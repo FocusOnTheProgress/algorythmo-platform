@@ -24,9 +24,13 @@ updates:
     commit-message:
       prefix: "chore(deps)"
       include: "scope"
-    # Agrupa famílias relacionadas num PR só, reduz volume
+    # Agrupa famílias relacionadas num PR só, reduz volume.
+    # Majors do Rails ficam de fora — sempre PR dedicado pra ler CHANGELOG.
     groups:
       rails-ecosystem:
+        update-types:
+          - "minor"
+          - "patch"
         patterns:
           - "rails"
           - "actionview"
@@ -58,8 +62,14 @@ updates:
     commit-message:
       prefix: "chore(deps)"
       include: "scope"
+    # Majors saem sempre em PR próprio (frameworks como Vue, Vite, Pinia
+    # quebram silenciosamente em group bumps — exemplo: vue-router 4→5
+    # esconde breaking changes que o reviewer não vê sem ler cada CHANGELOG).
     groups:
       vue-ecosystem:
+        update-types:
+          - "minor"
+          - "patch"
         patterns:
           - "vue"
           - "vue-*"
@@ -68,6 +78,9 @@ updates:
           - "vue-i18n*"
           - "pinia*"
       build-tooling:
+        update-types:
+          - "minor"
+          - "patch"
         patterns:
           - "vite"
           - "vite-*"
@@ -76,6 +89,9 @@ updates:
           - "postcss*"
           - "rollup*"
       lint-tooling:
+        update-types:
+          - "minor"
+          - "patch"
         patterns:
           - "eslint*"
           - "@eslint/*"
