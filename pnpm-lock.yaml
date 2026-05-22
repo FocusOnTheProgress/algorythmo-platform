@@ -44,8 +44,8 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0(highlight.js@11.10.0)(vue@3.5.12(typescript@5.6.2))
       '@iconify-json/fluent':
-        specifier: ^1.2.32
-        version: 1.2.36
+        specifier: ^1.2.47
+        version: 1.2.47
       '@iconify-json/material-symbols':
         specifier: ^1.2.10
         version: 1.2.10
@@ -955,8 +955,8 @@ packages:
     resolution: {integrity: sha512-93zYdMES/c1D69yZiKDBj0V24vqNzB/koF26KPaagAfd3P/4gUlh3Dys5ogAK+Exi9QyzlD8x/08Zt7wIKcDcA==}
     deprecated: Use @eslint/object-schema instead
 
-  '@iconify-json/fluent@1.2.36':
-    resolution: {integrity: sha512-DhxwOu5Qiq09o2ehHeUK0I9lC01OeWFlxXP7pIslM0vbi8VuplrrJ7kMg21GJy87iOCevzxf6gTU7TLPGgSknw==}
+  '@iconify-json/fluent@1.2.47':
+    resolution: {integrity: sha512-YA9pCYNW3bqXMD1rMIkK0vqLK90UyE63hfI1cB2sQwGAbEFhi+VUz5mvcXYfb7bl5R8N5sLZNI2Kr0Q3Yo9M4A==}
 
   '@iconify-json/logos@1.2.10':
     resolution: {integrity: sha512-qxaXKJ6fu8jzTMPQdHtNxlfx6tBQ0jXRbHZIYy5Ilh8Lx9US9FsAdzZWUR8MXV8PnWTKGDFO4ZZee9VwerCyMA==}
@@ -5505,7 +5505,7 @@ snapshots:
 
   '@humanwhocodes/object-schema@2.0.3': {}
 
-  '@iconify-json/fluent@1.2.36':
+  '@iconify-json/fluent@1.2.47':
     dependencies:
       '@iconify/types': 2.0.0
 
