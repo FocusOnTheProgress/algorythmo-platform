@@ -13,8 +13,8 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-22.04
-    # Only run if MFA test keys are available
-    if: github.event_name == 'workflow_dispatch' || (github.repository == 'chatwoot/chatwoot' && github.actor != 'dependabot[bot]')
+    # Skip Dependabot PRs (sem acesso a secrets); rodar em todos os outros casos
+    if: github.actor != 'dependabot[bot]'
 
     services:
       postgres:
