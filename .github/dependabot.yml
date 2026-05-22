@@ -1,0 +1,102 @@
+# Configuração do Dependabot para Fork Algorythmo
+#
+# Define como o Dependabot mantém dependências atualizadas. Implementa o gate
+# de segurança do ADR-0001 (CVEs entram sempre) e adiciona atualizações
+# regulares de versão para manter o fork em dia sem depender só do sync
+# mensal com upstream.
+#
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Ruby (Rails backend)
+  - package-ecosystem: "bundler"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "ruby"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    # Agrupa famílias relacionadas num PR só, reduz volume
+    groups:
+      rails-ecosystem:
+        patterns:
+          - "rails"
+          - "actionview"
+          - "actionmailer"
+          - "actionpack"
+          - "actioncable"
+          - "activerecord"
+          - "activestorage"
+          - "activesupport"
+          - "activejob"
+          - "activemodel"
+          - "railties"
+      devise-ecosystem:
+        patterns:
+          - "devise*"
+
+  # Frontend (Vue 3 + Vite)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "javascript"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      vue-ecosystem:
+        patterns:
+          - "vue"
+          - "vue-*"
+          - "@vue/*"
+          - "@intlify/*"
+          - "vue-i18n*"
+          - "pinia*"
+      build-tooling:
+        patterns:
+          - "vite"
+          - "vite-*"
+          - "@vitejs/*"
+          - "esbuild"
+          - "postcss*"
+          - "rollup*"
+      lint-tooling:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"
+          - "@typescript-eslint/*"
+          - "prettier*"
+      types:
+        patterns:
+          - "@types/*"
+
+  # GitHub Actions (versões das próprias actions usadas em workflows)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
