@@ -23,13 +23,14 @@ namespace :algorythmo do
         next
       end
 
-      # Create a super admin user (can login and access accounts)
+      # Regular User (not SuperAdmin STI) — the smoke suite logs in via
+      # devise_token_auth at /auth/sign_in, which finds rows where type IS NULL.
+      # SuperAdmin rows live in the same table but route through /super_admin.
       user = User.new(
         name: 'Algorythmo Test',
         email: email,
         password: password,
-        password_confirmation: password,
-        type: 'SuperAdmin'
+        password_confirmation: password
       )
       user.skip_confirmation!
       user.save!

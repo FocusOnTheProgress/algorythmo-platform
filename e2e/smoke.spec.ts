@@ -67,10 +67,9 @@ test.describe('M0 Smoke', () => {
     await page.getByTestId('password_input').fill(PASSWORD);
     await page.getByRole('button', { name: /sign in|log in|login/i }).click();
 
-    // Wait for dashboard to load — sidebar is the signal
-    await expect(page.locator('nav[class*="sidebar"], aside')).toBeVisible({
-      timeout: 15_000,
-    });
+    // URL change is the only signal that doesn't depend on knowing the
+    // dashboard markup (which evolves with the design system).
+    await page.waitForURL(/\/app\/accounts\/\d+/, { timeout: 15_000 });
   });
 
   test('"Chatwoot" does not appear in DOM of the home page after login', async ({
