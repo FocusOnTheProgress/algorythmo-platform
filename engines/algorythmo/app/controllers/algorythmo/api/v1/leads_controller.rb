@@ -27,6 +27,10 @@ module Algorythmo
         MAX_LIMIT                   = 200
         DEFAULT_CONVERSATIONS_LIMIT = 10
         MAX_CONVERSATIONS_LIMIT     = 100
+        MAX_LEADS_PER_CONTACT       = 50
+        # Upper bound for Postgres bigint (2**63 - 1). Cursors carrying ids beyond
+        # this value would cause a PG::NumericValueOutOfRange on the WHERE clause.
+        MAX_BIGINT                  = 9_223_372_036_854_775_807
 
         # GET /algorythmo/api/v1/accounts/:account_id/leads
         # Query params (mutually exclusive filters — exactly one required):
@@ -194,7 +198,7 @@ module Algorythmo
                   .where(account_id: current_account.id, contact_id: params[:contact_id])
                   .includes(:stage, contact: { avatar_attachment: :blob })
                   .order(:id)
-                  .limit(50)
+                  .limit(MAX_LEADS_PER_CONTACT)
 
           render json: { leads: leads.map { |l| lead_json(l) }, next_cursor: nil }
         end
@@ -312,32 +316,47 @@ module Algorythmo
         # Decodes a (position Float, id Integer) lead cursor.
         # Returns [Float, Integer] on success, nil on any malformed input.
         # Nil means "no cursor applied" — caller renders the first page.
+        #
+        # Type-checks before coercion so that passing nil/Array/Hash elements
+        # (e.g. [null, null] from JSON) never reaches Float()/Integer() and
+        # raises TypeError, which was not caught by the old rescue clause.
+        # Bigint cap prevents PG::NumericValueOutOfRange on the WHERE clause.
         def decode_lead_cursor(raw)
           return nil if raw.blank?
 
           parsed = JSON.parse(Base64.urlsafe_decode64(raw))
           return nil unless parsed.is_a?(Array) && parsed.size == 2
+          return nil unless parsed[0].is_a?(Numeric) && parsed[1].is_a?(Integer)
 
           pos = Float(parsed[0])
           cid = Integer(parsed[1])
+          return nil if cid < 0 || cid > MAX_BIGINT
+
           [pos, cid]
-        rescue ArgumentError, JSON::ParserError
+        rescue ArgumentError, TypeError, JSON::ParserError
           nil
         end
 
         # Decodes a (created_at ISO8601, id Integer) conversation cursor.
         # Returns [Time, Integer] on success, nil on any malformed input.
         # Nil means "no cursor applied" — caller renders the first page.
+        #
+        # Type-checks before coercion: Time.iso8601(nil) and Time.iso8601(42) raise
+        # TypeError (not ArgumentError), which the old rescue clause missed.
+        # Bigint cap prevents PG::NumericValueOutOfRange on the WHERE clause.
         def decode_conversation_cursor(raw)
           return nil if raw.blank?
 
           parsed = JSON.parse(Base64.urlsafe_decode64(raw))
           return nil unless parsed.is_a?(Array) && parsed.size == 2
+          return nil unless parsed[0].is_a?(String) && parsed[1].is_a?(Integer)
 
           ts  = Time.iso8601(parsed[0])
           cid = Integer(parsed[1])
+          return nil if cid < 0 || cid > MAX_BIGINT
+
           [ts, cid]
-        rescue ArgumentError, JSON::ParserError
+        rescue ArgumentError, TypeError, JSON::ParserError
           nil
         end
       end

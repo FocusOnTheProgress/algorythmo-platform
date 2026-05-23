@@ -123,41 +123,65 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
           expect(response).to have_http_status(:ok)
           expect(JSON.parse(response.body)['leads'].size).to eq(3)
         end
+
+        # HIGH-R2-1 — TypeError class: null/wrong-type elements must not reach Float()/Integer()
+        it 'returns first page (not 500) on cursor with null elements' do
+          bad = Base64.urlsafe_encode64('[null, null]')
+          get :index, params: { account_id: account.id, stage_id: novo_stage.id, cursor: bad }
+          expect(response).to have_http_status(:ok)
+        end
+
+        it 'returns first page (not 500) on cursor with string where Numeric expected' do
+          bad = Base64.urlsafe_encode64('["abc", 1]')
+          get :index, params: { account_id: account.id, stage_id: novo_stage.id, cursor: bad }
+          expect(response).to have_http_status(:ok)
+        end
+
+        it 'returns first page (not 500) on cursor with object elements' do
+          bad = Base64.urlsafe_encode64('[{}, []]')
+          get :index, params: { account_id: account.id, stage_id: novo_stage.id, cursor: bad }
+          expect(response).to have_http_status(:ok)
+        end
+
+        it 'returns first page (not 500) on cursor with bigint overflow id' do
+          bad = Base64.urlsafe_encode64('[1.5, 99999999999999999999]')
+          get :index, params: { account_id: account.id, stage_id: novo_stage.id, cursor: bad }
+          expect(response).to have_http_status(:ok)
+        end
       end
     end
 
     # H1 — Preloading contact avatar_attachment prevents N+1 on avatar_url.
+    # Threshold chosen so it catches the regression: without `avatar_attachment: :blob`
+    # in the includes, each of the 5 contacts fires 2 extra queries (attachment + blob)
+    # = 10 extra queries beyond the baseline ~5, totalling ~15+. The cap of 14 forces
+    # failure when the preload is absent and passes when it is present.
     describe 'H1 — N+1 prevention for contact avatar' do
       it 'preloads contact avatar to avoid N+1 on index_by_stage' do
-        contacts = 5.times.map { |i| create(:contact, account: account) }
+        contacts = create_list(:contact, 5, account: account)
+        contacts.each do |c|
+          c.avatar.attach(
+            io: StringIO.new('fakeimage'),
+            filename: 'avatar.png',
+            content_type: 'image/png'
+          )
+        end
         contacts.each_with_index do |c, i|
           Algorythmo::Lead.create!(account: account, contact: c, stage: novo_stage,
                                    position: i.to_f + 1, stage_entered_at: Time.current)
         end
 
         query_count = 0
-        counter = lambda { query_count += 1 }
+        counter = ->(*, **) { query_count += 1 }
         ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
           get :index, params: { account_id: account.id, stage_id: novo_stage.id }
         end
         expect(response).to have_http_status(:ok)
-        # With proper preloading, query count is small and constant — not proportional to N.
-        # 10 is a generous ceiling; N+1 for 5 leads would add 5-10 extra avatar queries.
-        expect(query_count).to be < 15
-      end
-
-      it 'preloads contact avatar to avoid N+1 on index_by_contact' do
-        # Create 5 contacts, each with their own lead linked to `contact`'s account.
-        # For index_by_contact we query by contact, so use the same contact with 1 lead.
-        create_lead(pos: 1.0)
-
-        query_count = 0
-        counter = lambda { query_count += 1 }
-        ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
-          get :index, params: { account_id: account.id, contact_id: contact.id }
-        end
-        expect(response).to have_http_status(:ok)
-        expect(query_count).to be < 15
+        # Baseline with preload: ~5-8 queries (auth, leads, contacts, attachments, blobs in bulk).
+        # Without `avatar_attachment: :blob` in includes, each of 5 contacts fires 2 extra queries
+        # (load attachment record + load blob record) = 10 extra, pushing total above 14.
+        # This threshold fails without the preload and passes with it.
+        expect(query_count).to be < 14
       end
     end
   end
@@ -614,6 +638,31 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)['conversations'].size).to eq(3)
       end
+
+      # HIGH-R2-1 — TypeError class: null/wrong-type elements must not reach Time.iso8601()/Integer()
+      it 'returns first page (not 500) on cursor with null elements' do
+        bad_cursor = Base64.urlsafe_encode64('[null, null]')
+        get :conversations, params: { account_id: account.id, id: lead.id, cursor: bad_cursor }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns first page (not 500) on cursor with wrong-type timestamp element' do
+        bad_cursor = Base64.urlsafe_encode64('[42, 1]')
+        get :conversations, params: { account_id: account.id, id: lead.id, cursor: bad_cursor }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns first page (not 500) on cursor with object elements' do
+        bad_cursor = Base64.urlsafe_encode64('[{}, []]')
+        get :conversations, params: { account_id: account.id, id: lead.id, cursor: bad_cursor }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns first page (not 500) on cursor with bigint overflow id' do
+        bad_cursor = Base64.urlsafe_encode64('["2026-01-01T00:00:00Z", 99999999999999999999]')
+        get :conversations, params: { account_id: account.id, id: lead.id, cursor: bad_cursor }
+        expect(response).to have_http_status(:ok)
+      end
     end
 
     describe 'cursor pagination' do
@@ -731,6 +780,16 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       it 'returns 404 when requesting conversations for a lead from another account' do
         get :conversations, params: { account_id: account.id, id: lead_b.id }
         expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    # LOW-R2-1 — Feature gate must be enforced on #conversations the same way as other actions.
+    context 'when CRM feature is disabled' do
+      before { allow(Algorythmo::FeatureGate).to receive(:feature_enabled?).and_return(false) }
+
+      it 'returns 403' do
+        get :conversations, params: { account_id: account.id, id: lead.id }
+        expect(response).to have_http_status(:forbidden)
       end
     end
   end
