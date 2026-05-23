@@ -34,15 +34,16 @@ RSpec.describe Algorythmo::Pipeline, type: :model do
       end
 
       it 'writes a cache entry under the versioned key' do
-        # The cache contract: cached_default_for must populate Rails.cache with
-        # an entry keyed by pipeline.cache_key_with_version. We assert the entry
-        # exists after the first call — the actual block re-execution is governed
-        # by Rails.cache.fetch semantics, which we trust.
-        Rails.cache.clear
+        # The test env uses :null_store (Rails default for tests) which is a no-op.
+        # Swap in a MemoryStore so we can verify the cache write contract:
+        # cached_default_for must populate Rails.cache under the versioned key.
+        memory_store = ActiveSupport::Cache::MemoryStore.new
+        allow(Rails).to receive(:cache).and_return(memory_store)
+
         described_class.cached_default_for(account)
 
         cache_key = "algorythmo:pipeline:default:#{account.id}/#{pipeline.cache_key_with_version}"
-        expect(Rails.cache.exist?(cache_key)).to be(true)
+        expect(memory_store.exist?(cache_key)).to be(true)
       end
 
       it 'busts cache after a stage rename (cache_key_with_version changes)' do
