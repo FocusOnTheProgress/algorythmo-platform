@@ -23,9 +23,13 @@ test.describe('Lead Idempotency', () => {
   });
 
   test.skip(
-    'second message from same contact does not create a duplicate Lead',
+    'polling upsert does not duplicate a Lead already in the Kanban (client-side dedup)',
     async ({ page }) => {
-      // Arrange: a contact already has 1 open lead in "Novo"
+      // This test validates useLeadStore.upsertLeads() client-side dedup logic:
+      // when polling returns the same lead ID already rendered, the count stays 1.
+      //
+      // Server-side idempotency (CrmListener not creating duplicate leads) is
+      // covered by RSpec at engines/algorythmo/spec/algorythmo/crm_listener_spec.rb.
       let callCount = 0;
       await page.route(`**/algorythmo/api/v1/accounts/*/leads*`, async (route) => {
         callCount++;
@@ -41,6 +45,7 @@ test.describe('Lead Idempotency', () => {
                 contact_id: 99,
                 channel_origin: 'whatsapp',
                 channel_metadata: { name: 'Repeated Contact', handle: '+5511888888888' },
+                contact: { id: 99, name: 'Repeated Contact', email: null, phone_number: '+5511888888888', thumbnail: null },
                 stage_entered_at: new Date().toISOString(),
                 last_message_at: new Date().toISOString(),
               },

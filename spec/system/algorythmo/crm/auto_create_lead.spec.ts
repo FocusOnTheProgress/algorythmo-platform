@@ -16,42 +16,29 @@
  * Enable in Fase 2 once:
  *   1. CRM route is live (Sessão C B-PR2/B-PR5).
  *   2. Polling 8s is wired (Sessão B B-PR5).
- *   3. `seedLeads` / mock-message helpers are functional (_fixture.ts TODO).
+ *   3. Feature flag is enabled in test environment (see _fixture.ts PRECONDITIONS).
  */
 
-import { test, expect, loginAsAdmin, goToCrm, BASE_URL } from './_fixture';
+import { test, expect, loginAsAdmin, goToCrm, mockLead, mockDefaultPipeline } from './_fixture';
 
 test.describe('D6 — Auto-create Lead por canal', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
+    await mockDefaultPipeline(page);
   });
 
   test.skip(
     'widget message creates Lead in "Novo" stage within 10s (polling)',
     async ({ page }) => {
-      // Arrange: mock a new inbound widget message via API stub
-      await page.route(
-        `**/algorythmo/api/v1/accounts/*/leads*`,
-        async (route) => {
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify({
-              leads: [
-                {
-                  id: 1,
-                  stage_id: 1,
-                  channel_origin: 'widget',
-                  channel_metadata: { name: 'Test User Widget', handle: 'widget-123' },
-                  stage_entered_at: new Date().toISOString(),
-                  last_message_at: new Date().toISOString(),
-                },
-              ],
-              next_cursor: null,
-            }),
-          });
-        }
-      );
+      const lead = mockLead({ id: 1, stageId: 1, channelOrigin: 'widget', contactName: 'Test User Widget', channelHandle: 'widget-123' });
+
+      await page.route(`**/algorythmo/api/v1/accounts/*/leads*`, async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ leads: [lead], next_cursor: null }),
+        });
+      });
 
       await goToCrm(page);
 
@@ -70,27 +57,13 @@ test.describe('D6 — Auto-create Lead por canal', () => {
   test.skip(
     'WhatsApp message creates Lead in "Novo" stage with WhatsApp channel icon',
     async ({ page }) => {
+      const lead = mockLead({ id: 2, stageId: 1, channelOrigin: 'whatsapp', contactName: 'Maria Santos', channelHandle: '+5511999999999' });
+
       await page.route(`**/algorythmo/api/v1/accounts/*/leads*`, async (route) => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({
-            leads: [
-              {
-                id: 2,
-                stage_id: 1,
-                channel_origin: 'whatsapp',
-                channel_metadata: {
-                  name: 'Maria Santos',
-                  handle: '+5511999999999',
-                  photo_url: null,
-                },
-                stage_entered_at: new Date().toISOString(),
-                last_message_at: new Date().toISOString(),
-              },
-            ],
-            next_cursor: null,
-          }),
+          body: JSON.stringify({ leads: [lead], next_cursor: null }),
         });
       });
 
@@ -108,26 +81,13 @@ test.describe('D6 — Auto-create Lead por canal', () => {
   test.skip(
     'email message creates Lead in "Novo" stage',
     async ({ page }) => {
+      const lead = mockLead({ id: 3, stageId: 1, channelOrigin: 'email', contactName: 'Ana Oliveira', channelHandle: 'ana@example.com', contactEmail: 'ana@example.com' });
+
       await page.route(`**/algorythmo/api/v1/accounts/*/leads*`, async (route) => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({
-            leads: [
-              {
-                id: 3,
-                stage_id: 1,
-                channel_origin: 'email',
-                channel_metadata: {
-                  name: 'Ana Oliveira',
-                  handle: 'ana@example.com',
-                },
-                stage_entered_at: new Date().toISOString(),
-                last_message_at: new Date().toISOString(),
-              },
-            ],
-            next_cursor: null,
-          }),
+          body: JSON.stringify({ leads: [lead], next_cursor: null }),
         });
       });
 
@@ -141,26 +101,13 @@ test.describe('D6 — Auto-create Lead por canal', () => {
   test.skip(
     'Instagram DM creates Lead in "Novo" stage',
     async ({ page }) => {
+      const lead = mockLead({ id: 4, stageId: 1, channelOrigin: 'instagram', contactName: 'Pedro Lima', channelHandle: '@pedrolima' });
+
       await page.route(`**/algorythmo/api/v1/accounts/*/leads*`, async (route) => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({
-            leads: [
-              {
-                id: 4,
-                stage_id: 1,
-                channel_origin: 'instagram',
-                channel_metadata: {
-                  name: 'Pedro Lima',
-                  handle: '@pedrolima',
-                },
-                stage_entered_at: new Date().toISOString(),
-                last_message_at: new Date().toISOString(),
-              },
-            ],
-            next_cursor: null,
-          }),
+          body: JSON.stringify({ leads: [lead], next_cursor: null }),
         });
       });
 

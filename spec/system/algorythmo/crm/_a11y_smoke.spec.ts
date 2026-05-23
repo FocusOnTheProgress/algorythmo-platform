@@ -3,9 +3,14 @@
  *
  * Gate: zero critical or serious WCAG AA violations. Fails CI if violations found.
  *
- * Uses `@axe-core/playwright` — verify it is installed:
+ * Uses `@axe-core/playwright` (Deque official) — verify it is installed:
  *   pnpm list @axe-core/playwright
  * If not: pnpm add -D @axe-core/playwright
+ *
+ * API: import { AxeBuilder } from '@axe-core/playwright'
+ *   const results = await new AxeBuilder({ page })
+ *     .withTags(['wcag2a', 'wcag2aa'])
+ *     .analyze();
  *
  * Plan ref:
  *   docs/plans/0002-m1-trilha-b-frontend-crm.md §5 B.13
@@ -14,19 +19,25 @@
  *
  * Status: SCAFFOLD — test.skip() until:
  *   1. /crm route is live (Sessão C ships CrmKanbanView).
- *   2. @axe-core/playwright is installed.
- * Fase 2: remove skip, let it run as a live gate.
+ *   2. @axe-core/playwright is installed (pnpm add -D @axe-core/playwright).
+ * Fase 2: remove skip, let it run as a live CI gate.
  */
 
-import { test, expect as _expect } from './_fixture';
+import { test, expect } from '@playwright/test';
 import { loginAsAdmin, goToCrm, goToPipelineConfig } from './_fixture';
 
-// Lazy import axe so the file still loads when axe is not installed.
-// This lets `playwright test --list` collect the test without erroring.
-async function getAxe() {
+const GATING_IMPACTS = new Set(['critical', 'serious']);
+
+/**
+ * Lazy-load AxeBuilder so the file still loads when @axe-core/playwright is
+ * not installed. Lets `playwright test --list` collect the test without error.
+ *
+ * Returns null if package is missing — tests self-skip in that case.
+ */
+async function getAxeBuilder() {
   try {
-    const { checkA11y, injectAxe } = await import('@axe-core/playwright');
-    return { checkA11y, injectAxe };
+    const mod = await import('@axe-core/playwright');
+    return mod.AxeBuilder;
   } catch {
     return null;
   }
@@ -36,76 +47,109 @@ test.describe('A11y smoke — axe-core WCAG AA gate', () => {
   test.skip(
     '/crm returns zero axe violations (critical + serious)',
     async ({ page }) => {
-      const axe = await getAxe();
-      if (!axe) {
-        test.skip(true, '@axe-core/playwright not installed — run: pnpm add -D @axe-core/playwright');
+      const AxeBuilder = await getAxeBuilder();
+      if (!AxeBuilder) {
+        test.skip(
+          true,
+          '@axe-core/playwright not installed — run: pnpm add -D @axe-core/playwright'
+        );
         return;
       }
 
       await loginAsAdmin(page);
       await goToCrm(page);
 
-      await axe.injectAxe(page);
-      await axe.checkA11y(page, undefined, {
-        detailedReport: true,
-        detailedReportOptions: { html: true },
-        axeOptions: {
-          runOnly: {
-            type: 'tag',
-            values: ['wcag2a', 'wcag2aa'],
-          },
-        },
-        // Only gate on critical and serious — informational and minor
-        // are documented as roadmap in A11Y.md
-        violationCallback: (violations) => {
-          const gating = violations.filter(
-            (v) => v.impact === 'critical' || v.impact === 'serious'
-          );
-          if (gating.length > 0) {
-            const summary = gating
-              .map((v) => `[${v.impact}] ${v.id}: ${v.description}`)
-              .join('\n');
-            throw new Error(
-              `axe found ${gating.length} gating violation(s) on /crm:\n${summary}`
-            );
-          }
-        },
-      });
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa'])
+        .analyze();
+
+      const gating = results.violations.filter((v) =>
+        GATING_IMPACTS.has(v.impact ?? '')
+      );
+
+      if (gating.length > 0) {
+        const summary = gating
+          .map(
+            (v) =>
+              `[${v.impact}] ${v.id}: ${v.description}\n  Nodes: ${v.nodes
+                .slice(0, 3)
+                .map((n) => n.html)
+                .join(', ')}`
+          )
+          .join('\n\n');
+        throw new Error(
+          `axe found ${gating.length} gating violation(s) on /crm:\n\n${summary}`
+        );
+      }
+
+      // Non-gating violations are surfaced for visibility but do not fail CI
+      const nonGating = results.violations.filter(
+        (v) => !GATING_IMPACTS.has(v.impact ?? '')
+      );
+      if (nonGating.length > 0) {
+        console.warn(
+          `[axe] ${nonGating.length} non-gating violation(s) on /crm (moderate/minor) — not blocking:`
+        );
+        nonGating.forEach((v) =>
+          console.warn(`  [${v.impact}] ${v.id}: ${v.description}`)
+        );
+      }
+
+      expect(gating).toHaveLength(0);
     }
   );
 
   test.skip(
     '/crm/pipeline returns zero axe violations (critical + serious)',
     async ({ page }) => {
-      const axe = await getAxe();
-      if (!axe) {
-        test.skip(true, '@axe-core/playwright not installed');
+      const AxeBuilder = await getAxeBuilder();
+      if (!AxeBuilder) {
+        test.skip(
+          true,
+          '@axe-core/playwright not installed — run: pnpm add -D @axe-core/playwright'
+        );
         return;
       }
 
       await loginAsAdmin(page);
       await goToPipelineConfig(page);
 
-      await axe.injectAxe(page);
-      await axe.checkA11y(page, undefined, {
-        detailedReport: true,
-        axeOptions: {
-          runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] },
-        },
-        violationCallback: (violations) => {
-          const gating = violations.filter(
-            (v) => v.impact === 'critical' || v.impact === 'serious'
-          );
-          if (gating.length > 0) {
-            const summary = gating
-              .map((v) => `[${v.impact}] ${v.id}: ${v.description}`)
-              .join('\n');
-            throw new Error(
-              `axe found ${gating.length} gating violation(s) on /crm/pipeline:\n${summary}`
-            );
-          }
-        },
-      });
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa'])
+        .analyze();
+
+      const gating = results.violations.filter((v) =>
+        GATING_IMPACTS.has(v.impact ?? '')
+      );
+
+      if (gating.length > 0) {
+        const summary = gating
+          .map(
+            (v) =>
+              `[${v.impact}] ${v.id}: ${v.description}\n  Nodes: ${v.nodes
+                .slice(0, 3)
+                .map((n) => n.html)
+                .join(', ')}`
+          )
+          .join('\n\n');
+        throw new Error(
+          `axe found ${gating.length} gating violation(s) on /crm/pipeline:\n\n${summary}`
+        );
+      }
+
+      const nonGating = results.violations.filter(
+        (v) => !GATING_IMPACTS.has(v.impact ?? '')
+      );
+      if (nonGating.length > 0) {
+        console.warn(
+          `[axe] ${nonGating.length} non-gating violation(s) on /crm/pipeline (moderate/minor):`
+        );
+        nonGating.forEach((v) =>
+          console.warn(`  [${v.impact}] ${v.id}: ${v.description}`)
+        );
+      }
+
+      expect(gating).toHaveLength(0);
     }
   );
 });

@@ -17,7 +17,7 @@
  *   - KanbanBoard.vue with aria-live region (B-PR5)
  */
 
-import { test, expect, loginAsAdmin, goToCrm } from './_fixture';
+import { test, expect, loginAsAdmin, goToCrm, dragLeadCard } from './_fixture';
 
 test.describe('A11y — Screen reader', () => {
   test.beforeEach(async ({ page }) => {
@@ -89,7 +89,8 @@ test.describe('A11y — Screen reader', () => {
 
       const leadCard = page.locator('[data-lead-id="1"]');
       const qualifiedColumn = page.locator('[data-stage-kind="qualified"]');
-      await leadCard.dragTo(qualifiedColumn);
+      // Use dragLeadCard (mouse events) — dragTo sends HTML5 events that SortableJS ignores
+      await dragLeadCard(page, leadCard, qualifiedColumn);
 
       // Live region must announce the move with lead name and destination stage
       await expect(liveRegion).toContainText(/João Silva/i, { timeout: 5_000 });
@@ -127,8 +128,8 @@ test.describe('A11y — Screen reader', () => {
 
       const ariaLabel = await chip.getAttribute('aria-label');
       expect(ariaLabel).toBeTruthy();
-      // Must describe the aging state
-      expect(ariaLabel).toMatch(/em dia|atenção|atrasado/i);
+      // Must describe the aging state (all 4 states: green/yellow/red/neutral)
+      expect(ariaLabel).toMatch(/em dia|atenção|atrasado|sem alerta/i);
     }
   );
 });

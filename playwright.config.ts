@@ -33,9 +33,12 @@ export default defineConfig({
     // isolated from upstream Chatwoot e2e suite (soft-fork zone hygiene).
     // All specs start as .skip() and are enabled in Fase 2 as Sessão C
     // delivers the components being tested.
+    // testIgnore: excludes _a11y_smoke.spec.ts — that runs under algorythmo-a11y
+    // only, preventing the axe scan from running twice per CI invocation.
     {
       name: 'algorythmo-crm',
       testDir: './spec/system/algorythmo/crm',
+      testIgnore: ['**/_a11y_smoke.spec.ts'],
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1440, height: 900 },

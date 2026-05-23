@@ -246,4 +246,4 @@ From `docs/plans/0002-m1-trilha-b-frontend-crm.md` §1.2 gaps:
 
 These are gaps explicitly called out in `engines/algorythmo/app/assets/stylesheets/DESIGN.md §7.4` and delegated to Sessão C.
 
-Each new component class must be added to `_components.scss` with a `// algorythmo: test-harness-m1b` comment at the block start, and documented in `engines/algorythmo/DESIGN.md` §3.7-3.10.
+Each new component class must be added to `_components.scss` with a `// algorythmo: design-system-import` comment at the block start (this tag is in the `check-soft-fork-zone.sh` allowlist), and documented in `engines/algorythmo/DESIGN.md` §3.7-3.10.

@@ -18,7 +18,7 @@
  * (B-PR5) and Sessão B ships useKanbanDragDrop (B.2).
  */
 
-import { test, expect, loginAsAdmin, goToCrm, BASE_URL } from './_fixture';
+import { test, expect, loginAsAdmin, goToCrm, dragLeadCard, BASE_URL } from './_fixture';
 
 test.describe('Kanban — Drag and Drop', () => {
   test.beforeEach(async ({ page }) => {
@@ -65,8 +65,9 @@ test.describe('Kanban — Drag and Drop', () => {
       const novoColumn = page.locator('[data-stage-kind="new"]');
       const qualifiedColumn = page.locator('[data-stage-kind="qualified"]');
 
-      // Drag card from Novo → Qualificado
-      await leadCard.dragTo(qualifiedColumn);
+      // Use dragLeadCard (mouse events) — NOT dragTo (HTML5 drag events).
+      // vuedraggable@4/SortableJS only fires on pointer/mouse events.
+      await dragLeadCard(page, leadCard, qualifiedColumn);
 
       // Optimistic: card immediately visible in target
       await expect(qualifiedColumn.locator('[data-lead-id="1"]')).toBeVisible();
@@ -82,7 +83,7 @@ test.describe('Kanban — Drag and Drop', () => {
       const leadCard = page.locator('[data-lead-id="1"]');
       const qualifiedColumn = page.locator('[data-stage-kind="qualified"]');
 
-      await leadCard.dragTo(qualifiedColumn);
+      await dragLeadCard(page, leadCard, qualifiedColumn);
       await page.reload({ waitUntil: 'networkidle' });
 
       // After reload, card should still be in Qualificado (server persisted)
@@ -105,7 +106,7 @@ test.describe('Kanban — Drag and Drop', () => {
       const novoColumn = page.locator('[data-stage-kind="new"]');
       const qualifiedColumn = page.locator('[data-stage-kind="qualified"]');
 
-      await leadCard.dragTo(qualifiedColumn);
+      await dragLeadCard(page, leadCard, qualifiedColumn);
 
       // Rollback: card returns to origin
       await expect(novoColumn.locator('[data-lead-id="1"]')).toBeVisible({
@@ -151,7 +152,7 @@ test.describe('Kanban — Drag and Drop', () => {
       const qualifiedColumn = page.locator('[data-stage-kind="qualified"]');
       const liveRegion = page.locator('[aria-live="polite"]');
 
-      await leadCard.dragTo(qualifiedColumn);
+      await dragLeadCard(page, leadCard, qualifiedColumn);
 
       // aria-live must announce the transition
       await expect(liveRegion).toContainText(/Qualificado/i, { timeout: 5_000 });
