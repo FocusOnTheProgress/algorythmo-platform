@@ -36,6 +36,56 @@ RSpec.describe Algorythmo::Lead, type: :model do
     end
   end
 
+  describe 'stage_kind denormalisation' do
+    it 'syncs stage_kind = 0 (open) when stage is open' do
+      lead = create_lead(stage: novo_stage)
+      expect(lead.stage_kind).to eq(0)
+    end
+
+    it 'syncs stage_kind = 1 (won) when stage is won' do
+      lead = create_lead(stage: won_stage, attrs: { contact: create(:contact, account: account) })
+      expect(lead.stage_kind).to eq(1)
+    end
+
+    it 'syncs stage_kind = 2 (lost) when stage is lost' do
+      lead = create_lead(stage: lost_stage, attrs: { contact: create(:contact, account: account) })
+      expect(lead.stage_kind).to eq(2)
+    end
+
+    it 'updates stage_kind when stage changes via move_to_stage' do
+      lead = create_lead
+      expect { lead.move_to_stage(won_stage) }.to change { lead.reload.stage_kind }.from(0).to(1)
+    end
+  end
+
+  describe 'DB-level partial unique index (B1)' do
+    # idx_leads_open_unique_per_contact: unique on (contact_id, account_id) WHERE stage_kind = 0
+    it 'raises RecordNotUnique when a second open lead is created for the same contact+account' do
+      create_lead(stage: novo_stage)
+      expect do
+        # Bypass before_save to force a raw DB insert that violates the index.
+        described_class.insert({
+          account_id: account.id,
+          contact_id: contact.id,
+          stage_id: novo_stage.id,
+          stage_kind: 0,
+          position: 2.0,
+          deleted: false,
+          stage_entered_at: Time.current,
+          created_at: Time.current,
+          updated_at: Time.current
+        })
+      end.to raise_error(ActiveRecord::RecordNotUnique)
+    end
+
+    it 'allows two leads for the same contact+account when one is closed (stage_kind != 0)' do
+      create_lead(stage: novo_stage)
+      # A won lead for the same contact — no unique conflict because stage_kind = 1.
+      closed = create_lead(stage: won_stage, attrs: { contact: contact })
+      expect(closed).to be_persisted
+    end
+  end
+
   describe '#move_to_stage' do
     let!(:lead) { create_lead }
 

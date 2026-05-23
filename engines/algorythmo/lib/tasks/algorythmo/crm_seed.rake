@@ -60,6 +60,5 @@ namespace :algorythmo do
       puts "[algorythmo:crm] Seeded pipeline '#{pipeline.name}' for account #{account.id} " \
            "with #{DEFAULT_STAGES.size} stages."
     end
-    private_method :seed_pipeline_for
   end
 end

@@ -39,7 +39,9 @@ module Algorythmo
       process_lead_for(account: account, contact_id: contact_id, message: message)
     rescue StandardError => e
       # Never let a CRM listener crash bubble up and break message delivery.
-      Rails.logger.error("[CrmListener] Unhandled error for message #{message&.id}: #{e.class}: #{e.message}")
+      # algorythmo: ChatwootExceptionTracker forwards to Sentry/Honeybadger when configured — do not swallow silently
+      ChatwootExceptionTracker.new(e, account: message&.conversation&.account).capture_exception
+      Rails.logger.error("[CrmListener] #{e.class}: #{e.message}\n#{e.backtrace.first(20).join("\n")}")
     end
 
     private

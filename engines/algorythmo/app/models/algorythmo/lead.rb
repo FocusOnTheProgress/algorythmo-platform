@@ -23,6 +23,10 @@ module Algorythmo
     scope :closed,  -> { active.joins(:stage).where(algorythmo_stages: { kind: %i[won lost] }) }
 
     before_create :set_stage_entered_at
+    # algorythmo: stage_kind is denormalised from stage.kind so the partial unique index
+    # idx_leads_open_unique_per_contact can use a plain WHERE clause (Postgres rejects subqueries
+    # in partial-index predicates). Must be synced on every save that touches stage_id.
+    before_save :sync_stage_kind
 
     # A.4 — Move lead to a new stage.
     # Recalculates position (appended at end) and resets the aging clock (D10).
@@ -82,6 +86,13 @@ module Algorythmo
 
     def set_stage_entered_at
       self.stage_entered_at ||= Time.current
+    end
+
+    def sync_stage_kind
+      # Use kind_before_type_cast to read the raw integer stored in the DB column
+      # without going through the enum string mapping — avoids a round-trip when stage
+      # is already loaded in memory. Falls back to 0 (open) if stage is somehow nil.
+      self.stage_kind = stage&.kind_before_type_cast.to_i
     end
   end
 end

@@ -9,6 +9,8 @@ module Algorythmo
       # A.6b — PATCH /algorythmo/api/v1/accounts/:account_id/stages/:id (aging_coefficient)
       class StagesController < BaseController
         before_action :set_stage
+        # algorythmo: admin-only — aging_coefficient and stage name are pipeline config, not agent ops
+        before_action :check_admin_authorization?, only: %i[update rename]
 
         # PATCH /algorythmo/api/v1/accounts/:account_id/stages/:id
         # Accepts: { stage: { aging_coefficient: 4.0 } }

@@ -14,6 +14,8 @@ module Algorythmo
       # Offset pagination is intentionally absent from this controller.
       class LeadsController < BaseController
         before_action :set_lead, only: %i[show update destroy move reopen]
+        # algorythmo: admin-only — soft-delete is irreversible via API; agents cannot delete leads
+        before_action :check_admin_authorization?, only: %i[destroy]
 
         DEFAULT_LIMIT = 50
         MAX_LIMIT     = 200
@@ -54,14 +56,29 @@ module Algorythmo
 
         # POST /algorythmo/api/v1/accounts/:account_id/leads
         def create
+          contact_id      = params.require(:lead).require(:contact_id)
+          previous_lead_id = params.require(:lead)[:previous_lead_id]
+
+          # H1 — IDOR guard: contact must belong to current account.
+          unless Contact.exists?(id: contact_id, account_id: current_account.id)
+            render json: { error: 'Contact not found' }, status: :not_found and return
+          end
+
+          # H1 — IDOR guard: previous_lead, when supplied, must belong to current account.
+          if previous_lead_id.present? &&
+             !Algorythmo::Lead.exists?(id: previous_lead_id, account_id: current_account.id)
+            render json: { error: 'Lead not found' }, status: :not_found and return
+          end
+
           stage = find_stage_for_account(params.require(:lead).require(:stage_id))
           max_pos = Algorythmo::Lead.where(stage: stage, deleted: false).maximum(:position) || 0.0
 
           lead = Algorythmo::Lead.create!(
             account: current_account,
-            contact_id: params.require(:lead).require(:contact_id),
+            contact_id: contact_id,
             stage: stage,
             position: max_pos + 1.0,
+            previous_lead_id: previous_lead_id,
             channel_origin: lead_params[:channel_origin],
             channel_metadata: lead_params[:channel_metadata],
             custom_fields: lead_params[:custom_fields],
@@ -77,7 +94,8 @@ module Algorythmo
 
         # PATCH /algorythmo/api/v1/accounts/:account_id/leads/:id
         def update
-          @lead.update!(lead_params.except(:stage_id))
+          # H1 — contact_id and previous_lead_id must not change after creation.
+          @lead.update!(lead_params.except(:stage_id, :contact_id, :previous_lead_id))
           render json: lead_json(@lead)
         rescue ActiveRecord::RecordInvalid => e
           render json: { error: e.message }, status: :unprocessable_entity
@@ -85,6 +103,7 @@ module Algorythmo
 
         # DELETE /algorythmo/api/v1/accounts/:account_id/leads/:id
         # Soft delete — sets deleted=true, preserves audit trail.
+        # Restricted to admin (before_action above).
         def destroy
           @lead.update!(deleted: true)
           head :no_content
@@ -124,9 +143,10 @@ module Algorythmo
         end
 
         def lead_params
+          # algorythmo: contact_id and previous_lead_id excluded from update path — see H1 note above
           params.require(:lead).permit(
-            :contact_id, :stage_id, :position, :channel_origin,
-            :previous_lead_id, :deleted,
+            :stage_id, :position, :channel_origin,
+            :deleted,
             channel_metadata: {},
             custom_fields: {}
           )

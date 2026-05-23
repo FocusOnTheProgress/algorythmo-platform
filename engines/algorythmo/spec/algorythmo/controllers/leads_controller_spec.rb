@@ -6,8 +6,12 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
   routes { Algorythmo::Engine.routes }
 
   let(:account) { create(:account) }
-  let(:user)    { create(:user, account: account, role: :administrator) }
+  let(:admin)   { create(:user, account: account, role: :administrator) }
+  let(:agent)   { create(:user, account: account, role: :agent) }
   let(:contact) { create(:contact, account: account) }
+
+  # Keep backward compat: existing specs used `user` as admin
+  let(:user) { admin }
 
   let(:pipeline) do
     p = Algorythmo::Pipeline.create!(account: account, name: 'Main')
@@ -107,6 +111,85 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       get :show, params: { account_id: account.id, id: lead.id }
       expect(response).to have_http_status(:not_found)
     end
+
+    context 'cross-account isolation' do
+      let(:account_b) { create(:account) }
+      let(:pipeline_b) do
+        p = Algorythmo::Pipeline.create!(account: account_b, name: 'B Main')
+        Algorythmo::Stage.create!(pipeline: p, name: 'Novo', kind: :open, position: 0, aging_coefficient: 1.0)
+        p.reload
+      end
+      let(:stage_b)   { pipeline_b.stages.first }
+      let(:contact_b) { create(:contact, account: account_b) }
+      let(:lead_b) do
+        Algorythmo::Lead.create!(account: account_b, contact: contact_b, stage: stage_b,
+                                 position: 1.0, stage_entered_at: Time.current)
+      end
+
+      before { lead_b }
+
+      it 'returns 404 when accessing a lead from another account' do
+        get :show, params: { account_id: account.id, id: lead_b.id }
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+  end
+
+  # ── POST #create ─────────────────────────────────────────────────────────────
+
+  describe 'POST #create' do
+    context 'cross-account isolation' do
+      let(:account_b)  { create(:account) }
+      let(:contact_b)  { create(:contact, account: account_b) }
+
+      it 'returns 404 when contact_id belongs to another account' do
+        post :create, params: {
+          account_id: account.id,
+          lead: { contact_id: contact_b.id, stage_id: novo_stage.id }
+        }
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it 'returns 404 when previous_lead_id belongs to another account' do
+        pipeline_b = Algorythmo::Pipeline.create!(account: account_b, name: 'B Main')
+        stage_b    = Algorythmo::Stage.create!(pipeline: pipeline_b, name: 'Novo', kind: :open,
+                                               position: 0, aging_coefficient: 1.0)
+        lead_b     = Algorythmo::Lead.create!(account: account_b, contact: contact_b,
+                                              stage: stage_b, position: 1.0, stage_entered_at: Time.current)
+
+        post :create, params: {
+          account_id: account.id,
+          lead: { contact_id: contact.id, stage_id: novo_stage.id, previous_lead_id: lead_b.id }
+        }
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+  end
+
+  # ── PATCH #update ─────────────────────────────────────────────────────────────
+
+  describe 'PATCH #update' do
+    context 'cross-account isolation' do
+      let(:account_b) { create(:account) }
+      let(:pipeline_b) do
+        p = Algorythmo::Pipeline.create!(account: account_b, name: 'B Main')
+        Algorythmo::Stage.create!(pipeline: p, name: 'Novo', kind: :open, position: 0, aging_coefficient: 1.0)
+        p.reload
+      end
+      let(:stage_b)   { pipeline_b.stages.first }
+      let(:contact_b) { create(:contact, account: account_b) }
+      let(:lead_b) do
+        Algorythmo::Lead.create!(account: account_b, contact: contact_b, stage: stage_b,
+                                 position: 1.0, stage_entered_at: Time.current)
+      end
+
+      before { lead_b }
+
+      it 'returns 404 when updating a lead from another account' do
+        patch :update, params: { account_id: account.id, id: lead_b.id, lead: { channel_origin: 'api' } }
+        expect(response).to have_http_status(:not_found)
+      end
+    end
   end
 
   # ── PATCH #move ───────────────────────────────────────────────────────────────
@@ -117,6 +200,28 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       patch :move, params: { account_id: account.id, id: lead.id, stage_id: qual_stage.id }
       expect(response).to have_http_status(:ok)
       expect(lead.reload.stage_id).to eq(qual_stage.id)
+    end
+
+    context 'cross-account isolation' do
+      let(:account_b) { create(:account) }
+      let(:pipeline_b) do
+        p = Algorythmo::Pipeline.create!(account: account_b, name: 'B Main')
+        Algorythmo::Stage.create!(pipeline: p, name: 'Novo', kind: :open, position: 0, aging_coefficient: 1.0)
+        p.reload
+      end
+      let(:stage_b)   { pipeline_b.stages.first }
+      let(:contact_b) { create(:contact, account: account_b) }
+      let(:lead_b) do
+        Algorythmo::Lead.create!(account: account_b, contact: contact_b, stage: stage_b,
+                                 position: 1.0, stage_entered_at: Time.current)
+      end
+
+      before { lead_b }
+
+      it 'returns 404 when moving a lead from another account' do
+        patch :move, params: { account_id: account.id, id: lead_b.id, stage_id: novo_stage.id }
+        expect(response).to have_http_status(:not_found)
+      end
     end
   end
 
@@ -136,16 +241,70 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       post :reopen, params: { account_id: account.id, id: lead.id }
       expect(response).to have_http_status(:unprocessable_entity)
     end
+
+    context 'cross-account isolation' do
+      let(:account_b) { create(:account) }
+      let(:pipeline_b) do
+        p = Algorythmo::Pipeline.create!(account: account_b, name: 'B Main')
+        Algorythmo::Stage.create!(pipeline: p, name: 'Won', kind: :won, position: 0, aging_coefficient: 0.0)
+        p.reload
+      end
+      let(:stage_b)   { pipeline_b.stages.first }
+      let(:contact_b) { create(:contact, account: account_b) }
+      let(:lead_b) do
+        Algorythmo::Lead.create!(account: account_b, contact: contact_b, stage: stage_b,
+                                 position: 1.0, stage_entered_at: Time.current)
+      end
+
+      before { lead_b }
+
+      it 'returns 404 when reopening a lead from another account' do
+        post :reopen, params: { account_id: account.id, id: lead_b.id }
+        expect(response).to have_http_status(:not_found)
+      end
+    end
   end
 
   # ── DELETE #destroy ───────────────────────────────────────────────────────────
 
   describe 'DELETE #destroy' do
-    it 'soft-deletes the lead' do
+    it 'soft-deletes the lead (admin)' do
       lead = create_lead
       delete :destroy, params: { account_id: account.id, id: lead.id }
       expect(response).to have_http_status(:no_content)
       expect(lead.reload.deleted).to be true
+    end
+
+    context 'H2 — role enforcement' do
+      before { request.headers['api_access_token'] = agent.access_token.token }
+
+      it 'returns 401/403 when an agent attempts to delete a lead' do
+        lead = create_lead
+        delete :destroy, params: { account_id: account.id, id: lead.id }
+        expect(response).to have_http_status(:unauthorized).or have_http_status(:forbidden)
+      end
+    end
+
+    context 'cross-account isolation' do
+      let(:account_b) { create(:account) }
+      let(:pipeline_b) do
+        p = Algorythmo::Pipeline.create!(account: account_b, name: 'B Main')
+        Algorythmo::Stage.create!(pipeline: p, name: 'Novo', kind: :open, position: 0, aging_coefficient: 1.0)
+        p.reload
+      end
+      let(:stage_b)   { pipeline_b.stages.first }
+      let(:contact_b) { create(:contact, account: account_b) }
+      let(:lead_b) do
+        Algorythmo::Lead.create!(account: account_b, contact: contact_b, stage: stage_b,
+                                 position: 1.0, stage_entered_at: Time.current)
+      end
+
+      before { lead_b }
+
+      it 'returns 404 when deleting a lead from another account' do
+        delete :destroy, params: { account_id: account.id, id: lead_b.id }
+        expect(response).to have_http_status(:not_found)
+      end
     end
   end
 

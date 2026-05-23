@@ -2,7 +2,9 @@
 
 # A.1 — CRM tables: algorythmo_pipelines, algorythmo_stages, algorythmo_leads
 # Indices chosen for three distinct hot paths:
-#   (1) Partial unique on (contact_id, account_id) scoped to open stages — DB-level idempotency (F2/F8)
+#   (1) Partial unique on (contact_id, account_id) scoped to stage_kind=0 (open) — DB-level idempotency (F2/F8)
+#       stage_kind is denormalised from algorythmo_stages.kind so that the partial-index predicate is a simple
+#       integer equality — Postgres does not accept subqueries in partial-index WHERE clauses.
 #   (2) (stage_id, stage_entered_at DESC) — aging signal ordering for D10 chip
 #   (3) (account_id, stage_id, position) — Kanban cursor pagination (A.11, P2)
 class CreateCrmTables < ActiveRecord::Migration[7.1]
@@ -25,11 +27,12 @@ class CreateCrmTables < ActiveRecord::Migration[7.1]
 
     create_table :algorythmo_leads do |t|
       t.references :account, null: false, foreign_key: true
-      t.references :contact, null: false, foreign_key: true
+      t.references :contact, null: false, foreign_key: { on_delete: :cascade }
       t.references :stage,   null: false,
                               foreign_key: { to_table: :algorythmo_stages }
       t.float     :position
-      t.bigint    :previous_lead_id   # chain reference (C2/A.5) — no FK to avoid circular dep
+      t.integer   :stage_kind,      null: false, default: 0 # algorythmo: denormalised from stage.kind for partial-index predicate
+      t.bigint    :previous_lead_id   # chain reference (C2/A.5) — FK managed manually below with on_delete: :nullify
       t.string    :channel_origin     # D6: whatsapp/email/instagram/widget/api/etc.
       t.jsonb     :channel_metadata   # D6: handle, phone, email domain, avatar URL, etc.
       t.jsonb     :custom_fields
@@ -40,14 +43,18 @@ class CreateCrmTables < ActiveRecord::Migration[7.1]
       t.timestamps
     end
 
+    # previous_lead_id FK: nullify on delete so the chain history is preserved but not broken.
+    add_foreign_key :algorythmo_leads, :algorythmo_leads,
+                    column: :previous_lead_id,
+                    on_delete: :nullify
+
     # (1) DB-level idempotency: one open Lead per contact per account.
-    # Uses a subquery on algorythmo_stages to scope to kind=0 (open).
-    # This is the primary guard against duplicate creation even under concurrent writes.
-    execute <<~SQL
-      CREATE UNIQUE INDEX idx_leads_open_unique_per_contact
-      ON algorythmo_leads (contact_id, account_id)
-      WHERE stage_id IN (SELECT id FROM algorythmo_stages WHERE kind = 0);
-    SQL
+    # stage_kind is denormalised here (kept in sync by Lead#sync_stage_kind before_save callback)
+    # so the predicate is a plain integer equality — Postgres rejects subqueries in partial-index WHERE.
+    add_index :algorythmo_leads, %i[contact_id account_id],
+              unique: true,
+              where: 'stage_kind = 0',
+              name: 'idx_leads_open_unique_per_contact'
 
     # (2) Aging signal ordering — used by the Kanban API to sort cards by time-in-stage.
     add_index :algorythmo_leads, %i[stage_id stage_entered_at],
