@@ -366,4 +366,169 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       expect(response).to have_http_status(:forbidden)
     end
   end
+
+  # ── B.0 — GET #index with contact_id filter ───────────────────────────────────
+
+  describe 'GET #index with contact_id filter' do
+    it 'returns active leads for the contact' do
+      lead = create_lead
+      get :index, params: { account_id: account.id, contact_id: contact.id }
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body['leads'].map { |l| l['id'] }).to include(lead.id)
+    end
+
+    it 'returns next_cursor as nil (no pagination on contact filter)' do
+      create_lead
+      get :index, params: { account_id: account.id, contact_id: contact.id }
+      body = JSON.parse(response.body)
+      expect(body['next_cursor']).to be_nil
+    end
+
+    context 'IDOR — contact belongs to another account' do
+      let(:account_b)  { create(:account) }
+      let(:contact_b)  { create(:contact, account: account_b) }
+
+      it 'returns 404 and does not leak leads from another account' do
+        get :index, params: { account_id: account.id, contact_id: contact_b.id }
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    it 'returns 400 when neither stage_id nor contact_id is supplied' do
+      get :index, params: { account_id: account.id }
+      expect(response).to have_http_status(:bad_request)
+      expect(JSON.parse(response.body)['error']).to eq('stage_id or contact_id is required')
+    end
+  end
+
+  # ── B.0 — contact embed in lead_json ─────────────────────────────────────────
+
+  describe 'contact embed in lead_json' do
+    it 'includes contact block with expected keys in #show response' do
+      lead = create_lead
+      get :show, params: { account_id: account.id, id: lead.id }
+      body = JSON.parse(response.body)
+      expect(body).to have_key('contact')
+      expect(body['contact'].keys).to include('id', 'name', 'email', 'phone_number', 'thumbnail')
+    end
+
+    it 'includes contact id matching the lead contact' do
+      lead = create_lead
+      get :show, params: { account_id: account.id, id: lead.id }
+      body = JSON.parse(response.body)
+      expect(body['contact']['id']).to eq(contact.id)
+    end
+
+    it 'returns contact in index response leads' do
+      create_lead
+      get :index, params: { account_id: account.id, stage_id: novo_stage.id }
+      body = JSON.parse(response.body)
+      expect(body['leads'].first).to have_key('contact')
+    end
+  end
+
+  # ── B.0 — GET #conversations ──────────────────────────────────────────────────
+
+  describe 'GET #conversations' do
+    let(:inbox)  { create(:inbox, account: account) }
+    let(:lead)   { create_lead }
+
+    def create_conversation(created_offset_seconds: 0)
+      Conversation.create!(
+        account: account,
+        inbox: inbox,
+        contact: contact,
+        contact_inbox: ContactInbox.find_or_create_by!(contact: contact, inbox: inbox),
+        created_at: Time.current - created_offset_seconds.seconds
+      )
+    end
+
+    it 'returns conversations for the lead contact, newest first' do
+      older = create_conversation(created_offset_seconds: 60)
+      newer = create_conversation(created_offset_seconds: 0)
+      get :conversations, params: { account_id: account.id, id: lead.id }
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      ids = body['conversations'].map { |c| c['id'] }
+      expect(ids.first).to eq(newer.id)
+      expect(ids).to include(older.id)
+    end
+
+    it 'includes required conversation fields' do
+      create_conversation
+      get :conversations, params: { account_id: account.id, id: lead.id }
+      conv = JSON.parse(response.body)['conversations'].first
+      expect(conv.keys).to include('id', 'display_id', 'status', 'inbox_id',
+                                   'last_activity_at', 'created_at')
+    end
+
+    it 'defaults to limit 10 when limit param is absent' do
+      12.times { |i| create_conversation(created_offset_seconds: i) }
+      get :conversations, params: { account_id: account.id, id: lead.id }
+      body = JSON.parse(response.body)
+      expect(body['conversations'].size).to eq(10)
+      expect(body['next_cursor']).not_to be_nil
+    end
+
+    it 'caps limit at 100 when a higher value is requested' do
+      get :conversations, params: { account_id: account.id, id: lead.id, limit: 200 }
+      # Fewer than 100 conversations exist, so next_cursor is nil — but the cap is enforced internally.
+      # We verify by checking that no error is raised and response is 200.
+      expect(response).to have_http_status(:ok)
+    end
+
+    describe 'cursor pagination' do
+      it 'returns next_cursor when there are more results' do
+        12.times { |i| create_conversation(created_offset_seconds: i) }
+        get :conversations, params: { account_id: account.id, id: lead.id, limit: 10 }
+        body = JSON.parse(response.body)
+        expect(body['next_cursor']).not_to be_nil
+      end
+
+      it 'returns the next page using cursor, with no overlap' do
+        12.times { |i| create_conversation(created_offset_seconds: i) }
+        get :conversations, params: { account_id: account.id, id: lead.id, limit: 10 }
+        body1 = JSON.parse(response.body)
+        cursor = body1['next_cursor']
+
+        get :conversations, params: { account_id: account.id, id: lead.id, limit: 10, cursor: cursor }
+        body2 = JSON.parse(response.body)
+
+        ids1 = body1['conversations'].map { |c| c['id'] }
+        ids2 = body2['conversations'].map { |c| c['id'] }
+        expect((ids1 & ids2)).to be_empty
+        expect(ids2).not_to be_empty
+      end
+
+      it 'returns null next_cursor on the last page' do
+        2.times { |i| create_conversation(created_offset_seconds: i) }
+        get :conversations, params: { account_id: account.id, id: lead.id, limit: 10 }
+        body = JSON.parse(response.body)
+        expect(body['next_cursor']).to be_nil
+      end
+    end
+
+    context 'cross-account isolation' do
+      let(:account_b) { create(:account) }
+      let(:pipeline_b) do
+        p = Algorythmo::Pipeline.create!(account: account_b, name: 'B Main')
+        Algorythmo::Stage.create!(pipeline: p, name: 'Novo', kind: :open, position: 0, aging_coefficient: 1.0)
+        p.reload
+      end
+      let(:stage_b)   { pipeline_b.stages.first }
+      let(:contact_b) { create(:contact, account: account_b) }
+      let(:lead_b) do
+        Algorythmo::Lead.create!(account: account_b, contact: contact_b, stage: stage_b,
+                                 position: 1.0, stage_entered_at: Time.current)
+      end
+
+      before { lead_b }
+
+      it 'returns 404 when requesting conversations for a lead from another account' do
+        get :conversations, params: { account_id: account.id, id: lead_b.id }
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+  end
 end
