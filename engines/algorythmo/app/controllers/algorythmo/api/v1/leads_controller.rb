@@ -90,6 +90,8 @@ module Algorythmo
           render json: { error: e.message }, status: :not_found
         rescue ActiveRecord::RecordInvalid => e
           render json: { error: e.message }, status: :unprocessable_entity
+        rescue ActiveRecord::RecordNotUnique
+          render json: { error: 'Open lead already exists for this contact' }, status: :conflict
         end
 
         # PATCH /algorythmo/api/v1/accounts/:account_id/leads/:id
@@ -143,10 +145,12 @@ module Algorythmo
         end
 
         def lead_params
-          # algorythmo: contact_id and previous_lead_id excluded from update path — see H1 note above
+          # algorythmo: contact_id and previous_lead_id excluded from update path — see H1 note above.
+          # algorythmo: :deleted excluded — soft-delete must only flow through destroy (admin-gated);
+          #   permitting it here would allow any agent to soft-delete via PATCH, bypassing the
+          #   check_admin_authorization? guard on destroy.
           params.require(:lead).permit(
             :stage_id, :position, :channel_origin,
-            :deleted,
             channel_metadata: {},
             custom_fields: {}
           )

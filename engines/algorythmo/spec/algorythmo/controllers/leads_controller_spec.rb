@@ -138,15 +138,42 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
   # ── POST #create ─────────────────────────────────────────────────────────────
 
   describe 'POST #create' do
+    # HIGH-NEW #1 — concurrent POST race: partial unique index fires RecordNotUnique
+    context 'duplicate open lead (same contact)' do
+      it 'returns 409 conflict and does not create a second lead' do
+        # First lead — open for contact in account
+        Algorythmo::Lead.create!(
+          account: account,
+          contact: contact,
+          stage: novo_stage,
+          position: 1.0,
+          stage_entered_at: Time.current
+        )
+
+        expect {
+          post :create, params: {
+            account_id: account.id,
+            lead: { contact_id: contact.id, stage_id: novo_stage.id }
+          }
+        }.not_to change(Algorythmo::Lead, :count)
+
+        expect(response).to have_http_status(:conflict)
+        expect(JSON.parse(response.body)['error']).to eq('Open lead already exists for this contact')
+      end
+    end
+
     context 'cross-account isolation' do
       let(:account_b)  { create(:account) }
       let(:contact_b)  { create(:contact, account: account_b) }
 
-      it 'returns 404 when contact_id belongs to another account' do
-        post :create, params: {
-          account_id: account.id,
-          lead: { contact_id: contact_b.id, stage_id: novo_stage.id }
-        }
+      it 'returns 404 and does not create a lead when contact_id belongs to another account' do
+        expect {
+          post :create, params: {
+            account_id: account.id,
+            lead: { contact_id: contact_b.id, stage_id: novo_stage.id }
+          }
+        }.not_to change(Algorythmo::Lead, :count)
+
         expect(response).to have_http_status(:not_found)
       end
 
@@ -169,6 +196,24 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
   # ── PATCH #update ─────────────────────────────────────────────────────────────
 
   describe 'PATCH #update' do
+    # HIGH-NEW #2 — :deleted removed from strong params; PATCH must never soft-delete
+    context 'soft-delete backdoor prevention' do
+      let(:lead) { create_lead }
+
+      it 'agent PATCH with deleted:true returns 200 but does not change deleted flag' do
+        request.headers['api_access_token'] = agent.access_token.token
+        patch :update, params: { account_id: account.id, id: lead.id, lead: { deleted: true } }
+        expect(response).to have_http_status(:ok)
+        expect(lead.reload.deleted).to be false
+      end
+
+      it 'admin PATCH with deleted:true also does not change deleted flag (use DELETE instead)' do
+        patch :update, params: { account_id: account.id, id: lead.id, lead: { deleted: true } }
+        expect(response).to have_http_status(:ok)
+        expect(lead.reload.deleted).to be false
+      end
+    end
+
     context 'cross-account isolation' do
       let(:account_b) { create(:account) }
       let(:pipeline_b) do
@@ -185,9 +230,11 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
 
       before { lead_b }
 
-      it 'returns 404 when updating a lead from another account' do
+      it 'returns 404 and does not mutate the lead when updating a lead from another account' do
+        original_channel = lead_b.channel_origin
         patch :update, params: { account_id: account.id, id: lead_b.id, lead: { channel_origin: 'api' } }
         expect(response).to have_http_status(:not_found)
+        expect(lead_b.reload.channel_origin).to eq(original_channel)
       end
     end
   end
@@ -301,9 +348,11 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
 
       before { lead_b }
 
-      it 'returns 404 when deleting a lead from another account' do
+      it 'returns 404 and does not soft-delete the lead when deleting across accounts' do
         delete :destroy, params: { account_id: account.id, id: lead_b.id }
         expect(response).to have_http_status(:not_found)
+        # MED-NEW #3: DB assertion — lead_b must remain untouched
+        expect(lead_b.reload.deleted).to be false
       end
     end
   end
