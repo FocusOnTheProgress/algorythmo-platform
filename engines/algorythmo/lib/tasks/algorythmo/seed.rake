@@ -18,6 +18,14 @@ namespace :algorythmo do
       email = 'test@algorythmo.com'
       password = ENV.fetch('ALGORYTHMO_SEED_PASSWORD') { raise 'ALGORYTHMO_SEED_PASSWORD env var required for seeding' }
 
+      # algorythmo: ci-401-debug — print length + sha256 fingerprint of the password
+      # (NOT the password itself). The Playwright step prints the same fingerprint
+      # of its PLAYWRIGHT_PASSWORD env var; if they differ, the secret is being
+      # mangled in transit (YAML/shell expansion) on one side but not the other.
+      require 'digest'
+      fp = Digest::SHA256.hexdigest(password)[0, 16]
+      puts "[algorythmo:seed] password length=#{password.length} fingerprint=#{fp}"
+
       if User.exists?(email: email)
         puts "[algorythmo:seed] Test user #{email} already exists — skipping."
         next
