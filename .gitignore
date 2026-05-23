@@ -112,3 +112,5 @@ Procfile.worktree
 # Playwright artifacts
 playwright-report/
 test-results/
+.husky/_/
+spec/system/algorythmo/.env.test
