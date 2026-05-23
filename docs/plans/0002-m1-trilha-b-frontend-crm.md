@@ -481,16 +481,22 @@ Cada task tem path, mudança, razão, e DoD. Tudo numerado pra rastreio.
 
 **Mudanças:**
 1. **`pipelines_controller.rb`** (novo): `GET /algorythmo/api/v1/accounts/:account_id/pipelines/default` retorna `{ pipeline: {id, name}, stages: [...] }`. Usa `Algorythmo::Pipeline.cached_default_for(current_account)`. Sem auth extra além do BaseController.
-2. **`leads_controller.rb`**: aceitar `contact_id` como filtro alternativo a `stage_id` em `#index` (retorna max 1 Lead aberto — D6 idempotência). Adicionar bloco `contact: { id, name, email, phone_number, thumbnail }` no `lead_json`. Stage_id continua obrigatório quando contact_id ausente.
-3. **`config/routes.rb`**: `resources :pipelines, only: [] do collection do get :default end end`.
+2. **`leads_controller.rb`**:
+   - Aceitar `contact_id` como filtro alternativo a `stage_id` em `#index` (retorna max 1 Lead aberto — D6 idempotência).
+   - Adicionar bloco `contact: { id, name, email, phone_number, thumbnail }` no `lead_json`.
+   - Stage_id continua obrigatório quando contact_id ausente.
+   - **Novo endpoint `#conversations` (Q-B5 resposta founder):** `GET /algorythmo/api/v1/accounts/:account_id/leads/:id/conversations?cursor=&limit=10` retornando `{ conversations: [...], next_cursor }`. Usa `Conversation.where(contact_id: lead.contact_id).where(account_id: current_account.id)`. Cursor pagination similar a leads (P2). Default `limit=10`, max `100`.
+3. **`config/routes.rb`**:
+   - `resources :pipelines, only: [] do collection do get :default end end`.
+   - `resources :leads do member do get :conversations end end` (estender o block existente).
 
-**Razão:** API atual não entrega o suficiente pro Kanban se montar (stages + contact info). Endpoint novo + extensão.
+**Razão:** API atual não entrega o suficiente pro Kanban se montar (stages + contact info) nem pra LeadDetailDrawer mostrar histórico paginado (Q-B5).
 
 **DoD:**
-- RSpec ≥90% nos 2 controllers (5 cases pra pipelines#default, 4 cases pra leads#index com contact_id filter).
-- Sem mudança no behavior `stage_id`-driven.
-- IDOR guard mantido (`contact_id` filtrado por `current_account.id` no `Contact.exists?` check).
-- PR size estimado: ~80 LOC.
+- RSpec ≥90% nos 2 controllers (5 cases pra pipelines#default, 4 cases pra leads#index com contact_id filter, 4 cases pra leads#conversations incluindo cross-account 404).
+- Sem mudança no behavior `stage_id`-driven existente.
+- IDOR guard mantido (`contact_id` filtrado por `current_account.id` no `Contact.exists?` check; `#conversations` valida ownership do lead).
+- PR size estimado: ~120 LOC (subiu de 80 com endpoint de conversations).
 
 ### B.1 — Bridge SCSS (Vite alias + import)
 
@@ -781,18 +787,18 @@ Engineer agent abre PRs em ordem; cada um é mergeável independente (atrás dos
 
 ---
 
-## 10. Open questions (pro founder)
+## 10. Open questions — RESPONDIDAS pelo founder (2026-05-23)
 
-Apenas decisões de PRODUTO. Tudo técnico já decidi acima.
+| Q | Decisão final | Impacto na implementação |
+|---|---|---|
+| Q-B1 — Drag mobile? | **Fora do MVP** | Kanban funcional ≥1024px. <768px é roadmap pós-MVP (lista vertical). Sem ajuste vs proposta. |
+| Q-B2 — Refresh: polling vs ActionCable | **Polling 8s** | T-B7 mantido. ActionCable é roadmap pós-M2. |
+| Q-B3 — Reordenar leads DENTRO da mesma coluna | **NÃO — ordem fixa por chegada** | **Mudança vs default proposto.** Reorder intra-stage está cortado. `vuedraggable` configurado com `:move` callback retornando `false` quando `evt.from === evt.to`. Ordem visual = `ORDER BY position ASC` (chegada cronológica, dado que A insere com `position = max + 1.0`). PipelineConfigView NÃO tem reorder de leads. Spec Playwright valida que arrastar dentro da mesma coluna não muda nada. |
+| Q-B4 — Flag off → /crm 404 vs redirect | **Redirect com aviso** | T-B8 + B.9 atualizado. Redirect pra `/conversations` + toast "CRM não está habilitado para esta conta". |
+| Q-B5 — Quantas conversas no LeadDetailDrawer | **Últimas 10 com paginação** | B.7 atualizado. Não é "10 + link"; é lista paginada de 10 em 10 (botão "Ver mais" carrega próximas 10). Cursor pagination no client-side OU server-side se necessário. **B.0 inclui:** endpoint `GET /leads/:id/conversations?cursor=&limit=10` retornando `{conversations: [...], next_cursor}`. |
+| Q-B6 — Empty state copy: pt_BR ou bilingue | **APENAS pt_BR** | **Mudança vs default proposto.** B.12 simplificado: `engines/algorythmo/app/javascript/i18n/overrides/en.json` NÃO recebe `ALGORYTHMO_CRM.*` (deixa só pt_BR). Locale `en` cai em fallback do upstream Chatwoot (mostra a chave como string se não houver pt_BR ativo). Defensible: produto é pra PMEs brasileiras (M0.5 confirmou pt_BR como locale primário). Test do overlay valida só pt_BR. |
 
-1. **Q-B1 — Drag mobile?** B exclui mobile (<768px) do escopo. Confirma que MVP rodando no laptop é suficiente? Roadmap pós-MVP transforma em lista vertical. **Default proposto:** sim, fora do MVP.
-2. **Q-B2 — Polling 8 segundos é "instantâneo o suficiente" pro founder operando?** Alternativa é ActionCable (3x mais código, mas push real). **Default proposto:** 8s no MVP, ActionCable é roadmap.
-3. **Q-B3 — Drag-and-drop entre Leads na MESMA stage (reordenar)?** Anatomia do card não mostra position visible; é só dado interno. Permitir reorder dentro da stage (drag vertical) adiciona ~50 LOC + 1 spec. **Default proposto:** sim — incluir reorder na mesma stage, sem custo significativo, e melhora UX (operador organiza prioridade).
-4. **Q-B4 — Quando flag CRM off, rota `/crm` deve mostrar 404 ou redirect silencioso pra `/conversations`?** **Default proposto:** redirect com toast informativo "CRM não está habilitado para esta conta". 404 é amador.
-5. **Q-B5 — `LeadDetailDrawer` mostra histórico de conversas vinculadas. Quantas? Todas? Últimas 10?** **Default proposto:** últimas 10 + link "Ver todas no Conversations". Lista completa fica em Conversations onde o componente já existe.
-6. **Q-B6 — Empty state copy fixa em português ou bilingue (en + pt_BR)?** **Default proposto:** ambos via i18n overlay, com pt_BR como tradução primária editorial e en como fallback.
-
-Se founder não responder em 24h, engineer prossegue com defaults acima.
+**Engineer parte com essas decisões finais.** Nenhuma pergunta aberta para o founder neste momento. Próximas decisões de produto que surgirem viram nova pergunta isolada.
 
 ---
 
