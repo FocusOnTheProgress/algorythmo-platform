@@ -26,11 +26,11 @@ export default defineConfig({
       widget: path.resolve('./app/javascript/widget'),
       assets: path.resolve('./app/javascript/dashboard/assets'),
       engines: path.resolve('./engines'),
-      '@algorythmo': path.resolve(
-        './app/javascript/dashboard/components-next/algorythmo'
-      ),
       '@algorythmo/styles': path.resolve(
         './engines/algorythmo/app/assets/stylesheets/algorythmo.scss'
+      ),
+      '@algorythmo': path.resolve(
+        './app/javascript/dashboard/components-next/algorythmo'
       ),
     },
   },

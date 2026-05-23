@@ -11,7 +11,8 @@
 
 // algorythmo: design-system-import — Algorythmo OS design tokens + components
 // Must come before 'base' so .alg-* classes are available in the cascade.
-@import '@algorythmo/styles';
+// Relative path used to bypass Vite alias prefix-match collision (@algorythmo vs @algorythmo/styles).
+@import '../../../../../engines/algorythmo/app/assets/stylesheets/algorythmo';
 
 // Base styles for elements
 @import 'base';

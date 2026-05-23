@@ -93,10 +93,10 @@ export default defineConfig({
       assets: path.resolve('./app/javascript/dashboard/assets'),
       // algorythmo: i18n-overlay-m0 — engine JS modules reachable from host app
       engines: path.resolve('./engines'),
+      // algorythmo: design-system-import — design system SCSS entry (more-specific must come first)
+      '@algorythmo/styles': path.resolve('./engines/algorythmo/app/assets/stylesheets/algorythmo.scss'),
       // algorythmo: design-system-import — CRM component JS import alias
       '@algorythmo': path.resolve('./app/javascript/dashboard/components-next/algorythmo'),
-      // algorythmo: design-system-import — design system SCSS entry (for @import usage)
-      '@algorythmo/styles': path.resolve('./engines/algorythmo/app/assets/stylesheets/algorythmo.scss'),
     },
   },
   test: {
