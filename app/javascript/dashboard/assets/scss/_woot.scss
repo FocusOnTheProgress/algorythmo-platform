@@ -9,6 +9,10 @@
 // Next Colors
 @import 'next-colors';
 
+// algorythmo: design-system-import — Algorythmo OS design tokens + components
+// Must come before 'base' so .alg-* classes are available in the cascade.
+@import '@algorythmo/styles';
+
 // Base styles for elements
 @import 'base';
 

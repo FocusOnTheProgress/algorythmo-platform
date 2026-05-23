@@ -1,0 +1,48 @@
+// algorythmo: design-system-import
+// =============================================================================
+// Algorythmo OS — SCSS Bridge
+// =============================================================================
+// Consumer recipe for Vue component <style scoped> blocks that need to
+// reference Algorythmo design tokens at the SCSS level (e.g. for mixins,
+// @media breakpoints, or SCSS variable derivations).
+//
+// Usage in a component:
+//   @use 'algorythmo-bridge' as alg;
+//
+// Note: CSS custom properties (--alg-*) are globally available on :root
+// via the _woot.scss import — no bridge import needed for those.
+// Only import this file when you need SCSS-level constructs.
+//
+// What this bridge provides:
+//   - Breakpoint mixins (alg.respond-to('lg'))
+//   - SCSS variable aliases for media query breakpoints (token values
+//     can't be used inside @media rules, which need concrete px values)
+// =============================================================================
+
+// ---------------------------------------------------------------------------
+// Breakpoint map — matches layout tokens in _tokens.scss
+// ---------------------------------------------------------------------------
+$alg-breakpoints: (
+  'sm':  640px,
+  'md':  768px,
+  'lg':  1024px,
+  'xl':  1280px,
+  '2xl': 1536px,
+) !default;
+
+@mixin alg-respond-to($bp) {
+  $width: map-get($alg-breakpoints, $bp);
+  @if $width == null {
+    @error "Unknown breakpoint '#{$bp}'. Use one of: sm, md, lg, xl, 2xl.";
+  }
+  @media (min-width: $width) {
+    @content;
+  }
+}
+
+// Convenience: the drawer appears full-screen below md
+@mixin alg-drawer-mobile {
+  @media (max-width: #{map-get($alg-breakpoints, 'md') - 1}) {
+    @content;
+  }
+}

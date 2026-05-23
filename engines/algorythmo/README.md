@@ -84,6 +84,8 @@ identify and re-apply our changes after a rebase.
 | `app/javascript/survey/i18n/index.js` | overlay block | `// algorythmo: survey-i18n-overlay` | Survey i18n entry point |
 | `app/javascript/survey/views/Response.vue` | 177 | `<!-- algorythmo: rebrand-m0 -->` | Image alt text "Chatwoot logo" |
 | `config/installation_config.yml` | branding block | `# algorythmo: rebrand-m0` | Default `INSTALLATION_NAME`, `BRAND_NAME`, `BRAND_URL` etc. seeded into `InstallationConfig` on `db:migrate`. Drives the HTML `<title>` tag and email/widget "Powered By" line. |
+| `vite.config.ts` | alias block | `// algorythmo: design-system-import` | Vite alias `@algorythmo` (CRM JS) + `@algorythmo/styles` (design system SCSS entry). Added M1-B. |
+| `app/javascript/dashboard/assets/scss/_woot.scss` | import block | `// algorythmo: design-system-import` | Imports Algorythmo design system tokens + components before host `base` styles. Added M1-B. |
 
 The script `engines/algorythmo/bin/check-soft-fork-zone.sh` validates that each path in
 this table exists in the filesystem and contains the expected tag. Run it before opening
