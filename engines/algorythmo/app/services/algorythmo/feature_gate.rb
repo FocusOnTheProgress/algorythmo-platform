@@ -26,6 +26,13 @@ module Algorythmo
     # @param flag_name [String] the feature flag name (e.g. 'algorythmo_show_captain')
     # @return [Boolean]
     def self.feature_enabled?(account, flag_name)
+      # Fail-closed: missing account or flag → feature is disabled.
+      # Defensive — Captain::BaseController inherits current_account from
+      # Api::V1::Accounts::BaseController, so account should be non-nil here.
+      # But a misconfigured listener or service hop could pass nil, and we'd
+      # rather return false than raise NoMethodError on a security boundary.
+      return false if account.nil? || flag_name.blank?
+
       cache_key = "algorythmo:gate:#{account.id}:#{flag_name}"
 
       Rails.cache.fetch(cache_key, expires_in: 30.seconds) do
