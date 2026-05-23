@@ -6,39 +6,40 @@
  *
  * Plan ref: docs/plans/0002-m1-trilha-b-frontend-crm.md §5 B.7
  *
- * Status: SCAFFOLD — describe.skip() until component exists.
+ * Status: SCAFFOLD — it.todo() items appear as pending in Vitest reports.
+ * Replace with real tests in Fase 2 once component exists.
  */
 
-import { describe } from 'vitest';
+import { describe, it } from 'vitest';
 
-describe.skip('LeadDetailDrawer', () => {
+describe('LeadDetailDrawer', () => {
   describe('rendering', () => {
-    // renders lead name as heading (aria-labelledby target)
-    // renders contact info: email, phone
-    // renders channel origin with icon
-    // renders stage history (stage name + entered_at timestamp per entry)
-    // renders linked conversation with link
-    // renders editable notes field
-    // renders "Reabrir como novo Lead" button when stage is won or lost
-    // does NOT render "Reabrir" button when stage is open (new/qualified/proposal)
+    it.todo('renders lead name as heading (aria-labelledby target)');
+    it.todo('renders contact info: email, phone');
+    it.todo('renders channel origin with icon');
+    it.todo('renders stage history (stage name + entered_at timestamp per entry)');
+    it.todo('renders linked conversation with link');
+    it.todo('renders editable notes field');
+    it.todo('renders "Reabrir como novo Lead" button when stage is won or lost');
+    it.todo('does NOT render "Reabrir" button when stage is open (new/qualified/proposal)');
   });
 
   describe('interaction', () => {
-    // Esc key closes drawer and emits "close" event
-    // scrim click closes drawer
-    // notes field edit triggers PATCH /leads/:id on blur
-    // "Reabrir" button triggers POST /leads/:id/reopen
-    // conversations list shows "Ver mais" button when next_cursor is non-null
+    it.todo('Esc key closes drawer and emits "close" event');
+    it.todo('scrim click closes drawer');
+    it.todo('notes field edit triggers PATCH /leads/:id on blur');
+    it.todo('"Reabrir" button triggers POST /leads/:id/reopen');
+    it.todo('conversations list shows "Ver mais" button when next_cursor is non-null');
   });
 
   describe('focus trap', () => {
-    // focus is trapped inside drawer (Tab does not escape)
-    // first focusable element receives focus on open
-    // focus returns to trigger element on close
+    it.todo('focus is trapped inside drawer (Tab does not escape)');
+    it.todo('first focusable element receives focus on open');
+    it.todo('focus returns to trigger element on close');
   });
 
   describe('aria', () => {
-    // has role="dialog" and aria-modal="true"
-    // aria-labelledby points to the heading with lead name
+    it.todo('has role="dialog" and aria-modal="true"');
+    it.todo('aria-labelledby points to the heading with lead name');
   });
 });

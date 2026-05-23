@@ -101,7 +101,7 @@ export default defineConfig({
       'app/**/*.{test,spec}.?(c|m)[jt]s?(x)',
       // algorythmo: engine JS specs (deepMerge, i18n overlay, etc.)
       'engines/algorythmo/app/javascript/**/*.{test,spec}.?(c|m)[jt]s?(x)',
-      // algorythmo: test-harness-m1b — CRM Vitest scaffolds (spec/javascript/algorythmo/)
+      // algorythmo: soft-fork — test-harness-m1b (CRM Vitest scaffolds)
       'spec/javascript/algorythmo/**/*.{test,spec}.?(c|m)[jt]s?(x)',
     ],
     coverage: {

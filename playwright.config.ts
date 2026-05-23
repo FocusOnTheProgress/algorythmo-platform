@@ -28,7 +28,7 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
 
-    // algorythmo: test-harness-m1b — CRM e2e scaffold (B.14)
+    // algorythmo: soft-fork — test-harness-m1b (B.14 CRM e2e scaffold)
     // Specs live in spec/system/algorythmo/crm/ to keep Algorythmo tests
     // isolated from upstream Chatwoot e2e suite (soft-fork zone hygiene).
     // All specs start as .skip() and are enabled in Fase 2 as Sessão C
@@ -45,7 +45,7 @@ export default defineConfig({
       },
     },
 
-    // algorythmo: test-harness-m1b — A11y axe-core gate (B.13)
+    // algorythmo: soft-fork — test-harness-m1b (B.13 A11y axe-core gate)
     // Requires @axe-core/playwright: pnpm add -D @axe-core/playwright
     // Gate: zero critical/serious WCAG AA violations on /crm and /crm/pipeline.
     // Specs start as .skip() and are activated in Fase 2 once CRM route is live.

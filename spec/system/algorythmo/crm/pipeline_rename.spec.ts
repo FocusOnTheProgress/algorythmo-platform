@@ -106,32 +106,7 @@ test.describe('Pipeline rename', () => {
     }
   );
 
-  test.skip(
-    'aging_coefficient input updates preview scale in real-time',
-    async ({ page }) => {
-      await page.route(
-        `**/algorythmo/api/v1/accounts/*/stages/1`,
-        async (route) => {
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify({ id: 1, name: 'Novo', aging_coefficient: 2.0 }),
-          });
-        }
-      );
-
-      await goToPipelineConfig(page);
-
-      const coefInput = page.locator('[data-stage-id="1"] [data-testid="aging-coefficient-input"]');
-      await expect(coefInput).toBeVisible({ timeout: 5_000 });
-
-      await coefInput.clear();
-      await coefInput.fill('2');
-
-      // Preview scale must update: green until 24h, yellow until 48h, red after 48h
-      const preview = page.locator('[data-stage-id="1"] [data-testid="aging-preview"]');
-      await expect(preview).toContainText(/24h/i, { timeout: 3_000 });
-      await expect(preview).toContainText(/48h/i, { timeout: 3_000 });
-    }
-  );
+  // Removed: "aging_coefficient input updates preview scale in real-time"
+  // was not specified in B.8 (PipelineConfigView DoD) and violated R3 (no invented behavior).
+  // If this behavior is confirmed in the plan, add it via a new PR with explicit plan reference.
 });

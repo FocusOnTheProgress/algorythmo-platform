@@ -39,11 +39,11 @@ export const BASE_URL =
 export const ADMIN_EMAIL =
   process.env.PLAYWRIGHT_EMAIL || 'test@algorythmo.com';
 
-// Default password matches the dev seed in seed.rake. In CI environments
-// PLAYWRIGHT_PASSWORD MUST be set explicitly — this fallback is only for
-// local dev (mirrors the known seed value, not a real secret).
-export const ADMIN_PASSWORD =
-  process.env.PLAYWRIGHT_PASSWORD || 'Test@12345';
+// PLAYWRIGHT_PASSWORD is required to actually RUN tests — no fallback.
+// `--list` and collection still work without it; the error fires on first use.
+// For local dev: copy spec/system/algorythmo/.env.test.example → .env.test
+// In CI: set PLAYWRIGHT_PASSWORD as a secret environment variable.
+export const ADMIN_PASSWORD: string = process.env.PLAYWRIGHT_PASSWORD ?? 'UNSET';
 
 // Account ID used in seed — adjust if seed changes.
 export const TEST_ACCOUNT_ID = 1;
@@ -201,8 +201,10 @@ export async function dragLeadCard(
   );
   await page.mouse.move(endX, endY, { steps: 10 });
 
-  // Brief hover to trigger SortableJS drop zone detection
-  await page.waitForTimeout(50);
+  // Wait for SortableJS to process the pointer events before dropping.
+  // rAF fires after the browser has processed the last mousemove — avoids
+  // the arbitrary 50 ms timer while still giving the event loop a full cycle.
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())));
   await page.mouse.up();
 }
 
@@ -215,6 +217,13 @@ export async function dragLeadCard(
  * Returns after networkidle so Vuex hydration + i18n are complete.
  */
 export async function loginAsAdmin(page: Page): Promise<void> {
+  if (ADMIN_PASSWORD === 'UNSET') {
+    throw new Error(
+      'PLAYWRIGHT_PASSWORD env var is required.\n' +
+      'Local dev: copy spec/system/algorythmo/.env.test.example → .env.test\n' +
+      'CI: set PLAYWRIGHT_PASSWORD as a secret.'
+    );
+  }
   await page.goto(`${BASE_URL}/app/login`);
   await page.getByTestId('email_input').fill(ADMIN_EMAIL);
   await page.getByTestId('password_input').fill(ADMIN_PASSWORD);
