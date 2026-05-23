@@ -130,6 +130,13 @@ jobs:
       - name: Load schema
         run: bundle exec rake db:schema:load
 
+      # algorythmo: engine migrations are appended to the host migration path
+      # at boot (engines/algorythmo/lib/algorythmo/engine.rb) but are NOT in
+      # db/schema.rb, so db:migrate must run after schema:load to create
+      # algorythmo_pipelines / algorythmo_stages / algorythmo_leads tables.
+      - name: Run engine migrations
+        run: bundle exec rake db:migrate
+
       - name: Run Algorythmo-scoped RSpec
         run: |
           bundle exec rspec \
