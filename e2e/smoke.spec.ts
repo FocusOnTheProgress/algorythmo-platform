@@ -34,9 +34,12 @@ async function getAllVisibleText(page: Page): Promise<string> {
  */
 async function loginAndWait(page: Page): Promise<void> {
   await page.goto(`${BASE_URL}/app/login`);
-  await page.getByLabel(/email/i).fill(EMAIL);
-  await page.getByLabel(/password/i).fill(PASSWORD);
-  await page.getByRole('button', { name: /sign in|log in/i }).click();
+  // The FormInput renders <label for="email_address"> but the underlying
+  // <input> uses name=, not id=, so Playwright's getByLabel can't link them.
+  // We rely on the data-testid attributes the component already exposes.
+  await page.getByTestId('email_input').fill(EMAIL);
+  await page.getByTestId('password_input').fill(PASSWORD);
+  await page.getByRole('button', { name: /sign in|log in|login/i }).click();
   await page.waitForLoadState('networkidle', { timeout: 20_000 });
 }
 
@@ -60,9 +63,9 @@ test.describe('M0 Smoke', () => {
   });
 
   test('login succeeds', async ({ page }) => {
-    await page.getByLabel(/email/i).fill(EMAIL);
-    await page.getByLabel(/password/i).fill(PASSWORD);
-    await page.getByRole('button', { name: /sign in|log in/i }).click();
+    await page.getByTestId('email_input').fill(EMAIL);
+    await page.getByTestId('password_input').fill(PASSWORD);
+    await page.getByRole('button', { name: /sign in|log in|login/i }).click();
 
     // Wait for dashboard to load — sidebar is the signal
     await expect(page.locator('nav[class*="sidebar"], aside')).toBeVisible({
