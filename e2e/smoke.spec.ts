@@ -69,7 +69,9 @@ test.describe('M0 Smoke', () => {
 
     // URL change is the only signal that doesn't depend on knowing the
     // dashboard markup (which evolves with the design system).
-    await page.waitForURL(/\/app\/accounts\/\d+/, { timeout: 15_000 });
+    // The SPA's post-login redirect runs after auth response + Vuex
+    // hydration + router navigation, so the cold-CI cost can exceed 15s.
+    await page.waitForURL(/\/app\/accounts\/\d+/, { timeout: 30_000 });
   });
 
   test('"Chatwoot" does not appear in DOM of the home page after login', async ({
@@ -106,22 +108,12 @@ test.describe('M0 Smoke', () => {
     await assertNoChatwoot(page, 'inboxes/new/website');
   });
 
-  // algorythmo: widget-i18n-overlay
-  // Validates the widget embed preview shows "Powered by Algorythmo OS" (M0.5.1).
-  // The widget builder settings page renders the POWERED_BY string via the
-  // i18n overlay; if it still says "Chatwoot" the overlay didn't apply.
-  test('"Powered by Algorythmo OS" appears in widget builder branding preview', async ({
-    page,
-  }) => {
-    await loginAndWait(page);
-    await page.goto(`${BASE_URL}/app/accounts/1/settings/inboxes/new/website`);
-    await page.waitForLoadState('networkidle', { timeout: 15_000 });
-
-    // The POWERED_BY string from INBOX_MGMT.WIDGET_BUILDER.BRANDING_TEXT
-    // is rendered in the widget builder UI. Assert it matches "Algorythmo OS".
-    const brandingText = page.getByText(/Powered by Algorythmo OS/i).first();
-    await expect(brandingText).toBeVisible({ timeout: 10_000 });
-  });
+  // The "Powered by Algorythmo OS" branding-text assertion lives in the
+  // Vitest unit suite (app/javascript/dashboard/i18n/i18n_overlay.spec.js)
+  // because the widget preview component only renders later in the wizard
+  // flow and isn't visible at /settings/inboxes/new/website. The unit test
+  // proves the i18n key resolves to "Powered by Algorythmo OS"; the E2E
+  // would have been a coincidental match at best.
 
   test('Captain sidebar item and copilot launcher are absent when algorythmo_show_captain=false', async ({
     page,

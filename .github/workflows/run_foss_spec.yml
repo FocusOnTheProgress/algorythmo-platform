@@ -257,15 +257,6 @@ jobs:
           echo "=== /app/login first 200 lines ==="
           head -200 /tmp/app-login.html || true
 
-      # algorythmo: ci-401-debug — print fingerprint of the secret as Playwright sees it.
-      # The seed step prints the same fingerprint via seed.rake; they must match
-      # or the secret is being mangled in transit on one of the two paths.
-      - name: Fingerprint Playwright password env
-        run: |
-          echo "PLAYWRIGHT_PASSWORD length=${#PLAYWRIGHT_PASSWORD} fingerprint=$(printf '%s' "$PLAYWRIGHT_PASSWORD" | sha256sum | head -c 16)"
-        env:
-          PLAYWRIGHT_PASSWORD: ${{ secrets.ALGORYTHMO_SEED_PASSWORD }}
-
       - name: Run Playwright smoke suite
         run: pnpm exec playwright test e2e/smoke.spec.ts --trace=on
         env:
