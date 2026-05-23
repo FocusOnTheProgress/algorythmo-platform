@@ -31,7 +31,7 @@ module Algorythmo
         # GET /algorythmo/api/v1/accounts/:account_id/leads
         # Query params (mutually exclusive filters — exactly one required):
         #   stage_id   — filters by stage, cursor-paginates (position, id)
-        #   contact_id — filters by contact, returns active leads only, no cursor
+        #   contact_id — filters by contact, returns open leads only, no cursor
         #   cursor     — optional; opaque string encoding (position, id) from prev page
         #   limit      — optional; default 50, max 200
         #
@@ -134,7 +134,8 @@ module Algorythmo
         #   cursor — optional; opaque string encoding (created_at, id) from prev page
         #   limit  — optional; default 10, max 100
         #
-        # Returns conversations for the lead's contact, newest first (desc created_at).
+        # Returns conversations for the lead's contact that the current user may access,
+        # newest first (desc created_at). Non-admin agents see only inboxes they belong to.
         # IDOR: set_lead before_action already ensures @lead.account_id == current_account.id.
         #
         # Response:
@@ -146,12 +147,18 @@ module Algorythmo
                     DEFAULT_CONVERSATIONS_LIMIT
                   end
 
-          scope = Conversation
-                  .where(contact_id: @lead.contact_id, account_id: current_account.id)
-                  .order(created_at: :desc, id: :desc)
+          # B1 — privilege scope: admins see all; agents see only their inboxes.
+          base_scope = Conversation
+                       .where(contact_id: @lead.contact_id, account_id: current_account.id)
+                       .order(created_at: :desc, id: :desc)
 
-          if params[:cursor].present?
-            ts, cid = decode_cursor(params[:cursor])
+          scope = Conversations::PermissionFilterService.new(
+            base_scope, current_user, current_account
+          ).perform
+
+          decoded = decode_conversation_cursor(params[:cursor])
+          if decoded
+            ts, cid = decoded
             scope = scope.where(
               '(conversations.created_at, conversations.id) < (?, ?)',
               ts, cid
@@ -181,10 +188,12 @@ module Algorythmo
             render json: { error: 'Contact not found' }, status: :not_found and return
           end
 
+          # H2 — plan §5 B.0 specifies only open leads; .active would include won/lost leads.
           leads = Algorythmo::Lead
-                  .active
+                  .open
                   .where(account_id: current_account.id, contact_id: params[:contact_id])
-                  .includes(:contact, :stage)
+                  .includes(:stage, contact: { avatar_attachment: :blob })
+                  .order(:id)
                   .limit(50)
 
           render json: { leads: leads.map { |l| lead_json(l) }, next_cursor: nil }
@@ -196,17 +205,17 @@ module Algorythmo
           base = Algorythmo::Lead
                  .active
                  .where(account_id: current_account.id, stage_id: params[:stage_id])
-                 .includes(:contact, :stage)
+                 .includes(:stage, contact: { avatar_attachment: :blob })
                  .order(:position, :id)
 
-          leads = apply_cursor(base, params[:cursor], limit + 1)
+          leads = apply_lead_cursor(base, params[:cursor], limit + 1)
 
           has_more   = leads.size > limit
           page_leads = leads.first(limit)
 
           render json: {
             leads:       page_leads.map { |l| lead_json(l) },
-            next_cursor: has_more ? encode_cursor(page_leads.last) : nil
+            next_cursor: has_more ? encode_lead_cursor(page_leads.last) : nil
           }
         end
 
@@ -280,29 +289,56 @@ module Algorythmo
         end
 
         # A.11 — Cursor pagination (position, id) for stage-filtered index.
-        def apply_cursor(scope, cursor_param, limit)
-          if cursor_param.present?
-            pos, cid = decode_cursor(cursor_param)
+        def apply_lead_cursor(scope, cursor_param, limit)
+          decoded = decode_lead_cursor(cursor_param)
+          if decoded
+            pos, cid = decoded
             scope = scope.where('(algorythmo_leads.position, algorythmo_leads.id) > (?, ?)', pos, cid)
           end
 
           scope.limit(limit)
         end
 
-        def encode_cursor(lead)
-          Base64.strict_encode64([lead.position.to_f, lead.id].to_json)
+        def encode_lead_cursor(lead)
+          Base64.urlsafe_encode64([lead.position.to_f, lead.id].to_json)
         end
 
         # B.0 — Separate cursor encoder for conversations (ISO8601 timestamp, id).
         # Using ISO8601 with microseconds to match Postgres timestamp precision.
         def encode_conversation_cursor(created_at, id)
-          Base64.strict_encode64([created_at.iso8601(6), id].to_json)
+          Base64.urlsafe_encode64([created_at.iso8601(6), id].to_json)
         end
 
-        def decode_cursor(raw)
-          JSON.parse(Base64.strict_decode64(raw))
+        # Decodes a (position Float, id Integer) lead cursor.
+        # Returns [Float, Integer] on success, nil on any malformed input.
+        # Nil means "no cursor applied" — caller renders the first page.
+        def decode_lead_cursor(raw)
+          return nil if raw.blank?
+
+          parsed = JSON.parse(Base64.urlsafe_decode64(raw))
+          return nil unless parsed.is_a?(Array) && parsed.size == 2
+
+          pos = Float(parsed[0])
+          cid = Integer(parsed[1])
+          [pos, cid]
         rescue ArgumentError, JSON::ParserError
-          [0.0, 0]
+          nil
+        end
+
+        # Decodes a (created_at ISO8601, id Integer) conversation cursor.
+        # Returns [Time, Integer] on success, nil on any malformed input.
+        # Nil means "no cursor applied" — caller renders the first page.
+        def decode_conversation_cursor(raw)
+          return nil if raw.blank?
+
+          parsed = JSON.parse(Base64.urlsafe_decode64(raw))
+          return nil unless parsed.is_a?(Array) && parsed.size == 2
+
+          ts  = Time.iso8601(parsed[0])
+          cid = Integer(parsed[1])
+          [ts, cid]
+        rescue ArgumentError, JSON::ParserError
+          nil
         end
       end
     end

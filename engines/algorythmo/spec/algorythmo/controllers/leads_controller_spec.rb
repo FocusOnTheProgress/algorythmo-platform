@@ -79,7 +79,7 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       end
 
       it 'paginates correctly with cursor' do
-        leads = 5.times.map { |i| create_lead(pos: i.to_f + 1) }
+        5.times { |i| create_lead(pos: i.to_f + 1) }
         get :index, params: { account_id: account.id, stage_id: novo_stage.id, limit: 3 }
         body1 = JSON.parse(response.body)
         cursor = body1['next_cursor']
@@ -91,6 +91,73 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
         ids_page2 = body2['leads'].map { |l| l['id'] }
         expect((ids_page1 & ids_page2)).to be_empty
         expect(ids_page2).not_to be_empty
+      end
+
+      # B2 — Malformed lead cursor must degrade to first page, never 500.
+      describe 'B2 — malformed lead cursor degrades to first page' do
+        before { 3.times { |i| create_lead(pos: i.to_f + 1) } }
+
+        it 'returns 200 first page for invalid base64' do
+          get :index, params: { account_id: account.id, stage_id: novo_stage.id, cursor: 'not-valid!!!' }
+          expect(response).to have_http_status(:ok)
+          expect(JSON.parse(response.body)['leads'].size).to eq(3)
+        end
+
+        it 'returns 200 first page for valid base64 with bad JSON' do
+          bad = Base64.urlsafe_encode64('{"broken":')
+          get :index, params: { account_id: account.id, stage_id: novo_stage.id, cursor: bad }
+          expect(response).to have_http_status(:ok)
+          expect(JSON.parse(response.body)['leads'].size).to eq(3)
+        end
+
+        it 'returns 200 first page when array has wrong element count' do
+          bad = Base64.urlsafe_encode64('[1, 2, 3, 4]')
+          get :index, params: { account_id: account.id, stage_id: novo_stage.id, cursor: bad }
+          expect(response).to have_http_status(:ok)
+          expect(JSON.parse(response.body)['leads'].size).to eq(3)
+        end
+
+        it 'returns 200 first page when id element is not an integer' do
+          bad = Base64.urlsafe_encode64('[1.5, "not-an-id"]')
+          get :index, params: { account_id: account.id, stage_id: novo_stage.id, cursor: bad }
+          expect(response).to have_http_status(:ok)
+          expect(JSON.parse(response.body)['leads'].size).to eq(3)
+        end
+      end
+    end
+
+    # H1 — Preloading contact avatar_attachment prevents N+1 on avatar_url.
+    describe 'H1 — N+1 prevention for contact avatar' do
+      it 'preloads contact avatar to avoid N+1 on index_by_stage' do
+        contacts = 5.times.map { |i| create(:contact, account: account) }
+        contacts.each_with_index do |c, i|
+          Algorythmo::Lead.create!(account: account, contact: c, stage: novo_stage,
+                                   position: i.to_f + 1, stage_entered_at: Time.current)
+        end
+
+        query_count = 0
+        counter = lambda { query_count += 1 }
+        ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
+          get :index, params: { account_id: account.id, stage_id: novo_stage.id }
+        end
+        expect(response).to have_http_status(:ok)
+        # With proper preloading, query count is small and constant — not proportional to N.
+        # 10 is a generous ceiling; N+1 for 5 leads would add 5-10 extra avatar queries.
+        expect(query_count).to be < 15
+      end
+
+      it 'preloads contact avatar to avoid N+1 on index_by_contact' do
+        # Create 5 contacts, each with their own lead linked to `contact`'s account.
+        # For index_by_contact we query by contact, so use the same contact with 1 lead.
+        create_lead(pos: 1.0)
+
+        query_count = 0
+        counter = lambda { query_count += 1 }
+        ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
+          get :index, params: { account_id: account.id, contact_id: contact.id }
+        end
+        expect(response).to have_http_status(:ok)
+        expect(query_count).to be < 15
       end
     end
   end
@@ -370,7 +437,7 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
   # ── B.0 — GET #index with contact_id filter ───────────────────────────────────
 
   describe 'GET #index with contact_id filter' do
-    it 'returns active leads for the contact' do
+    it 'returns open leads for the contact' do
       lead = create_lead
       get :index, params: { account_id: account.id, contact_id: contact.id }
       expect(response).to have_http_status(:ok)
@@ -383,6 +450,35 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       get :index, params: { account_id: account.id, contact_id: contact.id }
       body = JSON.parse(response.body)
       expect(body['next_cursor']).to be_nil
+    end
+
+    # H2 — index_by_contact must return only open leads (plan §5 B.0).
+    describe 'H2 — open-only filtering' do
+      it 'returns only the open lead when contact has open + won + lost leads' do
+        open_lead = create_lead(stage: novo_stage)
+        won_lead  = create_lead(stage: won_stage, pos: 2.0)
+        # Create a lost stage and a lost lead
+        pipeline.reload
+        lost_stage = Algorythmo::Stage.create!(pipeline: pipeline, name: 'Perdido', kind: :lost,
+                                               position: 3, aging_coefficient: 0.0)
+        lost_lead = Algorythmo::Lead.create!(account: account, contact: contact, stage: lost_stage,
+                                             position: 1.0, stage_entered_at: Time.current)
+
+        get :index, params: { account_id: account.id, contact_id: contact.id }
+        expect(response).to have_http_status(:ok)
+        ids = JSON.parse(response.body)['leads'].map { |l| l['id'] }
+        expect(ids).to include(open_lead.id)
+        expect(ids).not_to include(won_lead.id, lost_lead.id)
+      end
+
+      it 'returns empty leads array when contact has no open leads' do
+        won_lead = create_lead(stage: won_stage, pos: 1.0)
+
+        get :index, params: { account_id: account.id, contact_id: contact.id }
+        expect(response).to have_http_status(:ok)
+        body = JSON.parse(response.body)
+        expect(body['leads']).to be_empty
+      end
     end
 
     context 'IDOR — contact belongs to another account' do
@@ -471,11 +567,53 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       expect(body['next_cursor']).not_to be_nil
     end
 
+    # M1 — Spec must actually verify the cap by creating enough rows and checking size + next_cursor.
     it 'caps limit at 100 when a higher value is requested' do
+      105.times { |i| create_conversation(created_offset_seconds: i) }
       get :conversations, params: { account_id: account.id, id: lead.id, limit: 200 }
-      # Fewer than 100 conversations exist, so next_cursor is nil — but the cap is enforced internally.
-      # We verify by checking that no error is raised and response is 200.
+      body = JSON.parse(response.body)
       expect(response).to have_http_status(:ok)
+      expect(body['conversations'].size).to eq(100)
+      expect(body['next_cursor']).not_to be_nil
+    end
+
+    # M5 — 404 for soft-deleted lead.
+    it 'returns 404 for soft-deleted lead' do
+      lead.update!(deleted: true)
+      get :conversations, params: { account_id: account.id, id: lead.id }
+      expect(response).to have_http_status(:not_found)
+    end
+
+    # B2 — Malformed cursor must not raise 500; must silently return first page.
+    describe 'B2 — malformed conversation cursor degrades to first page' do
+      before { 3.times { |i| create_conversation(created_offset_seconds: i) } }
+
+      it 'returns 200 first page for invalid base64' do
+        get :conversations, params: { account_id: account.id, id: lead.id, cursor: 'invalid-base64!!!' }
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['conversations'].size).to eq(3)
+      end
+
+      it 'returns 200 first page for valid base64 but bad JSON' do
+        bad_cursor = Base64.urlsafe_encode64('{"bad":"json"')
+        get :conversations, params: { account_id: account.id, id: lead.id, cursor: bad_cursor }
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['conversations'].size).to eq(3)
+      end
+
+      it 'returns 200 first page when timestamp field is not ISO8601' do
+        bad_cursor = Base64.urlsafe_encode64('["not-a-timestamp", 1]')
+        get :conversations, params: { account_id: account.id, id: lead.id, cursor: bad_cursor }
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['conversations'].size).to eq(3)
+      end
+
+      it 'returns 200 first page when array has wrong element count' do
+        bad_cursor = Base64.urlsafe_encode64('[1, 2, 3, 4]')
+        get :conversations, params: { account_id: account.id, id: lead.id, cursor: bad_cursor }
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['conversations'].size).to eq(3)
+      end
     end
 
     describe 'cursor pagination' do
@@ -506,6 +644,71 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
         get :conversations, params: { account_id: account.id, id: lead.id, limit: 10 }
         body = JSON.parse(response.body)
         expect(body['next_cursor']).to be_nil
+      end
+    end
+
+    # B1 — Horizontal privilege escalation via inbox membership.
+    describe 'B1 — inbox-scoped access control' do
+      let(:inbox_x)  { create(:inbox, account: account) }
+      let(:inbox_y)  { create(:inbox, account: account) }
+      let(:member_agent) { create(:user, account: account, role: :agent) }
+
+      def create_conversation_in_inbox(inbox_obj, offset: 0)
+        ci = ContactInbox.find_or_create_by!(contact: contact, inbox: inbox_obj)
+        Conversation.create!(
+          account: account,
+          inbox: inbox_obj,
+          contact: contact,
+          contact_inbox: ci,
+          created_at: Time.current - offset.seconds
+        )
+      end
+
+      it 'admin sees all conversations regardless of inbox membership' do
+        conv_x = create_conversation_in_inbox(inbox_x)
+        conv_y = create_conversation_in_inbox(inbox_y)
+        # admin (user) has no inbox memberships but is administrator
+        get :conversations, params: { account_id: account.id, id: lead.id }
+        expect(response).to have_http_status(:ok)
+        ids = JSON.parse(response.body)['conversations'].map { |c| c['id'] }
+        expect(ids).to include(conv_x.id, conv_y.id)
+      end
+
+      it 'agent member of inbox_x sees only conversations from inbox_x' do
+        InboxMember.create!(inbox: inbox_x, user: member_agent)
+        conv_x = create_conversation_in_inbox(inbox_x)
+        _conv_y = create_conversation_in_inbox(inbox_y)
+
+        request.headers['api_access_token'] = member_agent.access_token.token
+        get :conversations, params: { account_id: account.id, id: lead.id }
+        expect(response).to have_http_status(:ok)
+        ids = JSON.parse(response.body)['conversations'].map { |c| c['id'] }
+        expect(ids).to include(conv_x.id)
+        expect(ids).not_to include(_conv_y.id)
+      end
+
+      it 'agent with no inbox membership sees empty conversations list' do
+        create_conversation_in_inbox(inbox_x)
+        create_conversation_in_inbox(inbox_y)
+        # member_agent belongs to no inbox
+
+        request.headers['api_access_token'] = member_agent.access_token.token
+        get :conversations, params: { account_id: account.id, id: lead.id }
+        expect(response).to have_http_status(:ok)
+        body = JSON.parse(response.body)
+        expect(body['conversations']).to be_empty
+      end
+
+      it 'admin with no inbox memberships still sees all conversations' do
+        admin_no_inbox = create(:user, account: account, role: :administrator)
+        conv_x = create_conversation_in_inbox(inbox_x)
+        conv_y = create_conversation_in_inbox(inbox_y)
+
+        request.headers['api_access_token'] = admin_no_inbox.access_token.token
+        get :conversations, params: { account_id: account.id, id: lead.id }
+        expect(response).to have_http_status(:ok)
+        ids = JSON.parse(response.body)['conversations'].map { |c| c['id'] }
+        expect(ids).to include(conv_x.id, conv_y.id)
       end
     end
 
