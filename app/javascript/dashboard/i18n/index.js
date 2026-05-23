@@ -40,6 +40,14 @@ import zh_TW from './locale/zh_TW';
 import is from './locale/is';
 import lt from './locale/lt';
 
+// algorythmo: i18n-overlay-m0
+// Deep-merge Algorythmo OS brand overrides on top of upstream locale strings.
+// Only en and pt_BR are overridden in M0; other locales remain upstream as-is
+// and will be addressed in M5/production (documented in engines/algorythmo/README.md).
+import { deepMerge } from 'engines/algorythmo/app/javascript/i18n/deepMerge';
+import enOverrides from 'engines/algorythmo/app/javascript/i18n/overrides/en.json';
+import ptBROverrides from 'engines/algorythmo/app/javascript/i18n/overrides/pt_BR.json';
+
 export default {
   ar,
   bg,
@@ -48,7 +56,7 @@ export default {
   da,
   de,
   el,
-  en,
+  en: deepMerge(en, enOverrides), // algorythmo: i18n-overlay-m0
   es,
   et,
   fa,
@@ -66,7 +74,7 @@ export default {
   nl,
   no,
   pl,
-  pt_BR,
+  pt_BR: deepMerge(pt_BR, ptBROverrides), // algorythmo: i18n-overlay-m0
   pt,
   ro,
   ru,

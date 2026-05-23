@@ -18,7 +18,9 @@
     "story:dev": "histoire dev",
     "story:build": "histoire build",
     "story:preview": "histoire preview",
-    "sync:i18n": "bin/sync_i18n_file_change"
+    "sync:i18n": "bin/sync_i18n_file_change",
+    "e2e": "playwright test",
+    "e2e:smoke": "playwright test e2e/smoke.spec.ts"
   },
   "size-limit": [
     {
@@ -113,6 +115,7 @@
     "wavesurfer.js": "7.8.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.52.0",
     "@egoist/tailwindcss-icons": "^1.9.2",
     "@histoire/plugin-vue": "0.17.15",
     "@iconify-json/logos": "^1.2.10",

@@ -239,11 +239,12 @@ const handleToggleWidget = () => {
         v-else
         class="flex-1 p-3 rounded-lg [&_code]:!bg-n-slate-2 bg-n-slate-2 min-w-0 overflow-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_code]:whitespace-pre-wrap"
       >
+        <!-- algorythmo: rebrand-m0 — codepen title updated -->
         <Code
           :script="widgetScript"
           lang="html"
           class="!text-start"
-          :codepen-title="`${websiteName} - Chatwoot Widget Test`"
+          :codepen-title="`${websiteName} - Algorythmo OS Widget Test`"
           enable-code-pen
         />
       </div>

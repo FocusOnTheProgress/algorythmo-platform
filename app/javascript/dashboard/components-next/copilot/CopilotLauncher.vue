@@ -35,8 +35,15 @@ const showCopilotLauncher = computed(() => {
     currentAccountId.value,
     FEATURE_FLAGS.CAPTAIN
   );
+  // algorythmo: feature-gate algorythmo_show_captain
+  // Captain copilot launcher is also gated — hidden when algorythmo_show_captain is false.
+  const isAlgorythmoShowCaptain = isFeatureEnabledonAccount.value(
+    currentAccountId.value,
+    FEATURE_FLAGS.ALGORYTHMO_SHOW_CAPTAIN
+  );
   return (
     isCaptainEnabled &&
+    isAlgorythmoShowCaptain &&
     !uiSettings.value.is_copilot_panel_open &&
     !isConversationRoute.value
   );

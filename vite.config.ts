@@ -91,6 +91,8 @@ export default defineConfig({
       survey: path.resolve('./app/javascript/survey'),
       widget: path.resolve('./app/javascript/widget'),
       assets: path.resolve('./app/javascript/dashboard/assets'),
+      // algorythmo: i18n-overlay-m0 — engine JS modules reachable from host app
+      engines: path.resolve('./engines'),
     },
   },
   test: {

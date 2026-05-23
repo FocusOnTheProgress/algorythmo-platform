@@ -60,9 +60,9 @@ export const ONGOING_CAMPAIGN_EMPTY_STATE_CONTENT = [
     },
     sender: {
       id: 1,
-      name: 'Chatwoot',
+      name: 'Algorythmo OS', // algorythmo: rebrand-m0
     },
-    message: 'Hi! Chatwoot here. Need help setting up? Let me know!',
+    message: 'Hi! Algorythmo OS here. Need help setting up? Let me know!', // algorythmo: rebrand-m0
     campaign_status: 'active',
     enabled: false,
     campaign_type: 'ongoing',

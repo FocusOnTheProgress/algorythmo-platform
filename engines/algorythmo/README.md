@@ -1,0 +1,88 @@
+# Algorythmo OS Engine
+
+Rails engine that adds CRM, Brain and Agent capabilities to the Chatwoot fork.
+
+## Running locally
+
+Prerequisites: Docker Desktop installed and running.
+
+```bash
+cp .env.example .env          # already has Algorythmo OS branding defaults
+docker compose up             # starts Rails + Sidekiq + Vite + PostgreSQL + Redis + Mailhog
+```
+
+First boot runs migrations automatically (including engine migrations).
+Open http://localhost:3000 and sign up.
+
+## Structure
+
+```
+engines/algorythmo/
+  app/
+    controllers/algorythmo/   Engine controllers (namespace-isolated)
+    dispatchers/algorythmo/   AsyncDispatcher extension (listener registration)
+    listeners/algorythmo/     Event listeners (CrmListener in M1)
+    models/algorythmo/        CRM models (Lead, Stage, Pipeline — added in M1)
+    services/algorythmo/      Business logic services
+  config/
+    locales/                  i18n overlay — overrides Chatwoot brand strings
+    routes.rb                 Engine routes (mounted at /algorythmo in host routes.rb)
+  db/
+    migrate/                  Engine migrations (auto-appended to host db:migrate)
+  docs/
+    adr/                      Engine-level ADRs
+  lib/
+    algorythmo/
+      engine.rb               Rails::Engine definition (isolate_namespace Algorythmo)
+    tasks/algorythmo/         Rake tasks (seed, etc.)
+  spec/algorythmo/            RSpec specs (≥90% coverage target for new code)
+```
+
+## Engine namespace
+
+All Ruby code lives under `Algorythmo::*`. Models use `algorythmo_*` table prefix.
+The engine is mounted at `/algorythmo` in the host `config/routes.rb`.
+
+## Feature flags
+
+Algorythmo flags live in `config/features.yml` with the `algorythmo_` prefix (ADR-0002 Q2):
+- `algorythmo_show_captain` — controls visibility of all Captain AI surfaces (default: false)
+- More flags added in M1 (algorythmo_crm) and M2 (algorythmo_brain, algorythmo_manu)
+
+## Frontend i18n overlay
+
+Algorythmo OS overrides user-visible "Chatwoot" brand strings in the Vue frontend
+via a deep-merge mechanism in `app/javascript/dashboard/i18n/index.js`.
+
+Override files live at:
+```
+engines/algorythmo/app/javascript/i18n/
+  deepMerge.js          Lightweight recursive object merge utility (no external deps)
+  overrides/
+    en.json             English overrides (~30 keys) — M0 complete
+    pt_BR.json          Brazilian Portuguese overrides — M0 complete
+```
+
+**Known limitation (M5 debt):** Only `en` and `pt_BR` locales are overridden in M0.
+The remaining ~40 upstream locales (ar, de, fr, es, etc.) still contain "Chatwoot"
+in the same ~30 key positions. These locales are used by a small fraction of
+early-stage users. Full multi-locale override is tracked as M5/production work.
+
+## Sync with upstream Chatwoot
+
+Files touched by Algorythmo are tagged with `// algorythmo: <tag>` (JS/Vue) or
+`# algorythmo: <tag>` (Ruby/YAML). These markers make merge conflicts from upstream
+easy to identify and resolve. See ADR-0001 (sync strategy).
+
+## Tests
+
+```bash
+# Backend (engine specs)
+bundle exec rspec engines/algorythmo/spec/
+
+# Frontend (Vitest)
+pnpm run test:coverage
+
+# E2E smoke (Playwright — requires running stack)
+pnpm exec playwright test e2e/smoke.spec.ts
+```

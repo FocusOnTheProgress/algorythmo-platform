@@ -47,6 +47,9 @@ export const FEATURE_FLAGS = {
   ADVANCED_SEARCH: 'advanced_search',
   CONVERSATION_REQUIRED_ATTRIBUTES: 'conversation_required_attributes',
   CONVERSATION_UNREAD_COUNTS: 'conversation_unread_counts',
+  // algorythmo: feature-gate algorythmo_show_captain
+  // Controls visibility of all Captain AI surfaces. Default false = hidden.
+  ALGORYTHMO_SHOW_CAPTAIN: 'algorythmo_show_captain',
 };
 
 export const PREMIUM_FEATURES = [

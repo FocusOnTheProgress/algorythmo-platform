@@ -1,4 +1,8 @@
 Rails.application.routes.draw do
+  # algorythmo: engine-mount
+  # Engine routes live at /algorythmo. All Algorythmo OS CRM/Brain/Agent API goes here.
+  mount Algorythmo::Engine, at: '/algorythmo'
+
   # AUTH STARTS
   mount_devise_token_auth_for 'User', at: 'auth', controllers: {
     confirmations: 'devise_overrides/confirmations',

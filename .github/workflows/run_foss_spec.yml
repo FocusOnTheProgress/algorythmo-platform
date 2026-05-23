@@ -1,4 +1,4 @@
-name: Run Chatwoot CE spec
+name: Run Algorythmo OS spec
 permissions:
   contents: read
 on:
@@ -7,6 +7,7 @@ on:
       - develop
       - master
       - algorythmo/main
+      - 'algorythmo/**'
   pull_request:
   workflow_dispatch:
 
@@ -112,15 +113,14 @@ jobs:
       - name: Seed database
         run: bundle exec rake db:schema:load
 
-      - name: Run backend tests (parallelized)
+      - name: Run backend tests (parallelized — host + engine)
         run: |
-          # Get all spec files and split them using round-robin distribution
-          # This ensures slow tests are distributed evenly across all nodes
-          SPEC_FILES=($(find spec -name '*_spec.rb' | sort))
+          # Collect both host specs and Algorythmo engine specs.
+          # Engine specs live in engines/algorythmo/spec/ and follow the same pattern.
+          SPEC_FILES=($(find spec engines/algorythmo/spec -name '*_spec.rb' 2>/dev/null | sort))
           TESTS=""
 
           for i in "${!SPEC_FILES[@]}"; do
-            # Assign spec to this node if: index % total == node_index
             if [ $(( i % ${{ matrix.ci_node_total }} )) -eq ${{ matrix.ci_node_index }} ]; then
               TESTS="$TESTS ${SPEC_FILES[$i]}"
             fi
@@ -145,3 +145,91 @@ jobs:
         with:
           name: rails-log-folder-${{ matrix.ci_node_index }}
           path: log
+
+  # algorythmo: playwright-gate
+  # Playwright smoke suite is a MERGE GATE — PRs cannot merge if these fail.
+  # Runs against a fully booted docker-compose stack (Rails + Sidekiq + Vite + PG + Redis).
+  # Decision T1 + T2 in docs/plans/0001-mvp-algorythmo-os.md.
+  playwright-smoke:
+    name: Playwright E2E smoke (algorythmo gate)
+    runs-on: ubuntu-latest
+    needs: [lint-backend, lint-frontend, frontend-tests]
+    # Skip on dependabot PRs (no secrets available)
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ''
+          POSTGRES_DB: chatwoot
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: --entrypoint redis-server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Install pnpm dependencies
+        run: pnpm i
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Set up .env for CI
+        run: |
+          cp .env.example .env
+          echo "SECRET_KEY_BASE=ci_$(openssl rand -hex 32)" >> .env
+          echo "POSTGRES_HOST=localhost" >> .env
+          echo "POSTGRES_USERNAME=postgres" >> .env
+          echo "POSTGRES_PASSWORD=" >> .env
+          echo "REDIS_URL=redis://localhost:6379" >> .env
+          echo "REDIS_PASSWORD=" >> .env
+          echo "FRONTEND_URL=http://localhost:3000" >> .env
+
+      - name: Set up database and seed test account
+        run: |
+          bundle exec rake db:create db:schema:load db:migrate
+          bundle exec rake algorythmo:seed:smoke_test_account
+
+      - name: Start Rails server (background)
+        run: |
+          bundle exec rails server -p 3000 -e test &
+          echo "Waiting for server..."
+          until curl -sf http://localhost:3000/auth/sign_in; do sleep 2; done
+        timeout-minutes: 3
+
+      - name: Run Playwright smoke suite
+        run: pnpm exec playwright test e2e/smoke.spec.ts --reporter=github
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          PLAYWRIGHT_EMAIL: test@algorythmo.com
+          PLAYWRIGHT_PASSWORD: Test@12345
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/

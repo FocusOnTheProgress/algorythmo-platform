@@ -1,0 +1,16 @@
+# algorythmo: rebrand-m0
+# Engine i18n overlay — loaded AFTER upstream Chatwoot locales so these keys win.
+# Keys here override Chatwoot's en.yml brand strings.
+# Never edit upstream config/locales/en.yml for brand changes — add overrides here.
+en:
+  installation_name: "Algorythmo OS"
+  brand_name: "Algorythmo OS"
+  brand_url: "https://algorythmo.com"
+
+  # Overrides for email subjects / bodies that reference brand
+  mailer:
+    subject_prefix: "[Algorythmo OS]"
+
+  # Override any Chatwoot-specific UI strings that leak the upstream brand.
+  # Add keys as discovered during M0.4 search-replace audit.
+  app_name: "Algorythmo OS"
