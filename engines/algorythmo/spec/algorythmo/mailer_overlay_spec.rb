@@ -22,13 +22,13 @@ RSpec.describe 'M0 rebrand: mailer Liquid template overlay', type: :sanity do
   ).freeze
 
   HOST_VIEWS_ROOT = Rails.root.join(
-    'app', 'views', 'mailers', 'administrator_notifications'
+    'app/views/mailers/administrator_notifications'
   ).freeze
 
   OVERLAY_TEMPLATES = [
     'account_compliance_mailer/account_deleted.liquid',
     'account_notification_mailer/account_deletion_for_inactivity.liquid',
-    'account_notification_mailer/account_deletion_user_initiated.liquid',
+    'account_notification_mailer/account_deletion_user_initiated.liquid'
   ].freeze
 
   shared_examples 'a rebranded mailer template' do |relative_path|
@@ -62,7 +62,7 @@ RSpec.describe 'M0 rebrand: mailer Liquid template overlay', type: :sanity do
 
   OVERLAY_TEMPLATES.each do |path|
     describe path do
-      include_examples 'a rebranded mailer template', path
+      it_behaves_like 'a rebranded mailer template', path
     end
   end
 
@@ -71,15 +71,15 @@ RSpec.describe 'M0 rebrand: mailer Liquid template overlay', type: :sanity do
       # Confirm the initializer ran: engine path should appear before host path
       # in the app view paths.
       engine_views = Algorythmo::Engine.root.join('app', 'views').to_s
-      host_views = Rails.root.join('app', 'views').to_s
+      host_views = Rails.root.join('app/views').to_s
 
       paths = Rails.application.config.paths['app/views'].to_a
       engine_index = paths.index(engine_views)
       host_index   = paths.index(host_views)
 
       expect(engine_index).to be < host_index,
-        "Expected engine views (#{engine_views}) to precede host views (#{host_views}) " \
-        "in Rails view lookup path.\n\nActual order:\n#{paths.join("\n")}"
+                              "Expected engine views (#{engine_views}) to precede host views (#{host_views}) " \
+                              "in Rails view lookup path.\n\nActual order:\n#{paths.join("\n")}"
     end
   end
 end

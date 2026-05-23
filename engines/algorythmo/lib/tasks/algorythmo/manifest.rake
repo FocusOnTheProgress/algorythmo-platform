@@ -22,9 +22,9 @@
 namespace :algorythmo do
   namespace :manifest do
     desc 'Generate public/manifest.json from public/manifest.json.template using ENV vars'
-    task :generate do
-      template_path = Rails.root.join('public', 'manifest.json.template')
-      output_path   = Rails.root.join('public', 'manifest.json')
+    task generate: :environment do
+      template_path = Rails.public_path.join('manifest.json.template')
+      output_path   = Rails.public_path.join('manifest.json')
 
       unless template_path.exist?
         warn "[algorythmo:manifest] Template not found at #{template_path} — skipping"

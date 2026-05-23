@@ -29,7 +29,7 @@ RSpec.describe 'algorythmo:seed:smoke_test_account', type: :task do
     end
 
     it 'raises an error with a clear message' do
-      expect { task.execute }.to raise_error(RuntimeError, /restricted to development\/test environments/)
+      expect { task.execute }.to raise_error(RuntimeError, %r{restricted to development/test environments})
     end
   end
 

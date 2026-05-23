@@ -20,11 +20,11 @@ RSpec.describe 'M0 rebrand: no untagged "Chatwoot" literals', type: :sanity do
   #     ChatwootMarkdownRenderer, ChatwootApp, Chatwoot:: namespace, etc.
   SKIP_PATTERNS = [
     %r{/spec/},
-    %r{\.spec\.(js|ts|vue)$},
-    %r{\.story\.vue$},
+    /\.spec\.(js|ts|vue)$/,
+    /\.story\.vue$/,
     %r{/captain/},
     %r{/fixtures/},           # Component demo fixture data — not shipped to users
-    %r{/templates/twilio},    # Twilio template previews — demo data
+    %r{/templates/twilio}    # Twilio template previews — demo data
   ].freeze
 
   # Tokens that are engineering identifiers, not brand strings.
@@ -81,8 +81,8 @@ RSpec.describe 'M0 rebrand: no untagged "Chatwoot" literals', type: :sanity do
     end
 
     expect(violations).to be_empty,
-      "Found untagged 'Chatwoot' literals in dashboard files:\n#{violations.join("\n")}" \
-      "\n\nAll user-visible 'Chatwoot' strings must be tagged with '// algorythmo: rebrand-m0'" \
-      " or excluded via the SKIP_PATTERNS / ENGINEERING_TOKENS allowlists in this spec."
+                          "Found untagged 'Chatwoot' literals in dashboard files:\n#{violations.join("\n")}" \
+                          "\n\nAll user-visible 'Chatwoot' strings must be tagged with '// algorythmo: rebrand-m0' " \
+                          'or excluded via the SKIP_PATTERNS / ENGINEERING_TOKENS allowlists in this spec.'
   end
 end

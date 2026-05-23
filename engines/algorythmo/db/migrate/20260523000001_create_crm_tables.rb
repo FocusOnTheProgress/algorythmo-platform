@@ -17,7 +17,7 @@ class CreateCrmTables < ActiveRecord::Migration[7.1]
 
     create_table :algorythmo_stages do |t|
       t.references :pipeline, null: false,
-                               foreign_key: { to_table: :algorythmo_pipelines }
+                              foreign_key: { to_table: :algorythmo_pipelines }
       t.string  :name,              null: false
       t.integer :position,          null: false, default: 0
       t.integer :kind,              null: false, default: 0 # enum: open, won, lost
@@ -29,7 +29,7 @@ class CreateCrmTables < ActiveRecord::Migration[7.1]
       t.references :account, null: false, foreign_key: true
       t.references :contact, null: false, foreign_key: { on_delete: :cascade }
       t.references :stage,   null: false,
-                              foreign_key: { to_table: :algorythmo_stages }
+                             foreign_key: { to_table: :algorythmo_stages }
       t.float     :position
       t.integer   :stage_kind,      null: false, default: 0 # algorythmo: denormalised from stage.kind for partial-index predicate
       t.bigint    :previous_lead_id   # chain reference (C2/A.5) — FK managed manually below with on_delete: :nullify
@@ -69,7 +69,7 @@ class CreateCrmTables < ActiveRecord::Migration[7.1]
     # necessary if this migration runs during a future upstream sync with existing data).
     reversible do |dir|
       dir.up do
-        execute <<~SQL
+        execute <<~SQL.squish
           UPDATE algorythmo_leads SET stage_entered_at = created_at WHERE stage_entered_at IS NULL
         SQL
       end

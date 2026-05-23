@@ -11,16 +11,16 @@
 #
 # Closed stages (won/lost) use 0.0 so the chip stays neutral — no aging alert
 # makes sense once the deal is decided.
+DEFAULT_STAGES = [
+  { name: 'Novo',             kind: :open, position: 0, aging_coefficient: 1.0 },
+  { name: 'Qualificado',      kind: :open, position: 1, aging_coefficient: 4.0 },
+  { name: 'Proposta',         kind: :open, position: 2, aging_coefficient: 7.0 },
+  { name: 'Fechado ganho',    kind: :won,  position: 3, aging_coefficient: 0.0 },
+  { name: 'Fechado perdido',  kind: :lost, position: 4, aging_coefficient: 0.0 }
+].freeze
+
 namespace :algorythmo do
   namespace :crm do
-    DEFAULT_STAGES = [
-      { name: 'Novo',             kind: :open, position: 0, aging_coefficient: 1.0 },
-      { name: 'Qualificado',      kind: :open, position: 1, aging_coefficient: 4.0 },
-      { name: 'Proposta',         kind: :open, position: 2, aging_coefficient: 7.0 },
-      { name: 'Fechado ganho',    kind: :won,  position: 3, aging_coefficient: 0.0 },
-      { name: 'Fechado perdido',  kind: :lost, position: 4, aging_coefficient: 0.0 }
-    ].freeze
-
     desc 'Seed default CRM pipeline for all accounts (idempotent)'
     task seed_pipelines: :environment do
       Account.find_each do |account|
@@ -36,7 +36,7 @@ namespace :algorythmo do
     end
 
     def seed_pipeline_for(account)
-      existing = Algorythmo::Pipeline.where(account: account).exists?
+      existing = Algorythmo::Pipeline.exists?(account: account)
       if existing
         puts "[algorythmo:crm] Account #{account.id} already has a pipeline — skipping."
         return

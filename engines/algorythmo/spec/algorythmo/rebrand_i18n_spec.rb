@@ -48,8 +48,8 @@ RSpec.describe 'M0 rebrand: frontend i18n overlay files', type: :sanity do
       end
 
       expect(violations).to be_empty,
-        "Override file #{locale}.json still contains 'Chatwoot' in values:\n" \
-        "#{violations.map { |v| "  #{v[:path]}: #{v[:value][0, 120]}" }.join("\n")}"
+                            "Override file #{locale}.json still contains 'Chatwoot' in values:\n" \
+                            "#{violations.map { |v| "  #{v[:path]}: #{v[:value][0, 120]}" }.join("\n")}"
     end
 
     it 'overrides GENERAL_SETTINGS.UPDATE_CHATWOOT' do
@@ -78,7 +78,7 @@ RSpec.describe 'M0 rebrand: frontend i18n overlay files', type: :sanity do
   end
 
   describe 'en.json' do
-    include_examples 'a clean override file', 'en'
+    it_behaves_like 'a clean override file', 'en'
 
     it 'replaces Chatwoot with Algorythmo OS in the branding text' do
       parsed = JSON.parse(File.read(OVERRIDE_DIR.join('en.json')))
@@ -88,7 +88,7 @@ RSpec.describe 'M0 rebrand: frontend i18n overlay files', type: :sanity do
   end
 
   describe 'pt_BR.json' do
-    include_examples 'a clean override file', 'pt_BR'
+    it_behaves_like 'a clean override file', 'pt_BR'
 
     it 'replaces Chatwoot with Algorythmo OS in the branding text (pt-BR)' do
       parsed = JSON.parse(File.read(OVERRIDE_DIR.join('pt_BR.json')))

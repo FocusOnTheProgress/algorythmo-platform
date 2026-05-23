@@ -12,7 +12,7 @@ namespace :algorythmo do
       # This prevents accidental data creation on production databases.
       unless Rails.env.development? || Rails.env.test? || ENV['ALGORYTHMO_SEED_PRODUCTION'] == 'I_UNDERSTAND_THE_RISK'
         raise 'algorythmo:seed tasks are restricted to development/test environments. ' \
-              "Set ALGORYTHMO_SEED_PRODUCTION=I_UNDERSTAND_THE_RISK to override on production."
+              'Set ALGORYTHMO_SEED_PRODUCTION=I_UNDERSTAND_THE_RISK to override on production.'
       end
 
       email = 'test@algorythmo.com'

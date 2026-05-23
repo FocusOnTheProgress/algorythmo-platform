@@ -8,7 +8,7 @@ RSpec.describe Algorythmo::Engine, type: :request do
   describe 'routes' do
     it 'has routes mounted at /algorythmo' do
       # Engine root responds to GET /algorythmo
-      expect(Algorythmo::Engine.routes).to be_a(ActionDispatch::Routing::RouteSet)
+      expect(described_class.routes).to be_a(ActionDispatch::Routing::RouteSet)
     end
   end
 
@@ -26,16 +26,14 @@ RSpec.describe Algorythmo::Engine, type: :request do
 
       it 'includes Algorythmo::AsyncDispatcher in AsyncDispatcher ancestors after engine boots' do
         # Simulate the initializer running (idempotent — safe to call again)
-        unless AsyncDispatcher.ancestors.include?(Algorythmo::AsyncDispatcher)
-          AsyncDispatcher.prepend(Algorythmo::AsyncDispatcher)
-        end
+        AsyncDispatcher.prepend(Algorythmo::AsyncDispatcher) unless AsyncDispatcher <= Algorythmo::AsyncDispatcher
 
         expect(AsyncDispatcher.ancestors).to include(Algorythmo::AsyncDispatcher)
       end
 
       it 'is idempotent — prepend does not add the module twice' do
-        AsyncDispatcher.prepend(Algorythmo::AsyncDispatcher) unless AsyncDispatcher.ancestors.include?(Algorythmo::AsyncDispatcher)
-        AsyncDispatcher.prepend(Algorythmo::AsyncDispatcher) unless AsyncDispatcher.ancestors.include?(Algorythmo::AsyncDispatcher)
+        AsyncDispatcher.prepend(Algorythmo::AsyncDispatcher) unless AsyncDispatcher <= Algorythmo::AsyncDispatcher
+        AsyncDispatcher.prepend(Algorythmo::AsyncDispatcher) unless AsyncDispatcher <= Algorythmo::AsyncDispatcher
 
         occurrences = AsyncDispatcher.ancestors.count { |a| a == Algorythmo::AsyncDispatcher }
         expect(occurrences).to eq(1)
@@ -48,8 +46,8 @@ RSpec.describe Algorythmo::Engine, type: :request do
         expect do
           without_const('AsyncDispatcher') do
             # Simulate the initializer body
-            if defined?(AsyncDispatcher) && defined?(Algorythmo::AsyncDispatcher)
-              AsyncDispatcher.prepend(Algorythmo::AsyncDispatcher) unless AsyncDispatcher.ancestors.include?(Algorythmo::AsyncDispatcher)
+            if defined?(AsyncDispatcher) && defined?(Algorythmo::AsyncDispatcher) && !AsyncDispatcher <= Algorythmo::AsyncDispatcher
+              AsyncDispatcher.prepend(Algorythmo::AsyncDispatcher)
             end
           end
         end.not_to raise_error
@@ -63,7 +61,6 @@ def without_const(name)
   had_const = Object.const_defined?(name)
   Object.send(:remove_const, name) if had_const
   yield
-ensure
+
   # We cannot restore a constant that was never defined — skip restore in specs.
-  nil
 end

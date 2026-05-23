@@ -16,5 +16,8 @@ Gem::Specification.new do |spec|
     Dir['{app,config,db,lib}/**/*', 'LICENSE', 'Rakefile']
   end
 
+  spec.required_ruby_version = '>= 3.4.0'
+
   spec.add_dependency 'rails', '~> 7.1'
+  spec.metadata['rubygems_mfa_required'] = 'true'
 end

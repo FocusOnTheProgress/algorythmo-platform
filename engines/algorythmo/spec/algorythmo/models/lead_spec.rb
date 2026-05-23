@@ -65,16 +65,16 @@ RSpec.describe Algorythmo::Lead, type: :model do
       expect do
         # Bypass before_save to force a raw DB insert that violates the index.
         described_class.insert({
-          account_id: account.id,
-          contact_id: contact.id,
-          stage_id: novo_stage.id,
-          stage_kind: 0,
-          position: 2.0,
-          deleted: false,
-          stage_entered_at: Time.current,
-          created_at: Time.current,
-          updated_at: Time.current
-        })
+                                 account_id: account.id,
+                                 contact_id: contact.id,
+                                 stage_id: novo_stage.id,
+                                 stage_kind: 0,
+                                 position: 2.0,
+                                 deleted: false,
+                                 stage_entered_at: Time.current,
+                                 created_at: Time.current,
+                                 updated_at: Time.current
+                               })
       end.to raise_error(ActiveRecord::RecordNotUnique)
     end
 

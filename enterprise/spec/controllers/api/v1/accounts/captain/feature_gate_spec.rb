@@ -44,38 +44,38 @@ RSpec.describe 'Captain API feature gate (algorythmo_show_captain)', type: :requ
 
   # AssistantsController
   describe 'AssistantsController' do
-    include_examples 'gated by algorythmo_show_captain', :get,
-                     '/api/v1/accounts/:account_id/captain/assistants'
+    it_behaves_like 'gated by algorythmo_show_captain', :get,
+                    '/api/v1/accounts/:account_id/captain/assistants'
   end
 
   # AssistantResponsesController
   describe 'AssistantResponsesController' do
-    include_examples 'gated by algorythmo_show_captain', :get,
-                     '/api/v1/accounts/:account_id/captain/assistant_responses'
+    it_behaves_like 'gated by algorythmo_show_captain', :get,
+                    '/api/v1/accounts/:account_id/captain/assistant_responses'
   end
 
   # BulkActionsController
   describe 'BulkActionsController' do
-    include_examples 'gated by algorythmo_show_captain', :post,
-                     '/api/v1/accounts/:account_id/captain/bulk_actions'
+    it_behaves_like 'gated by algorythmo_show_captain', :post,
+                    '/api/v1/accounts/:account_id/captain/bulk_actions'
   end
 
   # CopilotThreadsController
   describe 'CopilotThreadsController' do
-    include_examples 'gated by algorythmo_show_captain', :get,
-                     '/api/v1/accounts/:account_id/captain/copilot_threads'
+    it_behaves_like 'gated by algorythmo_show_captain', :get,
+                    '/api/v1/accounts/:account_id/captain/copilot_threads'
   end
 
   # CustomToolsController
   describe 'CustomToolsController' do
-    include_examples 'gated by algorythmo_show_captain', :get,
-                     '/api/v1/accounts/:account_id/captain/custom_tools'
+    it_behaves_like 'gated by algorythmo_show_captain', :get,
+                    '/api/v1/accounts/:account_id/captain/custom_tools'
   end
 
   # DocumentsController
   describe 'DocumentsController' do
-    include_examples 'gated by algorythmo_show_captain', :get,
-                     '/api/v1/accounts/:account_id/captain/documents'
+    it_behaves_like 'gated by algorythmo_show_captain', :get,
+                    '/api/v1/accounts/:account_id/captain/documents'
   end
 
   # InboxesController — requires assistant_id nested route

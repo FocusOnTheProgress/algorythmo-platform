@@ -14,7 +14,7 @@ RSpec.describe 'Algorythmo feature flags', type: :model do
 
     it 'defaults to false' do
       flag = features.find { |f| f['name'] == 'algorythmo_show_captain' }
-      expect(flag['enabled']).to eq(false)
+      expect(flag['enabled']).to be(false)
     end
   end
 
@@ -27,7 +27,7 @@ RSpec.describe 'Algorythmo feature flags', type: :model do
 
     it 'defaults to false (fail-closed)' do
       flag = features.find { |f| f['name'] == 'algorythmo_crm' }
-      expect(flag['enabled']).to eq(false)
+      expect(flag['enabled']).to be(false)
     end
 
     it 'has the algorythmo_ prefix (ADR-0002 Q2 naming convention)' do

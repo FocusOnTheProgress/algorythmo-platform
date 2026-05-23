@@ -27,8 +27,8 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
 
   before do
     allow(Algorythmo::FeatureGate).to receive(:feature_enabled?)
-                                        .with(account, 'algorythmo_crm')
-                                        .and_return(true)
+      .with(account, 'algorythmo_crm')
+      .and_return(true)
     request.headers['api_access_token'] = user.access_token.token
     pipeline
   end
@@ -241,12 +241,12 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
           stage_entered_at: Time.current
         )
 
-        expect {
+        expect do
           post :create, params: {
             account_id: account.id,
             lead: { contact_id: contact.id, stage_id: novo_stage.id }
           }
-        }.not_to change(Algorythmo::Lead, :count)
+        end.not_to change(Algorythmo::Lead, :count)
 
         expect(response).to have_http_status(:conflict)
         expect(JSON.parse(response.body)['error']).to eq('Open lead already exists for this contact')
@@ -258,12 +258,12 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       let(:contact_b)  { create(:contact, account: account_b) }
 
       it 'returns 404 and does not create a lead when contact_id belongs to another account' do
-        expect {
+        expect do
           post :create, params: {
             account_id: account.id,
             lead: { contact_id: contact_b.id, stage_id: novo_stage.id }
           }
-        }.not_to change(Algorythmo::Lead, :count)
+        end.not_to change(Algorythmo::Lead, :count)
 
         expect(response).to have_http_status(:not_found)
       end
@@ -496,7 +496,7 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       end
 
       it 'returns empty leads array when contact has no open leads' do
-        won_lead = create_lead(stage: won_stage, pos: 1.0)
+        create_lead(stage: won_stage, pos: 1.0)
 
         get :index, params: { account_id: account.id, contact_id: contact.id }
         expect(response).to have_http_status(:ok)

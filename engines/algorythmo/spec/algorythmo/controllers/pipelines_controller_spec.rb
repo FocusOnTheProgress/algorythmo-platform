@@ -10,8 +10,8 @@ RSpec.describe Algorythmo::Api::V1::PipelinesController, type: :controller do
 
   before do
     allow(Algorythmo::FeatureGate).to receive(:feature_enabled?)
-                                        .with(account, 'algorythmo_crm')
-                                        .and_return(true)
+      .with(account, 'algorythmo_crm')
+      .and_return(true)
     request.headers['api_access_token'] = admin.access_token.token
   end
 
@@ -70,8 +70,8 @@ RSpec.describe Algorythmo::Api::V1::PipelinesController, type: :controller do
       before do
         create_pipeline_with_stages(account_b)
         allow(Algorythmo::FeatureGate).to receive(:feature_enabled?)
-                                            .with(account_b, 'algorythmo_crm')
-                                            .and_return(true)
+          .with(account_b, 'algorythmo_crm')
+          .and_return(true)
       end
 
       it 'returns 404 when account has no pipeline even though another account does' do

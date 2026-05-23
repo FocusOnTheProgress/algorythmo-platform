@@ -8,19 +8,19 @@ RSpec.describe 'Algorythmo M0 migrations', type: :model do
     it 'has telemetry_consent column with default false' do
       account = build(:account)
       expect(account).to respond_to(:telemetry_consent)
-      expect(account.telemetry_consent).to eq(false)
+      expect(account.telemetry_consent).to be(false)
     end
 
     it 'telemetry_consent is not null' do
       column = Account.columns.find { |c| c.name == 'telemetry_consent' }
       expect(column).not_to be_nil
-      expect(column.null).to eq(false)
+      expect(column.null).to be(false)
     end
   end
 
   describe 'telemetry_events table' do
     it 'exists in the database' do
-      expect(ActiveRecord::Base.connection.table_exists?(:telemetry_events)).to eq(true)
+      expect(ActiveRecord::Base.connection.table_exists?(:telemetry_events)).to be(true)
     end
 
     it 'has required columns' do

@@ -99,7 +99,7 @@ RSpec.describe Algorythmo::CrmListener, type: :listener do
 
     it 'does NOT create a lead for activity message' do
       msg = create(:message, message_type: :activity, account: account,
-                              inbox: inbox, conversation: conversation, sender: nil)
+                             inbox: inbox, conversation: conversation, sender: nil)
       expect do
         listener.message_created(build_event(msg))
       end.not_to change(Algorythmo::Lead, :count)
@@ -107,7 +107,7 @@ RSpec.describe Algorythmo::CrmListener, type: :listener do
 
     it 'does NOT create a lead for template message' do
       msg = create(:message, message_type: :template, account: account,
-                              inbox: inbox, conversation: conversation, sender: contact)
+                             inbox: inbox, conversation: conversation, sender: contact)
       expect do
         listener.message_created(build_event(msg))
       end.not_to change(Algorythmo::Lead, :count)
@@ -128,7 +128,7 @@ RSpec.describe Algorythmo::CrmListener, type: :listener do
       conv_no_contact.update_column(:contact_id, nil)
 
       msg = create(:message, message_type: :incoming, account: account,
-                              inbox: inbox, conversation: conv_no_contact, sender: contact)
+                             inbox: inbox, conversation: conv_no_contact, sender: contact)
 
       expect do
         listener.message_created(build_event(msg))
@@ -177,7 +177,7 @@ RSpec.describe Algorythmo::CrmListener, type: :listener do
     end
 
     it 'creates exactly 1 lead when 50 threads fire simultaneously' do
-      threads = 50.times.map do
+      threads = Array.new(50) do
         Thread.new do
           msg = incoming_message
           listener.message_created(build_event(msg))
