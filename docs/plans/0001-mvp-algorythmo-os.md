@@ -525,3 +525,354 @@ Founder roda `/plan-design-review` neste plano. Após aprovação, despacho M0 (
 9. **Drag-by-keyboard pós-MVP:** D11 baseline aceito como parcial (F4 + C4). Roadmap: avaliar substituição de `vuedraggable-next` por `dnd-kit` (suporte primeira-classe) ou implementação custom com `aria-keyshortcuts`.
 
 **VERDICT:** APPROVED_WITH_REVISIONS — pronto para despachar **M0 E M1**. Decisões F1-F8 + C1-C4 + ajuste D11 incorporadas. Não há blockers remanescentes. Próximo `/plan-eng-review` agendado para após M2 fechar (foco M3 Brain + M4 Manu + M5 Lead Intelligence).
+
+---
+
+## Round 3 — Decisões Arquiteturais (post-adversarial-review)
+
+**Contexto:** M0 foi commitado em `algorythmo/m0-foundation` (5e1a1347a). O adversarial-reviewer não apontou bugs de código, mas duas **decisões de arquitetura** que vão se amplificar em M1-M5 e custar caro depois. Decididas agora pelo planner antes de o engineer continuar.
+
+### Decisão 1 — Estratégia de Rebrand: **Recomendação B (Overlay-First + Inline com Tag onde não dá)**
+
+**Investigação concreta (números reais do repo, 2026-05-22).**
+
+| Surface | Localização | Hits "Chatwoot" | Mecanismo de overlay disponível? | Custo overlay |
+|---|---|---|---|---|
+| Dashboard i18n | `app/javascript/dashboard/i18n/locale/*` | **445 em 200 arquivos** (40 idiomas × ~5 namespaces) | **SIM — já existe**: `deepMerge` em `app/javascript/dashboard/i18n/index.js` + `engines/algorythmo/app/javascript/i18n/overrides/{en,pt_BR}.json` | LOW (estendido) |
+| Widget i18n | `app/javascript/widget/i18n/locale/*` | **54** (1 por idioma — só `POWERED_BY`) | **SIM — mesmo padrão**: `widget/i18n/index.js` linhas 1-83 é estrutura idêntica ao dashboard, basta replicar o `deepMerge` | LOW |
+| Survey i18n | `app/javascript/survey/i18n/locale/*` | **53** (1 por idioma — `POWERED_BY`) | **SIM — mesmo padrão** | LOW |
+| Liquid mailers admin | `app/views/mailers/administrator_notifications/**` | **8 hits em 3 arquivos** (`account_deleted`, `account_deletion_*`) | **SIM — view path priority**: Chatwoot já usa `config.paths['app/views'].unshift('enterprise/app/views')` em `config/application.rb:49`. Engine pode adicionar `engines/algorythmo/app/views` ao topo do view_path e sobrescrever arquivo-por-arquivo. | LOW-MED |
+| Layout base mailer | `app/views/layouts/mailer/base.liquid:95` | 1 hit (`brand_name = 'Chatwoot'` fallback) | **NÃO PRECISA**: fallback só é atingido se `BRAND_NAME` env estiver vazio. `.env.example:288` já define `BRAND_NAME=Algorythmo OS`. **Comportamento já correto sem ação.** | ZERO |
+| Conversation reply mailer (HTML) | `app/views/mailers/conversation_reply_mailer/*.html.erb` | 3 hits (referências internas, não user-visible — usam helper de branding) | **VERIFICAR caso a caso**: a maioria é `brand_name`/`{{global_config['BRAND_NAME']}}`. Se for literal, overlay via view path. | LOW |
+| Devise mailer | `app/views/devise/mailer/confirmation_instructions.html.erb` | 1 hit | **SIM — view path priority** (mesmo mecanismo) | LOW |
+| Vue v3 signup | `app/javascript/v3/views/auth/signup/Index.vue:14` — `installationName === 'Chatwoot'` | 6 hits (lógica que esconde layout em instalações não-Chatwoot) | **PRECISA inline** com tag: a checagem é lógica, não string visível. Inverter pra `!== 'Chatwoot'` ou remover o branch quando inst.name vira `'Algorythmo OS'`. | LOW (inline) |
+| Hardcoded em components | `Code.vue`, `Widget.vue`, `CampaignEmptyStateContent.js`, `Sidebar.vue`, `SidepanelSwitch.vue`, `CopilotLauncher.vue`, MFA wizards, helpcenter `Header`, `useBranding.js`, `Branding.vue`, etc. | **88 hits em 31 arquivos** (literais em template/script — boa parte já tagueada `// algorythmo: rebrand-m0` em M0) | **PARCIAL**: `useBranding()` em `app/javascript/shared/composables/useBranding.js` já tem `replaceInstallationName(text)` que substitui `Chatwoot` → `installationName` em runtime. **Pode ser estendido pra cobrir 80% das strings via composable em vez de search-replace**, mas exige PR refatorando call sites. | MED (refatorar) |
+| Assets (logo, favicon, PWA) | `public/manifest.json:2-3`, `public/brand-assets/*` | 2 no manifest + assets binários | **PARCIAL**: manifest é JSON estático servido por Rails; sobrescrever via view path do engine ou serve via controller. Logos: M0 já tem `public/algorythmo-assets/{algorythmo-logo,algorythmo-favicon}.svg` mas `BRAND_URL`/`LOGO`/`LOGO_THUMBNAIL` env vars já apontam pra eles. **manifest.json continua hardcoded — gap.** | LOW (1 PR pra manifest dinâmico) |
+| Super admin views | `app/views/super_admin/**` | 16 hits | **NÃO COBRIR**: super_admin é tela interna do operador da plataforma (founder), não cliente PME. Decisão M0 implícita: aceito. Tagueado `# algorythmo: super-admin-internal` se algum dia mexer. | ZERO (skip) |
+| Mobile app | fora deste repo | N/A | Fora do escopo MVP (§7). | ZERO |
+
+**Surfaces críticos de cliente final ainda descobertos = 3 grupos: widget (54), survey (53), liquid admin mailers (8). Total ~115 strings em 40+ idiomas, todos endereçáveis por mecanismo já provado no codebase.**
+
+**Avaliação das 3 opções:**
+
+**Recomendação A — Overlay-everywhere.**
+- Custo: ~1.5-2 dias de engenharia adicional em M0.5 (PR único, mecanicamente repetível). Replica `deepMerge` pra widget+survey (2h cada × debug = 1 dia), monta view_path do engine pra mailers liquid (2h), monta manifest.json dinâmico via controller (3h), refatora os ~88 hits inline pra usar `useBranding().replaceInstallationName()` onde fizer sentido (1 dia).
+- Benefício de décadas: **zero merge conflict de upstream em surface de branding pelos próximos 10 anos**. Quando Chatwoot adicionar 200 strings novas com "Chatwoot" em widget pt_BR, nosso overlay continua válido — só completa as chaves novas no `pt_BR.json` overlay se quisermos cobrir.
+- Riscos: 4 mecanismos diferentes (i18n deepMerge × 3 + view_path Rails) — superfície de testes maior.
+
+**Recomendação B — Overlay onde possível + Inline com tag + soft-fork-zone explícita.** ← **ESCOLHIDA**
+- Aplicar overlay nos 3 grupos descobertos (widget i18n, survey i18n, mailers liquid via view_path) — todos têm mecanismo zero-cost já provado no Chatwoot/engine.
+- Tornar `manifest.json` dinâmico via controller que lê `BRAND_NAME`/`INSTALLATION_NAME` (decisão estrutural, não inline tag).
+- Aceitar inline-com-tag para: (a) lógica que checa marca (signup `installationName === 'Chatwoot'`), (b) hardcoded em componentes que não podem ser i18n-izados sem reescrever (Code.vue codepen title, Campaign empty state, etc.).
+- **Soft-fork-zone explícita** (lista no engine README, ~10-15 arquivos máximo): "estes arquivos vão dar merge conflict toda vez que upstream mexer. Aceito conscientemente porque overlay custaria mais que conflict mensal manual."
+- Custo: ~1.5 dias em M0.5 (replicar overlay nos 3 grupos + manifest dinâmico + lista de soft-fork-zone documentada).
+
+**Recomendação C — Hard fork.**
+- Custo de décadas: dependabot continua funcionando para gems puras, mas **security patches do Chatwoot core viram aplicação manual** (cada release upstream = engineering hour pra portar). Em 5 anos isso é várias semanas/ano de manutenção pura. Para uma operação enxuta de PME que **não tem time de segurança dedicado**, é receita pra atraso de patch crítico.
+- Único cenário em que faz sentido: se Algorythmo divergir tanto de Chatwoot que sync mensal já está custando mais que hard fork (≠ caso atual — ADR-0001 confirmou alinhamento).
+
+**Decisão: Recomendação B.** Razão de décadas: equilíbrio entre custo de implementação hoje (1.5 dia) e custo de merge conflict mensal (zero nos 3 grupos cobertos, controlado/listado nos ~10 arquivos soft-fork). Hard fork (C) sacrifica security upstream — inegociável. Overlay-everywhere (A) é purismo que paga 30% extra em M0.5 sem ROI claro vs B.
+
+**Implementação concreta a inserir em M0.5 (trilha de cleanup pós-foundation):**
+
+| ID | Tarefa | Saída |
+|---|---|---|
+| M0.5.1 | Widget i18n overlay: criar `engines/algorythmo/app/javascript/widget-i18n/overrides/{en,pt_BR}.json` (sobrescreve só `POWERED_BY`); patch único em `app/javascript/widget/i18n/index.js` com `deepMerge` (tag `// algorythmo: widget-i18n-overlay`) | Widget mostra "Powered by Algorythmo OS" |
+| M0.5.2 | Survey i18n overlay: mesmo padrão em `app/javascript/survey/i18n/index.js` | CSAT pós-conversa mostra "Powered by Algorythmo OS" |
+| M0.5.3 | Mailer liquid overlay: adicionar `config.paths['app/views'].unshift(Algorythmo::Engine.root.join('app/views').to_s)` no `engine.rb` (após existente `i18n.load_path`); criar `engines/algorythmo/app/views/mailers/administrator_notifications/account_compliance_mailer/account_deleted.liquid` (+ outros 2) | E-mails admin não mencionam "Chatwoot" |
+| M0.5.4 | `manifest.json` dinâmico: rota Rails `GET /manifest.json` em controller do engine que renderiza JSON com `INSTALLATION_NAME`/`BRAND_NAME` env. Patch tagueado em `app/views/layouts/vueapp.html.erb` (ou onde o `<link rel="manifest">` é declarado) | PWA install mostra "Algorythmo OS" |
+| M0.5.5 | Lista soft-fork-zone: append em `engines/algorythmo/README.md` seção `## Soft-fork zone`, com path:line de cada arquivo aceito (signup `Index.vue:14`, hardcoded components, super_admin views). Cada arquivo recebe tag `// algorythmo: soft-fork <razão curta>` | Engineer + reviewer sabem onde merge conflict é esperado |
+| M0.5.6 | Sweep `grep` final: critério de aceite atualizado — `grep -rn "Chatwoot" app/javascript/widget/ app/javascript/survey/ app/views/mailers/administrator_notifications/` retorna **zero** | Validado em smoke test |
+
+**Critério de aceite Round 3 — Decisão 1:** após M0.5, grep por "Chatwoot" em superfícies cliente-final (dashboard + widget + survey + mailers admin + manifest PWA) retorna apenas linhas marcadas `// algorythmo: rebrand-m0` ou `// algorythmo: soft-fork`. Sync mensal de upstream tem zero conflict em widget/survey/mailers liquid/dashboard i18n.
+
+### Decisão 2 — Feature Gate Strategy: **Contrato 3-Camadas Obrigatório (Dispatcher + Controller + UI)**
+
+**Investigação concreta.**
+
+| Camada | Existe no Chatwoot upstream? | Padrão atual | Cobre o quê |
+|---|---|---|---|
+| 1. Dispatcher | **NÃO existe gate per-flag**. `enterprise/app/dispatchers/enterprise/async_dispatcher.rb` registra `CaptainListener` incondicionalmente. Listener filtra internamente via `conversation.inbox.captain_active?` (line 8 do `captain_listener.rb`). | Listener registrado sempre; lógica de skip dentro do callback. | Side effects (OpenAI calls, webhooks). Sem checagem aqui, custo OpenAI é gerado mesmo com UI hidden. |
+| 2. Controller | **Existe padrão claro**: `enterprise/app/controllers/api/v1/accounts/companies/base_controller.rb:7-11` e `saml_settings_controller.rb:52-56` usam `before_action :ensure_X_enabled!` retornando 403 se `Current.account.feature_enabled?('X')` é falso. **Captain controllers NÃO seguem esse padrão** — só checam `captain_v2_enabled?` para escolher serviço, não para autorizar request. | `before_action :ensure_<feature>_enabled!` retornando 403. | REST API direta (curl, scripts). |
+| 3. Router (Rails) | Rotas declaradas em `config/routes.rb` linhas 64-94 incondicionalmente. Não há `constraints` de feature flag em rota. | Sem gate. | Acesso por URL — bate em controller, então camada 2 protege. |
+| 3'. Router (Vue) | `app/javascript/dashboard/routes/dashboard/captain/captain.routes.js:22` declara `meta: { featureFlag: FEATURE_FLAGS.CAPTAIN }`. **Mas `app/javascript/dashboard/helper/routeHelpers.js:15-18` o router guard só checa `permissions`, não `featureFlag`.** Meta é só dica pro sidebar resolver visibilidade. | Declarativo mas **não enforced no `beforeEach`**. | Acesso por URL no SPA bate no componente, que tem que ter `v-if` interno. |
+| 4. Componente Vue | `v-if` em template ou early return no setup. Padrão atual no M0: `Sidebar.vue:64,394`, `SidepanelSwitch.vue:17`, `CopilotLauncher.vue:38` usam `if (!isFeatureFlagEnabled(FEATURE_FLAGS.ALGORYTHMO_SHOW_CAPTAIN))`. | Ad-hoc por componente. | UI visibility. Sozinho deixa URL acessível e backend exposto. |
+| 5. Sidebar | Esconde item de menu via `featureFlag` do route meta. | Padrão automático em `provider.js:123`. | Discoverability via menu — não protege URL nem backend. |
+
+**Achados-chave:**
+
+1. **Chatwoot upstream NÃO tem padrão consistente.** Cada feature implementa gate em camadas diferentes. SAML/Companies fazem (2)+(5). Captain faz só (5) + lógica interna em listener (1 parcial via `captain_active?`).
+2. **Router Vue guard não enforça `featureFlag`** — isso é bug latente do próprio upstream. URL direta pra rota de Captain bate no componente; só o `v-if` segura.
+3. **Camada 1 (dispatcher) é a única que bloqueia custo real OpenAI**. Sem ela, qualquer trigger interno (eventos automáticos, webhooks de inbound message) dispara Captain mesmo com UI completamente hidden.
+
+**Avaliação das camadas:**
+
+| Combinação | Bloqueia OpenAI? | Bloqueia REST direta? | Bloqueia URL direta SPA? | Esconde UI? | Custo DRY |
+|---|---|---|---|---|---|
+| Só (5) sidebar | NÃO | NÃO | NÃO | parcial | trivial |
+| (4)+(5) componente+sidebar | NÃO | NÃO | NÃO (componente carrega) | SIM | baixo |
+| **(1)+(2)+(4)+(5) [recomendado]** | **SIM** | **SIM** | **NÃO bate no backend** (controller 403) | **SIM** | médio (helper compartilhado) |
+| (1)+(2)+(3)+(4)+(5) tudo | SIM | SIM | SIM (rota não registrada) | SIM | alto (custom router guard) |
+
+**Decisão: combinação obrigatória mínima = camadas 1 + 2 + 4 + 5.** Camada 3 (router guard Vue real) é nice-to-have e fica como helper opcional. Camada 3 Rails (`constraints` em routes.rb) descartada — bota fragilidade em sync mensal sem ganho real sobre camada 2.
+
+**Contrato ADR-0012 (a criar, despachado em M0.5):**
+
+> **Toda feature flag prefixada `algorythmo_` que controla feature de custo real (OpenAI, webhook externo, scraping, AI job) DEVE ser enforced em 4 camadas:**
+>
+> 1. **Dispatcher:** se o feature dispara side effect via event listener, o listener checa flag antes de enfileirar job. Se a flag é per-account, checagem é `account.feature_enabled?('algorythmo_<flag>')`. Se é per-installation, `Algorythmo::FeatureGate.installation_enabled?('algorythmo_<flag>')`.
+> 2. **Controller (Rails):** `before_action :ensure_algorythmo_<flag>_enabled!` em todo controller que serve rotas da feature. Helper compartilhado `Algorythmo::FeatureGate::ControllerConcern` define o helper.
+> 3. **Componente (Vue):** `v-if="isFeatureFlagEnabled(FEATURE_FLAGS.ALGORYTHMO_<FLAG>)"` no template OU early-return no setup. Composable compartilhado `useAlgorythmoFeatureGate('<flag>')` empacota o pattern.
+> 4. **Sidebar:** route meta com `featureFlag: FEATURE_FLAGS.ALGORYTHMO_<FLAG>` (já automático).
+>
+> **Feature flag que controla apenas visibilidade UI (sem custo OpenAI/externo) pode ser apenas (4)+(5).**
+
+**Mecanismo DRY a implementar em M0.5 (antes de M1 começar a adicionar flags):**
+
+```
+engines/algorythmo/
+├── app/
+│   ├── concerns/algorythmo/feature_gate/controller_concern.rb
+│   │   # provides: ensure_algorythmo_feature_enabled!(flag_name)
+│   │   # raises Pundit::NotAuthorizedError com mensagem padronizada
+│   └── lib/algorythmo/feature_gate.rb
+│       # provides: installation_enabled?(flag), account_enabled?(flag, account)
+│       # cached via Rails.cache, invalidado por account.cache_key_with_version
+│   └── javascript/composables/useAlgorythmoFeatureGate.js
+│       # provides: useAlgorythmoFeatureGate('<flag>')
+│       # retorna { isEnabled, requireEnabled() → throws or redirects }
+```
+
+Cada flag nova em M1-M5 vira **3 linhas de código**: 1 entry em `features.yml`, 1 `before_action` no controller (ou check no listener), 1 `v-if` no componente. **Sem reimplementar o pattern.**
+
+**Retrofit do Captain gate de M0 (sem reescrever):**
+
+Estado atual: gate só em camadas (4)+(5). Faltam (1) e (2).
+
+| Patch | Arquivo | Mudança |
+|---|---|---|
+| Camada 1 (dispatcher) | `enterprise/app/listeners/captain_listener.rb:4-12` | Adicionar guard no topo de `conversation_resolved`: `return unless conversation.account.feature_enabled?('algorythmo_show_captain')`. Tag `# algorythmo: feature-gate algorythmo_show_captain`. Bloqueia `Captain::Llm::ContactNotesService` e `ConversationFaqService` (chamadas OpenAI). |
+| Camada 2 (controllers) | 9 controllers em `enterprise/app/controllers/api/v1/accounts/captain/*.rb` | Criar `Api::V1::Accounts::Captain::BaseController < Api::V1::Accounts::EnterpriseAccountsController` com `before_action :ensure_algorythmo_show_captain_enabled!` (usa concern do engine). Refatorar os 9 controllers pra herdar dela. Tag `# algorythmo: feature-gate algorythmo_show_captain` em cada um. Retorna 403 com `{ error: 'Captain not available on this account' }`. |
+| Camada 3' (Vue router) | `app/javascript/dashboard/routes/dashboard/captain/captain.routes.js:20-36` | Adicionar `algorythmoFeatureFlag: FEATURE_FLAGS.ALGORYTHMO_SHOW_CAPTAIN` ao meta + estender `validateLoggedInRoutes` em `helper/routeHelpers.js` pra checar `algorythmoFeatureFlag` e redirecionar pro dashboard se off. **Opcional — defesa em profundidade.** |
+| Teste | `engines/algorythmo/spec/algorythmo/feature_gate/captain_spec.rb` | RSpec cobre: (a) flag off + REST direto → 403, (b) flag off + evento `conversation_resolved` → listener NÃO chama OpenAI service, (c) flag on → comportamento normal, (d) Playwright: URL direta `/app/accounts/:id/captain/assistants` com flag off redireciona pro dashboard. |
+
+**Critério de aceite Round 3 — Decisão 2:**
+1. Captain gate enforçado em camadas 1+2+4+5 (camada 3' nice-to-have).
+2. Helper `Algorythmo::FeatureGate::ControllerConcern` + composable `useAlgorythmoFeatureGate` disponíveis no engine.
+3. ADR-0012 escrito em `docs/adrs/0012-algorythmo-feature-gate-contract.md` referenciando este plano.
+4. Teste RSpec + Playwright proibindo regressão da camada 1 (custo OpenAI) e camada 2 (REST direto) no Captain.
+5. Regra documentada: **toda feature flag `algorythmo_*` que controla feature de custo segue contrato 4-camadas.** Reviewer obrigado a checar em PRs M1-M5.
+
+### Resumo Round 3 — o que entra em M0.5 (nova trilha de cleanup pós-M0)
+
+| ID | Decisão | Custo | Justificativa de décadas |
+|---|---|---|---|
+| **M0.5 (rebrand)** | Overlay-first para widget i18n + survey i18n + mailers liquid + manifest PWA dinâmico. Lista de soft-fork-zone documentada. | ~1.5 dia | Zero merge conflict em surfaces de cliente final pelos próximos 10 anos; soft-fork-zone limitada a ~10 arquivos rastreáveis. |
+| **M0.5 (gates)** | Contrato 4-camadas (Dispatcher + Controller + Componente + Sidebar) obrigatório pra flag de custo. Helper Ruby + composable Vue. Retrofit do Captain gate. ADR-0012. | ~1.5 dia | Cada flag M1-M5 herda padrão — 3 linhas de código por gate em vez de re-inventar. Bloqueia custo OpenAI mesmo com UI hidden. |
+
+**Total M0.5 ≈ 3 dias de engenharia.** Próximo passo: `/plan-eng-review` round 3 valida; founder aprova; engineer round 3 implementa em PR(s) separado(s) da branch `algorythmo/m0-foundation`.
+
+---
+
+## Round 3.5 — Eng Manager Review (post-planner Round 3)
+
+**Verdict:** APPROVED_WITH_AMENDMENTS. Decisões 1 e 2 estão corretas em direção. 4 amendments antes de despachar engineer round 3.
+
+### Step 0 — Scope Challenge
+
+- **Padrões verificados no codebase (planner acertou):** `deepMerge` dashboard ✓, widget i18n estrutura idêntica ✓ (54 hits validados), survey idêntico ✓ (53 hits), `ensure_*_enabled!` pattern existe em 4 places (Companies, WhatsApp Calling, **e Captain Custom Tools — já dentro de Captain!**), view path priority padrão Enterprise ✓.
+- **Insight extra (planner perdeu):** `enterprise/app/controllers/api/v1/accounts/captain/custom_tools_controller.rb:3,38` JÁ implementa `before_action :ensure_custom_tools_enabled`. Refactor dos 9 controllers Captain pode espelhar exatamente esse arquivo — zero invenção de padrão.
+- **Complexity check:** ~26 arquivos tocados (acima do threshold 8). Justificado: 3 blockers do adversarial-review são reais. Sem redução de escopo.
+- **TODOS.md:** não existe no projeto. Itens deferíveis viram seção `## NOT in scope` aqui.
+
+### Architecture Review — 4 amendments
+
+**A1 [P1, confidence 7/10] — Mudar M0.5.4 de "manifest.json dinâmico via controller" pra build-time substitution.**
+
+PWAs cacheiam `manifest.json` agressivamente no service worker. Trocar pra rota dinâmica = dispositivos com PWA instalado continuam vendo "Chatwoot" até desinstalar. Rota Rails dinâmica também adiciona request por sessão.
+
+Solução: gerar `public/manifest.json` final em build-time via Vite plugin ou template processado por `bin/setup`/asset:precompile, lendo `BRAND_NAME`/`INSTALLATION_NAME` do env. Zero risco de cache, zero overhead runtime. Custo: ~30min, **menor** que controller dinâmico.
+
+**A2 [P1, confidence 8/10] — Promover Camada 3' (Vue router guard) de "opcional" pra OBRIGATÓRIO no contrato 4-camadas.**
+
+Sem router guard real (não só meta), URL direta `/app/.../captain/...` carrega o componente, dispara API call, recebe 403 do controller (Camada 2 funciona) — mas usuário vê **erro UI feio**, **network requests visíveis** em devtools, **possíveis analytics events** disparados. Defesa em profundidade quebrada por economia de 30min.
+
+Fix: estender `app/javascript/dashboard/helper/routeHelpers.js:15-18` pra checar `meta.algorythmoFeatureFlag` no `beforeEach` global. Redirect imediato pro dashboard se flag off. **Contrato fica 4-camadas obrigatório: Dispatcher + Controller + RouterGuard + Componente.** Sidebar continua automático.
+
+**A3 [P2, confidence 6/10] — Concern usa `head :forbidden` + `render json` (pattern existente), não `Pundit::NotAuthorizedError`.**
+
+Plano menciona "raises Pundit::NotAuthorizedError com mensagem padronizada". Mas `companies/base_controller.rb:7-11` e `captain/custom_tools_controller.rb:38` ambos fazem `render json: { error: ... }, status: :forbidden` direto. Espelhar pattern existente.
+
+**A4 [P2, confidence 7/10] — Soft-fork-zone tem que ser machine-checkable, não só markdown.**
+
+M0.5.5 propõe lista em README do engine. Lista markdown vira stale silenciosamente quando arquivo é movido/deletado upstream. Adicionar CI check: script que lê a lista, valida que cada `path:line` existe e contém tag `algorythmo: soft-fork`. Falha CI quando lista fica stale. Custo: ~30min de bash + entry no workflow.
+
+### Code Quality Review — 2 amendments
+
+**Q1 [P2, confidence 9/10] — `deepMerge` deve ser ÚNICO no engine, importado dos 3 entry points (dashboard, widget, survey).**
+
+Plano implícito mas não explicitado. Confirmar no patch: M0.5.1 e M0.5.2 importam `deepMerge` de `engines/algorythmo/app/javascript/i18n/deepMerge.js` (existente desde M0), não duplicam.
+
+**Q2 [P3, confidence 6/10] — `useAlgorythmoFeatureGate` deve especificar fail-closed behavior pra account não-carregada.**
+
+Plano diz "retorna `{ isEnabled, requireEnabled() }`" mas não especifica: o que `isEnabled` retorna se `currentAccountId` é null durante load? Adversarial-review (#8) já apontou race condition relacionada no watcher Captain de M0. Decidir agora: **`isEnabled` retorna `false` se account null** (fail-closed, sem flicker). Sem `null` ternário pra evitar UI states inconsistentes.
+
+### Test Review — Coverage diagram + IRON RULE regressions
+
+```
+CODE PATHS                                                  USER FLOWS
+[+] engines/.../widget-i18n/overrides/*.json + wrap        [+] Widget no site do cliente
+  └── deepMerge(base, overrides)                             ├── [GAP] [→E2E] POWERED_BY assertion
+      └── [★★ TESTED via dashboard] — happy path             └── [GAP]        Trocar locale runtime
+
+[+] app/views/.../*.liquid (engine overlay)                [+] Admin recebe e-mail
+  └── Liquid render BRAND_NAME                               └── [GAP] [→RSpec mailer] HTML render
+
+[+] manifest build-time substitution                       [+] PWA install
+  └── env interpolation                                      └── [GAP] [→manual] não testável em CI
+
+[+] enterprise/.../captain_listener.rb (patch guard)       [+] Conversation resolves, flag off
+  ├── flag off → return early   [REGRESSION ★]              ├── [GAP] [→RSpec] zero OpenAI calls
+  └── flag on  → service.call                                └── [GAP] [→RSpec] service called
+
+[+] enterprise/.../captain/base_controller.rb (novo)       [+] URL direta com flag off
+    + 9 subclasses refactored                                 ├── [GAP] [→Playwright] redirect to dashboard
+  └── before_action :ensure_algorythmo_show_captain_enabled! └── [GAP] [→RSpec request] GET API → 403
+      ├── flag off → 403            [REGRESSION ★]
+      └── flag on  → pass
+
+[+] engines/.../feature_gate/controller_concern.rb         [+] Outro flag Algorythmo em M1+
+  └── ensure_algorythmo_feature_enabled!(flag)               └── [GAP] [→RSpec] unit reusável
+      ├── account nil   → 403
+      ├── flag off      → 403
+      └── flag on       → noop
+
+[+] engines/.../composables/useAlgorythmoFeatureGate.js    [+] Componente Vue gated
+  └── { isEnabled, requireEnabled() }                        └── [GAP] [→Vitest]
+      ├── account null → false (fail-closed)                       account null    → false
+      ├── flag off     → false                                     loaded + flag off → false
+      └── flag on      → true                                      loaded + flag on  → true
+
+[+] routeHelpers.js extended (A2 amendment)                [+] Vue router guard com algorythmoFeatureFlag
+  └── beforeEach checks meta.algorythmoFeatureFlag           └── [GAP] [→Vitest] redirect when off
+
+COVERAGE: 1/19 paths tested (5%)
+GAPS: 18 (4 Playwright/E2E, 11 RSpec, 3 Vitest unit)
+REGRESSION TESTS (IRON RULE, mandatory):
+  - captain_listener guard quando flag off
+  - captain controllers 403 quando flag off
+```
+
+**Tests obrigatórios a adicionar em M0.5 (engineer NÃO pode pular):**
+- `engines/algorythmo/spec/algorythmo/feature_gate/controller_concern_spec.rb`
+- `engines/algorythmo/spec/algorythmo/feature_gate/captain_integration_spec.rb` (listener + controller request specs, regression)
+- `engines/algorythmo/spec/algorythmo/i18n_overlay_widget_spec.rb` + survey spec
+- `app/javascript/dashboard/helper/__tests__/routeHelpers_algorythmo.spec.js` (router guard)
+- `app/javascript/shared/composables/specs/useAlgorythmoFeatureGate.spec.js`
+- `e2e/captain_gate.spec.ts` — Playwright: URL direta com flag off redireciona; flag on permite; widget POWERED_BY assertion
+
+### Performance Review
+
+- **P1 [confidence 5/10]:** `account.feature_enabled?(...)` em cada listener event pode ser query desnecessária se Chatwoot upstream não cacheia. Engineer deve confirmar memoization existente; senão `Rails.cache.fetch` com TTL curto no helper do engine. Verificação em ~5min.
+- **P2 [confidence 8/10]:** `deepMerge` em load-time bundle Vue é trivial (~30 chaves × 2 locales × 3 entries). Sem impacto.
+- **P3 [confidence 7/10]:** Build-time manifest (A1) elimina request runtime. Win.
+
+### Failure Modes — Critical Gaps
+
+| Gap | Impacto produção | Coberto por |
+|---|---|---|
+| **PWA cache stale** | Cliente vê "Chatwoot" no atalho instalado mesmo pós-deploy | A1 (build-time substitution) |
+| **URL direta Captain** | Erro UI feio, network requests visíveis, possível analytics event Captain disparado | A2 (router guard obrigatório) |
+| **Watcher race M0 não corrigido** | `is_copilot_panel_open` pode oscilar em multi-tab + account async load | TODO (adversarial #8 — ficou pra M0.5 ou backlog) |
+| **Soft-fork-zone drift** | Lista markdown vira stale, devs perdem rastreabilidade | A4 (CI check) |
+
+### NOT in scope (Round 3.5)
+
+- Locales != en/pt_BR no dashboard/widget/survey (esperado, documentado pra M5)
+- Transactional mailers (não-admin) — só admin notifications cobertos em M0.5
+- Mobile app/SDK rebrand (fora deste repo)
+- Super admin views (interno operador da plataforma — aceito como soft-fork-zone)
+- Watcher race condition do M0 (#8 adversarial) — TODO P2 separado, não bloqueia M0.5
+
+### What already exists — confirmado reuso, zero rebuild
+
+- `deepMerge`: `engines/algorythmo/app/javascript/i18n/deepMerge.js` (M0)
+- `before_action :ensure_X_enabled!`: 4 controllers, 1 dentro de Captain (custom_tools)
+- View path priority Rails: Enterprise pattern em `config/application.rb:49`
+- `useBranding().replaceInstallationName()`: substitui Chatwoot→installationName em runtime
+- Migration appender: `engines/algorythmo/lib/algorythmo/engine.rb` (M0)
+- Tag convention `algorythmo: <slug>`: estabelecida em M0 (rebrand-m0, feature-gate, i18n-overlay-m0)
+
+### Parallelization Strategy
+
+- **Lane A (rebrand):** M0.5.1 widget + M0.5.2 survey + M0.5.3 mailers + M0.5.4 manifest + M0.5.5 soft-fork list + M0.5.6 grep sweep. Tasks independentes — podem rodar em PRs paralelos OU 1 PR bundle.
+- **Lane B (gates):** captain_listener patch + base_controller novo + 9 subclasses refactor + concern + composable + routeHelpers extension + ADR-0012. Sequential within lane.
+- **Conflict:** zero. Lane A toca `app/javascript/widget|survey/`, `app/views/mailers/`, `public/`. Lane B toca `enterprise/app/...`, `engines/algorythmo/`, `app/javascript/dashboard/helper/`.
+- **Recomendação:** despachar **A + B em paralelo via 2 engineer agents em worktrees separados**. Total wall-clock ~1.5 dia em vez de 3.
+
+### Implementation Tasks
+
+- [ ] **T1 (P1, human: ~30min / CC: ~5min)** — `manifest.json` build-time
+  - Surfaced by: A1
+  - Files: `public/manifest.json` template + Vite/asset-precompile hook
+  - Verify: build local, abrir `public/packs/manifest.json` (ou equivalente), assert `Algorythmo OS`
+- [ ] **T2 (P1, human: ~30min / CC: ~10min)** — Vue router guard `algorythmoFeatureFlag` obrigatório
+  - Surfaced by: A2
+  - Files: `app/javascript/dashboard/helper/routeHelpers.js`, `app/javascript/dashboard/routes/dashboard/captain/captain.routes.js`
+  - Verify: Playwright `e2e/captain_gate.spec.ts` — flag off + URL direta = redirect
+- [ ] **T3 (P2, human: ~15min / CC: ~5min)** — Concern usa `head :forbidden`/render JSON, não Pundit
+  - Surfaced by: A3
+  - Files: `engines/algorythmo/app/controllers/concerns/algorythmo/feature_gate/controller_concern.rb` (novo)
+  - Verify: RSpec do concern + integration com captain controller
+- [ ] **T4 (P2, human: ~30min / CC: ~10min)** — CI check pra soft-fork-zone list
+  - Surfaced by: A4
+  - Files: `.github/workflows/run_foss_spec.yml` + `engines/algorythmo/bin/check-soft-fork-zone.sh` (novo)
+  - Verify: rodar localmente, fazer commit que move um arquivo soft-fork, ver CI falhar
+- [ ] **T5 (P2, human: ~10min / CC: ~2min)** — `deepMerge` único, importado dos 3 entry points
+  - Surfaced by: Q1
+  - Files: `app/javascript/widget/i18n/index.js`, `app/javascript/survey/i18n/index.js`
+  - Verify: grep `from.*deepMerge` retorna 3 hits, todos apontam pro engine
+- [ ] **T6 (P3, human: ~10min / CC: ~2min)** — `useAlgorythmoFeatureGate` fail-closed quando account null
+  - Surfaced by: Q2
+  - Files: `engines/algorythmo/app/javascript/composables/useAlgorythmoFeatureGate.js` (novo)
+  - Verify: Vitest spec — `account=null` ⇒ `isEnabled=false`
+- [ ] **T7 (P3, human: ~5min / CC: ~2min)** — Confirmar memoization `feature_enabled?` upstream
+  - Surfaced by: Perf P1
+  - Files: investigação rápida em `app/models/concerns/...` + decisão se adicionar cache
+  - Verify: Sidekiq logs após M1 simulado — zero queries duplicadas por evento
+
+### Unresolved decisions
+Nenhuma. Eng-review apresenta amendments concretos; founder aprova ou rejeita o conjunto.
+
+### Completion Summary
+
+- Step 0 Scope Challenge: scope aceito (26 files, justificado por blockers)
+- Architecture Review: 4 amendments (A1 P1, A2 P1, A3 P2, A4 P2)
+- Code Quality Review: 2 amendments (Q1 P2, Q2 P3)
+- Test Review: diagram produzido, 18 gaps (4 E2E, 11 RSpec, 3 Vitest), **2 regression tests obrigatórios** (IRON RULE)
+- Performance Review: 1 P3 (verificação rápida memoization), 2 sem ação
+- NOT in scope: escrito (5 itens)
+- What already exists: escrito (6 patterns)
+- Failure modes: 4 critical gaps, 3 cobertos por amendments, 1 vira TODO separado (watcher race)
+- Outside voice: skipped (escopo limitado, eng-review já validou planner)
+- Parallelization: 2 lanes paralelas (A rebrand independente, B gates sequential within) — total ~1.5 dia wall-clock
+- Implementation Tasks: 7 T-items (2 P1, 4 P2, 1 P3)
+
+**VERDICT:** APPROVED_WITH_AMENDMENTS. Founder aprova os 4 amendments (A1, A2, A3, A4) + 2 quality (Q1, Q2) + 1 perf check (T7) → engineer round 3 implementa em 2 lanes paralelos.
+
+---
+
+## GSTACK REVIEW REPORT
+
+| Review | Trigger | Why | Runs | Status | Findings |
+|--------|---------|-----|------|--------|----------|
+| CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | (not run — founder defines scope inline) |
+| Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | (skipped — eng-review tem confidence alto sobre planner) |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 3 | **APPROVED_WITH_AMENDMENTS** | Round 1+2: 9 decisões (F1-F8 + C1-C4). Round 3.5: 7 amendments (2 P1, 4 P2, 1 P3), 4 critical gaps cobertos, 18 test gaps, 2 regressions IRON RULE. |
+| Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | (UI scope mínimo no M0.5 — só rebrand strings + redirect, sem novo componente) |
+| DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | (skipped) |
+
+**UNRESOLVED:** 0 (todos os amendments do Round 3.5 estão concretos, aguardando approve binário do founder).
+
+**VERDICT:** **ENG REVIEW APPROVED_WITH_AMENDMENTS** — Round 3 do planner está em direção correta, com 7 amendments concretos pra incorporar antes do engineer round 3. Após founder approve, despachar 2 engineer agents em worktrees paralelos (Lane A rebrand + Lane B gates).
+

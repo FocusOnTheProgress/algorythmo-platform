@@ -144,3 +144,36 @@ export const isAInboxViewRoute = (routeName, includeBase = false) => {
 
 export const isNotificationRoute = routeName =>
   routeName === 'notifications_index';
+
+// algorythmo: feature-gate algorythmo_show_captain
+/**
+ * Checks whether a route is blocked by an Algorythmo OS feature gate.
+ *
+ * Routes declare their gate via `meta.algorythmoFeatureFlag`. If the flag is set
+ * and the store reports the feature as disabled for the current account, the route
+ * is blocked and the caller should redirect to the account dashboard.
+ *
+ * Fail-closed: any error reading the flag (store not ready, getter missing) treats
+ * the feature as disabled to avoid leaking gated UI accidentally.
+ *
+ * @param {Object} to - Vue Router destination route object
+ * @param {Function} isFeatureEnabledonAccount - Vuex getter: (accountId, flagName) => boolean
+ * @param {number} accountId - Current account ID
+ * @returns {boolean} true if the route is blocked by the feature gate
+ */
+export const isRouteBlockedByAlgorythmoGate = (
+  to,
+  isFeatureEnabledonAccount,
+  accountId
+) => {
+  const flagName = to?.meta?.algorythmoFeatureFlag;
+  if (!flagName) return false;
+
+  try {
+    const enabled = isFeatureEnabledonAccount(accountId, flagName);
+    return !enabled;
+  } catch {
+    // Fail-closed: treat as disabled if the check itself errors.
+    return true;
+  }
+};

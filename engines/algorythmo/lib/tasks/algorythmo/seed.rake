@@ -7,8 +7,16 @@ namespace :algorythmo do
   namespace :seed do
     desc 'Create minimal smoke-test account for Playwright M0 suite'
     task smoke_test_account: :environment do
+      # Security gate: refuse to run in production unless the operator has
+      # explicitly acknowledged the risk via ALGORYTHMO_SEED_PRODUCTION env var.
+      # This prevents accidental data creation on production databases.
+      unless Rails.env.development? || Rails.env.test? || ENV['ALGORYTHMO_SEED_PRODUCTION'] == 'I_UNDERSTAND_THE_RISK'
+        raise 'algorythmo:seed tasks are restricted to development/test environments. ' \
+              "Set ALGORYTHMO_SEED_PRODUCTION=I_UNDERSTAND_THE_RISK to override on production."
+      end
+
       email = 'test@algorythmo.com'
-      password = 'Test@12345'
+      password = ENV.fetch('ALGORYTHMO_SEED_PASSWORD') { raise 'ALGORYTHMO_SEED_PASSWORD env var required for seeding' }
 
       if User.exists?(email: email)
         puts "[algorythmo:seed] Test user #{email} already exists — skipping."

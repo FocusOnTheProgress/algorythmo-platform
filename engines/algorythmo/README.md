@@ -68,6 +68,26 @@ The remaining ~40 upstream locales (ar, de, fr, es, etc.) still contain "Chatwoo
 in the same ~30 key positions. These locales are used by a small fraction of
 early-stage users. Full multi-locale override is tracked as M5/production work.
 
+## Soft-fork zone
+
+Certain host-app files are edited inline (not via overlay) because no overlay mechanism
+exists for that file type. Every such file MUST contain a tag `// algorythmo: rebrand-m0`
+or `// algorythmo: soft-fork` on every modified line so the monthly upstream sync can
+identify and re-apply our changes after a rebase.
+
+**Accepted inline edits (soft-fork zone):**
+
+| Path | Line | Tag | Reason |
+|---|---|---|---|
+| `app/javascript/v3/views/auth/signup/Index.vue` | 14 | `// algorythmo: rebrand-m0` | Signup page title hard-coded "Chatwoot" |
+| `app/javascript/widget/i18n/index.js` | overlay block | `// algorythmo: widget-i18n-overlay` | Widget i18n entry point |
+| `app/javascript/survey/i18n/index.js` | overlay block | `// algorythmo: survey-i18n-overlay` | Survey i18n entry point |
+| `app/javascript/survey/views/Response.vue` | 177 | `<!-- algorythmo: rebrand-m0 -->` | Image alt text "Chatwoot logo" |
+
+The script `engines/algorythmo/bin/check-soft-fork-zone.sh` validates that each path in
+this table exists in the filesystem and contains the expected tag. Run it before opening
+a PR to catch regressions early. It also runs as a CI step.
+
 ## Sync with upstream Chatwoot
 
 Files touched by Algorythmo are tagged with `// algorythmo: <tag>` (JS/Vue) or

@@ -212,6 +212,8 @@ jobs:
         run: |
           bundle exec rake db:create db:schema:load db:migrate
           bundle exec rake algorythmo:seed:smoke_test_account
+        env:
+          ALGORYTHMO_SEED_PASSWORD: ${{ secrets.ALGORYTHMO_SEED_PASSWORD }}
 
       - name: Start Rails server (background)
         run: |
@@ -225,7 +227,7 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           PLAYWRIGHT_EMAIL: test@algorythmo.com
-          PLAYWRIGHT_PASSWORD: Test@12345
+          PLAYWRIGHT_PASSWORD: ${{ secrets.ALGORYTHMO_SEED_PASSWORD }}
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -233,3 +235,15 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
+
+  # algorythmo: soft-fork-ci-check
+  # Validates that every file in the soft-fork zone exists and is tagged.
+  # This is a MERGE GATE — PRs cannot merge if soft-fork zone integrity fails.
+  # See engines/algorythmo/README.md § Soft-fork zone for the acceptance table.
+  soft-fork-check:
+    name: Soft-fork zone integrity check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate soft-fork zone tags # algorythmo: soft-fork-ci-check
+        run: bash engines/algorythmo/bin/check-soft-fork-zone.sh

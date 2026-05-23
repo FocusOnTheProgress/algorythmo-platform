@@ -104,6 +104,23 @@ test.describe('M0 Smoke', () => {
     await assertNoChatwoot(page, 'inboxes/new/website');
   });
 
+  // algorythmo: widget-i18n-overlay
+  // Validates the widget embed preview shows "Powered by Algorythmo OS" (M0.5.1).
+  // The widget builder settings page renders the POWERED_BY string via the
+  // i18n overlay; if it still says "Chatwoot" the overlay didn't apply.
+  test('"Powered by Algorythmo OS" appears in widget builder branding preview', async ({
+    page,
+  }) => {
+    await loginAndWait(page);
+    await page.goto(`${BASE_URL}/app/accounts/1/settings/inboxes/new/website`);
+    await page.waitForLoadState('networkidle', { timeout: 15_000 });
+
+    // The POWERED_BY string from INBOX_MGMT.WIDGET_BUILDER.BRANDING_TEXT
+    // is rendered in the widget builder UI. Assert it matches "Algorythmo OS".
+    const brandingText = page.getByText(/Powered by Algorythmo OS/i).first();
+    await expect(brandingText).toBeVisible({ timeout: 10_000 });
+  });
+
   test('Captain sidebar item and copilot launcher are absent when algorythmo_show_captain=false', async ({
     page,
   }) => {

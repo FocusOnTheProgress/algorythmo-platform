@@ -39,6 +39,14 @@ import vi from './locale/vi.json';
 import zh_CN from './locale/zh_CN.json';
 import zh_TW from './locale/zh_TW.json';
 
+// algorythmo: widget-i18n-overlay
+// Apply Algorythmo OS brand overrides to widget locale strings.
+// Only en and pt_BR are overridden; other locales remain upstream as-is.
+// The shared deepMerge module is the single source of truth — no copy here.
+import { deepMerge } from 'engines/algorythmo/app/javascript/i18n/deepMerge';
+import enOverrides from 'engines/algorythmo/app/javascript/widget-i18n/overrides/en.json';
+import ptBROverrides from 'engines/algorythmo/app/javascript/widget-i18n/overrides/pt_BR.json';
+
 export default {
   ar,
   bg,
@@ -47,7 +55,7 @@ export default {
   da,
   de,
   el,
-  en,
+  en: deepMerge(en, enOverrides), // algorythmo: widget-i18n-overlay
   es,
   fa,
   fi,
@@ -66,7 +74,7 @@ export default {
   nl,
   no,
   pl,
-  pt_BR,
+  pt_BR: deepMerge(pt_BR, ptBROverrides), // algorythmo: widget-i18n-overlay
   pt,
   ro,
   ru,

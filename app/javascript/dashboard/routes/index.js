@@ -3,7 +3,10 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { frontendURL } from '../helper/URLHelper';
 import dashboard from './dashboard/dashboard.routes';
 import store from 'dashboard/store';
-import { validateLoggedInRoutes } from '../helper/routeHelpers';
+import {
+  validateLoggedInRoutes,
+  isRouteBlockedByAlgorythmoGate,
+} from '../helper/routeHelpers';
 import { isOnOnboardingView } from 'v3/helpers/RouteHelper';
 import AnalyticsHelper from '../helper/AnalyticsHelper';
 
@@ -51,7 +54,25 @@ export const validateAuthenticateRoutePermission = async (to, next) => {
   }
 
   const nextRoute = validateLoggedInRoutes(to, store.getters.getCurrentUser);
-  return nextRoute ? next(frontendURL(nextRoute)) : next();
+  if (nextRoute) return next(frontendURL(nextRoute));
+
+  // algorythmo: feature-gate algorythmo_show_captain
+  // Check Algorythmo feature gate AFTER permission validation.
+  // Routes declare the gate via meta.algorythmoFeatureFlag.
+  // Fail-closed: if the flag check errors, the route is blocked.
+  const isFeatureEnabledonAccount =
+    store.getters['accounts/isFeatureEnabledonAccount'];
+  if (
+    isRouteBlockedByAlgorythmoGate(
+      to,
+      isFeatureEnabledonAccount,
+      routeAccountId
+    )
+  ) {
+    return next(frontendURL(`accounts/${routeAccountId}/dashboard`));
+  }
+
+  return next();
 };
 
 export const initalizeRouter = () => {

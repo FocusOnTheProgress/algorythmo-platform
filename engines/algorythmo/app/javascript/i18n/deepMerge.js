@@ -12,12 +12,19 @@
  */
 export function deepMerge(base, overrides) {
   const result = Object.assign({}, base);
-  for (const key of Object.keys(overrides)) {
+  Object.keys(overrides).forEach(key => {
     const baseVal = base[key];
     const overVal = overrides[key];
+
+    // algorythmo: null-guard adversarial-#5
+    // A null override value must NOT silently delete the base subtree.
+    // This prevents a misconfigured override file from wiping out entire
+    // locale branches (e.g. { "GENERAL_SETTINGS": null } would have
+    // deleted all GENERAL_SETTINGS strings from the merged locale).
+    if (overVal === null) return;
+
     if (
       baseVal !== null &&
-      overVal !== null &&
       typeof baseVal === 'object' &&
       typeof overVal === 'object' &&
       !Array.isArray(baseVal) &&
@@ -27,6 +34,6 @@ export function deepMerge(base, overrides) {
     } else {
       result[key] = overVal;
     }
-  }
+  });
   return result;
 }
