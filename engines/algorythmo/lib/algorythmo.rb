@@ -1,8 +1,4 @@
 # frozen_string_literal: true
 
-require 'algorythmo/engine'
-
-module Algorythmo
-  # Version follows the MVP milestone, not semver—pre-1.0 software.
-  VERSION = '0.1.0'
-end
+require_relative 'algorythmo/version'
+require_relative 'algorythmo/engine'

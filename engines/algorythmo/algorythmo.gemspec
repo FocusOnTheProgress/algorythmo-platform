@@ -1,4 +1,4 @@
-require_relative 'lib/algorythmo'
+require_relative 'lib/algorythmo/version'
 
 Gem::Specification.new do |spec|
   spec.name        = 'algorythmo'
