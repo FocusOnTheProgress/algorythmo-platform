@@ -31,6 +31,7 @@ class Account < ApplicationRecord
   include CaptainFeaturable
   include AccountEmailRateLimitable
   include AccountSettingsSchema
+  include Algorythmo::FeatureFlagBits
 
   DEFAULT_QUERY_SETTING = {
     flag_query_mode: :bit_operator,

@@ -679,6 +679,8 @@ Rails.application.routes.draw do
       resources :accounts, only: [:index, :new, :create, :show, :edit, :update, :destroy] do
         post :seed, on: :member
         post :reset_cache, on: :member
+        # algorythmo: per-account cut-surface flag management (accounts.algorythmo_feature_flags column)
+        resource :algorythmo_flags, only: [:show, :update]
       end
       resources :users, only: [:index, :new, :create, :show, :edit, :update, :destroy] do
         delete :avatar, on: :member, action: :destroy_avatar

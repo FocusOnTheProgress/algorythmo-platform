@@ -1,0 +1,47 @@
+<% content_for(:title) { "Algorythmo Flags — #{@account.name}" } %>
+
+<header class="main-content__header">
+  <h2 class="main-content__page-title">
+    Algorythmo Cut Flags
+    <span class="main-content__page-sub-title">— <%= @account.name %></span>
+  </h2>
+</header>
+
+<div class="main-content__body">
+  <p class="u-margin-bottom-16">
+    Flags stored in <code>accounts.algorythmo_feature_flags</code> (dedicated bigint, positions 1–13).
+    Isolated from Chatwoot&rsquo;s <code>feature_flags</code> column — no bit conflicts.
+    <strong>Check a flag to cut (hide) that surface for this account.</strong>
+  </p>
+
+  <%= form_with url: super_admin_account_algorythmo_flags_path(@account), method: :patch, local: true do %>
+    <table class="resource-table">
+      <thead>
+        <tr>
+          <th>Surface (cut flag)</th>
+          <th>Enabled (surface is hidden)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% Algorythmo::FeatureFlagBits::CUT_FLAG_NAMES.each do |flag| %>
+          <tr>
+            <td><code>algorythmo_cut_<%= flag %></code></td>
+            <td>
+              <%= check_box_tag "algorythmo_flags[#{flag}]", '1',
+                    @account.algorythmo_cut_enabled?(flag),
+                    id: "algorythmo_flag_#{flag}" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <div class="u-margin-top-16">
+      <%= submit_tag 'Update Algorythmo Flags', class: 'button' %>
+    </div>
+  <% end %>
+
+  <p class="u-margin-top-16">
+    <%= link_to '← Back to Account', super_admin_account_path(@account) %>
+  </p>
+</div>

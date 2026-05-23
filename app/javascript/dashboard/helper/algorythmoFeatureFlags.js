@@ -1,26 +1,25 @@
 /**
- * Algorythmo feature-gate helper for Vue components.
+ * Algorythmo cut-surface feature-gate helper for Vue components.
  *
  * Usage in a component:
- *   import { isAlgorythmoFeatureEnabled } from '@/helper/algorythmoFeatureFlags';
+ *   import { isAlgorythmoCutEnabled } from '@/helper/algorythmoFeatureFlags';
  *   // then in computed / setup:
  *   const showCampaigns = computed(() =>
- *     isAlgorythmoFeatureEnabled('campaigns', store.getters['accounts/getAccount'](accountId).features)
+ *     isAlgorythmoCutEnabled('campaigns', store.getters['accounts/getAccount'](accountId).algorythmo_cut_flags)
  *   );
  *
- * Flag names match config/features.yml entries WITHOUT the `algorythmo_` prefix.
- * All flags default to false (fail-closed) until explicitly enabled per-account.
+ * Cut flag names match Algorythmo::FeatureFlagBits::CUT_FLAG_NAMES WITHOUT any prefix.
+ * All flags default to false (fail-closed) — surface is visible until the flag is enabled.
  */
 
 /**
- * Returns true if the given Algorythmo feature flag is enabled.
+ * Returns true if the given Algorythmo cut-surface flag is enabled (surface is hidden).
  *
- * @param {string} flagName - Short flag name WITHOUT the algorythmo_ prefix (e.g. 'campaigns').
- * @param {Object} accountFeatures - The features hash from the account object
- *   (store.getters['accounts/getAccount'](id).features).
+ * @param {string} flagName - Short flag name WITHOUT any prefix (e.g. 'campaigns').
+ * @param {Object} cutFlags - The algorythmo_cut_flags hash from the account object.
  * @returns {boolean}
  */
-export function isAlgorythmoFeatureEnabled(flagName, accountFeatures) {
-  if (!accountFeatures || typeof accountFeatures !== 'object') return false;
-  return accountFeatures[`algorythmo_${flagName}`] === true;
+export function isAlgorythmoCutEnabled(flagName, cutFlags) {
+  if (!cutFlags || typeof cutFlags !== 'object') return false;
+  return cutFlags[flagName] === true;
 }

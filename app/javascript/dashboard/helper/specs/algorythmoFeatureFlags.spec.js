@@ -1,44 +1,42 @@
 import { describe, it, expect } from 'vitest';
-import { isAlgorythmoFeatureEnabled } from '../algorythmoFeatureFlags';
+import { isAlgorythmoCutEnabled } from '../algorythmoFeatureFlags';
 
-describe('isAlgorythmoFeatureEnabled', () => {
-  it('returns false when accountFeatures is null', () => {
-    expect(isAlgorythmoFeatureEnabled('campaigns', null)).toBe(false);
+describe('isAlgorythmoCutEnabled', () => {
+  it('returns false when cutFlags is null', () => {
+    expect(isAlgorythmoCutEnabled('campaigns', null)).toBe(false);
   });
 
-  it('returns false when accountFeatures is undefined', () => {
-    expect(isAlgorythmoFeatureEnabled('campaigns', undefined)).toBe(false);
+  it('returns false when cutFlags is undefined', () => {
+    expect(isAlgorythmoCutEnabled('campaigns', undefined)).toBe(false);
   });
 
-  it('returns false when accountFeatures is not an object', () => {
-    expect(isAlgorythmoFeatureEnabled('campaigns', 'string')).toBe(false);
+  it('returns false when cutFlags is not an object', () => {
+    expect(isAlgorythmoCutEnabled('campaigns', 'string')).toBe(false);
   });
 
-  it('returns false when the flag is absent from features hash', () => {
-    expect(isAlgorythmoFeatureEnabled('campaigns', {})).toBe(false);
+  it('returns false when the flag is absent from the hash', () => {
+    expect(isAlgorythmoCutEnabled('campaigns', {})).toBe(false);
   });
 
   it('returns false when the flag is explicitly false', () => {
-    expect(
-      isAlgorythmoFeatureEnabled('campaigns', { algorythmo_campaigns: false })
-    ).toBe(false);
+    expect(isAlgorythmoCutEnabled('campaigns', { campaigns: false })).toBe(
+      false
+    );
   });
 
   it('returns true when the flag is explicitly true', () => {
-    expect(
-      isAlgorythmoFeatureEnabled('campaigns', { algorythmo_campaigns: true })
-    ).toBe(true);
+    expect(isAlgorythmoCutEnabled('campaigns', { campaigns: true })).toBe(true);
   });
 
-  it('prepends algorythmo_ prefix automatically', () => {
-    const features = { algorythmo_help_center: true, help_center: false };
-    expect(isAlgorythmoFeatureEnabled('help_center', features)).toBe(true);
+  it('uses the flag name as-is (no prefix prepended)', () => {
+    const flags = { help_center: true, algorythmo_help_center: false };
+    expect(isAlgorythmoCutEnabled('help_center', flags)).toBe(true);
   });
 
   it('is independent per flag — enabling one does not affect another', () => {
-    const features = { algorythmo_campaigns: true, algorythmo_macros: false };
-    expect(isAlgorythmoFeatureEnabled('campaigns', features)).toBe(true);
-    expect(isAlgorythmoFeatureEnabled('macros', features)).toBe(false);
+    const flags = { campaigns: true, macros: false };
+    expect(isAlgorythmoCutEnabled('campaigns', flags)).toBe(true);
+    expect(isAlgorythmoCutEnabled('macros', flags)).toBe(false);
   });
 
   it('covers all 13 CUT flags returning false by default', () => {
@@ -58,7 +56,7 @@ describe('isAlgorythmoFeatureEnabled', () => {
       'conversation_workflow',
     ];
     flags.forEach(flag => {
-      expect(isAlgorythmoFeatureEnabled(flag, {})).toBe(false);
+      expect(isAlgorythmoCutEnabled(flag, {})).toBe(false);
     });
   });
 });

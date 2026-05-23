@@ -17,14 +17,10 @@
   display_name: Facebook Channel
   enabled: true
   help_url: https://chwt.app/hc/fb
-# algorythmo: feature-gate algorythmo_conversation_workflow (CUT-013)
-# Repurposed from: conversation_unread_counts (chatwoot_internal, enabled:false).
-# Bit position 4 (2^3) — safe bigint range. All Algorythmo OS accounts have this bit=0.
-# Hides Conversation Workflow settings (Required Attributes + Auto-Resolve config).
-# Founder approved 2026-05-23. docs/plans/cuts.md CUT-013
-- name: algorythmo_conversation_workflow
-  display_name: Conversation Workflow (Algorythmo)
+- name: conversation_unread_counts
+  display_name: Conversation Unread Counts
   enabled: false
+  chatwoot_internal: true
 - name: ip_lookup
   display_name: IP Lookup
   enabled: false
@@ -112,18 +108,14 @@
   display_name: Custom Tools
   enabled: false
   premium: true
-# algorythmo: feature-gate algorythmo_campaigns (CUT-001)
-# Repurposed from: message_reply_to (deprecated, enabled:false, bit=0 everywhere).
-# Bit position 30 (2^29) — safe bigint range. docs/plans/cuts.md CUT-001
-- name: algorythmo_campaigns
-  display_name: Campaigns (Algorythmo)
+- name: message_reply_to
+  display_name: Message Reply To
   enabled: false
-# algorythmo: feature-gate algorythmo_help_center (CUT-002)
-# Repurposed from: insert_article_in_reply (deprecated, enabled:false, bit=0 everywhere).
-# Bit position 31 (2^30) — safe bigint range. docs/plans/cuts.md CUT-002
-- name: algorythmo_help_center
-  display_name: Help Center (Algorythmo)
+  deprecated: true
+- name: insert_article_in_reply
+  display_name: Insert Article in Reply
   enabled: false
+  deprecated: true
 - name: inbox_view
   display_name: Inbox View
   enabled: false
@@ -133,12 +125,11 @@
   enabled: false
   premium: true
   help_url: https://chwt.app/hc/sla
-# algorythmo: feature-gate algorythmo_sla (CUT-003)
-# Repurposed from: help_center_embedding_search (chatwoot_internal, premium, enabled:false, bit=0).
-# Bit position 34 (2^33) — safe bigint range. docs/plans/cuts.md CUT-003
-- name: algorythmo_sla
-  display_name: SLA Management (Algorythmo)
+- name: help_center_embedding_search
+  display_name: Help Center Embedding Search
   enabled: false
+  premium: true
+  chatwoot_internal: true
 - name: linear_integration
   display_name: Linear Integration
   enabled: false
@@ -153,28 +144,23 @@
 - name: chatwoot_v4
   display_name: Chatwoot V4
   enabled: true
-# algorythmo: feature-gate algorythmo_audit_logs (CUT-004)
-# Repurposed from: captain_v1_action_classifier (chatwoot_internal, premium, enabled:false, bit=0).
-# Bit position 39 (2^38) — safe bigint range. docs/plans/cuts.md CUT-004
-- name: algorythmo_audit_logs
-  display_name: Audit Logs (Algorythmo)
+- name: captain_v1_action_classifier
+  display_name: Captain V1 Action Classifier
   enabled: false
+  premium: true
+  chatwoot_internal: true
 - name: contact_chatwoot_support_team
   display_name: Contact Chatwoot Support Team
   enabled: true
   chatwoot_internal: true
-# algorythmo: feature-gate algorythmo_custom_roles (CUT-005)
-# Repurposed from: shopify_integration (chatwoot_internal, enabled:false, bit=0).
-# Bit position 41 (2^40) — safe bigint range. docs/plans/cuts.md CUT-005
-- name: algorythmo_custom_roles
-  display_name: Custom Roles (Algorythmo)
+- name: shopify_integration
+  display_name: Shopify Integration
   enabled: false
-# algorythmo: feature-gate algorythmo_security_settings (CUT-006)
-# Repurposed from: search_with_gin (chatwoot_internal, enabled:false, bit=0).
-# Bit position 42 (2^41) — safe bigint range. docs/plans/cuts.md CUT-006
-- name: algorythmo_security_settings
-  display_name: Security Settings / SAML (Algorythmo)
+  chatwoot_internal: true
+- name: search_with_gin
+  display_name: Search messages with GIN
   enabled: false
+  chatwoot_internal: true
 - name: channel_instagram
   display_name: Instagram Channel
   enabled: true
@@ -192,21 +178,17 @@
   display_name: Captain V2
   enabled: false
   premium: true
-# algorythmo: feature-gate algorythmo_billing_settings (CUT-007)
-# Repurposed from: whatsapp_embedded_signup (deprecated, enabled:false, bit=0 everywhere).
-# Bit position 48 (2^47) — safe bigint range. docs/plans/cuts.md CUT-007
-- name: algorythmo_billing_settings
-  display_name: Billing Settings (Algorythmo)
+- name: whatsapp_embedded_signup
+  display_name: WhatsApp Embedded Signup
   enabled: false
+  deprecated: true
 - name: whatsapp_campaign
   display_name: WhatsApp Campaign
   enabled: false
-# algorythmo: feature-gate algorythmo_agent_bots (CUT-008)
-# Repurposed from: crm_v2 (chatwoot_internal, enabled:false, bit=0).
-# Bit position 50 (2^49) — safe bigint range. docs/plans/cuts.md CUT-008
-- name: algorythmo_agent_bots
-  display_name: Agent Bots (Algorythmo)
+- name: crm_v2
+  display_name: CRM V2
   enabled: false
+  chatwoot_internal: true
 - name: assignment_v2
   display_name: Assignment V2
   enabled: true
@@ -214,38 +196,30 @@
   display_name: Captain Document Auto Sync
   enabled: false
   premium: true
-# algorythmo: feature-gate algorythmo_macros (CUT-009)
-# Repurposed from: advanced_search (chatwoot_internal, premium, enabled:false, bit=0).
-# Bit position 53 (2^52) — safe bigint range.
-# Founder approved 2026-05-23: Manu (M4) replaces macros paradigm. docs/plans/cuts.md CUT-009
-- name: algorythmo_macros
-  display_name: Macros (Algorythmo)
+- name: advanced_search
+  display_name: Advanced Search
   enabled: false
+  premium: true
+  chatwoot_internal: true
 - name: saml
   display_name: SAML
   enabled: false
   premium: true
-# algorythmo: feature-gate algorythmo_dashboard_apps (CUT-010)
-# Repurposed from: advanced_search_indexing (chatwoot_internal, premium, enabled:false, bit=0).
-# Bit position 55 (2^54) — safe bigint range. docs/plans/cuts.md CUT-010
-- name: algorythmo_dashboard_apps
-  display_name: Dashboard Apps / iFrame Embeds (Algorythmo)
+- name: advanced_search_indexing
+  display_name: Advanced Search Indexing
   enabled: false
-# algorythmo: feature-gate algorythmo_advanced_assignment (CUT-011)
-# Repurposed from: reply_mailer_migration (chatwoot_internal, enabled:false, bit=0).
-# Bit position 56 (2^55) — safe bigint range.
-# Founder approved 2026-05-23. docs/plans/cuts.md CUT-011
-- name: algorythmo_advanced_assignment
-  display_name: Advanced Assignment Policy (Algorythmo)
+  premium: true
+  chatwoot_internal: true
+- name: reply_mailer_migration
+  # This feature is temporary only to migrate reply mailer to new email builder
+  # Once the migration is done, this feature can be removed
+  display_name: Reply Mailer Migration
   enabled: false
-# algorythmo: feature-gate algorythmo_reports_bot (CUT-012a)
-# Repurposed from: quoted_email_reply (deprecated, enabled:false, bit=0 everywhere).
-# Bit position 57 (2^56) — safe bigint range.
-# Founder approved 2026-05-23. Note: SLA Reports (CUT-012b) is intentionally KEPT.
-# docs/plans/cuts.md CUT-012a
-- name: algorythmo_reports_bot
-  display_name: Reports — Bot Tab (Algorythmo)
+  chatwoot_internal: true
+- name: quoted_email_reply
+  display_name: Quoted Email Reply
   enabled: false
+  deprecated: true
 - name: companies
   display_name: Companies
   enabled: false
@@ -273,8 +247,6 @@
 # false = hidden (default for all Algorythmo OS accounts).
 # Set to true ONLY for internal engineering/QA accounts to test Captain.
 # Decision: A6 in docs/plans/0001-mvp-algorythmo-os.md
-# KNOWN ISSUE: position 64 (bit 2^63) is at the signed bigint boundary.
-# Tracked for migration to algorythmo_feature_flags column in a follow-up PR.
 - name: algorythmo_show_captain
   display_name: Show Captain AI (Algorythmo internal)
   enabled: false
@@ -283,8 +255,6 @@
 # Listener (CrmListener) and controllers check this gate before any work.
 # Enable per-account in admin when the account is ready for CRM.
 # Decision: M1/A.9 in docs/plans/0001-mvp-algorythmo-os.md
-# KNOWN ISSUE: position 65 (bit 2^64) overflows signed bigint.
-# Tracked for migration to algorythmo_feature_flags column in a follow-up PR.
 - name: algorythmo_crm
   display_name: CRM Kanban (Algorythmo)
   enabled: false
