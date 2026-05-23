@@ -3,10 +3,11 @@
  *
  * Usage in a component:
  *   import { isAlgorythmoCutEnabled } from '@/helper/algorythmoFeatureFlags';
- *   // then in computed / setup:
- *   const showCampaigns = computed(() =>
- *     isAlgorythmoCutEnabled('campaigns', store.getters['accounts/getAccount'](accountId).algorythmo_cut_flags)
- *   );
+ *   // then in computed / setup (algorythmo_cut_flags is emitted by _account.json.jbuilder):
+ *   const showCampaigns = computed(() => {
+ *     const account = store.getters['accounts/getAccount'](accountId);
+ *     return isAlgorythmoCutEnabled('campaigns', account.algorythmo_cut_flags);
+ *   });
  *
  * Cut flag names match Algorythmo::FeatureFlagBits::CUT_FLAG_NAMES WITHOUT any prefix.
  * All flags default to false (fail-closed) — surface is visible until the flag is enabled.

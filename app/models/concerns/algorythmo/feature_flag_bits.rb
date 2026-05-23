@@ -36,6 +36,7 @@ module Algorythmo
                    .freeze
 
     included do
+      include FlagShihTzu
       has_flags CUT_FLAG_MAP.merge(
         column: 'algorythmo_feature_flags',
         flag_query_mode: :bit_operator,

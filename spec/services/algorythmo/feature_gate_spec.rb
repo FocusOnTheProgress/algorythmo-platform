@@ -58,6 +58,22 @@ RSpec.describe Algorythmo::FeatureGate do
       expect(described_class.cut_enabled?(account, 'algorythmo_campaigns')).to be false
     end
 
+    it 'accepts algorythmo_cut_ prefixed flag names' do
+      expect(described_class.cut_enabled?(account, 'algorythmo_cut_campaigns')).to be false
+    end
+
+    it 'all three name shapes resolve to the same result when flag is enabled' do
+      account.algorythmo_cut_campaigns = true
+      account.save!
+      Rails.cache.clear
+      reloaded = account.reload
+      expect(described_class.cut_enabled?(reloaded, 'campaigns')).to be true
+      Rails.cache.clear
+      expect(described_class.cut_enabled?(reloaded, 'algorythmo_campaigns')).to be true
+      Rails.cache.clear
+      expect(described_class.cut_enabled?(reloaded, 'algorythmo_cut_campaigns')).to be true
+    end
+
     it 'returns false for nil account (fail-closed)' do
       expect(described_class.cut_enabled?(nil, 'campaigns')).to be false
     end

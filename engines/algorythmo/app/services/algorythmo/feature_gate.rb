@@ -72,7 +72,7 @@ module Algorythmo::FeatureGate
   def self.cut_enabled?(account, cut_flag_name)
     return false if account.nil?
 
-    name = cut_flag_name.to_s.delete_prefix('algorythmo_')
+    name = cut_flag_name.to_s.delete_prefix('algorythmo_cut_').delete_prefix('algorythmo_')
     return false if name.blank?
     return false unless ALGORYTHMO_CUT_FLAGS.include?(name)
 
