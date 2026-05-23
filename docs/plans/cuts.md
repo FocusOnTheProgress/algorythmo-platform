@@ -102,7 +102,7 @@ Surfaces da Chatwoot upstream que NÃO fazem sentido pro produto Algorythmo OS
 - **Por que cortar**: Macros são sequências de ações pré-gravadas que um agente humano executa com um clique (atribuir, etiquetar, responder, fechar). Essa funcionalidade é substituída naturalmente pelo Manu (M4), que executa ações de CRM de forma inteligente via LLM. Expor Macros agora é oferecer o paradigma antigo de automação que o produto está superando.
 - **Risco se mantiver**: PME gasta tempo configurando macros (ações programadas) quando deveria conectar canal e aguardar M4 (Manu). Duas formas de automação em paralelo criam confusão de quando usar qual.
 - **Plano de gate**: flag `algorythmo_macros` em `app/javascript/dashboard/components-next/sidebar/Sidebar.vue` (item Macros ~L751), `app/javascript/dashboard/routes/dashboard/settings/macros/macros.routes.js` (meta).
-- **Confiança**: med — Macros podem ser úteis durante o período pré-Manu como workaround manual. Founder decide se corta agora ou deixa como válvula de escape até M4.
+- **Confiança**: high — **founder aprovou cortar (2026-05-23)**. Decisão: paradigma de macros é substituído por Manu (M4); evitar oferecer dois caminhos de automação em paralelo.
 
 ---
 
@@ -122,17 +122,26 @@ Surfaces da Chatwoot upstream que NÃO fazem sentido pro produto Algorythmo OS
 - **Por que cortar**: Assignment Policy avançada (regras de capacidade por agente, roteamento por carga) é operação de suporte enterprise com times de 20+ agentes. PME com 2-5 pessoas usa atribuição simples por inbox ou manual. Além disso, com Manu vindo no M4, a atribuição vai ser gerenciada pela própria AI — não por regras manuais de capacity.
 - **Risco se mantiver**: Como upstream já condiciona a `ADVANCED_ASSIGNMENT` feature flag, risco de exibição indevida é baixo. Mas se a flag estiver habilitada, o item aparece e confunde PME que não tem modelo mental de "capacity planning de agentes".
 - **Plano de gate**: flag `algorythmo_advanced_assignment` em `app/javascript/dashboard/components-next/sidebar/Sidebar.vue` (bloco `hasAdvancedAssignment` ~L693 — substituir condição ou adicionar AND com flag algorythmo), `app/javascript/dashboard/routes/dashboard/settings/assignmentPolicy/assignmentPolicy.routes.js` (meta).
-- **Confiança**: med — Só aparece se `ADVANCED_ASSIGNMENT` estiver ligado. Se não for ligado no MVP de qualquer forma, esse corte é preventivo. Founder decide se vale formalizar agora.
+- **Confiança**: high — **founder aprovou cortar (2026-05-23)**. Decisão: round-robin simples basta no MVP; M4 Manu vai gerenciar atribuição via AI.
 
 ---
 
-### CUT-012 — Reports: Bot e SLA (abas específicas)
+### CUT-012a — Reports: Bot (aba)
 
-- **Surface**: Abas "Bot" (`bot_reports`) e "SLA" (`sla_reports`) dentro da seção de Reports no sidebar (`Sidebar.vue` ~L573 e ~L579).
-- **Por que cortar**: Bot Reports requer Captain ou Agent Bots ativos (ambos cortados em M0/batch 1). SLA Reports requer SLA configurado (cortado em CUT-003). As abas aparecem no sidebar de Reports mesmo quando as features correspondentes estão desligadas, resultando em páginas vazias ou com erro de permissão.
+- **Surface**: Aba "Bot" (`bot_reports`) dentro da seção de Reports no sidebar (`Sidebar.vue` ~L579).
+- **Por que cortar**: Bot Reports requer Captain ou Agent Bots ativos (ambos cortados em M0/batch 1). A aba aparece no sidebar de Reports mesmo quando as features correspondentes estão desligadas, resultando em páginas vazias.
 - **Risco se mantiver**: PME clica em "Bot" esperando métricas do Manu — não encontra nada (Manu não é um "bot" no sentido do Chatwoot ainda). Cria expectativa errada de que os agentes AI já estariam reportando métricas.
-- **Plano de gate**: flag `algorythmo_reports_bot` e `algorythmo_reports_sla` em `app/javascript/dashboard/components-next/sidebar/Sidebar.vue` (itens Reports Bot ~L579 e Reports SLA ~L573). As rotas correspondentes podem ter guard adicionado também para completude, mas o impacto visual é no sidebar.
-- **Confiança**: high (para bot_reports); med (para sla_reports — SLA pode ter dados legítimos se o founder decidir manter SLA; mas como CUT-003 já corta SLA settings, este segue consistentemente).
+- **Plano de gate**: flag `algorythmo_reports_bot` em `app/javascript/dashboard/components-next/sidebar/Sidebar.vue` (item Reports Bot ~L579). Rota correspondente pode ter guard adicionado também para completude.
+- **Confiança**: high — **founder aprovou cortar (2026-05-23)**.
+
+---
+
+### CUT-012b — Reports: SLA (aba) — MANTIDO
+
+- **Surface**: Aba "SLA" (`sla_reports`) dentro da seção de Reports no sidebar (`Sidebar.vue` ~L573).
+- **Status**: **MANTÉM visível — founder decidiu preservar (2026-05-23)**.
+- **Decisão**: SLA Reports continua acessível no painel mesmo sem flag de corte. Razão de produto: ainda que PME médio não use SLA agressivamente, o relatório de SLA pode interessar quando o produto migrar pra atender SaaS B2B (futuro).
+- **Trade-off técnico conhecido**: enquanto **CUT-003 (SLA Management settings)** estiver cortado, a aba SLA Reports vai exibir dados vazios (sem SLA configurado, não há métrica). Founder ciente. Resolução futura: revisitar CUT-003 (descortar SLA Management) ou aceitar painel vazio até primeiro cliente B2B com SLA pedir.
 
 ---
 
@@ -142,16 +151,18 @@ Surfaces da Chatwoot upstream que NÃO fazem sentido pro produto Algorythmo OS
 - **Por que cortar**: Conversation Workflow expõe "Required Attributes" (campos obrigatórios antes de fechar conversa — feature enterprise de SLA/compliance) e a configuração de Auto-Resolve por tempo. Auto-Resolve pode confundir PME: Manu vai gerenciar o ciclo de vida das conversas ativamente (mover Lead para fechado com aprovação humana) — auto-resolve por timeout conflita com esse fluxo.
 - **Risco se mantiver**: PME habilita auto-resolve por 1 hora e conversas de lead fecham automaticamente antes de Manu agir. Required Attributes cria fricção de preenchimento que não existe no modelo de auto-create de Leads do Algorythmo OS.
 - **Plano de gate**: flag `algorythmo_conversation_workflow` em `app/javascript/dashboard/components-next/sidebar/Sidebar.vue` (item Conversation Workflow ~L788), `app/javascript/dashboard/routes/dashboard/settings/conversationWorkflow/conversationWorkflow.routes.js` (meta).
-- **Confiança**: med — Auto-resolve tem valor genuíno para limpar conversas velhas. Founder decide se esconde tudo ou apenas a parte de Required Attributes.
+- **Confiança**: high — **founder aprovou cortar (2026-05-23)**. Decisão: ciclo de vida de conversas será gerenciado por Manu (M4); auto-resolve por timeout conflita com esse fluxo. Required Attributes adiciona fricção sem ganho no modelo Algorythmo.
 
 ---
 
-## Resumo por confiança
+## Resumo final (pós-decisão founder 2026-05-23)
 
-| Confiança | Cortes |
+| Status | Cortes |
 |---|---|
-| **high** | CUT-001 Campaigns, CUT-002 Help Center, CUT-003 SLA, CUT-004 Audit Logs, CUT-005 Custom Roles, CUT-006 Security (SAML), CUT-007 Billing, CUT-008 Agent Bots, CUT-010 Dashboard Apps, CUT-012 Bot Reports |
-| **med** | CUT-009 Macros, CUT-011 Advanced Assignment, CUT-012 SLA Reports (parte), CUT-013 Conversation Workflow |
+| **Cortar (gate aplicado em C.2-C.4)** | CUT-001 Campaigns, CUT-002 Help Center, CUT-003 SLA Management, CUT-004 Audit Logs, CUT-005 Custom Roles, CUT-006 Security (SAML), CUT-007 Billing, CUT-008 Agent Bots, CUT-009 Macros, CUT-010 Dashboard Apps, CUT-011 Advanced Assignment, CUT-012a Bot Reports, CUT-013 Conversation Workflow |
+| **Manter visível** | CUT-012b SLA Reports (founder pediu preservar — atenção ao trade-off técnico com CUT-003) |
+
+**Total: 13 surfaces cortadas, 1 preservada.**
 
 ## O que NÃO está nesta lista (justificativa)
 
