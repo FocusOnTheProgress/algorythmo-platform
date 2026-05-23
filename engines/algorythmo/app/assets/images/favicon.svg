@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Algorythmo OS — favicon (32x32, SVG)
+  -----------------------------------------------------------------------------
+  Standalone variant of the mark optimized for 16-32px rendering. Inner dot
+  enlarged slightly for legibility at tab-icon sizes. Brand-tinted fill so
+  it stands out against both dark and light browser chrome.
+
+  For browsers without SVG favicon support, generate a 16x16 ICO fallback
+  from this file (out of scope for the SCSS-only design system trilha — the
+  final brand designer will produce a multi-resolution ICO).
+
+  Status: PLACEHOLDER — final favicon TBD.
+
+  Author: Algorythmo design system / 2026-05-23
+  License: proprietary, internal use only
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Square background so the mark has identity at small sizes -->
+  <rect width="32" height="32" rx="6" fill="#0e1318"/>
+  <!-- Ring -->
+  <circle cx="16" cy="16" r="11" fill="none" stroke="#5ad6cf" stroke-width="3"/>
+  <!-- Notch -->
+  <path d="M 23.5 8.5 L 26.5 5.5 L 22 6 Z" fill="#0e1318"/>
+  <!-- Center dot -->
+  <circle cx="16" cy="16" r="3.2" fill="#5ad6cf"/>
+</svg>

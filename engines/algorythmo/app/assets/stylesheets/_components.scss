@@ -1,0 +1,617 @@
+// =============================================================================
+// Algorythmo OS — Component classes
+// -----------------------------------------------------------------------------
+// Plain CSS classes — no framework dependency. Vue components in trilha B
+// consume these via class binding. Each component:
+//   1. Has a single base class (`.alg-btn`, `.alg-input`, …).
+//   2. Variants via modifier classes (`.alg-btn--primary`).
+//   3. Sizes via size classes (`.alg-btn--sm`).
+//   4. States via attributes/data attrs (`[disabled]`, `[data-loading]`).
+//
+// Author: Algorythmo design system / 2026-05-23
+// =============================================================================
+
+@import 'tokens';
+
+// =============================================================================
+// BUTTON
+// =============================================================================
+
+.alg-btn {
+  // Reset
+  -webkit-appearance: none;
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  font-family: var(--alg-font-sans);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  text-decoration: none;
+
+  // Layout
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--alg-space-2);
+
+  // Size: default = md
+  height: 2.25rem;                 // 36px — touch-friendly without bloat
+  padding: 0 var(--alg-space-button-padding-x);
+  font-size: var(--alg-text-sm);
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-snug);
+  border-radius: var(--alg-radius-md);
+
+  // Motion
+  transition:
+    background-color var(--alg-duration-fast) var(--alg-ease-out),
+    color var(--alg-duration-fast) var(--alg-ease-out),
+    border-color var(--alg-duration-fast) var(--alg-ease-out),
+    box-shadow var(--alg-duration-fast) var(--alg-ease-out),
+    transform var(--alg-duration-instant) var(--alg-ease-out);
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--alg-ring-focus);
+  }
+
+  &:active:not([disabled]):not([data-loading='true']) {
+    transform: translateY(0.5px);
+  }
+
+  &[disabled],
+  &[aria-disabled='true'] {
+    cursor: not-allowed;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  // Icon slot
+  > .alg-btn__icon {
+    display: inline-flex;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+  }
+
+  // Loading: dim label, show spinner overlay
+  &[data-loading='true'] {
+    cursor: progress;
+    color: transparent !important;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: 1rem;
+      height: 1rem;
+      border-radius: 50%;
+      border: 2px solid currentcolor;
+      border-right-color: transparent;
+      color: var(--alg-text-primary);
+      animation: alg-spin 0.7s linear infinite;
+    }
+  }
+}
+
+// Sizes
+.alg-btn--sm {
+  height: 1.75rem;                 // 28px
+  padding: 0 var(--alg-space-3);
+  font-size: var(--alg-text-xs);
+  border-radius: var(--alg-radius-sm);
+}
+
+.alg-btn--lg {
+  height: 2.75rem;                 // 44px — meets mobile touch target minimum
+  padding: 0 var(--alg-space-5);
+  font-size: var(--alg-text-md);
+}
+
+// Variants
+.alg-btn--primary {
+  background-color: var(--alg-color-brand-primary);
+  color: var(--alg-color-brand-primary-fg);
+  box-shadow: var(--alg-glow-subtle);
+
+  &:hover:not([disabled]):not([data-loading='true']) {
+    background-color: var(--alg-color-brand-primary-hover);
+  }
+
+  &:active:not([disabled]):not([data-loading='true']) {
+    background-color: var(--alg-color-brand-primary-active);
+  }
+}
+
+.alg-btn--secondary {
+  background-color: var(--alg-bg-raised);
+  color: var(--alg-text-primary);
+  border-color: var(--alg-border);
+  box-shadow: var(--alg-glow-subtle);
+
+  &:hover:not([disabled]):not([data-loading='true']) {
+    background-color: var(--alg-bg-raised-hover);
+    border-color: var(--alg-border-hover);
+  }
+}
+
+.alg-btn--ghost {
+  background-color: transparent;
+  color: var(--alg-text-secondary);
+
+  &:hover:not([disabled]):not([data-loading='true']) {
+    background-color: var(--alg-bg-raised);
+    color: var(--alg-text-primary);
+  }
+}
+
+.alg-btn--danger {
+  background-color: var(--alg-color-danger);
+  color: var(--alg-color-danger-fg);
+
+  &:hover:not([disabled]):not([data-loading='true']) {
+    background-color: oklch(from var(--alg-color-danger) calc(l + 0.05) c h);
+  }
+}
+
+.alg-btn--icon {
+  // Square button for icon-only actions (e.g. card menu trigger)
+  width: 2.25rem;
+  padding: 0;
+
+  &.alg-btn--sm { width: 1.75rem; }
+  &.alg-btn--lg { width: 2.75rem; }
+}
+
+// =============================================================================
+// INPUT
+// =============================================================================
+
+.alg-input {
+  // Reset
+  -webkit-appearance: none;
+  appearance: none;
+  font-family: var(--alg-font-sans);
+
+  // Box
+  display: block;
+  width: 100%;
+  height: 2.25rem;
+  padding: var(--alg-space-input-padding-y) var(--alg-space-input-padding-x);
+  font-size: var(--alg-text-sm);
+  line-height: var(--alg-leading-snug);
+  color: var(--alg-text-primary);
+
+  background-color: var(--alg-bg-raised);
+  border: 1px solid var(--alg-border);
+  border-radius: var(--alg-radius-sm);
+
+  transition:
+    border-color var(--alg-duration-fast) var(--alg-ease-out),
+    box-shadow var(--alg-duration-fast) var(--alg-ease-out),
+    background-color var(--alg-duration-fast) var(--alg-ease-out);
+
+  &::placeholder {
+    color: var(--alg-text-muted);
+  }
+
+  &:hover:not([disabled]):not([readonly]) {
+    border-color: var(--alg-border-hover);
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    border-color: var(--alg-border-focus);
+    box-shadow: 0 0 0 3px var(--alg-color-brand-primary-subtle);
+  }
+
+  &[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &[aria-invalid='true'],
+  &.alg-input--error {
+    border-color: var(--alg-color-danger);
+
+    &:focus {
+      box-shadow: 0 0 0 3px var(--alg-color-danger-subtle);
+    }
+  }
+}
+
+.alg-input--lg {
+  height: 2.75rem;
+  font-size: var(--alg-text-md);
+  border-radius: var(--alg-radius-md);
+}
+
+.alg-input--sm {
+  height: 1.75rem;
+  font-size: var(--alg-text-xs);
+}
+
+// Input with leading icon — wrapping group
+.alg-input-group {
+  position: relative;
+  display: block;
+
+  > .alg-input-group__icon {
+    position: absolute;
+    top: 50%;
+    left: var(--alg-space-3);
+    transform: translateY(-50%);
+    width: 1rem;
+    height: 1rem;
+    color: var(--alg-text-tertiary);
+    pointer-events: none;
+  }
+
+  > .alg-input {
+    padding-left: 2.25rem;
+  }
+
+  &.alg-input-group--trailing > .alg-input-group__icon {
+    left: auto;
+    right: var(--alg-space-3);
+  }
+
+  &.alg-input-group--trailing > .alg-input {
+    padding-left: var(--alg-space-input-padding-x);
+    padding-right: 2.25rem;
+  }
+}
+
+// Search variant (visually distinct from text — used in toolbars)
+.alg-input--search {
+  background-color: var(--alg-color-neutral-2);
+  border-color: transparent;
+
+  &:hover {
+    background-color: var(--alg-bg-raised-hover);
+  }
+
+  &:focus {
+    background-color: var(--alg-bg-raised);
+    border-color: var(--alg-border-focus);
+  }
+}
+
+// =============================================================================
+// CARD
+// =============================================================================
+
+.alg-card {
+  display: block;
+  background-color: var(--alg-bg-raised);
+  border: 1px solid var(--alg-border);
+  border-radius: var(--alg-radius-lg);
+  padding: var(--alg-space-card-padding);
+  box-shadow: var(--alg-shadow-sm);
+  transition:
+    background-color var(--alg-duration-fast) var(--alg-ease-out),
+    border-color var(--alg-duration-fast) var(--alg-ease-out),
+    box-shadow var(--alg-duration-fast) var(--alg-ease-out),
+    transform var(--alg-duration-fast) var(--alg-ease-out);
+}
+
+.alg-card--interactive {
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--alg-bg-raised-hover);
+    border-color: var(--alg-border-hover);
+    box-shadow: var(--alg-shadow-md);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--alg-ring-focus);
+  }
+
+  &:active {
+    transform: translateY(0.5px);
+  }
+}
+
+.alg-card--raised {
+  box-shadow: var(--alg-shadow-md);
+}
+
+.alg-card--flush {
+  padding: 0;
+}
+
+// Card composition helpers — not mandatory, but useful for LeadCard
+.alg-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--alg-space-3);
+  margin-bottom: var(--alg-space-2);
+}
+
+.alg-card__title {
+  font-size: var(--alg-text-sm);
+  font-weight: var(--alg-weight-semibold);
+  line-height: var(--alg-leading-snug);
+  letter-spacing: var(--alg-tracking-snug);
+  color: var(--alg-text-primary);
+  margin: 0;
+  // truncate gracefully — never wrap on a card
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alg-card__meta {
+  font-size: var(--alg-text-xs);
+  color: var(--alg-text-tertiary);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--alg-space-1);
+}
+
+.alg-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--alg-space-2);
+  margin-top: var(--alg-space-3);
+}
+
+// =============================================================================
+// CHIP
+// =============================================================================
+
+.alg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--alg-space-1);
+  height: 1.375rem;                // 22px
+  padding: 0 var(--alg-space-2);
+  background-color: var(--alg-bg-raised-hover);
+  color: var(--alg-text-secondary);
+  font-size: var(--alg-text-2xs);
+  font-weight: var(--alg-weight-medium);
+  line-height: 1;
+  letter-spacing: var(--alg-tracking-snug);
+  border-radius: var(--alg-radius-pill);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.alg-chip__glyph {
+  font-size: var(--alg-text-sm);
+  line-height: 1;
+  display: inline-block;
+}
+
+.alg-chip__icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+}
+
+// Variants
+.alg-chip--info    { color: var(--alg-color-info);    background-color: var(--alg-color-info-subtle); }
+.alg-chip--success { color: var(--alg-color-success); background-color: var(--alg-color-success-subtle); }
+.alg-chip--warning { color: var(--alg-color-warning); background-color: var(--alg-color-warning-subtle); }
+.alg-chip--danger  { color: var(--alg-color-danger);  background-color: var(--alg-color-danger-subtle); }
+.alg-chip--brand   { color: var(--alg-color-brand-primary); background-color: var(--alg-color-brand-primary-subtle); }
+
+// -----------------------------------------------------------------------------
+// LeadAgingChip — the operational heart (D10 + D11)
+// -----------------------------------------------------------------------------
+// Used by the Kanban card to show how long a Lead has been stalled in stage.
+// Cor + glyph + numerical time = three-way redundancy. Daltonism-safe.
+// Vue side computes which state to render and passes:
+//   <span class="alg-chip alg-chip--aging" data-state="green|yellow|red|neutral">
+//     <span class="alg-chip__glyph" aria-hidden="true">●</span>
+//     <span>4d 2h</span>
+//   </span>
+// The `aria-label` should announce the full state, e.g.
+//   aria-label="Em dia, 4 dias 2 horas nesta etapa"
+
+.alg-chip--aging {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--alg-tracking-normal);
+
+  &[data-state='green'] {
+    color: var(--alg-aging-green);
+    background-color: var(--alg-aging-green-bg);
+  }
+  &[data-state='yellow'] {
+    color: var(--alg-aging-yellow);
+    background-color: var(--alg-aging-yellow-bg);
+  }
+  &[data-state='red'] {
+    color: var(--alg-aging-red);
+    background-color: var(--alg-aging-red-bg);
+  }
+  &[data-state='neutral'] {
+    color: var(--alg-aging-neutral);
+    background-color: var(--alg-aging-neutral-bg);
+  }
+
+  // Fallback glyph injection when Vue side prefers content-property
+  // (e.g. `<span class="alg-chip__glyph" data-glyph="green">`).
+  // Kept here so designers and engineers can choose where to render the glyph.
+  .alg-chip__glyph[data-glyph='green']::before   { content: '\25CF'; }
+  .alg-chip__glyph[data-glyph='yellow']::before  { content: '\25D0'; }
+  .alg-chip__glyph[data-glyph='red']::before     { content: '\25CB'; }
+  .alg-chip__glyph[data-glyph='neutral']::before { content: '\2014'; }
+}
+
+// =============================================================================
+// MODAL
+// =============================================================================
+// Designed without Vue dependency — Trilha B can wrap in `<teleport>` etc.
+
+.alg-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: var(--alg-bg-overlay);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  z-index: var(--alg-z-overlay);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--alg-space-4);
+
+  // Entrance animation
+  animation: alg-fade-in var(--alg-duration-base) var(--alg-ease-out);
+}
+
+.alg-modal {
+  position: relative;
+  width: 100%;
+  max-width: var(--alg-modal-width-md);
+  max-height: calc(100vh - var(--alg-space-16));
+  display: flex;
+  flex-direction: column;
+
+  background-color: var(--alg-bg-raised);
+  border: 1px solid var(--alg-border);
+  border-radius: var(--alg-radius-xl);
+  box-shadow: var(--alg-shadow-xl);
+  z-index: var(--alg-z-modal);
+
+  animation: alg-modal-in var(--alg-duration-slow) var(--alg-ease-out);
+
+  &--sm { max-width: var(--alg-modal-width-sm); }
+  &--lg { max-width: var(--alg-modal-width-lg); }
+}
+
+.alg-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--alg-space-4);
+  padding: var(--alg-space-5) var(--alg-space-modal-padding);
+  border-bottom: 1px solid var(--alg-border);
+}
+
+.alg-modal__title {
+  font-family: var(--alg-font-display);
+  font-size: var(--alg-text-lg);
+  font-weight: var(--alg-weight-semibold);
+  letter-spacing: var(--alg-tracking-tight);
+  color: var(--alg-text-primary);
+  margin: 0;
+}
+
+.alg-modal__close {
+  // Compose with .alg-btn .alg-btn--ghost .alg-btn--icon .alg-btn--sm
+  // Provided here as semantic anchor only.
+}
+
+.alg-modal__body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--alg-space-modal-padding);
+  color: var(--alg-text-secondary);
+  font-size: var(--alg-text-sm);
+  line-height: var(--alg-leading-normal);
+}
+
+.alg-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--alg-space-2);
+  padding: var(--alg-space-4) var(--alg-space-modal-padding);
+  border-top: 1px solid var(--alg-border);
+  background-color: var(--alg-color-neutral-2);
+  border-radius: 0 0 var(--alg-radius-xl) var(--alg-radius-xl);
+}
+
+// =============================================================================
+// SKELETON — loading shimmer
+// =============================================================================
+// Used as placeholder for cards/rows/text while data is fetching.
+// Respects `prefers-reduced-motion`: shimmer freezes, opacity-pulse instead.
+
+.alg-skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--alg-color-neutral-3) 0%,
+    var(--alg-color-neutral-4) 50%,
+    var(--alg-color-neutral-3) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--alg-radius-sm);
+  animation: alg-shimmer 1.4s var(--alg-ease-in-out) infinite;
+  // Don't be visible to assistive tech — it's pure decoration
+  // (consumer should also wrap in aria-busy region)
+}
+
+.alg-skeleton--text {
+  height: 0.75rem;
+  margin: var(--alg-space-1) 0;
+}
+
+.alg-skeleton--title {
+  height: 1.25rem;
+  width: 60%;
+}
+
+.alg-skeleton--avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--alg-radius-pill);
+}
+
+.alg-skeleton--card {
+  height: 6.5rem;
+  border-radius: var(--alg-radius-lg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alg-skeleton {
+    animation: alg-skeleton-pulse 2s var(--alg-ease-in-out) infinite;
+    background: var(--alg-color-neutral-3);
+  }
+}
+
+// =============================================================================
+// KEYFRAMES
+// =============================================================================
+
+@keyframes alg-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes alg-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes alg-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes alg-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes alg-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
