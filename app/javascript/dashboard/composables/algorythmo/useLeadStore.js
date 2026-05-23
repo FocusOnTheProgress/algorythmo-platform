@@ -175,16 +175,16 @@ export function useLeadStore(accountId) {
       );
     }
 
-    // Find the lead across ALL stages — it may have been moved again mid-flight.
-    let found = false;
+    // Remove from every bucket (covers rapid re-drag mid-flight and dedup).
     stageMap.forEach(state => {
-      if (found) return;
       const idx = state.leads.findIndex(l => l.id === leadId);
-      if (idx !== -1) {
-        state.leads[idx] = { ...updated, movePending: false };
-        found = true;
-      }
+      if (idx !== -1) state.leads.splice(idx, 1);
     });
+
+    // Insert into the stage the server confirms — may differ from toStageId
+    // if the server applied a business rule or the user dragged again mid-flight.
+    const targetState = ensureStage(stageMap, updated.stage_id);
+    targetState.leads.unshift({ ...updated, movePending: false });
   }
 
   function rollbackMove({ leadId, fromStageId }) {

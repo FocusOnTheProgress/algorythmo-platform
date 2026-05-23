@@ -26,6 +26,7 @@ const emit = defineEmits(['update:open', 'close']);
 const drawerRef = ref(null);
 let previousFocus = null;
 let previousBodyOverflow = '';
+let bodyLocked = false;
 
 function getFocusables(el) {
   return Array.from(
@@ -79,6 +80,7 @@ watch(
   () => props.open,
   val => {
     if (val) {
+      bodyLocked = true;
       previousFocus = document.activeElement;
       previousBodyOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
@@ -90,8 +92,11 @@ watch(
           drawerRef.value.addEventListener('keydown', handleKeydown);
         }
       });
-    } else {
+    } else if (bodyLocked) {
+      // Only unlock if we actually locked — prevents clobbering an external
+      // scroll-lock when a second drawer mounts with open=false.
       unlock();
+      bodyLocked = false;
       previousFocus?.focus?.();
       previousFocus = null;
     }
@@ -100,7 +105,10 @@ watch(
 );
 
 onBeforeUnmount(() => {
-  unlock();
+  if (bodyLocked) {
+    unlock();
+    bodyLocked = false;
+  }
   previousFocus?.focus?.();
   previousFocus = null;
 });

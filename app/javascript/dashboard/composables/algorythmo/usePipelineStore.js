@@ -6,7 +6,10 @@ import { fetchDefaultPipeline } from 'dashboard/helper/algorythmo/leadApi.js';
 // Keyed by accountId to prevent data bleed across accounts.
 // ---------------------------------------------------------------------------
 
-/** @type {Map<string, { pipeline: import('vue').ShallowRef, stages: import('vue').ShallowRef, isLoading: import('vue').ShallowRef, error: import('vue').ShallowRef }>} */
+/**
+ * @typedef {{ pipeline: import('vue').ShallowRef, stages: import('vue').ShallowRef, isLoading: import('vue').ShallowRef, error: import('vue').ShallowRef, inflight: Promise|null }} PipelineEntry
+ * @type {Map<string, PipelineEntry>}
+ */
 const cacheByAccount = new Map();
 
 function getOrCreateCache(accountId) {
@@ -17,6 +20,7 @@ function getOrCreateCache(accountId) {
       stages: shallowRef([]),
       isLoading: shallowRef(false),
       error: shallowRef(null),
+      inflight: null,
     });
   }
   return cacheByAccount.get(key);
@@ -30,7 +34,8 @@ function getOrCreateCache(accountId) {
  * @param {string|number} accountId
  */
 export function usePipelineStore(accountId) {
-  const { pipeline, stages, isLoading, error } = getOrCreateCache(accountId);
+  const entry = getOrCreateCache(accountId);
+  const { pipeline, stages, isLoading, error } = entry;
 
   const pipelineLoaded = computed(() => pipeline.value !== null);
 
@@ -42,28 +47,43 @@ export function usePipelineStore(accountId) {
 
   async function loadPipeline() {
     if (pipeline.value !== null) return;
+    // Dedup: if a fetch is already in flight, await it so the caller waits
+    // for the shared result without firing a second network request.
+    if (entry.inflight) {
+      await entry.inflight;
+      return;
+    }
 
     isLoading.value = true;
     error.value = null;
 
-    // Race-condition guard: capture the account we're loading for.
-    // If the composable is called again for a different account mid-flight,
-    // each call has its own cache entry, so no cross-account overwrite.
     const loadingFor = String(accountId);
-    try {
-      const res = await fetchDefaultPipeline(accountId);
-      // Guard: if this cache entry was cleared (account switch) while in
-      // flight, a new entry was created and we should not write to a stale one.
-      if (!cacheByAccount.has(loadingFor)) return;
-      pipeline.value = res.data.pipeline;
-      stages.value = res.data.stages ?? [];
-    } catch (err) {
-      error.value = err?.response?.data?.message ?? err.message;
-      // eslint-disable-next-line no-console
-      console.error('algorythmo:pipeline-load-failed', err);
-    } finally {
-      isLoading.value = false;
-    }
+
+    // Capture the promise before assigning to entry so await uses the same
+    // reference even after entry.inflight is cleared in .finally().
+    const inflight = fetchDefaultPipeline(accountId)
+      .then(res => {
+        // Identity guard: if the cache entry was cleared and re-created while
+        // this fetch was in flight, `entry` is now an orphan. Bail out.
+        const current = cacheByAccount.get(loadingFor);
+        if (!current || current !== entry) return;
+        pipeline.value = res.data.pipeline;
+        stages.value = res.data.stages ?? [];
+      })
+      .catch(err => {
+        const current = cacheByAccount.get(loadingFor);
+        if (!current || current !== entry) return;
+        error.value = err?.response?.data?.message ?? err.message;
+        // eslint-disable-next-line no-console
+        console.error('algorythmo:pipeline-load-failed', err);
+      })
+      .finally(() => {
+        entry.inflight = null;
+        isLoading.value = false;
+      });
+
+    entry.inflight = inflight;
+    await inflight;
   }
 
   function updateStageName(stageId, name) {

@@ -62,8 +62,8 @@ function onImgError() {
     class="alg-avatar"
     :class="sizeClass"
     :style="!hasSrc ? gradientStyle : undefined"
-    :aria-label="name"
-    role="img"
+    :role="!hasSrc ? 'img' : undefined"
+    :aria-label="!hasSrc ? name : undefined"
   >
     <img
       v-if="hasSrc"

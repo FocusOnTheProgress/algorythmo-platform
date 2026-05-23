@@ -5,9 +5,12 @@ import { reactive, readonly } from 'vue';
 // AlgToastContainer.vue renders this list.
 // ---------------------------------------------------------------------------
 
+const MAX_TOASTS = 5;
 let nextId = 1;
 
 const toasts = reactive([]);
+/** @type {Map<number, ReturnType<typeof setTimeout>>} */
+const timerIds = new Map();
 
 const AUTO_DISMISS_MS = {
   success: 4000,
@@ -16,19 +19,30 @@ const AUTO_DISMISS_MS = {
 };
 
 function dismiss(id) {
+  const timer = timerIds.get(id);
+  if (timer !== undefined) {
+    clearTimeout(timer);
+    timerIds.delete(id);
+  }
   const idx = toasts.findIndex(t => t.id === id);
   if (idx !== -1) toasts.splice(idx, 1);
 }
 
 function add({ type, message, retry }) {
+  // Cap: evict oldest toast to prevent unbounded growth under error storms.
+  while (toasts.length >= MAX_TOASTS) {
+    dismiss(toasts[0].id);
+  }
   const id = nextId;
   nextId += 1;
-  const toast = { id, type, message, retry: retry ?? null };
-  toasts.push(toast);
+  toasts.push({ id, type, message, retry: retry ?? null });
 
   const duration = AUTO_DISMISS_MS[type];
   if (duration !== null) {
-    setTimeout(() => dismiss(id), duration);
+    timerIds.set(
+      id,
+      setTimeout(() => dismiss(id), duration)
+    );
   }
   return id;
 }

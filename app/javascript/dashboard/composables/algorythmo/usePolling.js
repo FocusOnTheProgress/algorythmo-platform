@@ -16,10 +16,12 @@ export function usePolling(fetchFn, intervalMs = 8000, isActiveRef = null) {
   const isPolling = ref(false);
   let timerId = null;
   let backoffMs = intervalMs;
+  let runEpoch = 0;
   let tickInFlight = false;
   const BACKOFF_CAP = 32_000;
 
   async function tick() {
+    const myEpoch = runEpoch;
     if (!isPolling.value || tickInFlight) return;
     if (document.visibilityState !== 'visible') {
       // eslint-disable-next-line no-use-before-define
@@ -34,16 +36,20 @@ export function usePolling(fetchFn, intervalMs = 8000, isActiveRef = null) {
     tickInFlight = true;
     try {
       await fetchFn();
+      // Epoch check: if stop() was called while awaiting, discard state writes.
+      if (myEpoch !== runEpoch) return;
       backoffMs = intervalMs;
     } catch (err) {
+      if (myEpoch !== runEpoch) return;
       // eslint-disable-next-line no-console
       console.error('algorythmo:polling-failed', err);
       backoffMs = Math.min(backoffMs * 2, BACKOFF_CAP);
     } finally {
+      // Always clear flight flag — only tick() itself manages this invariant.
       tickInFlight = false;
     }
     // eslint-disable-next-line no-use-before-define
-    if (isPolling.value) scheduleNext(backoffMs);
+    if (myEpoch === runEpoch && isPolling.value) scheduleNext(backoffMs);
   }
 
   function scheduleNext(delay) {
@@ -53,7 +59,6 @@ export function usePolling(fetchFn, intervalMs = 8000, isActiveRef = null) {
   function handleVisibilityChange() {
     if (document.visibilityState === 'visible' && isPolling.value) {
       clearTimeout(timerId);
-      // Only kick off a new tick if one isn't already running.
       if (!tickInFlight) tick();
     }
   }
@@ -62,15 +67,17 @@ export function usePolling(fetchFn, intervalMs = 8000, isActiveRef = null) {
     if (isPolling.value) return;
     isPolling.value = true;
     backoffMs = intervalMs;
+    runEpoch += 1;
     document.addEventListener('visibilitychange', handleVisibilityChange);
     scheduleNext(intervalMs);
   }
 
   function stop() {
     isPolling.value = false;
+    runEpoch += 1; // Invalidates any in-flight tick — it exits cleanly via epoch check.
     clearTimeout(timerId);
     timerId = null;
-    tickInFlight = false;
+    // Do NOT touch tickInFlight — only tick() may do that via try/finally.
     document.removeEventListener('visibilitychange', handleVisibilityChange);
   }
 

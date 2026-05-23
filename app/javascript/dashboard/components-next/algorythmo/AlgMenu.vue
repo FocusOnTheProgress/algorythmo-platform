@@ -19,6 +19,11 @@ const menuRef = ref(null);
 const triggerRect = ref(null);
 let triggerEl = null;
 
+const triggerAttrs = computed(() => ({
+  'aria-haspopup': 'menu',
+  'aria-expanded': isOpen.value,
+}));
+
 const floatingStyles = computed(() => {
   if (!triggerRect.value) return {};
   const r = triggerRect.value;
@@ -147,12 +152,17 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateTriggerRect);
 });
 
-defineExpose({ open, close, toggle, isOpen });
+defineExpose({ open, close, toggle, isOpen, triggerAttrs });
 </script>
 
 <template>
   <div class="alg-menu-root">
-    <slot name="trigger" :toggle="toggle" :is-open="isOpen" />
+    <slot
+      name="trigger"
+      :toggle="toggle"
+      :is-open="isOpen"
+      :trigger-attrs="triggerAttrs"
+    />
     <teleport to="body">
       <div
         v-if="isOpen"

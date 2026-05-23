@@ -25,11 +25,18 @@ function accountIdFromPath() {
   return Number.isFinite(id) && id > 0 ? String(id) : '';
 }
 
+function assertAccountId(id) {
+  if (!/^\d+$/.test(String(id))) {
+    throw new Error(`algorythmo:leadApi: invalid accountId "${id}"`);
+  }
+}
+
 /**
- * @param {string} accountId
+ * @param {string|number} accountId
  * @returns {string}
  */
 function baseUrl(accountId) {
+  assertAccountId(accountId);
   return `/algorythmo/api/v1/accounts/${accountId}`;
 }
 
