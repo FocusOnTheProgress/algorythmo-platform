@@ -245,13 +245,20 @@ jobs:
 
       - name: Start Rails server (background)
         run: |
-          bundle exec rails server -p 3000 -e test &
+          bundle exec rails server -p 3000 -e test > /tmp/rails.log 2>&1 &
           echo "Waiting for server..."
           until curl -sf http://localhost:3000/auth/sign_in; do sleep 2; done
         timeout-minutes: 3
 
+      # algorythmo: snapshot da página /app/login antes do Playwright p/ diagnóstico.
+      - name: Snapshot /app/login HTML for debug
+        run: |
+          curl -sL http://localhost:3000/app/login -o /tmp/app-login.html || true
+          echo "=== /app/login first 200 lines ==="
+          head -200 /tmp/app-login.html || true
+
       - name: Run Playwright smoke suite
-        run: pnpm exec playwright test e2e/smoke.spec.ts --reporter=github
+        run: pnpm exec playwright test e2e/smoke.spec.ts --trace=on
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           PLAYWRIGHT_EMAIL: test@algorythmo.com
@@ -263,6 +270,17 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
+          if-no-files-found: ignore
+
+      - name: Upload Rails log on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-rails-log
+          path: |
+            /tmp/rails.log
+            /tmp/app-login.html
+            log/test.log
 
   # algorythmo: soft-fork-ci-check
   # Validates that every file in the soft-fork zone exists and is tagged.
