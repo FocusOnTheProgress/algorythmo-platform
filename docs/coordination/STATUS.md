@@ -2,7 +2,7 @@
 
 > **Mantenedor:** Sessão A (orquestradora). Atualizado em tempo real conforme PRs abrem, CI fecha, adversarial revisa, merge acontece.
 
-**Última atualização:** 2026-05-23 — Sessão A inicializa coordenação.
+**Última atualização:** 2026-05-23 — PRs #43, #44, #45 abertos; review/CI em andamento.
 
 ---
 
@@ -11,9 +11,42 @@
 | Sessão | Worktree | Branch | Tarefa atual | Status | PR |
 |---|---|---|---|---|---|
 | **A** (orquestradora) | `Fork Chatwoot/` (main) | `algorythmo/main` | Coordena B/C/D | 🟢 ativo | — |
-| **B** (executora 1) | `../algorythmo-b` | `algorythmo/m2-foundation` | Onda 1 M2: foundation (flags + helpers + Playwright fixture) | ⏸ aguardando humano colar brief | — |
-| **C** (executora 2) | `../algorythmo-c` | `algorythmo/m1b-base` | M1-B base: B.1 + B.2 + B.3 (SCSS bridge, composables, primitives) | ⏸ aguardando humano colar brief | — |
-| **D** (executora 3) | `../algorythmo-d` | `algorythmo/m1b-test-harness` | M1-B test harness: B.13 + B.14 + B.16 scaffolding | ⏸ aguardando humano colar brief | — |
+| **B** (executora 1) | `../algorythmo-b` | `algorythmo/m2-foundation` | Onda 1 M2: foundation | 🔴 **CI vermelho — precisa corrigir** | #43 |
+| **C** (executora 2) | `../algorythmo-c` | `algorythmo/m1b-base` | M1-B base: B.1 + B.2 + B.3 | 🟡 RSpec rodando | #45 |
+| **D** (executora 3) | `../algorythmo-d` | `algorythmo/m1b-test-harness` | M1-B test harness | 🟠 **CI verde, adversarial pediu changes** | #44 |
+
+## Issues abertos por PR
+
+### PR #43 (Sessão B) — CI vermelho
+1. **Rubocop:** 2 offenses corrigíveis (`Style/ClassAndModuleChildren` em `lib/algorythmo/feature_gate.rb:12` + `Layout/MultilineOperationIndentation` em `spec/lib/algorythmo/feature_gate_spec.rb:74`). Rodar `bundle exec rubocop -a` resolve.
+2. **RSpec — 14+ tests do LeadsController falhando:** B implementou o helper com método `Algorythmo::FeatureGate.enabled?(account, flag)`. Mas controllers já existentes (mergeados em PR #36) chamam `Algorythmo::FeatureGate.feature_enabled?(account, flag)`. **Contrato divergente.** Decisão: renomear o método pra `feature_enabled?` (o que controllers esperam) — ou renomear nos controllers (mais arriscado, mexe em código já em main).
+3. Após corrigir + CI verde, disparar adversarial-reviewer.
+
+### PR #44 (Sessão D) — adversarial REQUEST CHANGES
+
+**CRITICAL** (bloqueia merge):
+- `.husky/_/husky.sh` commitado por engano — diretório auto-gerado pelo husky, não deveria estar no diff. Vetor `.sh` executável não revisado.
+
+**HIGH** (bloqueia merge):
+- Tags soft-fork inválidas em `playwright.config.ts:29` e `vite.config.ts:103` — usou `// algorythmo: test-harness-m1b` e `// algorythmo: engine JS specs` que não matcham regex aceita por `engines/algorythmo/bin/check-soft-fork-zone.sh` (válidas: `rebrand-m0|soft-fork|widget-i18n-overlay|survey-i18n-overlay`). Corrigir pra `// algorythmo: soft-fork — test-harness-m1b`.
+- Senha hard-coded em `spec/system/algorythmo/crm/_fixture.ts:30` (`ADMIN_PASSWORD = 'Test@12345'`). Mover pra env var obrigatória (`PLAYWRIGHT_PASSWORD`).
+- `describe.skip()` sem `import` do componente em `spec/javascript/algorythmo/crm/LeadCard.spec.ts:13` (idem KanbanBoard/LeadAgingChip/LeadDetailDrawer). Vão ficar skip pra sempre quando C entregar — trocar por `it.todo()` (que aparece como pending no relatório).
+
+**MEDIUM** (não bloqueia mas vira follow-up):
+- Fixture mistura padrões (com/sem `crmPage`) — padronizar.
+- `@axe-core/playwright` não está em `package.json` mas o spec depende dele — adicionar agora ou abrir issue de follow-up.
+- `pipeline_rename.spec.ts:107` testa "preview scale real-time" — feature inventada, não está em B.8 do plano. Remover ou levantar como decisão.
+
+**LOW:**
+- 3 `waitForTimeout` arbitrários (`_fixture.ts:204`, `idempotency.spec.ts:67`, `empty_state.spec.ts:35`).
+
+**INFO positivo:**
+- Docs (README/DESIGN/A11Y) referenciam D5/D6/D10/D11 por número + tokens exatos. Padrão correto.
+- Zero conflito futuro com C ou Fase 2 de B.
+
+### PR #45 (Sessão C) — aguardar CI fechar
+- Vitest, lint-backend, lint-frontend, soft-fork zone, validate title: passaram.
+- RSpec ainda rodando. Adversarial-review só após CI fechar verde.
 
 ---
 
