@@ -1,0 +1,23 @@
+// =============================================================================
+// Algorythmo OS — Design system entry point
+// -----------------------------------------------------------------------------
+// Single import surface for downstream consumers. Vue components in trilha B,
+// mailer Liquid templates, and any other engine UI surface should @import
+// this file (or the Vite alias `~algorythmo/styles`) once.
+//
+// Composition order matters:
+//   1. _tokens.scss   — defines all custom properties on :root / [data-theme]
+//   2. _components.scss — consumes tokens; defines `.alg-*` classes
+//
+// The engine does NOT auto-hook itself into the host app's Vue / Vite build.
+// See engines/algorythmo/DESIGN.md "Integração" section for the consumer
+// recipe. This keeps trilha D (design) decoupled from trilha B (CRM Vue)
+// and prevents global build-system mutation.
+// =============================================================================
+
+@import 'tokens';
+@import 'components';
+
+// Reset / normalize is intentionally NOT included here. The host Chatwoot
+// app already imports tailwindcss/base in _woot.scss — adding another reset
+// would compound. Engine surfaces inherit the host's normalize.
