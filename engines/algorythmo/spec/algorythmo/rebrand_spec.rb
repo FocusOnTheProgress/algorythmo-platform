@@ -20,11 +20,14 @@ RSpec.describe 'M0 rebrand: no untagged "Chatwoot" literals', type: :sanity do
   #     ChatwootMarkdownRenderer, ChatwootApp, Chatwoot:: namespace, etc.
   SKIP_PATTERNS = [
     %r{/spec/},
+    %r{/specs/},              # Pluralized spec dirs (e.g. /store/modules/specs/sla)
     /\.spec\.(js|ts|vue)$/,
     /\.story\.vue$/,
+    %r{/story/},              # Storybook fixtures (story/fixtures.js, etc.) — not shipped to users
     %r{/captain/},
     %r{/fixtures/},           # Component demo fixture data — not shipped to users
-    %r{/templates/twilio}    # Twilio template previews — demo data
+    %r{/templates/twilio},    # Twilio template previews — demo data
+    %r{/year-in-review/}      # Year-in-review slides — Chatwoot-specific upstream feature, gated off
   ].freeze
 
   # Tokens that are engineering identifiers, not brand strings.

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
+require 'rake'
 
 # M0.5 — Adversarial #1: seed.rake env guard
 # Asserts that the seed task refuses to run in production without the explicit override env var.

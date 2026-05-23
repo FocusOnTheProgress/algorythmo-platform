@@ -11,6 +11,12 @@ RSpec.describe CaptainListener, type: :listener do
   let(:conversation) { create(:conversation, account: account, inbox: inbox) }
   let(:event) { OpenStruct.new(data: { conversation: conversation }) }
 
+  before do
+    # Default any other feature flag check (e.g. ip_lookup from Contact creation)
+    # to false so partial stubs below don't raise MissingStubError.
+    allow_any_instance_of(Account).to receive(:feature_enabled?).and_return(false)
+  end
+
   describe '#conversation_resolved' do
     context 'when algorythmo_show_captain flag is disabled (default)' do
       before do

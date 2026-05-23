@@ -124,6 +124,11 @@ RSpec.describe Algorythmo::CrmListener, type: :listener do
 
     it 'does NOT create a lead for a conversation without contact_id and logs warning' do
       allow(Rails.logger).to receive(:warn)
+      # Stub the upstream HookExecutionService — it crashes on nil contact while
+      # checking should_send_email_collect?, but that path is irrelevant to this
+      # listener's behavior. We only care that CrmListener handles nil contact_id.
+      allow_any_instance_of(MessageTemplates::HookExecutionService).to receive(:perform)
+
       conv_no_contact = create(:conversation, account: account, inbox: inbox)
       conv_no_contact.update_column(:contact_id, nil)
 

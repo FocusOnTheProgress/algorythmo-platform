@@ -43,8 +43,11 @@ RSpec.describe 'M0 rebrand: frontend i18n overlay files', type: :sanity do
     end
 
     it 'has no "Chatwoot" in any override value' do
+      # Strip template variables like {latestChatwootVersion} — those are
+      # interpolation placeholders bound to upstream code, not user-visible text.
       violations = collect_string_values(parsed).select do |entry|
-        entry[:value].include?('Chatwoot')
+        stripped = entry[:value].gsub(/\{[^}]*\}/, '')
+        stripped.include?('Chatwoot')
       end
 
       expect(violations).to be_empty,

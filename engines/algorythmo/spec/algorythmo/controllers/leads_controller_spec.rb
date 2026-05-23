@@ -33,10 +33,13 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
     pipeline
   end
 
-  def create_lead(stage: nil, pos: 1.0)
+  # Helper accepts an optional fresh contact so pagination specs (which need
+  # multiple OPEN leads) don't trip the partial unique index
+  # idx_leads_open_unique_per_contact (one open lead per contact+account).
+  def create_lead(stage: nil, pos: 1.0, lead_contact: nil)
     Algorythmo::Lead.create!(
       account: account,
-      contact: contact,
+      contact: lead_contact || contact,
       stage: stage || novo_stage,
       position: pos,
       stage_entered_at: Time.current
@@ -65,7 +68,7 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
     describe 'A.11 — cursor pagination' do
       it 'returns next_cursor when there are more results' do
         # Create 3 leads, request limit=2
-        3.times { |i| create_lead(pos: i.to_f + 1) }
+        3.times { |i| create_lead(pos: i.to_f + 1, lead_contact: create(:contact, account: account)) }
         get :index, params: { account_id: account.id, stage_id: novo_stage.id, limit: 2 }
         body = JSON.parse(response.body)
         expect(body['next_cursor']).not_to be_nil
@@ -79,7 +82,7 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       end
 
       it 'paginates correctly with cursor' do
-        5.times { |i| create_lead(pos: i.to_f + 1) }
+        5.times { |i| create_lead(pos: i.to_f + 1, lead_contact: create(:contact, account: account)) }
         get :index, params: { account_id: account.id, stage_id: novo_stage.id, limit: 3 }
         body1 = JSON.parse(response.body)
         cursor = body1['next_cursor']
@@ -95,7 +98,7 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
 
       # B2 — Malformed lead cursor must degrade to first page, never 500.
       describe 'B2 — malformed lead cursor degrades to first page' do
-        before { 3.times { |i| create_lead(pos: i.to_f + 1) } }
+        before { 3.times { |i| create_lead(pos: i.to_f + 1, lead_contact: create(:contact, account: account)) } }
 
         it 'returns 200 first page for invalid base64' do
           get :index, params: { account_id: account.id, stage_id: novo_stage.id, cursor: 'not-valid!!!' }
@@ -555,11 +558,13 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
     let(:lead)   { create_lead }
 
     def create_conversation(created_offset_seconds: 0)
+      ci = ContactInbox.find_by(contact: contact, inbox: inbox) ||
+           create(:contact_inbox, contact: contact, inbox: inbox)
       Conversation.create!(
         account: account,
         inbox: inbox,
         contact: contact,
-        contact_inbox: ContactInbox.find_or_create_by!(contact: contact, inbox: inbox),
+        contact_inbox: ci,
         created_at: Time.current - created_offset_seconds.seconds
       )
     end
@@ -703,7 +708,8 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       let(:member_agent) { create(:user, account: account, role: :agent) }
 
       def create_conversation_in_inbox(inbox_obj, offset: 0)
-        ci = ContactInbox.find_or_create_by!(contact: contact, inbox: inbox_obj)
+        ci = ContactInbox.find_by(contact: contact, inbox: inbox_obj) ||
+             create(:contact_inbox, contact: contact, inbox: inbox_obj)
         Conversation.create!(
           account: account,
           inbox: inbox_obj,

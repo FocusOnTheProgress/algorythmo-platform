@@ -33,13 +33,15 @@ RSpec.describe Algorythmo::Pipeline, type: :model do
         expect(result.id).to eq(pipeline.id)
       end
 
-      it 'caches the result' do
-        # First call populates cache
+      it 'caches the stages eager-load (no algorythmo_stages query on second call)' do
+        # First call populates cache (includes stages.load)
         described_class.cached_default_for(account)
 
-        # Second call should NOT hit the DB (query count stays same)
+        # Second call should NOT re-query stages — they come from cache.
+        # The pipeline lookup itself is intentionally not cached (it's needed
+        # to compute cache_key_with_version), so we only count stage queries.
         query_count = 0
-        counter = ->(_name, _start, _finish, _id, payload) { query_count += 1 if payload[:sql]&.include?('algorythmo_pipelines') }
+        counter = ->(_name, _start, _finish, _id, payload) { query_count += 1 if payload[:sql]&.include?('algorythmo_stages') }
         ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
           described_class.cached_default_for(account)
         end
