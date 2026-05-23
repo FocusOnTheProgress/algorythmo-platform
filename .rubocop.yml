@@ -398,7 +398,6 @@ Lint/ConstantDefinitionInBlock:
 
 Rails/SkipsModelValidations:
   Exclude:
-    - 'spec/**/*'
     - 'engines/algorythmo/spec/**/*'
 
 RSpec/AnyInstance:

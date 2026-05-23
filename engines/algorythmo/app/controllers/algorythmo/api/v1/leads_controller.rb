@@ -15,7 +15,7 @@
 #   lead's contact, supporting the LeadDetailDrawer history view (Q-B5).
 #
 # Offset pagination is intentionally absent from this controller.
-class Algorythmo::Api::V1::LeadsController < BaseController
+class Algorythmo::Api::V1::LeadsController < Algorythmo::Api::V1::BaseController
   before_action :set_lead, only: %i[show update destroy move reopen conversations]
   # algorythmo: admin-only — soft-delete is irreversible via API; agents cannot delete leads
   before_action :check_admin_authorization?, only: %i[destroy]

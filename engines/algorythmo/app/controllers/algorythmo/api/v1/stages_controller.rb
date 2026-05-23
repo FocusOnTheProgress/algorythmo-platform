@@ -4,7 +4,7 @@
 #
 # A.8 — PATCH /algorythmo/api/v1/accounts/:account_id/stages/:id/rename
 # A.6b — PATCH /algorythmo/api/v1/accounts/:account_id/stages/:id (aging_coefficient)
-class Algorythmo::Api::V1::StagesController < BaseController
+class Algorythmo::Api::V1::StagesController < Algorythmo::Api::V1::BaseController
   before_action :set_stage
   # algorythmo: admin-only — aging_coefficient and stage name are pipeline config, not agent ops
   before_action :check_admin_authorization?, only: %i[update rename]

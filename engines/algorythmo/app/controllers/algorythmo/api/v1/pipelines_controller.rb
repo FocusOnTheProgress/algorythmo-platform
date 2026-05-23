@@ -6,7 +6,7 @@
 # The Kanban board needs to know the 5 stage definitions before it can render
 # columns. Rather than hard-coding stage names in the frontend, this endpoint
 # returns the pipeline record + ordered stages so the client stays data-driven.
-class Algorythmo::Api::V1::PipelinesController < BaseController
+class Algorythmo::Api::V1::PipelinesController < Algorythmo::Api::V1::BaseController
   # GET /algorythmo/api/v1/accounts/:account_id/pipelines/default
   #
   # Returns the default pipeline for the current account together with its stages
