@@ -97,12 +97,42 @@ easy to identify and resolve. See ADR-0001 (sync strategy).
 ## Tests
 
 ```bash
-# Backend (engine specs)
-bundle exec rspec engines/algorythmo/spec/
+# Backend (engine specs + Captain feature-gate)
+bundle exec rspec \
+  engines/algorythmo/spec \
+  enterprise/spec/listeners/captain_listener_spec.rb \
+  enterprise/spec/controllers/api/v1/accounts/captain/feature_gate_spec.rb
 
-# Frontend (Vitest)
-pnpm run test:coverage
+# Frontend (Vitest — escopo Algorythmo)
+TZ=UTC pnpm exec vitest run \
+  engines/algorythmo/app/javascript \
+  app/javascript/dashboard/composables/specs/useAlgorythmoFeatureGate.spec.js \
+  app/javascript/dashboard/helper/specs/routeHelpers_algorythmo.spec.js \
+  app/javascript/dashboard/i18n/i18n_overlay.spec.js \
+  app/javascript/survey/i18n/i18n_overlay.spec.js \
+  app/javascript/widget/i18n/i18n_overlay.spec.js \
+  app/javascript/dashboard/components-next/copilot/specs/CopilotLauncher.spec.js \
+  --no-coverage
 
 # E2E smoke (Playwright — requires running stack)
 pnpm exec playwright test e2e/smoke.spec.ts
 ```
+
+## CI strategy — free tier + local pre-push gate
+
+O fork vive em repo privado no GitHub free plan (2 000 min de Actions/mês).
+Estratégia em dois andares pra caber no orçamento:
+
+1. **Local pre-push gate** (`bin/validate_push`, ativado por husky):
+   roda soft-fork-check + ESLint + Vitest (Algorythmo scope) + Rubocop +
+   RSpec (Algorythmo scope) antes de cada `git push`. Em Windows sem Ruby
+   instalado, os gates Ruby são pulados com aviso e o CI cobre.
+2. **GitHub Actions** (`.github/workflows/run_foss_spec.yml`): mesmo conjunto
+   de gates, mas escopado APENAS a código Algorythmo (não roda a suíte
+   inteira do Chatwoot). Workflows pesados herdados do upstream
+   (`run_mfa_spec`, `test_docker_build`, `size-limit`, `frontend-fe` duplicado)
+   vivem em `.github/workflows/disabled/` e reativam quando migrarmos pra
+   org paga ou self-hosted runners.
+
+Para bypassar o gate local em emergência: `git push --no-verify`.
+Para reativar workflows: `git mv .github/workflows/disabled/<file>.yml .github/workflows/`.
