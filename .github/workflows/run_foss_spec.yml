@@ -232,6 +232,17 @@ jobs:
         env:
           ALGORYTHMO_SEED_PASSWORD: ${{ secrets.ALGORYTHMO_SEED_PASSWORD }}
 
+      # algorythmo: precompile assets so the SPA can boot under puma in test env.
+      # vite-plugin-ruby honors config/vite.json -> writes to public/vite-test/.
+      # Without this, /app/login serves a layout pointing at a non-existent
+      # manifest and Playwright sees ERR_ABORTED on page.goto.
+      - name: Precompile frontend assets (vite build)
+        run: bundle exec rake assets:precompile
+        env:
+          RAILS_ENV: test
+          NODE_OPTIONS: --openssl-legacy-provider --max-old-space-size=4096
+          SECRET_KEY_BASE: ci_placeholder_for_precompile_only
+
       - name: Start Rails server (background)
         run: |
           bundle exec rails server -p 3000 -e test &
