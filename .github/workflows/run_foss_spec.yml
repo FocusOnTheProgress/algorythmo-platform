@@ -225,11 +225,33 @@ jobs:
           echo "REDIS_PASSWORD=" >> .env
           echo "FRONTEND_URL=http://localhost:3000" >> .env
 
+      # algorythmo: pin RAILS_ENV=test so seed lands in chatwoot_test, the same
+      # DB the rails server (started below with `-e test`) reads from. Without
+      # this, db:create defaults to development and the server can't find the
+      # seeded user — POST /auth/sign_in returns 401 against an empty test DB.
       - name: Set up database and seed test account
         run: |
           bundle exec rake db:create db:schema:load db:migrate
           bundle exec rake algorythmo:seed:smoke_test_account
         env:
+          RAILS_ENV: test
+          ALGORYTHMO_SEED_PASSWORD: ${{ secrets.ALGORYTHMO_SEED_PASSWORD }}
+
+      # algorythmo: post-seed sanity check — verify bcrypt round-trip works
+      # in the same env the server will run. Catches Devise pepper drift,
+      # SECRET_KEY_BASE divergence, encoding mismatch, etc. with a clear error.
+      - name: Verify seed user can authenticate (bcrypt round-trip)
+        run: |
+          bundle exec rails runner '
+            email = "test@algorythmo.com"
+            user  = User.find_by(email: email)
+            raise "[verify] user not found in #{Rails.env} DB" if user.nil?
+            ok = user.valid_password?(ENV.fetch("ALGORYTHMO_SEED_PASSWORD"))
+            raise "[verify] valid_password? returned FALSE — seed/login pwd diverge" unless ok
+            puts "[verify] OK — user #{email} can authenticate in #{Rails.env}"
+          '
+        env:
+          RAILS_ENV: test
           ALGORYTHMO_SEED_PASSWORD: ${{ secrets.ALGORYTHMO_SEED_PASSWORD }}
 
       # algorythmo: precompile assets so the SPA can boot under puma in test env.
