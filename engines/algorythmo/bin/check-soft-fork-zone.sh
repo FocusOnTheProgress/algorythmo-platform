@@ -52,6 +52,7 @@ check_file "app/javascript/v3/views/auth/signup/Index.vue" "rebrand-m0"
 check_file "app/javascript/widget/i18n/index.js" "widget-i18n-overlay"
 check_file "app/javascript/survey/i18n/index.js" "survey-i18n-overlay"
 check_file "app/javascript/survey/views/Response.vue" "rebrand-m0"
+check_file "config/installation_config.yml" "rebrand-m0"
 
 echo ""
 if [[ "${FAILURES}" -gt 0 ]]; then
