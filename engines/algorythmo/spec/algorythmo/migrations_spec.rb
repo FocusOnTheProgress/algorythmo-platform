@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require 'rails_helper'
 
 # M0.5 — Telemetry migration tests
 RSpec.describe 'Algorythmo M0 migrations', type: :model do

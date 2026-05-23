@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require 'rails_helper'
 
 # A.10 — RSpec coverage for Algorythmo::CrmListener.
 # Every named scenario from the plan §10/A.10 is exercised here.

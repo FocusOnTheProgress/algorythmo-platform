@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require 'rails_helper'
 require 'json'
 
 # M0 rebrand: frontend i18n overlay audit

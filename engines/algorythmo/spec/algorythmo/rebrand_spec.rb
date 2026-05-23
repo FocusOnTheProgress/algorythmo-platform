@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require 'rails_helper'
 
 # M0.4 — Rebrand audit
 # Verifies that every "Chatwoot" literal remaining in app/javascript/dashboard/

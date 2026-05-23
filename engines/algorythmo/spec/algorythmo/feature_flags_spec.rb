@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require 'rails_helper'
 
 # M0.6 — Feature flag tests
 RSpec.describe 'Algorythmo feature flags', type: :model do

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require 'rails_helper'
 
 RSpec.describe Algorythmo::Api::V1::PipelinesController, type: :controller do
   routes { Algorythmo::Engine.routes }

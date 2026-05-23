@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require 'rails_helper'
 
 # M0.1 — Engine boot smoke tests
 # Verifies the Algorythmo::Engine initializes correctly and mounts routes.
