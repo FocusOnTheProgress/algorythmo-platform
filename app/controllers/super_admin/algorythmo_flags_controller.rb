@@ -20,7 +20,7 @@ class SuperAdmin::AlgorythmoFlagsController < SuperAdmin::ApplicationController
         Rails.cache.delete("algorythmo:cut:#{@account.id}:#{flag}")
       end
       redirect_to super_admin_account_algorythmo_flags_path(@account),
-                  notice: 'Algorythmo flags updated.'
+                  notice: t('super_admin.algorythmo_flags.updated')
     else
       flash.now[:error] = @account.errors.full_messages.to_sentence
       render :show, status: :unprocessable_entity
