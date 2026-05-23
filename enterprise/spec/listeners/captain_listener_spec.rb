@@ -35,6 +35,12 @@ RSpec.describe CaptainListener, type: :listener do
       end
 
       it 'does not check captain_active? on the inbox' do
+        # Force lazy resolution of conversation/event BEFORE setting the message
+        # expectation — conversation creation calls inbox.active_bot? which
+        # calls captain_active? as part of Rails determine_conversation_status,
+        # which is unrelated to the listener under test.
+        event
+
         expect(inbox).not_to receive(:captain_active?)
 
         listener.conversation_resolved(event)
