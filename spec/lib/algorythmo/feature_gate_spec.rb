@@ -1,17 +1,19 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe Algorythmo::FeatureGate do
   let(:account) { create(:account) }
 
   # All algorythmo_* cut flags default to false (fail-closed by features.yml repurpose).
-  describe '.enabled?' do
+  describe '.feature_enabled?' do
     it 'returns false for a flag that is disabled by default' do
-      expect(described_class.enabled?(account, 'campaigns')).to be false
+      expect(described_class.feature_enabled?(account, 'campaigns')).to be false
     end
 
     it 'returns false for all 13 CUT flags by default' do
       described_class::ALGORYTHMO_CUT_FLAGS.each do |flag|
-        expect(described_class.enabled?(account, flag)).to(
+        expect(described_class.feature_enabled?(account, flag)).to(
           be(false),
           "expected algorythmo_#{flag} to be false by default"
         )
@@ -20,44 +22,44 @@ RSpec.describe Algorythmo::FeatureGate do
 
     it 'returns true after enabling the flag on the account' do
       account.enable_features!('algorythmo_campaigns')
-      expect(described_class.enabled?(account, 'campaigns')).to be true
+      expect(described_class.feature_enabled?(account, 'campaigns')).to be true
     end
 
     it 'returns false again after disabling the flag' do
       account.enable_features!('algorythmo_campaigns')
       account.disable_features!('algorythmo_campaigns')
-      expect(described_class.enabled?(account, 'campaigns')).to be false
+      expect(described_class.feature_enabled?(account, 'campaigns')).to be false
     end
 
     it 'accepts symbol flag names' do
-      expect(described_class.enabled?(account, :campaigns)).to be false
+      expect(described_class.feature_enabled?(account, :campaigns)).to be false
     end
 
     it 'returns false for nil account (fail-closed, no NoMethodError)' do
-      expect(described_class.enabled?(nil, 'campaigns')).to be false
+      expect(described_class.feature_enabled?(nil, 'campaigns')).to be false
     end
 
     it 'returns false for nil flag name (fail-closed)' do
-      expect(described_class.enabled?(account, nil)).to be false
+      expect(described_class.feature_enabled?(account, nil)).to be false
     end
 
     it 'returns false for blank flag name' do
-      expect(described_class.enabled?(account, '')).to be false
+      expect(described_class.feature_enabled?(account, '')).to be false
     end
 
     it 'returns false for unknown flag name (not in ALGORYTHMO_CUT_FLAGS)' do
-      expect(described_class.enabled?(account, 'nonexistent')).to be false
+      expect(described_class.feature_enabled?(account, 'nonexistent')).to be false
     end
 
     it 'returns false when caller accidentally passes the full algorythmo_ prefix' do
-      # Prevents NoMethodError from double-prefix: algorythmo_algorythmo_campaigns
-      expect(described_class.enabled?(account, 'algorythmo_campaigns')).to be false
+      # Prevents double-prefix: algorythmo_algorythmo_campaigns — not in allowlist
+      expect(described_class.feature_enabled?(account, 'algorythmo_campaigns')).to be false
     end
 
     it 'is independent per account' do
       other_account = create(:account)
       account.enable_features!('algorythmo_campaigns')
-      expect(described_class.enabled?(other_account, 'campaigns')).to be false
+      expect(described_class.feature_enabled?(other_account, 'campaigns')).to be false
     end
   end
 
