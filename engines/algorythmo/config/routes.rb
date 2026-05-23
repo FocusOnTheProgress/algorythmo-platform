@@ -8,11 +8,20 @@ Algorythmo::Engine.routes.draw do
   namespace :api do
     namespace :v1 do
       scope '/accounts/:account_id' do
-        # Lead CRUD + move + reopen
+        # B.0 — Pipeline default endpoint (precondition for Kanban frontend).
+        # Returns the default pipeline + ordered stages so the client can render columns.
+        resources :pipelines, only: [] do
+          collection do
+            get :default
+          end
+        end
+
+        # Lead CRUD + move + reopen + conversations (B.0)
         resources :leads, only: %i[index show create update destroy] do
           member do
             patch :move
             post  :reopen
+            get   :conversations
           end
         end
 
