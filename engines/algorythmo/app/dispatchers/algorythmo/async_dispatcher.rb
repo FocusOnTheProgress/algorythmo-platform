@@ -5,10 +5,12 @@ module Algorythmo
   # Prepended via Engine initializer — same pattern as Enterprise::AsyncDispatcher.
   # algorythmo: auto-create-lead-d6
   module AsyncDispatcher
+    # algorythmo: auto-create-lead-d6
+    # Appends Algorythmo listeners to the host AsyncDispatcher list.
+    # Uses super to preserve all upstream listeners — no destructive override.
     def listeners
       super + [
-        # M0: no listeners yet — placeholder for CrmListener added in M1/Trilha A.
-        # Algorythmo::CrmListener.instance
+        Algorythmo::CrmListener.instance
       ]
     end
   end

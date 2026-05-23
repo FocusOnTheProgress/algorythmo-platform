@@ -7,6 +7,11 @@
 
 require_relative '../../../spec/rails_helper'
 
+# Register engine factories so FactoryBot resolves Algorythmo::* model factories.
+engine_factory_path = File.expand_path('../factories', __FILE__)
+FactoryBot.definition_file_paths << engine_factory_path
+FactoryBot.reload
+
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
     expectations.include_chain_clauses_in_custom_matcher_descriptions = true
