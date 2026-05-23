@@ -258,3 +258,97 @@
 - name: algorythmo_crm
   display_name: CRM Kanban (Algorythmo)
   enabled: false
+# algorythmo: feature-gate algorythmo_campaigns (CUT-001)
+# Hides Campaigns (Live Chat / SMS / WhatsApp broadcast) surfaces.
+# Algorythmo OS is inbound-first; outbound campaigns are not MVP scope.
+# docs/plans/cuts.md CUT-001
+- name: algorythmo_campaigns
+  display_name: Campaigns (Algorythmo)
+  enabled: false
+# algorythmo: feature-gate algorythmo_help_center (CUT-002)
+# Hides Help Center / Portals (public knowledge base). Not relevant for
+# a sales CRM; Brain (M3) is the private internal equivalent.
+# docs/plans/cuts.md CUT-002
+- name: algorythmo_help_center
+  display_name: Help Center (Algorythmo)
+  enabled: false
+# algorythmo: feature-gate algorythmo_sla (CUT-003)
+# Hides SLA Management settings. SMB sales teams use Kanban aging signals,
+# not enterprise SLA contracts. Upstream already restricts to CLOUD/ENTERPRISE.
+# docs/plans/cuts.md CUT-003
+- name: algorythmo_sla
+  display_name: SLA Management (Algorythmo)
+  enabled: false
+# algorythmo: feature-gate algorythmo_audit_logs (CUT-004)
+# Hides Audit Logs settings. Enterprise compliance feature; SMB has no
+# security team reviewing access logs. Upstream restricts to CLOUD/ENTERPRISE.
+# docs/plans/cuts.md CUT-004
+- name: algorythmo_audit_logs
+  display_name: Audit Logs (Algorythmo)
+  enabled: false
+# algorythmo: feature-gate algorythmo_custom_roles (CUT-005)
+# Hides Custom Roles settings. SMB with 2-5 people uses admin+agent only.
+# Upstream restricts to CLOUD/ENTERPRISE.
+# docs/plans/cuts.md CUT-005
+- name: algorythmo_custom_roles
+  display_name: Custom Roles (Algorythmo)
+  enabled: false
+# algorythmo: feature-gate algorythmo_security_settings (CUT-006)
+# Hides Security (SAML/SSO) settings. SMB uses email+password or Google OAuth;
+# zero demand for enterprise IdP. Upstream restricts to CLOUD/ENTERPRISE.
+# docs/plans/cuts.md CUT-006
+- name: algorythmo_security_settings
+  display_name: Security Settings / SAML (Algorythmo)
+  enabled: false
+# algorythmo: feature-gate algorythmo_billing_settings (CUT-007)
+# Hides Billing settings page (Chatwoot-cloud-specific Stripe UI).
+# Algorythmo OS will have its own billing UI when the time comes.
+# docs/plans/cuts.md CUT-007
+- name: algorythmo_billing_settings
+  display_name: Billing Settings (Algorythmo)
+  enabled: false
+# algorythmo: feature-gate algorythmo_agent_bots (CUT-008)
+# Hides Agent Bots settings (external webhook-based bot mechanism).
+# Algorythmo's equivalent is Manu (M4 BYOK); two bot paths would confuse SMB.
+# docs/plans/cuts.md CUT-008
+- name: algorythmo_agent_bots
+  display_name: Agent Bots (Algorythmo)
+  enabled: false
+# algorythmo: feature-gate algorythmo_macros (CUT-009)
+# Hides Macros settings (pre-recorded agent action sequences).
+# Founder approved 2026-05-23: Manu (M4) replaces this paradigm.
+# docs/plans/cuts.md CUT-009
+- name: algorythmo_macros
+  display_name: Macros (Algorythmo)
+  enabled: false
+# algorythmo: feature-gate algorythmo_dashboard_apps (CUT-010)
+# Hides Dashboard Apps (iframe embed) sub-route within Integrations.
+# Algorythmo OS IS the product; embedding external tools conflicts with its purpose.
+# docs/plans/cuts.md CUT-010
+- name: algorythmo_dashboard_apps
+  display_name: Dashboard Apps / iFrame Embeds (Algorythmo)
+  enabled: false
+# algorythmo: feature-gate algorythmo_advanced_assignment (CUT-011)
+# Hides Advanced Assignment Policy settings.
+# Founder approved 2026-05-23: simple round-robin suffices; Manu (M4) will
+# handle assignment via AI. Upstream already gates on ADVANCED_ASSIGNMENT flag.
+# docs/plans/cuts.md CUT-011
+- name: algorythmo_advanced_assignment
+  display_name: Advanced Assignment Policy (Algorythmo)
+  enabled: false
+# algorythmo: feature-gate algorythmo_reports_bot (CUT-012a)
+# Hides "Bot" tab in Reports sidebar. Captain and Agent Bots are cut;
+# this tab always shows empty data in Algorythmo OS.
+# Founder approved 2026-05-23. Note: SLA Reports (CUT-012b) is intentionally KEPT.
+# docs/plans/cuts.md CUT-012a
+- name: algorythmo_reports_bot
+  display_name: Reports — Bot Tab (Algorythmo)
+  enabled: false
+# algorythmo: feature-gate algorythmo_conversation_workflow (CUT-013)
+# Hides Conversation Workflow settings (Required Attributes + Auto-Resolve config).
+# Founder approved 2026-05-23: Manu (M4) manages conversation lifecycle;
+# auto-resolve by timeout conflicts with that flow.
+# docs/plans/cuts.md CUT-013
+- name: algorythmo_conversation_workflow
+  display_name: Conversation Workflow (Algorythmo)
+  enabled: false
