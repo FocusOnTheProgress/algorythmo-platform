@@ -10,6 +10,10 @@ const store = useStore();
 
 const isLoading = ref(false);
 const globalConfig = computed(() => store.getters['globalConfig/get']);
+// algorythmo: rebrand-m0
+// isAChatwootInstance gates testimonials sidebar and CTA copy — always false
+// on Algorythmo OS since installationName is 'Algorythmo OS', not 'Chatwoot'.
+// Keeping the upstream logic intact; the sidebar simply never renders.
 const isAChatwootInstance = computed(
   () => globalConfig.value.installationName === 'Chatwoot'
 );

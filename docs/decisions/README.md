@@ -32,6 +32,10 @@ Helpdesk open-source com AI nativa e CRM embutido, voltado para PMEs brasileiras
 | [ADR-0005](0005-marca-standalone-manu-personagem.md) | Produto standalone, Manu como personagem | Aceita |
 | [ADR-0006](0006-hospedagem-algorythmo-padrao.md) | Hosting Algorythmo padrão, self-hosted premium | Aceita |
 | [ADR-0007](0007-time-c-level-estrategico.md) | Camada Algorythmo é estratégica, não operacional | Aceita |
+| [ADR-0008](0008-nome-produto-algorythmo-os.md) | Nome do produto: Algorythmo OS | Aceita |
+| [ADR-0009](0009-repo-privado-standalone.md) | Repositório privado standalone | Aceita |
+| [ADR-0010](0010-byok-por-agente-plug-and-play.md) | BYOK por agente, plug-and-play | Aceita |
+| [ADR-0011](0011-sequencia-mvp-crm-brain-agentes.md) | Sequência MVP: CRM → Brain → Agentes | Aceita |
 
 ## Convenções
 

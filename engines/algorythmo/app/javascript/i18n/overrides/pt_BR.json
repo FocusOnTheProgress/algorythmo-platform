@@ -1,0 +1,108 @@
+{
+  "AUDIT_LOGS": {
+    "SIDEBAR_TXT": "<p><b>Registros de Auditoria</b> </p><p> Registros de Auditoria são rastros de eventos e ações em uma conta do Algorythmo OS. </p>",
+    "LIST": {
+      "DESC": "Registros de Auditoria são rastros de eventos e ações em uma conta do Algorythmo OS."
+    }
+  },
+  "CONVERSATION": {
+    "NATIVE_APP_ADVISORY": "Esta mensagem foi enviada pelo aplicativo nativo. Responda pelo Algorythmo OS para manter a janela de mensagens."
+  },
+  "GENERAL_SETTINGS": {
+    "UPDATE_CHATWOOT": "Uma atualização {latestChatwootVersion} do Algorythmo OS está disponível. Por favor, atualize sua instância.",
+    "PAYMENT_PENDING": "Seu pagamento está pendente. Por favor, atualize suas informações de pagamento para continuar usando o Algorythmo OS",
+    "UPGRADE": "Faça o upgrade para continuar usando o Algorythmo OS",
+    "LIMITS_UPGRADE": "Sua conta excedeu os limites de uso. Por favor, faça o upgrade do seu plano para continuar usando o Algorythmo OS"
+  },
+  "HELP_CENTER": {
+    "CREATE_PORTAL_DIALOG": {
+      "NAME": {
+        "PLACEHOLDER": "Guia do Usuário | Algorythmo OS"
+      }
+    }
+  },
+  "INBOX_MGMT": {
+    "CREATE_FLOW": {
+      "CHANNEL": {
+        "BODY": "Escolha o provedor que você deseja integrar com o Algorythmo OS."
+      }
+    },
+    "ADD": {
+      "FB": {
+        "HELP": "PS: Ao fazer login, obtemos acesso apenas às mensagens da sua Página. Suas mensagens privadas nunca podem ser acessadas pelo Algorythmo OS."
+      },
+      "AUTH": {
+        "DESC": "O Algorythmo OS suporta widgets de chat ao vivo, Facebook Messenger, WhatsApp, E-mails etc. como canais. Se você quiser criar um canal personalizado, pode fazê-lo usando o canal API. Para começar, escolha um dos canais abaixo."
+      },
+      "DETAILS": {
+        "DESC": "No menu suspenso abaixo, selecione a Página do Facebook que deseja conectar ao Algorythmo OS. Você também pode dar um nome personalizado à sua caixa de entrada para melhor identificação."
+      },
+      "FINISH": {
+        "DESC": "Você concluiu com sucesso a integração da sua Página do Facebook com o Algorythmo OS. Na próxima vez que um cliente enviar uma mensagem para sua Página, a conversa aparecerá automaticamente na sua caixa de entrada.<br>Também estamos disponibilizando um script de widget que você pode adicionar facilmente ao seu site. Uma vez ativo em seu site, os clientes podem enviar mensagens diretamente do seu site, e a conversa aparecerá aqui no Algorythmo OS.<br>Legal, né? Bem, é o que tentamos ser :)"
+      }
+    },
+    "WIDGET_BUILDER": {
+      "BRANDING_TEXT": "Desenvolvido por Algorythmo OS"
+    }
+  },
+  "INTEGRATION_SETTINGS": {
+    "DESCRIPTION": "O Algorythmo OS se integra com várias ferramentas e serviços para melhorar a eficiência da sua equipe. Explore a lista abaixo para configurar seus aplicativos favoritos.",
+    "WEBHOOK": {
+      "FORM": {
+        "DESC": "Os eventos de webhook fornecem informações em tempo real sobre o que está acontecendo na sua conta do Algorythmo OS. Por favor, insira uma URL válida para configurar um callback."
+      },
+      "SIDEBAR_TXT": "<p><b>Webhooks</b> </p> <p>Webhooks são callbacks HTTP que podem ser definidos para cada conta. Eles são acionados por eventos como a criação de mensagens no Algorythmo OS. Você pode criar mais de um webhook para esta conta. <br /><br /> Para criar um <b>webhook</b>, clique no botão <b>Adicionar novo webhook</b>. Você também pode remover qualquer webhook existente clicando no botão Excluir.</p>"
+    },
+    "SLACK": {
+      "HELP_TEXT": {
+        "BODY": "Com esta integração, todas as suas conversas recebidas serão sincronizadas com o canal ***{selectedChannelName}*** no seu workspace do Slack. Você pode gerenciar todas as conversas dos seus clientes direto no canal e nunca perder uma mensagem.\n\nAqui estão os principais recursos da integração:\n\n**Responda às conversas dentro do Slack:** Para responder a uma conversa no canal ***{selectedChannelName}*** do Slack, basta digitar sua mensagem e enviá-la como resposta de thread. Isso criará uma resposta ao cliente por meio do Algorythmo OS. É simples assim!\n\n **Crie notas privadas:** Se quiser criar notas privadas em vez de respostas, comece sua mensagem com ***`note:`***. Isso garante que sua mensagem seja mantida em sigilo e não seja visível para o cliente.\n\n**Associe um perfil de agente:** Se a pessoa que respondeu no Slack tiver um perfil de agente no Algorythmo OS com o mesmo e-mail, as respostas serão associadas automaticamente a esse perfil de agente."
+      },
+      "SELECT_CHANNEL": {
+        "DESCRIPTION": "Seu workspace do Slack está vinculado ao Algorythmo OS. No entanto, a integração está inativa. Para ativá-la e conectar um canal ao Algorythmo OS, clique no botão abaixo.\n\n**Nota:** Se estiver tentando conectar um canal privado, adicione o app do Algorythmo OS ao canal do Slack antes de prosseguir."
+      }
+    },
+    "DASHBOARD_APPS": {
+      "SIDEBAR_TXT": "<p><b>Apps do Painel</b></p><p>Os Apps do Painel permitem que organizações incorporem um aplicativo dentro do painel do Algorythmo OS para fornecer contexto aos agentes de suporte. Este recurso permite criar um aplicativo de forma independente e incorporá-lo para fornecer informações do usuário, pedidos ou histórico de pagamentos.</p><p>Ao incorporar seu aplicativo usando o painel do Algorythmo OS, ele receberá o contexto da conversa e do contato como um evento de janela. Implemente um listener para o evento de mensagem em sua página para receber o contexto.</p><p>Para adicionar um novo app do painel, clique no botão 'Adicionar um novo app do painel'.</p>"
+    }
+  },
+  "LABEL_MGMT": {
+    "SUGGESTIONS": {
+      "POWERED_BY": "Algorythmo AI"
+    }
+  },
+  "LOGIN": {
+    "TITLE": "Entrar no Algorythmo OS"
+  },
+  "MFA_VERIFICATION": {
+    "HELP_MODAL": {
+      "CONTACT_DESC_CLOUD": "Se você perdeu o acesso tanto ao seu aplicativo autenticador quanto aos códigos de backup, entre em contato com o suporte do Algorythmo OS para obter assistência."
+    }
+  },
+  "RESET_PASSWORD": {
+    "DESCRIPTION": "Digite o endereço de e-mail que você usa para fazer login no Algorythmo OS para receber as instruções de redefinição de senha."
+  },
+  "PROFILE_SETTINGS": {
+    "INTERFACE_SECTION": {
+      "NOTE": "Personalize a aparência do seu painel do Algorythmo OS."
+    }
+  },
+  "SECURITY_SETTINGS": {
+    "SAML": {
+      "SP_ENTITY_ID": {
+        "TOOLTIP": "Identificador único do Algorythmo OS como Provedor de Serviço — Configure-o nas configurações do seu IdP"
+      }
+    }
+  },
+  "CREATE_ACCOUNT": {
+    "NO_ACCOUNT_WARNING": "Opa! Não conseguimos encontrar nenhuma conta no Algorythmo OS. Por favor, crie uma nova conta para continuar."
+  },
+  "REGISTER": {
+    "GET_STARTED": "Comece a usar o Algorythmo OS"
+  },
+  "YEAR_IN_REVIEW": {
+    "SHARE_MODAL": {
+      "SHARE_TEXT": "Confira meu Resumo do Ano {year} com o Algorythmo OS!",
+      "BRANDING": "Feito com Algorythmo OS"
+    }
+  }
+}

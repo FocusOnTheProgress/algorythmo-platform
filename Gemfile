@@ -2,6 +2,11 @@ source 'https://rubygems.org'
 
 ruby '3.4.4'
 
+# algorythmo: engine-boot
+# Algorythmo OS engine — all CRM/Brain/Agent code lives here.
+# Path gem: no gem server needed, pulled directly from the monorepo.
+gem 'algorythmo', path: 'engines/algorythmo'
+
 ##-- base gems for rails --##
 gem 'rack-cors', '2.0.0', require: 'rack/cors'
 gem 'rails', '~> 7.1'

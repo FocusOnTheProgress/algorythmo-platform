@@ -14,8 +14,18 @@ const isFeatureEnabledonAccount = useMapGetter(
   'accounts/isFeatureEnabledonAccount'
 );
 
-const showCopilotTab = computed(() =>
-  isFeatureEnabledonAccount.value(currentAccountId.value, FEATURE_FLAGS.CAPTAIN)
+// algorythmo: feature-gate algorythmo_show_captain
+// Copilot tab in conversation panel only shown when algorythmo_show_captain is on.
+const showCopilotTab = computed(
+  () =>
+    isFeatureEnabledonAccount.value(
+      currentAccountId.value,
+      FEATURE_FLAGS.CAPTAIN
+    ) &&
+    isFeatureEnabledonAccount.value(
+      currentAccountId.value,
+      FEATURE_FLAGS.ALGORYTHMO_SHOW_CAPTAIN
+    )
 );
 
 const { uiSettings } = useUISettings();

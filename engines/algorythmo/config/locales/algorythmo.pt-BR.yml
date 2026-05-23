@@ -1,0 +1,11 @@
+# algorythmo: rebrand-m0
+# Engine i18n overlay pt-BR — loaded AFTER upstream Chatwoot locales.
+"pt-BR":
+  installation_name: "Algorythmo OS"
+  brand_name: "Algorythmo OS"
+  brand_url: "https://algorythmo.com"
+
+  mailer:
+    subject_prefix: "[Algorythmo OS]"
+
+  app_name: "Algorythmo OS"

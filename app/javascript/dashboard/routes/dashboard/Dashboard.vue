@@ -9,6 +9,8 @@ import UpgradePage from 'dashboard/routes/dashboard/upgrade/UpgradePage.vue';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useWindowSize } from '@vueuse/core';
+import { useMapGetter } from 'dashboard/composables/store';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 import wootConstants from 'dashboard/constants/globals';
 
@@ -45,6 +47,31 @@ export default {
     const { width: windowWidth } = useWindowSize();
     const callsStore = useCallsStore();
 
+    // algorythmo: feature-gate algorythmo_show_captain
+    // Both CopilotLauncher and CopilotContainer are mounted only when BOTH
+    // captain_integration AND algorythmo_show_captain are enabled.
+    // This prevents the panel from rendering even if is_copilot_panel_open
+    // is persisted as true in a migrated user's uiSettings.
+    const currentAccountId = useMapGetter('getCurrentAccountId');
+    const isFeatureEnabledonAccount = useMapGetter(
+      'accounts/isFeatureEnabledonAccount'
+    );
+    const hasCaptainFeature = computed(() =>
+      isFeatureEnabledonAccount.value(
+        currentAccountId.value,
+        FEATURE_FLAGS.CAPTAIN
+      )
+    );
+    const hasAlgorythmoCaptain = computed(() =>
+      isFeatureEnabledonAccount.value(
+        currentAccountId.value,
+        FEATURE_FLAGS.ALGORYTHMO_SHOW_CAPTAIN
+      )
+    );
+    const showCaptainUI = computed(
+      () => hasCaptainFeature.value && hasAlgorythmoCaptain.value // algorythmo: feature-gate algorythmo_show_captain
+    );
+
     return {
       uiSettings,
       updateUISettings,
@@ -53,6 +80,7 @@ export default {
       windowWidth,
       hasActiveCall: computed(() => callsStore.hasActiveCall),
       hasIncomingCall: computed(() => callsStore.hasIncomingCall),
+      showCaptainUI, // algorythmo: feature-gate algorythmo_show_captain
     };
   },
   data() {
@@ -97,6 +125,18 @@ export default {
           this.updateUISettings({
             conversation_display_type: this.previouslyUsedDisplayType,
           });
+        }
+      },
+      immediate: true,
+    },
+    // algorythmo: feature-gate algorythmo_show_captain
+    // When the flag is off, force is_copilot_panel_open to false so that
+    // any persisted storage value from a migrated user does not re-open the
+    // panel if the flag is toggled back on mid-session.
+    showCaptainUI: {
+      handler(isOn) {
+        if (!isOn && this.uiSettings.is_copilot_panel_open) {
+          this.updateUISettings({ is_copilot_panel_open: false });
         }
       },
       immediate: true,
@@ -156,12 +196,14 @@ export default {
       <template v-if="!showUpgradePage">
         <router-view />
         <CommandBar />
-        <CopilotLauncher />
+        <!-- algorythmo: feature-gate algorythmo_show_captain -->
+        <CopilotLauncher v-if="showCaptainUI" />
         <MobileSidebarLauncher
           :is-mobile-sidebar-open="isMobileSidebarOpen"
           @toggle="toggleMobileSidebar"
         />
-        <CopilotContainer />
+        <!-- algorythmo: feature-gate algorythmo_show_captain -->
+        <CopilotContainer v-if="showCaptainUI" />
         <FloatingCallWidget v-if="hasActiveCall || hasIncomingCall" />
       </template>
       <AddAccountModal

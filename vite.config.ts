@@ -91,11 +91,17 @@ export default defineConfig({
       survey: path.resolve('./app/javascript/survey'),
       widget: path.resolve('./app/javascript/widget'),
       assets: path.resolve('./app/javascript/dashboard/assets'),
+      // algorythmo: i18n-overlay-m0 — engine JS modules reachable from host app
+      engines: path.resolve('./engines'),
     },
   },
   test: {
     environment: 'jsdom',
-    include: ['app/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
+    include: [
+      'app/**/*.{test,spec}.?(c|m)[jt]s?(x)',
+      // algorythmo: engine JS specs (deepMerge, i18n overlay, etc.)
+      'engines/algorythmo/app/javascript/**/*.{test,spec}.?(c|m)[jt]s?(x)',
+    ],
     coverage: {
       reporter: ['lcov', 'text'],
       include: ['app/**/*.js', 'app/**/*.vue'],

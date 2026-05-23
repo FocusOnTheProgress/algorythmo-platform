@@ -1,17 +1,35 @@
-name: Run Chatwoot CE spec
+name: Run Algorythmo OS spec
 permissions:
   contents: read
 on:
   push:
     branches:
-      - develop
-      - master
       - algorythmo/main
+      - 'algorythmo/**'
   pull_request:
   workflow_dispatch:
 
+# Cancel older runs in the same PR — saves minutes on rapid pushes.
+concurrency:
+  group: pr-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+# algorythmo: free-tier-budget
+# This workflow is deliberately scoped to ONLY Algorythmo-owned code so the
+# whole fork stays inside the GitHub Actions free tier (2 000 min/month).
+# Upstream Chatwoot suites (full RSpec, MFA, size-limit, docker build,
+# duplicate frontend job) live in .github/workflows/disabled/ and are
+# reactivated only when we move off the free tier.
+#
+# Coverage map:
+#   - lint-backend         → Rubocop em paralelo (1 runner, ~3 min)
+#   - lint-frontend        → ESLint full repo (1 runner, ~3 min)
+#   - algorythmo-rspec     → engine specs + Captain feature-gate specs (1 runner)
+#   - algorythmo-vitest    → engine JS specs + i18n overlays + gate composable
+#   - playwright-smoke     → MERGE GATE (ADR T1/T2) sobe stack real + smoke
+#   - soft-fork-check      → MERGE GATE (zona soft-fork íntegra)
+
 jobs:
-  # Separate linting jobs for faster feedback
   lint-backend:
     runs-on: ubuntu-latest
     steps:
@@ -36,8 +54,10 @@ jobs:
       - name: Run ESLint
         run: pnpm run eslint
 
-  # Frontend tests run in parallel with backend
-  frontend-tests:
+  # algorythmo: vitest scoped to Algorythmo-owned specs only.
+  # Explicit --include globs override vite.config.ts's broader include.
+  algorythmo-vitest:
+    name: Vitest (Algorythmo scope)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,18 +68,23 @@ jobs:
           cache: 'pnpm'
       - name: Install pnpm dependencies
         run: pnpm i
-      - name: Run frontend tests
-        run: pnpm run test:coverage
+      - name: Run Algorythmo-scoped Vitest
+        run: |
+          TZ=UTC pnpm exec vitest run \
+            engines/algorythmo/app/javascript \
+            app/javascript/dashboard/composables/specs/useAlgorythmoFeatureGate.spec.js \
+            app/javascript/dashboard/helper/specs/routeHelpers_algorythmo.spec.js \
+            app/javascript/dashboard/i18n/i18n_overlay.spec.js \
+            app/javascript/survey/i18n/i18n_overlay.spec.js \
+            app/javascript/widget/i18n/i18n_overlay.spec.js \
+            app/javascript/dashboard/components-next/copilot/specs/CopilotLauncher.spec.js \
+            --no-coverage
 
-  # Backend tests with parallelization
-  backend-tests:
+  # algorythmo: rspec scoped to Algorythmo engine + Captain feature-gate.
+  # NO matrix sharding — this set is small (~12 spec files). Single runner.
+  algorythmo-rspec:
+    name: RSpec (Algorythmo scope)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        ci_node_total: [16]
-        ci_node_index: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -84,10 +109,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
 
       - uses: ruby/setup-ruby@v1
         with:
@@ -101,47 +124,136 @@ jobs:
       - name: Install pnpm dependencies
         run: pnpm i
 
-      - name: Strip enterprise code
-        run: |
-          rm -rf enterprise
-          rm -rf spec/enterprise
-
       - name: Create database
         run: bundle exec rake db:create
 
-      - name: Seed database
+      - name: Load schema
         run: bundle exec rake db:schema:load
 
-      - name: Run backend tests (parallelized)
+      - name: Run Algorythmo-scoped RSpec
         run: |
-          # Get all spec files and split them using round-robin distribution
-          # This ensures slow tests are distributed evenly across all nodes
-          SPEC_FILES=($(find spec -name '*_spec.rb' | sort))
-          TESTS=""
-
-          for i in "${!SPEC_FILES[@]}"; do
-            # Assign spec to this node if: index % total == node_index
-            if [ $(( i % ${{ matrix.ci_node_total }} )) -eq ${{ matrix.ci_node_index }} ]; then
-              TESTS="$TESTS ${SPEC_FILES[$i]}"
-            fi
-          done
-
-          if [ -n "$TESTS" ]; then
-            bundle exec rspec --profile=10 --format progress --format json --out tmp/rspec_results.json $TESTS
-          fi
+          bundle exec rspec \
+            engines/algorythmo/spec \
+            enterprise/spec/listeners/captain_listener_spec.rb \
+            enterprise/spec/controllers/api/v1/accounts/captain/feature_gate_spec.rb \
+            --profile=10 \
+            --format progress \
+            --format json --out tmp/rspec_results.json
         env:
           NODE_OPTIONS: --openssl-legacy-provider
 
-      - name: Upload test results
+      - name: Upload rspec results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: rspec-results-${{ matrix.ci_node_index }}
+          name: algorythmo-rspec-results
           path: tmp/rspec_results.json
 
-      - name: Upload rails log folder
+      - name: Upload rails log on failure
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: rails-log-folder-${{ matrix.ci_node_index }}
+          name: algorythmo-rails-log
           path: log
+
+  # algorythmo: playwright-gate
+  # Playwright smoke suite is a MERGE GATE — PRs cannot merge if these fail.
+  # Runs against a fully booted Rails stack (PG + Redis + Rails server).
+  # Decision T1 + T2 in docs/plans/0001-mvp-algorythmo-os.md.
+  playwright-smoke:
+    name: Playwright E2E smoke (algorythmo gate)
+    runs-on: ubuntu-latest
+    needs: [lint-backend, lint-frontend, algorythmo-vitest, algorythmo-rspec]
+    # Skip on dependabot PRs (no secrets available)
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ''
+          POSTGRES_DB: chatwoot
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: --entrypoint redis-server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Install pnpm dependencies
+        run: pnpm i
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Set up .env for CI
+        run: |
+          cp .env.example .env
+          echo "SECRET_KEY_BASE=ci_$(openssl rand -hex 32)" >> .env
+          echo "POSTGRES_HOST=localhost" >> .env
+          echo "POSTGRES_USERNAME=postgres" >> .env
+          echo "POSTGRES_PASSWORD=" >> .env
+          echo "REDIS_URL=redis://localhost:6379" >> .env
+          echo "REDIS_PASSWORD=" >> .env
+          echo "FRONTEND_URL=http://localhost:3000" >> .env
+
+      - name: Set up database and seed test account
+        run: |
+          bundle exec rake db:create db:schema:load db:migrate
+          bundle exec rake algorythmo:seed:smoke_test_account
+        env:
+          ALGORYTHMO_SEED_PASSWORD: ${{ secrets.ALGORYTHMO_SEED_PASSWORD }}
+
+      - name: Start Rails server (background)
+        run: |
+          bundle exec rails server -p 3000 -e test &
+          echo "Waiting for server..."
+          until curl -sf http://localhost:3000/auth/sign_in; do sleep 2; done
+        timeout-minutes: 3
+
+      - name: Run Playwright smoke suite
+        run: pnpm exec playwright test e2e/smoke.spec.ts --reporter=github
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          PLAYWRIGHT_EMAIL: test@algorythmo.com
+          PLAYWRIGHT_PASSWORD: ${{ secrets.ALGORYTHMO_SEED_PASSWORD }}
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+
+  # algorythmo: soft-fork-ci-check
+  # Validates that every file in the soft-fork zone exists and is tagged.
+  # This is a MERGE GATE — PRs cannot merge if soft-fork zone integrity fails.
+  # See engines/algorythmo/README.md § Soft-fork zone for the acceptance table.
+  soft-fork-check:
+    name: Soft-fork zone integrity check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate soft-fork zone tags # algorythmo: soft-fork-ci-check
+        run: bash engines/algorythmo/bin/check-soft-fork-zone.sh

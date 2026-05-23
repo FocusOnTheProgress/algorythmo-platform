@@ -17,22 +17,29 @@ import ResponsesIndex from './responses/Index.vue';
 import ResponsesPendingIndex from './responses/Pending.vue';
 import CustomToolsIndex from './tools/Index.vue';
 
+// algorythmo: feature-gate algorythmo_show_captain
+// All Captain routes carry algorythmoFeatureFlag so the router guard in
+// routeHelpers.js#isRouteBlockedByAlgorythmoGate redirects to dashboard when
+// the flag is off. Flag default is false — Captain is hidden for all PME clients.
 const meta = {
   permissions: ['administrator', 'agent'],
   featureFlag: FEATURE_FLAGS.CAPTAIN,
   installationTypes: [INSTALLATION_TYPES.CLOUD, INSTALLATION_TYPES.ENTERPRISE],
+  algorythmoFeatureFlag: 'algorythmo_show_captain',
 };
 
 const metaCustomTools = {
   permissions: ['administrator', 'agent'],
   featureFlag: FEATURE_FLAGS.CAPTAIN_CUSTOM_TOOLS,
   installationTypes: [INSTALLATION_TYPES.CLOUD, INSTALLATION_TYPES.ENTERPRISE],
+  algorythmoFeatureFlag: 'algorythmo_show_captain',
 };
 
 const metaV2 = {
   permissions: ['administrator', 'agent'],
   featureFlag: FEATURE_FLAGS.CAPTAIN_V2,
   installationTypes: [INSTALLATION_TYPES.CLOUD, INSTALLATION_TYPES.ENTERPRISE],
+  algorythmoFeatureFlag: 'algorythmo_show_captain',
 };
 
 const assistantRoutes = [

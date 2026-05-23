@@ -61,6 +61,16 @@ const hasAdvancedAssignment = computed(() => {
   );
 });
 
+// algorythmo: feature-gate algorythmo_show_captain
+// Captain sidebar section is hidden unless this flag is explicitly enabled.
+// Default in config/features.yml: algorythmo_show_captain: false.
+const hasCaptain = computed(() => {
+  return isFeatureEnabledonAccount.value(
+    accountId.value,
+    FEATURE_FLAGS.ALGORYTHMO_SHOW_CAPTAIN
+  );
+});
+
 const hasConversationUnreadCounts = computed(() => {
   return isFeatureEnabledonAccount.value(
     accountId.value,
@@ -381,77 +391,84 @@ const menuItems = computed(() => {
         },
       ],
     },
-    {
-      name: 'Captain',
-      icon: 'i-woot-captain',
-      label: t('SIDEBAR.CAPTAIN'),
-      activeOn: ['captain_assistants_create_index'],
-      children: [
-        {
-          name: 'FAQs',
-          label: t('SIDEBAR.CAPTAIN_RESPONSES'),
-          activeOn: [
-            'captain_assistants_responses_index',
-            'captain_assistants_responses_pending',
-          ],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_responses_index',
-          }),
-        },
-        {
-          name: 'Documents',
-          label: t('SIDEBAR.CAPTAIN_DOCUMENTS'),
-          activeOn: ['captain_assistants_documents_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_documents_index',
-          }),
-        },
-        {
-          name: 'Scenarios',
-          label: t('SIDEBAR.CAPTAIN_SCENARIOS'),
-          activeOn: ['captain_assistants_scenarios_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_scenarios_index',
-          }),
-        },
-        {
-          name: 'Playground',
-          label: t('SIDEBAR.CAPTAIN_PLAYGROUND'),
-          activeOn: ['captain_assistants_playground_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_playground_index',
-          }),
-        },
-        {
-          name: 'Inboxes',
-          label: t('SIDEBAR.CAPTAIN_INBOXES'),
-          activeOn: ['captain_assistants_inboxes_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_inboxes_index',
-          }),
-        },
-        {
-          name: 'Tools',
-          label: t('SIDEBAR.CAPTAIN_TOOLS'),
-          activeOn: ['captain_tools_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_tools_index',
-          }),
-        },
-        {
-          name: 'Settings',
-          label: t('SIDEBAR.CAPTAIN_SETTINGS'),
-          activeOn: [
-            'captain_assistants_settings_index',
-            'captain_assistants_guidelines_index',
-            'captain_assistants_guardrails_index',
-          ],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_settings_index',
-          }),
-        },
-      ],
-    },
+    // algorythmo: feature-gate algorythmo_show_captain
+    // Captain section only rendered when algorythmo_show_captain flag is true.
+    // Default: false — PME clients never see Captain UI.
+    ...(hasCaptain.value
+      ? [
+          {
+            name: 'Captain',
+            icon: 'i-woot-captain',
+            label: t('SIDEBAR.CAPTAIN'),
+            activeOn: ['captain_assistants_create_index'],
+            children: [
+              {
+                name: 'FAQs',
+                label: t('SIDEBAR.CAPTAIN_RESPONSES'),
+                activeOn: [
+                  'captain_assistants_responses_index',
+                  'captain_assistants_responses_pending',
+                ],
+                to: accountScopedRoute('captain_assistants_index', {
+                  navigationPath: 'captain_assistants_responses_index',
+                }),
+              },
+              {
+                name: 'Documents',
+                label: t('SIDEBAR.CAPTAIN_DOCUMENTS'),
+                activeOn: ['captain_assistants_documents_index'],
+                to: accountScopedRoute('captain_assistants_index', {
+                  navigationPath: 'captain_assistants_documents_index',
+                }),
+              },
+              {
+                name: 'Scenarios',
+                label: t('SIDEBAR.CAPTAIN_SCENARIOS'),
+                activeOn: ['captain_assistants_scenarios_index'],
+                to: accountScopedRoute('captain_assistants_index', {
+                  navigationPath: 'captain_assistants_scenarios_index',
+                }),
+              },
+              {
+                name: 'Playground',
+                label: t('SIDEBAR.CAPTAIN_PLAYGROUND'),
+                activeOn: ['captain_assistants_playground_index'],
+                to: accountScopedRoute('captain_assistants_index', {
+                  navigationPath: 'captain_assistants_playground_index',
+                }),
+              },
+              {
+                name: 'Inboxes',
+                label: t('SIDEBAR.CAPTAIN_INBOXES'),
+                activeOn: ['captain_assistants_inboxes_index'],
+                to: accountScopedRoute('captain_assistants_index', {
+                  navigationPath: 'captain_assistants_inboxes_index',
+                }),
+              },
+              {
+                name: 'Tools',
+                label: t('SIDEBAR.CAPTAIN_TOOLS'),
+                activeOn: ['captain_tools_index'],
+                to: accountScopedRoute('captain_assistants_index', {
+                  navigationPath: 'captain_tools_index',
+                }),
+              },
+              {
+                name: 'Settings',
+                label: t('SIDEBAR.CAPTAIN_SETTINGS'),
+                activeOn: [
+                  'captain_assistants_settings_index',
+                  'captain_assistants_guidelines_index',
+                  'captain_assistants_guardrails_index',
+                ],
+                to: accountScopedRoute('captain_assistants_index', {
+                  navigationPath: 'captain_assistants_settings_index',
+                }),
+              },
+            ],
+          },
+        ]
+      : []),
     {
       name: 'Contacts',
       label: t('SIDEBAR.CONTACTS'),

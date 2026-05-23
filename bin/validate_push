@@ -1,13 +1,153 @@
 #!/bin/sh
+# algorythmo: local-ci-gate
+#
+# Pre-push validator. Roda as mesmas gates de .github/workflows/run_foss_spec.yml
+# localmente antes de liberar o push, porque o fork vive em repo privado com
+# free tier finito de GitHub Actions (2 000 min/mês). Validar local preserva
+# o orçamento E dá feedback instantâneo (sem round-trip de CI).
+#
+# Multi-plataforma: funciona em git-bash no Windows (dev habitual, sem Ruby /
+# Docker) e em runner Linux self-hosted (onde também checa os gates Ruby).
+#
+# Gates que dependem de tools não instaladas localmente são pulados com aviso
+# — o CI cobre quando rodar. Hard-fail só nos gates que rodaram e falharam.
 
-# script prevents pushing to develop and master by mistake
+set -u
 
 branch="$(git rev-parse --abbrev-ref HEAD)"
 
+# Hard block: nunca pushar direto em branches do upstream.
 if [ "$branch" = "master" ]; then
   echo "You can't push directly to master branch"
   exit 1
 elif [ "$branch" = "develop" ]; then
   echo "You can't push directly to develop branch"
+  exit 1
+fi
+
+# Só enforça os gates Algorythmo em branches algorythmo/*. Pushes em branches
+# de sync com upstream (chore/upstream-sync-*) mantêm o comportamento legado.
+case "$branch" in
+  algorythmo/*) ;;
+  *) exit 0 ;;
+esac
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT" || exit 1
+
+ALG_FAIL=0
+
+echo ""
+echo "-- Algorythmo local CI gate -------------------------------"
+
+# -----------------------------------------------------------
+# Gate 1: Soft-fork zone integrity. Pure bash, roda em tudo.
+# -----------------------------------------------------------
+echo ""
+echo "[1/5] Soft-fork zone integrity"
+if bash engines/algorythmo/bin/check-soft-fork-zone.sh; then
+  echo "  OK"
+else
+  echo "  FAIL soft-fork zone quebrada"
+  ALG_FAIL=1
+fi
+
+# -----------------------------------------------------------
+# Gate 2: ESLint frontend. Local roda apenas em arquivos
+# modificados vs origin/main pra evitar 235 mil erros de CRLF
+# do core.autocrlf=true (Windows) nos arquivos upstream — CI
+# em Linux roda o repo inteiro sem esse ruido.
+# -----------------------------------------------------------
+echo ""
+echo "[2/5] ESLint (changed files vs origin/main)"
+if command -v pnpm >/dev/null 2>&1; then
+  CHANGED_JS=$(git diff --name-only --diff-filter=ACMR origin/main...HEAD -- '*.js' '*.vue' '*.ts' 2>/dev/null | grep -v '^node_modules/' || true)
+  if [ -z "$CHANGED_JS" ]; then
+    echo "  SKIP nenhum .js/.vue/.ts modificado vs origin/main"
+  elif echo "$CHANGED_JS" | xargs pnpm exec eslint >/tmp/algorythmo-eslint.log 2>&1; then
+    echo "  OK ($(echo "$CHANGED_JS" | wc -l | tr -d ' ') arquivo(s) verificado(s))"
+  else
+    echo "  FAIL eslint. Log: /tmp/algorythmo-eslint.log"
+    tail -30 /tmp/algorythmo-eslint.log
+    ALG_FAIL=1
+  fi
+else
+  echo "  SKIP pnpm nao encontrado (CI valida)"
+fi
+
+# -----------------------------------------------------------
+# Gate 3: Vitest scoped em specs Algorythmo. Mesma lista do
+# workflow run_foss_spec.yml.
+# -----------------------------------------------------------
+echo ""
+echo "[3/5] Vitest (Algorythmo scope)"
+if command -v pnpm >/dev/null 2>&1; then
+  if TZ=UTC pnpm exec vitest run \
+       engines/algorythmo/app/javascript \
+       app/javascript/dashboard/composables/specs/useAlgorythmoFeatureGate.spec.js \
+       app/javascript/dashboard/helper/specs/routeHelpers_algorythmo.spec.js \
+       app/javascript/dashboard/i18n/i18n_overlay.spec.js \
+       app/javascript/survey/i18n/i18n_overlay.spec.js \
+       app/javascript/widget/i18n/i18n_overlay.spec.js \
+       app/javascript/dashboard/components-next/copilot/specs/CopilotLauncher.spec.js \
+       --no-coverage >/tmp/algorythmo-vitest.log 2>&1; then
+    echo "  OK"
+  else
+    echo "  FAIL vitest. Log: /tmp/algorythmo-vitest.log"
+    tail -30 /tmp/algorythmo-vitest.log
+    ALG_FAIL=1
+  fi
+else
+  echo "  SKIP pnpm nao encontrado (CI valida)"
+fi
+
+# -----------------------------------------------------------
+# Gate 4: Rubocop. So roda se 'bundle' existir local. No Windows
+# sem Ruby instalado, e skipado e o gate confia no CI.
+# -----------------------------------------------------------
+echo ""
+echo "[4/5] Rubocop"
+if command -v bundle >/dev/null 2>&1; then
+  if bundle exec rubocop --parallel >/tmp/algorythmo-rubocop.log 2>&1; then
+    echo "  OK"
+  else
+    echo "  FAIL rubocop. Log: /tmp/algorythmo-rubocop.log"
+    tail -30 /tmp/algorythmo-rubocop.log
+    ALG_FAIL=1
+  fi
+else
+  echo "  SKIP Ruby/Bundler nao instalado (CI valida quando rodar)"
+fi
+
+# -----------------------------------------------------------
+# Gate 5: RSpec Algorythmo. Mesma justificativa do rubocop.
+# -----------------------------------------------------------
+echo ""
+echo "[5/5] RSpec (Algorythmo scope)"
+if command -v bundle >/dev/null 2>&1; then
+  if bundle exec rspec \
+       engines/algorythmo/spec \
+       enterprise/spec/listeners/captain_listener_spec.rb \
+       enterprise/spec/controllers/api/v1/accounts/captain/feature_gate_spec.rb \
+       --format progress >/tmp/algorythmo-rspec.log 2>&1; then
+    echo "  OK"
+  else
+    echo "  FAIL rspec. Log: /tmp/algorythmo-rspec.log"
+    tail -40 /tmp/algorythmo-rspec.log
+    ALG_FAIL=1
+  fi
+else
+  echo "  SKIP Ruby/Bundler nao instalado (CI valida quando rodar)"
+fi
+
+echo ""
+echo "-----------------------------------------------------------"
+if [ "$ALG_FAIL" -eq 0 ]; then
+  echo "OK Local CI gate passou. Push liberado."
+  echo ""
+  exit 0
+else
+  echo "FAIL Local CI gate. Corrige os erros acima ou rode 'git push --no-verify' por sua conta e risco."
+  echo ""
   exit 1
 fi
