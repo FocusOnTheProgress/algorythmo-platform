@@ -16,9 +16,13 @@
  * @returns {string}
  */
 function accountIdFromPath() {
+  // Expected path: /app/accounts/:accountId/...
+  // Find 'accounts' only when preceded by 'app' to avoid false positives.
   const parts = window.location.pathname.split('/');
-  const idx = parts.indexOf('accounts');
-  return idx !== -1 ? parts[idx + 1] : '';
+  const appIdx = parts.indexOf('app');
+  if (appIdx === -1 || parts[appIdx + 1] !== 'accounts') return '';
+  const id = parseInt(parts[appIdx + 2], 10);
+  return Number.isFinite(id) && id > 0 ? String(id) : '';
 }
 
 /**

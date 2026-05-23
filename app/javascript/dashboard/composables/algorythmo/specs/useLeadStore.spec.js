@@ -11,13 +11,7 @@ import {
   moveLead,
   reopenLead,
 } from 'dashboard/helper/algorythmo/leadApi.js';
-import { useLeadStore } from '../useLeadStore.js';
-
-// The store uses a module-level reactive Map — tests share state.
-// We clear the store manually before each test.
-function clearStore(store) {
-  store.stageMap.clear();
-}
+import { useLeadStore, clearLeadStoreForAccount } from '../useLeadStore.js';
 
 const ACCOUNT_ID = '42';
 const lead = (id, stageId, extra = {}) => ({
@@ -34,8 +28,8 @@ describe('useLeadStore', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    clearLeadStoreForAccount(ACCOUNT_ID);
     store = useLeadStore(ACCOUNT_ID);
-    clearStore(store);
   });
 
   // -------------------------------------------------------------------------
@@ -215,6 +209,20 @@ describe('useLeadStore', () => {
       expect(updated.stage_entered_at).toBe('2026-01-01');
     });
 
+    it('throws when response has no id (invalid shape)', async () => {
+      store.stageMap.set(2, {
+        leads: [{ ...lead(5, 2), movePending: true }],
+        cursor: null,
+        isLoading: false,
+        hasMore: false,
+        error: null,
+      });
+      moveLead.mockResolvedValue({ data: null });
+      await expect(
+        store.commitMove({ leadId: 5, toStageId: 2 })
+      ).rejects.toThrow('invalid response');
+    });
+
     it('throws on API failure so caller can rollback', async () => {
       store.stageMap.set(2, {
         leads: [{ ...lead(5, 2), movePending: true }],
@@ -242,6 +250,33 @@ describe('useLeadStore', () => {
       store.rollbackMove({ leadId: 3, fromStageId: 1 });
       expect(store.leadsByStage(2)).toHaveLength(0);
       expect(store.leadsByStage(1)[0]).toMatchObject({ id: 3, stage_id: 1 });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Cross-account isolation (C1)
+  // -------------------------------------------------------------------------
+  describe('cross-account isolation', () => {
+    it('does not share stageMap between different accountIds', async () => {
+      fetchLeads.mockResolvedValue({
+        data: { leads: [lead(1, 10)], next_cursor: null },
+      });
+      await store.fetchStage(10);
+
+      clearLeadStoreForAccount('999');
+      const otherStore = useLeadStore('999');
+      expect(otherStore.leadsByStage(10)).toHaveLength(0);
+    });
+
+    it('clearLeadStoreForAccount wipes only the specified account', async () => {
+      fetchLeads.mockResolvedValue({
+        data: { leads: [lead(1, 10)], next_cursor: null },
+      });
+      await store.fetchStage(10);
+
+      clearLeadStoreForAccount('999'); // different account
+      // ACCOUNT_ID store untouched
+      expect(store.leadsByStage(10)).toHaveLength(1);
     });
   });
 

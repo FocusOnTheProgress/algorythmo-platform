@@ -16,10 +16,11 @@ export function usePolling(fetchFn, intervalMs = 8000, isActiveRef = null) {
   const isPolling = ref(false);
   let timerId = null;
   let backoffMs = intervalMs;
+  let tickInFlight = false;
   const BACKOFF_CAP = 32_000;
 
   async function tick() {
-    if (!isPolling.value) return;
+    if (!isPolling.value || tickInFlight) return;
     if (document.visibilityState !== 'visible') {
       // eslint-disable-next-line no-use-before-define
       scheduleNext(intervalMs);
@@ -30,6 +31,7 @@ export function usePolling(fetchFn, intervalMs = 8000, isActiveRef = null) {
       scheduleNext(intervalMs);
       return;
     }
+    tickInFlight = true;
     try {
       await fetchFn();
       backoffMs = intervalMs;
@@ -37,6 +39,8 @@ export function usePolling(fetchFn, intervalMs = 8000, isActiveRef = null) {
       // eslint-disable-next-line no-console
       console.error('algorythmo:polling-failed', err);
       backoffMs = Math.min(backoffMs * 2, BACKOFF_CAP);
+    } finally {
+      tickInFlight = false;
     }
     // eslint-disable-next-line no-use-before-define
     if (isPolling.value) scheduleNext(backoffMs);
@@ -48,9 +52,9 @@ export function usePolling(fetchFn, intervalMs = 8000, isActiveRef = null) {
 
   function handleVisibilityChange() {
     if (document.visibilityState === 'visible' && isPolling.value) {
-      // Resume immediately on tab focus instead of waiting for next timer.
       clearTimeout(timerId);
-      tick();
+      // Only kick off a new tick if one isn't already running.
+      if (!tickInFlight) tick();
     }
   }
 
@@ -66,6 +70,7 @@ export function usePolling(fetchFn, intervalMs = 8000, isActiveRef = null) {
     isPolling.value = false;
     clearTimeout(timerId);
     timerId = null;
+    tickInFlight = false;
     document.removeEventListener('visibilitychange', handleVisibilityChange);
   }
 

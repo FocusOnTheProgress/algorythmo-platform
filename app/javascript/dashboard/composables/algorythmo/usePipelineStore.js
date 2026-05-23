@@ -2,24 +2,36 @@ import { shallowRef, readonly, computed } from 'vue';
 import { fetchDefaultPipeline } from 'dashboard/helper/algorythmo/leadApi.js';
 
 // ---------------------------------------------------------------------------
-// Pipeline store — singleton, process-scoped.
-// Caches the default pipeline + stages for the current account.
-// Reset on accountId change (rare: multi-account tab switching).
+// Pipeline store — per-account singleton.
+// Keyed by accountId to prevent data bleed across accounts.
 // ---------------------------------------------------------------------------
 
-const pipeline = shallowRef(null);
-const stages = shallowRef([]);
-const isLoading = shallowRef(false);
-const error = shallowRef(null);
-let cachedAccountId = null;
+/** @type {Map<string, { pipeline: import('vue').ShallowRef, stages: import('vue').ShallowRef, isLoading: import('vue').ShallowRef, error: import('vue').ShallowRef }>} */
+const cacheByAccount = new Map();
+
+function getOrCreateCache(accountId) {
+  const key = String(accountId);
+  if (!cacheByAccount.has(key)) {
+    cacheByAccount.set(key, {
+      pipeline: shallowRef(null),
+      stages: shallowRef([]),
+      isLoading: shallowRef(false),
+      error: shallowRef(null),
+    });
+  }
+  return cacheByAccount.get(key);
+}
 
 /**
  * Composable for the default pipeline (stages list, pipeline metadata).
- * Shared state — any component that calls this gets the same reactive refs.
+ * Shared state per-account — any component calling with the same accountId
+ * gets the same reactive refs.
  *
  * @param {string|number} accountId
  */
 export function usePipelineStore(accountId) {
+  const { pipeline, stages, isLoading, error } = getOrCreateCache(accountId);
+
   const pipelineLoaded = computed(() => pipeline.value !== null);
 
   const stageById = computed(() => {
@@ -29,17 +41,22 @@ export function usePipelineStore(accountId) {
   });
 
   async function loadPipeline() {
-    // Skip if already loaded for this account.
-    if (cachedAccountId === String(accountId) && pipeline.value !== null)
-      return;
+    if (pipeline.value !== null) return;
 
     isLoading.value = true;
     error.value = null;
+
+    // Race-condition guard: capture the account we're loading for.
+    // If the composable is called again for a different account mid-flight,
+    // each call has its own cache entry, so no cross-account overwrite.
+    const loadingFor = String(accountId);
     try {
       const res = await fetchDefaultPipeline(accountId);
+      // Guard: if this cache entry was cleared (account switch) while in
+      // flight, a new entry was created and we should not write to a stale one.
+      if (!cacheByAccount.has(loadingFor)) return;
       pipeline.value = res.data.pipeline;
       stages.value = res.data.stages ?? [];
-      cachedAccountId = String(accountId);
     } catch (err) {
       error.value = err?.response?.data?.message ?? err.message;
       // eslint-disable-next-line no-console
@@ -72,4 +89,12 @@ export function usePipelineStore(accountId) {
     updateStageName,
     updateStageCoefficient,
   };
+}
+
+/**
+ * Clear pipeline cache for a given account (call on account switch).
+ * @param {string|number} accountId
+ */
+export function clearPipelineStoreForAccount(accountId) {
+  cacheByAccount.delete(String(accountId));
 }

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch, nextTick, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
   /** Controls open state (v-model:open) */
@@ -25,6 +25,7 @@ const emit = defineEmits(['update:open', 'close']);
 
 const drawerRef = ref(null);
 let previousFocus = null;
+let previousBodyOverflow = '';
 
 function getFocusables(el) {
   return Array.from(
@@ -56,11 +57,32 @@ function handleKeydown(e) {
   if (e.key === 'Tab') trapFocus(e);
 }
 
+function close() {
+  emit('update:open', false);
+  emit('close');
+}
+
+// Document-level Esc so it works even if focus is outside the drawer element.
+function handleDocEsc(e) {
+  if (e.key === 'Escape') close();
+}
+
+function unlock() {
+  document.body.style.overflow = previousBodyOverflow;
+  document.removeEventListener('keydown', handleDocEsc);
+  if (drawerRef.value) {
+    drawerRef.value.removeEventListener('keydown', handleKeydown);
+  }
+}
+
 watch(
   () => props.open,
   val => {
     if (val) {
       previousFocus = document.activeElement;
+      previousBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      document.addEventListener('keydown', handleDocEsc);
       nextTick(() => {
         if (drawerRef.value) {
           const focusables = getFocusables(drawerRef.value);
@@ -69,19 +91,19 @@ watch(
         }
       });
     } else {
-      if (drawerRef.value) {
-        drawerRef.value.removeEventListener('keydown', handleKeydown);
-      }
+      unlock();
       previousFocus?.focus?.();
       previousFocus = null;
     }
-  }
+  },
+  { immediate: true }
 );
 
-function close() {
-  emit('update:open', false);
-  emit('close');
-}
+onBeforeUnmount(() => {
+  unlock();
+  previousFocus?.focus?.();
+  previousFocus = null;
+});
 
 function closeOnScrim() {
   if (props.closeOnBackdrop) close();
@@ -110,7 +132,6 @@ function onAfterLeave() {
         role="dialog"
         :aria-modal="true"
         :aria-label="title"
-        @keydown.esc="close"
       >
         <div class="alg-drawer__header">
           <h2 class="alg-drawer__title">{{ title }}</h2>
@@ -152,6 +173,7 @@ function onAfterLeave() {
 .alg-drawer-scrim-leave-active {
   transition: opacity var(--alg-duration-base) var(--alg-ease-out);
 }
+
 .alg-drawer-scrim-enter-from,
 .alg-drawer-scrim-leave-to {
   opacity: 0;
@@ -160,9 +182,11 @@ function onAfterLeave() {
 .alg-drawer-enter-active {
   transition: transform var(--alg-duration-slow) var(--alg-ease-out);
 }
+
 .alg-drawer-leave-active {
   transition: transform var(--alg-duration-base) var(--alg-ease-in);
 }
+
 .alg-drawer-enter-from,
 .alg-drawer-leave-to {
   transform: translateX(100%);

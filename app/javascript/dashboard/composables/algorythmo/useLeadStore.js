@@ -6,9 +6,8 @@ import {
 } from 'dashboard/helper/algorythmo/leadApi.js';
 
 // ---------------------------------------------------------------------------
-// Lead store — singleton per process.
-// State is a Map<stageId, StageState> so each stage column is independently
-// paginated, loaded, and updated.
+// Lead store — per-account singleton.
+// Keyed by accountId so switching accounts never blends data across tenants.
 // ---------------------------------------------------------------------------
 
 /**
@@ -20,8 +19,16 @@ import {
  * @property {string|null} error
  */
 
-/** @type {Map<string|number, StageState>} */
-const stageMap = reactive(new Map());
+/** @type {Map<string, import('vue').UnwrapNestedRefs<Map<string|number, StageState>>>} */
+const accountStore = new Map();
+
+function getStageMap(accountId) {
+  const key = String(accountId);
+  if (!accountStore.has(key)) {
+    accountStore.set(key, reactive(new Map()));
+  }
+  return accountStore.get(key);
+}
 
 function defaultStageState() {
   return {
@@ -33,7 +40,7 @@ function defaultStageState() {
   };
 }
 
-function ensureStage(stageId) {
+function ensureStage(stageMap, stageId) {
   if (!stageMap.has(stageId)) {
     stageMap.set(stageId, defaultStageState());
   }
@@ -41,13 +48,15 @@ function ensureStage(stageId) {
 }
 
 // ---------------------------------------------------------------------------
-// Public composable
+// Public API
 // ---------------------------------------------------------------------------
 
 /**
  * @param {string|number} accountId
  */
 export function useLeadStore(accountId) {
+  const stageMap = getStageMap(accountId);
+
   // -------------------------------------------------------------------------
   // Getters
   // -------------------------------------------------------------------------
@@ -62,17 +71,47 @@ export function useLeadStore(accountId) {
   }
 
   // -------------------------------------------------------------------------
-  // Fetch
+  // Upsert (merge server truth into local state, preserving pending moves)
+  // -------------------------------------------------------------------------
+  function upsertLeads(stageId, incomingLeads) {
+    const state = ensureStage(stageMap, stageId);
+    const incomingIds = new Set(incomingLeads.map(l => l.id));
+    const updated = [];
+
+    state.leads.forEach(existing => {
+      if (existing.movePending) {
+        updated.push(existing);
+        return;
+      }
+      if (incomingIds.has(existing.id)) {
+        const fresh = incomingLeads.find(l => l.id === existing.id);
+        updated.push(fresh);
+      }
+      // Not in incoming and not pending → gone from server, omit.
+    });
+
+    // Prepend new leads not seen locally (auto-created by CrmListener).
+    const existingIds = new Set(updated.map(l => l.id));
+    incomingLeads.forEach(lead => {
+      if (!existingIds.has(lead.id)) updated.unshift(lead);
+    });
+
+    state.leads = updated;
+  }
+
+  // -------------------------------------------------------------------------
+  // Fetch — routes through upsertLeads to preserve movePending leads
   // -------------------------------------------------------------------------
   async function fetchStage(stageId) {
-    const state = ensureStage(stageId);
+    const state = ensureStage(stageMap, stageId);
     if (state.isLoading) return;
 
     state.isLoading = true;
     state.error = null;
     try {
       const res = await fetchLeads(accountId, { stage_id: stageId, limit: 50 });
-      state.leads = res.data.leads ?? [];
+      const incomingLeads = res.data.leads ?? [];
+      upsertLeads(stageId, incomingLeads); // preserves movePending
       state.cursor = res.data.next_cursor ?? null;
       state.hasMore = state.cursor !== null;
     } catch (err) {
@@ -85,7 +124,7 @@ export function useLeadStore(accountId) {
   }
 
   async function fetchNextPage(stageId) {
-    const state = ensureStage(stageId);
+    const state = ensureStage(stageMap, stageId);
     if (state.isLoading || !state.hasMore || !state.cursor) return;
 
     state.isLoading = true;
@@ -96,7 +135,6 @@ export function useLeadStore(accountId) {
         limit: 50,
       });
       const newLeads = res.data.leads ?? [];
-      // Append, de-duping by id.
       const existingIds = new Set(state.leads.map(l => l.id));
       newLeads.forEach(lead => {
         if (!existingIds.has(lead.id)) state.leads.push(lead);
@@ -112,43 +150,11 @@ export function useLeadStore(accountId) {
   }
 
   // -------------------------------------------------------------------------
-  // Upsert (used by polling — merges server truth into local state)
-  // -------------------------------------------------------------------------
-  function upsertLeads(stageId, incomingLeads) {
-    const state = ensureStage(stageId);
-    const incomingIds = new Set(incomingLeads.map(l => l.id));
-
-    const updated = [];
-
-    // Retain optimistic-move leads that aren't confirmed yet.
-    state.leads.forEach(existing => {
-      if (existing.movePending) {
-        updated.push(existing);
-        return;
-      }
-      if (incomingIds.has(existing.id)) {
-        // Replace with server version.
-        const fresh = incomingLeads.find(l => l.id === existing.id);
-        updated.push(fresh);
-      }
-      // If not in incoming and not pending → gone from server, omit.
-    });
-
-    // Prepend truly new leads (auto-created by CrmListener).
-    const existingIds = new Set(updated.map(l => l.id));
-    incomingLeads.forEach(lead => {
-      if (!existingIds.has(lead.id)) updated.unshift(lead);
-    });
-
-    state.leads = updated;
-  }
-
-  // -------------------------------------------------------------------------
   // Optimistic move
   // -------------------------------------------------------------------------
   function moveLeadOptimistic({ leadId, fromStageId, toStageId }) {
     const fromState = stageMap.get(fromStageId);
-    const toState = ensureStage(toStageId);
+    const toState = ensureStage(stageMap, toStageId);
 
     if (!fromState) return;
 
@@ -156,32 +162,37 @@ export function useLeadStore(accountId) {
     if (idx === -1) return;
 
     const [lead] = fromState.leads.splice(idx, 1);
-    toState.leads.unshift({
-      ...lead,
-      stage_id: toStageId,
-      movePending: true,
-    });
+    toState.leads.unshift({ ...lead, stage_id: toStageId, movePending: true });
   }
 
   async function commitMove({ leadId, toStageId }) {
-    const state = stageMap.get(toStageId);
-    if (!state) return;
-
     const res = await moveLead(accountId, leadId, toStageId);
     const updated = res.data;
-    const idx = state.leads.findIndex(l => l.id === leadId);
-    if (idx !== -1) {
-      state.leads[idx] = { ...updated, movePending: false };
+
+    if (!updated?.id) {
+      throw new Error(
+        `algorythmo:commitMove: invalid response for lead ${leadId}`
+      );
     }
+
+    // Find the lead across ALL stages — it may have been moved again mid-flight.
+    let found = false;
+    stageMap.forEach(state => {
+      if (found) return;
+      const idx = state.leads.findIndex(l => l.id === leadId);
+      if (idx !== -1) {
+        state.leads[idx] = { ...updated, movePending: false };
+        found = true;
+      }
+    });
   }
 
   function rollbackMove({ leadId, fromStageId }) {
-    // Find the lead in whichever stage it's currently in (could be toStage).
     Array.from(stageMap.values()).some(state => {
       const idx = state.leads.findIndex(l => l.id === leadId);
       if (idx !== -1) {
         const [lead] = state.leads.splice(idx, 1);
-        const fromState = ensureStage(fromStageId);
+        const fromState = ensureStage(stageMap, fromStageId);
         fromState.leads.unshift({
           ...lead,
           stage_id: fromStageId,
@@ -199,14 +210,11 @@ export function useLeadStore(accountId) {
   async function reopenLeadAction(leadId, firstStageId) {
     const res = await reopenLead(accountId, leadId);
     const newLead = res.data;
-    const state = ensureStage(firstStageId);
+    const state = ensureStage(stageMap, firstStageId);
     state.leads.unshift(newLead);
     return newLead;
   }
 
-  // -------------------------------------------------------------------------
-  // Exposed
-  // -------------------------------------------------------------------------
   return {
     stageMap,
     leadsByStage,
@@ -219,4 +227,12 @@ export function useLeadStore(accountId) {
     rollbackMove,
     reopenLeadAction,
   };
+}
+
+/**
+ * Clear all lead state for a given account (call on account switch).
+ * @param {string|number} accountId
+ */
+export function clearLeadStoreForAccount(accountId) {
+  accountStore.delete(String(accountId));
 }

@@ -5,11 +5,13 @@ vi.mock('dashboard/helper/algorythmo/leadApi.js', () => ({
 }));
 
 import { fetchDefaultPipeline } from 'dashboard/helper/algorythmo/leadApi.js';
-import { usePipelineStore } from '../usePipelineStore.js';
+import {
+  usePipelineStore,
+  clearPipelineStoreForAccount,
+} from '../usePipelineStore.js';
 
-// Reset module-level singleton state between tests.
-// We do this by re-importing using vi.resetModules, but the simpler approach
-// is to rely on each test calling loadPipeline with a fresh mock.
+// Each test uses a unique accountId so per-account keyed caches don't bleed.
+// clearPipelineStoreForAccount is used when we need a fresh cache mid-test.
 
 describe('usePipelineStore', () => {
   beforeEach(() => {
@@ -17,6 +19,7 @@ describe('usePipelineStore', () => {
   });
 
   it('loadPipeline sets pipeline and stages on success', async () => {
+    clearPipelineStoreForAccount('1');
     fetchDefaultPipeline.mockResolvedValue({
       data: {
         pipeline: { id: 1, name: 'Default' },
@@ -36,14 +39,31 @@ describe('usePipelineStore', () => {
   });
 
   it('pipelineLoaded is false before first load', () => {
-    // Use a different account to avoid cache hit from previous test.
-    const store = usePipelineStore('999');
-    // Note: singleton state may already have pipeline from prev test — this
-    // test validates the shape, not the initial empty state across imports.
-    expect(typeof store.pipelineLoaded.value).toBe('boolean');
+    // Fresh account — cache entry does not exist yet.
+    clearPipelineStoreForAccount('fresh-acct');
+    const store = usePipelineStore('fresh-acct');
+    expect(store.pipelineLoaded.value).toBe(false);
+  });
+
+  it('cross-account: different accountIds have independent caches', async () => {
+    clearPipelineStoreForAccount('acct-a');
+    clearPipelineStoreForAccount('acct-b');
+    fetchDefaultPipeline.mockResolvedValue({
+      data: {
+        pipeline: { id: 1, name: 'Default' },
+        stages: [{ id: 10, name: 'Novo', position: 1, aging_coefficient: 1 }],
+      },
+    });
+
+    const storeA = usePipelineStore('acct-a');
+    await storeA.loadPipeline();
+
+    const storeB = usePipelineStore('acct-b');
+    expect(storeB.pipelineLoaded.value).toBe(false);
   });
 
   it('stageById computed returns a Map keyed by stage id', async () => {
+    clearPipelineStoreForAccount('2');
     fetchDefaultPipeline.mockResolvedValue({
       data: {
         pipeline: { id: 1, name: 'Default' },
@@ -58,6 +78,7 @@ describe('usePipelineStore', () => {
   });
 
   it('updateStageName mutates the stages ref', async () => {
+    clearPipelineStoreForAccount('3');
     fetchDefaultPipeline.mockResolvedValue({
       data: {
         pipeline: { id: 1, name: 'Default' },
@@ -71,6 +92,7 @@ describe('usePipelineStore', () => {
   });
 
   it('updateStageCoefficient mutates aging_coefficient', async () => {
+    clearPipelineStoreForAccount('4');
     fetchDefaultPipeline.mockResolvedValue({
       data: {
         pipeline: { id: 1, name: 'Default' },
@@ -84,6 +106,7 @@ describe('usePipelineStore', () => {
   });
 
   it('sets error on fetch failure', async () => {
+    clearPipelineStoreForAccount('5');
     fetchDefaultPipeline.mockRejectedValue({ message: 'Network error' });
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 

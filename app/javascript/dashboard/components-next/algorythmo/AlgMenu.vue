@@ -112,6 +112,8 @@ function close() {
   emit('close');
   document.removeEventListener('click', handleOutsideClick, { capture: true });
   document.removeEventListener('keydown', handleGlobalKeydown);
+  window.removeEventListener('scroll', updateTriggerRect, { capture: true });
+  window.removeEventListener('resize', updateTriggerRect);
   triggerEl?.focus?.();
 }
 
@@ -120,6 +122,11 @@ function open() {
   emit('open');
   document.addEventListener('click', handleOutsideClick, { capture: true });
   document.addEventListener('keydown', handleGlobalKeydown);
+  window.addEventListener('scroll', updateTriggerRect, {
+    passive: true,
+    capture: true,
+  });
+  window.addEventListener('resize', updateTriggerRect, { passive: true });
   nextTick(() => focusFirstItem());
 }
 
@@ -136,6 +143,8 @@ function toggle(event) {
 onUnmounted(() => {
   document.removeEventListener('click', handleOutsideClick, { capture: true });
   document.removeEventListener('keydown', handleGlobalKeydown);
+  window.removeEventListener('scroll', updateTriggerRect, { capture: true });
+  window.removeEventListener('resize', updateTriggerRect);
 });
 
 defineExpose({ open, close, toggle, isOpen });
