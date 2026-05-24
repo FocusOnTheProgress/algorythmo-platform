@@ -2,7 +2,7 @@
 
 > **Mantenedor:** Sessão A (orquestradora). Atualizado em tempo real conforme PRs abrem, CI fecha, adversarial revisa, merge acontece.
 
-**Última atualização:** 2026-05-24 — Sessão A executou Fase 2 sequencialmente (opção B: PR C dividida em C.1 + C.2). PRs #47 e #48 abertos e READY_FOR_MERGE; faltam C.2 e D.
+**Última atualização:** 2026-05-24 (sessão A continua) — PRs #47 e #48 MERGED. C.2 e D despachados em paralelo (engineer agent + codex como segunda opinião).
 
 ---
 
@@ -10,11 +10,9 @@
 
 | Agente | Worktree | Branch | Tarefa atual | Status | PR |
 |---|---|---|---|---|---|
-| **A** (orquestradora) | `Fork Chatwoot/` (main) | `algorythmo/main` | Próxima sessão retoma C.2 + D | ⏸️ pausada | — |
-| **B** (executado por A) | `algorythmo-b-onda2/` | `algorythmo/m2-onda2-sidebar-gates` | 13 cuts no Sidebar + route guards + dev-warn + coverage spec | ✅ READY_FOR_MERGE | [#47](https://github.com/FocusOnTheProgress/algorythmo-platform/pull/47) |
-| **C.1** (executado por A) | `algorythmo-c-onda2/` | `algorythmo/m1b-leadcard` | timeFormat + LeadAgingChip + LeadCard (CONTRACT §3 + §4) | ✅ READY_FOR_MERGE | [#48](https://github.com/FocusOnTheProgress/algorythmo-platform/pull/48) |
-| **C.2** (pendente) | `algorythmo-c-onda2/` (reaproveitar) | `algorythmo/m1b-kanban` (criar a partir de `algorythmo/main` após #48 mergear) | KanbanBoard + StageColumn + rota `/crm` + sidebar + i18n + drag composable + MoveLeadModal | ⏳ aguardando #48 | — |
-| **D** (pendente) | `algorythmo-d/` ou novo worktree | `algorythmo/m1b-playwright-suite` | 9 specs Playwright contra CONTRACT v1.0.0, com `.skip()` até C.2 mergear | ⏳ aguardando C.2 | — |
+| **A** (orquestradora) | `Fork Chatwoot/` (main) | `algorythmo/main` | Monitora C.2 + D, despacha adversarial pós-PR | 🟢 em execução | — |
+| **C.2** (engineer agent) | `algorythmo-c-onda2/` | `algorythmo/m1b-kanban` | KanbanBoard + StageColumn + rota `/crm` + sidebar + i18n + drag composable + MoveLeadModal | 🟡 em construção | — |
+| **D** (engineer agent) | `algorythmo-d/` | `algorythmo/m1b-playwright-suite` | 9 specs Playwright contra CONTRACT v1.0.0, com `.skip()` até C.2 mergear | 🟡 em construção | — |
 
 **Contrato compartilhado C↔D:** [`docs/coordination/CONTRACT_M1B.md`](CONTRACT_M1B.md) v1.0.0. Single source of truth pros selectors/aria.
 
@@ -23,14 +21,16 @@
 ## 🟢 Próxima sessão — leia isto primeiro
 
 **O que está no ar agora:**
-- PR [#47](https://github.com/FocusOnTheProgress/algorythmo-platform/pull/47) `algorythmo/m2-onda2-sidebar-gates` — 13 sidebar gates + route guards. READY_FOR_MERGE.
-- PR [#48](https://github.com/FocusOnTheProgress/algorythmo-platform/pull/48) `algorythmo/m1b-leadcard` — B.4: timeFormat helper + LeadAgingChip + LeadCard. READY_FOR_MERGE. Adversarial H1+H2+H3 endereçados em `d3353af1d`.
+- ✅ PR #47 mergeado em `8d81b789e` (2026-05-24 15:09Z) — 13 sidebar gates + route guards.
+- ✅ PR #48 mergeado em `8b74e0516` (2026-05-24 15:10Z) — B.4: timeFormat + LeadAgingChip + LeadCard.
+- 🟡 C.2 e D despachados em worktrees independentes via engineer agent (paralelo).
 
-**Passo 1 — mergear nesta ordem:**
-1. Confirmar CI verde em #47 e #48 (`gh pr checks <num> --repo FocusOnTheProgress/algorythmo-platform`).
-2. Mergear #47 primeiro (toca `Sidebar.vue`, baseline pra C.2 não dar conflito).
-3. Mergear #48.
-4. Atualizar este STATUS.md movendo C.1 + B pra "Histórico de merges".
+**Workflow ativo:**
+1. Aguardar engineer C.2 abrir PR. Spawn adversarial-reviewer + codex (segunda opinião). Endereçar HIGH.
+2. Aguardar engineer D abrir PR. Spawn adversarial-reviewer + codex. Mergear após C.2 (D depende do contrato, mas independente de código).
+3. Pós-merge C.2: PR follow-up removendo `.skip()` da suite D.
+
+**Histórico do dispatch:**
 
 **Passo 2 — PR C.2 (Kanban + rota):**
 - Worktree: reaproveitar `C:/Users/gusta/dev/algorythmo-c-onda2` OU criar `algorythmo-c-onda3`. Sincronizar com `algorythmo/main` após merges:
@@ -165,9 +165,12 @@ Nenhuma no momento. Qualquer dúvida levantada em PR `[BLOCKED]` por B/C/D apare
 | #45 | M1-B base — SCSS bridge + composables + primitives | 2026-05-24 00:46 | C |
 | #43 | M2-C.2 foundation de feature gates | 2026-05-24 03:02 | B |
 
-### Abertos READY_FOR_MERGE
+| #47 | M2-C.3 Onda 2 — 13 sidebar gates + route guards | 2026-05-24 15:09Z | A (executou B) |
+| #48 | M1-B/B.4 — LeadAgingChip + LeadCard + timeFormat | 2026-05-24 15:10Z | A (executou C.1) |
 
-| PR | Título | Aberto em | Sessão |
+### Em construção (Fase 2 final)
+
+| Branch | Worktree | Sessão | Escopo |
 |---|---|---|---|
-| [#47](https://github.com/FocusOnTheProgress/algorythmo-platform/pull/47) | M2-C.3 Onda 2 — 13 sidebar gates + route guards | 2026-05-24 | A (executou B) |
-| [#48](https://github.com/FocusOnTheProgress/algorythmo-platform/pull/48) | M1-B/B.4 — LeadAgingChip + LeadCard + timeFormat | 2026-05-24 | A (executou C.1) |
+| `algorythmo/m1b-kanban` | `algorythmo-c-onda2` | C.2 (engineer agent) | KanbanBoard + StageColumn + MoveLeadModal + rota /crm + sidebar entry + i18n + drag composable |
+| `algorythmo/m1b-playwright-suite` | `algorythmo-d` | D (engineer agent) | 9 specs Playwright contra CONTRACT v1.0.0 (`.skip()` até C.2 mergear) |
