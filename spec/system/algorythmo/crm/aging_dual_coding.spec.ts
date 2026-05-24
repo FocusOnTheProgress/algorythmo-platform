@@ -16,7 +16,13 @@
  * live AND test account has `algorythmo_crm` enabled.
  */
 
-import { test, expect, loginAsAdmin, goToCrm } from './_fixture';
+import {
+  test,
+  expect,
+  loginAsAdmin,
+  goToCrm,
+  TEST_ACCOUNT_ID,
+} from './_fixture';
 
 const LEADS_BY_AGING = [
   {
@@ -76,7 +82,7 @@ test.describe('Aging chip — dual-coding (D10 + D11)', () => {
     test.skip(lead.description, async ({ page }) => {
       // Mock pipeline with stage aging_coefficient matching lead
       await page.route(
-        `**/algorythmo/api/v1/accounts/*/pipelines/default`,
+        `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/pipelines/default`,
         async route => {
           await route.fulfill({
             status: 200,
@@ -106,7 +112,7 @@ test.describe('Aging chip — dual-coding (D10 + D11)', () => {
       );
 
       await page.route(
-        `**/algorythmo/api/v1/accounts/*/leads*`,
+        `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/leads*`,
         async route => {
           const url = route.request().url();
           const stageId = new URL(url).searchParams.get('stage_id');

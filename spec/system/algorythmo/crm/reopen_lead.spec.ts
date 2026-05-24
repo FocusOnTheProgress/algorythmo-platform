@@ -22,7 +22,12 @@ import {
   mockLead,
   mockDefaultPipeline,
   mockLeads,
+  TEST_ACCOUNT_ID,
 } from './_fixture';
+
+// pt_BR copy of ALGORYTHMO_CRM.LEAD_DRAWER.REOPEN_BUTTON. Extracted as a
+// single const so an i18n rename touches one place only.
+const REOPEN_BUTTON_REGEX = /reabrir como novo lead/i;
 
 const WON_LEAD = mockLead({
   id: 10,
@@ -30,6 +35,16 @@ const WON_LEAD = mockLead({
   channelOrigin: 'widget',
   contactName: 'Won Lead User',
   closed: true,
+});
+
+// Reopened lead — id=11 in Novo (stage_id=1) with previous_lead_id=10.
+// Used in BOTH the POST response AND the post-reopen leads list so that
+// either C.2 implementation strategy works (push-into-state OR refetch).
+const REOPENED_LEAD = mockLead({
+  id: 11,
+  stageId: 1,
+  channelOrigin: 'widget',
+  contactName: 'Won Lead User',
 });
 
 test.describe('Reopen Lead', () => {
@@ -52,9 +67,7 @@ test.describe('Reopen Lead', () => {
       .locator('[data-testid="lead-card"][data-lead-id="10"]')
       .click();
 
-    const reopenBtn = page.getByRole('button', {
-      name: /reabrir como novo lead/i,
-    });
+    const reopenBtn = page.getByRole('button', { name: REOPEN_BUTTON_REGEX });
     await expect(reopenBtn).toBeVisible({ timeout: 5_000 });
   });
 
@@ -63,20 +76,12 @@ test.describe('Reopen Lead', () => {
   }) => {
     await mockLeads(page, [WON_LEAD]);
     await page.route(
-      `**/algorythmo/api/v1/accounts/*/leads/10/reopen`,
+      `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/leads/10/reopen`,
       async route => {
         await route.fulfill({
           status: 201,
           contentType: 'application/json',
-          body: JSON.stringify({
-            id: 11,
-            stage_id: 1,
-            previous_lead_id: 10,
-            channel_origin: 'widget',
-            channel_metadata: { name: 'Won Lead User' },
-            stage_entered_at: new Date().toISOString(),
-            last_message_at: new Date().toISOString(),
-          }),
+          body: JSON.stringify({ ...REOPENED_LEAD, previous_lead_id: 10 }),
         });
       }
     );
@@ -89,7 +94,16 @@ test.describe('Reopen Lead', () => {
     await wonColumn
       .locator('[data-testid="lead-card"][data-lead-id="10"]')
       .click();
-    await page.getByRole('button', { name: /reabrir como novo lead/i }).click();
+
+    // After reopen, C.2 may either push the response into local state OR
+    // re-fetch /leads?stage_id=1. Re-register mockLeads so the second path
+    // also returns the new lead — otherwise the assertion is impl-coupled.
+    await page.unroute(
+      `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/leads*`
+    );
+    await mockLeads(page, [WON_LEAD, REOPENED_LEAD]);
+
+    await page.getByRole('button', { name: REOPEN_BUTTON_REGEX }).click();
 
     const novoColumn = page.locator(
       '[data-testid="stage-column"][data-stage-id="1"]'
@@ -120,9 +134,7 @@ test.describe('Reopen Lead', () => {
     );
     await card.click();
 
-    const reopenBtn = page.getByRole('button', {
-      name: /reabrir como novo lead/i,
-    });
+    const reopenBtn = page.getByRole('button', { name: REOPEN_BUTTON_REGEX });
     await expect(reopenBtn).toHaveCount(0, { timeout: 3_000 });
   });
 });

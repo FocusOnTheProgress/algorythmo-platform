@@ -41,8 +41,6 @@ const VALID_AGING_STATES = ['neutral', 'green', 'yellow', 'red'];
 const VALID_AGING_GLYPHS = ['—', '●', '◐', '○'];
 
 test.describe('CONTRACT_M1B v1.0.0 — surface conformance', () => {
-  test.describe.configure({ mode: 'serial' });
-
   test.skip('§2 — root, header, board region, and stage columns render', async ({
     page,
   }) => {
@@ -168,12 +166,11 @@ test.describe('CONTRACT_M1B v1.0.0 — surface conformance', () => {
     const href = await cta.getAttribute('href');
     expect(href).toMatch(/\/accounts\/\d+\/settings\/inboxes\/new$/);
 
-    // CONTRACT §5 — when global empty renders, the board is suppressed
-    // (v-if/v-else). Asserting the inverse keeps the meta-spec honest about
-    // the two branches being mutually exclusive.
-    await expect(
-      page.locator('[data-testid="kanban-board"]')
-    ).toHaveCount(0);
+    // CONTRACT §5 — when global empty renders, the board MUST NOT be visible
+    // to the user. `toBeHidden()` allows two equally valid implementations:
+    // (a) v-if removes the node, (b) board mounted but visually suppressed
+    // by the overlay. Asserting `toHaveCount(0)` would lock C.2 to strategy (a).
+    await expect(page.locator('[data-testid="kanban-board"]')).toBeHidden();
   });
 
   test.skip('§5 (per-column) — stage-empty-state + stage-empty-text render in empty stages while board has data', async ({

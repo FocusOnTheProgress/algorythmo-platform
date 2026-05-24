@@ -51,7 +51,7 @@ const LEAD_IN_NOVO = mockLead({
 
 function mockMoveSuccess(page: Parameters<typeof goToCrm>[0]) {
   return page.route(
-    `**/algorythmo/api/v1/accounts/*/leads/1/move`,
+    `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/leads/1/move`,
     async (route) => {
       await route.fulfill({
         status: 200,
@@ -133,7 +133,7 @@ test.describe('Kanban — Drag and Drop', () => {
   test.skip(
     'drag failure (5xx) rolls back card and announces via aria-live',
     async ({ page }) => {
-      await page.route(`**/algorythmo/api/v1/accounts/*/leads/*/move`, async (route) => {
+      await page.route(`**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/leads/*/move`, async (route) => {
         await route.fulfill({ status: 500, body: 'Internal Server Error' });
       });
 

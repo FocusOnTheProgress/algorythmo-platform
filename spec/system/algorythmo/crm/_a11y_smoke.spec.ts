@@ -120,6 +120,10 @@ test.describe('A11y smoke — axe-core WCAG AA gate', () => {
 
     await loginAsAdmin(page);
     await mockDefaultPipeline(page);
+    // Defensive: /crm/pipeline may surface per-stage lead counts that fire
+    // /leads requests. Stub them to avoid networkidle hangs even if the
+    // page does not (today) hit /leads — costs nothing if unused.
+    await mockLeads(page, []);
     await goToPipelineConfig(page);
 
     const results = await new AxeBuilder({ page })

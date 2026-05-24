@@ -31,6 +31,7 @@ import {
   mockDefaultPipeline,
   mockLeads,
   DEFAULT_PIPELINE_STAGES,
+  TEST_ACCOUNT_ID,
 } from './_fixture';
 
 const SAMPLE_LEAD = mockLead({
@@ -126,7 +127,7 @@ test.describe('A11y — Keyboard navigation', () => {
     page,
   }) => {
     await page.route(
-      `**/algorythmo/api/v1/accounts/*/leads/1/move`,
+      `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/leads/1/move`,
       async route => {
         await route.fulfill({
           status: 200,

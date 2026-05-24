@@ -25,14 +25,24 @@ import {
   mockLead,
   mockDefaultPipeline,
   mockLeads,
+  DEFAULT_PIPELINE_STAGES,
+  TEST_ACCOUNT_ID,
 } from './_fixture';
+
+// CONTRACT §2 — open|won|lost only. "Proposta" → RENAMED_STAGE_NAME stays an
+// open stage. The single source for the new name — input fill, mock body,
+// AND assertion all read from this const so an i18n / copy change is one edit.
+const RENAMED_STAGE_NAME = 'Orçamento';
+const RENAMED_STAGES = DEFAULT_PIPELINE_STAGES.map(s =>
+  s.id === 3 ? { ...s, name: RENAMED_STAGE_NAME } : s
+);
 
 test.describe('Pipeline rename', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
     await mockDefaultPipeline(page);
     await page.route(
-      `**/algorythmo/api/v1/accounts/*/stages/3/rename`,
+      `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/stages/3/rename`,
       async route => {
         await route.fulfill({
           status: 200,
@@ -40,7 +50,7 @@ test.describe('Pipeline rename', () => {
           // CONTRACT §2 — only open|won|lost. "Proposta" is an open stage.
           body: JSON.stringify({
             id: 3,
-            name: 'Orçamento',
+            name: RENAMED_STAGE_NAME,
             position: 3,
             kind: 'open',
             aging_coefficient: 7.0,
@@ -63,8 +73,14 @@ test.describe('Pipeline rename', () => {
     await expect(propostaInput).toBeVisible({ timeout: 5_000 });
 
     await propostaInput.clear();
-    await propostaInput.fill('Orçamento');
+    await propostaInput.fill(RENAMED_STAGE_NAME);
     await propostaInput.press('Enter');
+
+    // Post-rename: /pipelines/default must return the new name on the next fetch.
+    await page.unroute(
+      `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/pipelines/default`
+    );
+    await mockDefaultPipeline(page, RENAMED_STAGES);
 
     await goToCrm(page);
 
@@ -93,8 +109,14 @@ test.describe('Pipeline rename', () => {
       '[data-stage-id="3"] [data-testid="stage-name-input"]'
     );
     await propostaInput.clear();
-    await propostaInput.fill('Orçamento');
+    await propostaInput.fill(RENAMED_STAGE_NAME);
     await propostaInput.press('Enter');
+
+    // Post-rename: /pipelines/default must return the new name on the next fetch.
+    await page.unroute(
+      `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/pipelines/default`
+    );
+    await mockDefaultPipeline(page, RENAMED_STAGES);
 
     await goToCrm(page);
 
