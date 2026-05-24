@@ -390,4 +390,66 @@ RSpec.describe Algorythmo::CrmListener, type: :listener do
       expect(lead.channel_metadata).to include('contact_name' => contact.name)
     end
   end
+
+  # ── M1-C: StageHistory on create / reopen ─────────────────────────────────────
+
+  describe 'M1-C — StageHistory on lead creation' do
+    let(:pipeline) { seed_pipeline! }
+
+    before do
+      enable_crm_gate!
+      pipeline
+    end
+
+    context 'when creating a new lead' do
+      it 'appends a StageHistory entry with from=nil and actor=system' do
+        expect do
+          listener.message_created(build_event(incoming_message))
+        end.to change(Algorythmo::StageHistory, :count).by(1)
+
+        entry = Algorythmo::StageHistory.last
+        expect(entry.from_stage).to be_nil
+        expect(entry.to_stage).to eq(pipeline.stages.find_by(kind: :open))
+        expect(entry.actor_type).to eq('system')
+      end
+
+      it 'records exactly 1 StageHistory even when message_created fires twice (Sidekiq retry idempotency)' do
+        msg = incoming_message
+
+        listener.message_created(build_event(msg))
+        expect(Algorythmo::StageHistory.count).to eq(1)
+
+        # Second invocation: open_lead is found → only touch; no record_creation call.
+        listener.message_created(build_event(msg))
+        expect(Algorythmo::StageHistory.count).to eq(1)
+      end
+    end
+
+    context 'when reopening a closed lead (C2)' do
+      let(:won_stage)  { pipeline.stages.find_by(kind: :won) }
+      let(:novo_stage) { pipeline.stages.find_by(kind: :open) }
+
+      it 'appends a StageHistory entry with from=Won and actor=system' do
+        closed_lead = Algorythmo::Lead.create!(
+          account: account,
+          contact: contact,
+          stage: won_stage,
+          position: 1.0,
+          stage_entered_at: 10.days.ago,
+          closed_at: 2.days.ago,
+          last_message_at: 1.day.ago
+        )
+
+        expect do
+          listener.message_created(build_event(incoming_message))
+        end.to change(Algorythmo::StageHistory, :count).by(1)
+
+        entry = Algorythmo::StageHistory.last
+        expect(entry.lead).to eq(closed_lead)
+        expect(entry.from_stage).to eq(won_stage)
+        expect(entry.to_stage).to eq(novo_stage)
+        expect(entry.actor_type).to eq('system')
+      end
+    end
+  end
 end

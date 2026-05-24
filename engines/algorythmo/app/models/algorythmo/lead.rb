@@ -11,6 +11,14 @@ class Algorythmo::Lead < ApplicationRecord
                               inverse_of: :previous_lead,
                               dependent: :nullify
 
+  # dependent: :delete_all (not :destroy) — stage_histories are readonly? once
+  # persisted, so the per-record destroy() chain would raise ReadOnlyRecord.
+  # delete_all issues a single DELETE bypassing callbacks: correct semantics —
+  # when the parent lead is gone, its append-only history has no meaning to retain.
+  has_many :stage_histories, class_name: 'Algorythmo::StageHistory',
+                             inverse_of: :lead,
+                             dependent: :delete_all
+
   validates :account,  presence: true
   validates :contact,  presence: true
   validates :stage,    presence: true
@@ -26,19 +34,39 @@ class Algorythmo::Lead < ApplicationRecord
   before_save :sync_stage_kind
   before_create :set_stage_entered_at
 
+  # §5.4 — Ghost-history defence: stage_id can only change via move_to_stage.
+  # Direct update!(stage_id:) from rake tasks, console, or future jobs is blocked
+  # here so that StageHistory always reflects the canonical move path.
+  #
+  # Implemented as a validation (not before_update + throw :abort) so update!
+  # surfaces ActiveRecord::RecordInvalid with the message intact — the standard
+  # Rails contract for write-blocking guards. Known gap: update_columns and
+  # update_all bypass validations by design (see spec lead_spec.rb §5.4).
+  attr_accessor :_via_move_to_stage
+
+  validate :guard_stage_id_change, on: :update
+
+  # §6.3 — Record stage transition after the move commits. Runs after_commit so a
+  # history insert failure never rolls back the committed stage change.
+  after_update_commit :record_stage_transition, if: :saved_change_to_stage_id?
+
   # A.4 — Move lead to a new stage.
   # Recalculates position (appended at end) and resets the aging clock (D10).
   # Raises ArgumentError if stage belongs to a different pipeline.
+  # Sets _via_move_to_stage so the guard allows the stage_id change.
   def move_to_stage(new_stage)
     raise ArgumentError, 'Stage cannot be nil' if new_stage.nil?
     raise ArgumentError, 'Stage belongs to a different pipeline' if new_stage.pipeline_id != stage.pipeline_id
 
+    self._via_move_to_stage = true
     update!(
       stage: new_stage,
       position: next_position_in(new_stage),
       stage_entered_at: Time.current,
       closed_at: closed_at_for(new_stage)
     )
+  ensure
+    self._via_move_to_stage = false
   end
 
   # A.5 — Reopen a closed lead as a new lead, preserving the chain.
@@ -65,6 +93,26 @@ class Algorythmo::Lead < ApplicationRecord
   end
 
   private
+
+  # §5.4 — Blocks any update that changes stage_id outside of move_to_stage.
+  # Adds a validation error; update! then raises ActiveRecord::RecordInvalid.
+  def guard_stage_id_change
+    return unless stage_id_changed?
+    return if _via_move_to_stage
+
+    errors.add(:stage_id, 'só pode ser modificado via Lead#move_to_stage')
+  end
+
+  # §6.3 — Called after_update_commit when stage_id changed.
+  # Reads from saved_change_to_stage_id to resolve both Stage objects.
+  def record_stage_transition
+    from_id, to_id = saved_change_to_stage_id
+    from_stage = from_id ? Algorythmo::Stage.find_by(id: from_id) : nil
+    to_stage   = Algorythmo::Stage.find_by(id: to_id)
+    return unless to_stage
+
+    Algorythmo::StageHistoryRecorder.record_transition(self, from: from_stage, to: to_stage)
+  end
 
   def next_position_in(target_stage)
     max_position = self.class.where(stage: target_stage, deleted: false)
