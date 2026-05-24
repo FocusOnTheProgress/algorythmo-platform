@@ -85,7 +85,7 @@ class Algorythmo::CrmListener < BaseListener
               .where(id: open_lead.id, owner_id: nil)
               .update_all(owner_id: message.sender_id, updated_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
 
-    Rails.logger.debug("[CrmListener] owner already set for lead=#{open_lead.id}") if updated.zero?
+    Rails.logger.debug { "[CrmListener] owner already set for lead=#{open_lead.id}" } if updated.zero?
   end
 
   # C1 — Eligibility filter. Returns false for:

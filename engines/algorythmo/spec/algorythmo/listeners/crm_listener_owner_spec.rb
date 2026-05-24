@@ -271,11 +271,11 @@ RSpec.describe Algorythmo::CrmListener, type: :listener do
     # Standard Chatwoot records (accounts, contacts, users) are managed by the test suite
     # DB cleanup at suite end. FK-safe order: leads first, then stages, then pipelines.
     after do
-      Algorythmo::Lead.where(account_id: account.id).delete_all # rubocop:disable Rails/SkipsModelValidations
+      Algorythmo::Lead.where(account_id: account.id).delete_all
       Algorythmo::Stage.joins(:pipeline)
                        .where(algorythmo_pipelines: { account_id: account.id })
-                       .delete_all # rubocop:disable Rails/SkipsModelValidations
-      Algorythmo::Pipeline.where(account_id: account.id).delete_all # rubocop:disable Rails/SkipsModelValidations
+                       .delete_all
+      Algorythmo::Pipeline.where(account_id: account.id).delete_all
     end
 
     it 'ensures exactly one thread wins (first-writer-wins by DB)' do
@@ -288,17 +288,22 @@ RSpec.describe Algorythmo::CrmListener, type: :listener do
 
       threads = race_agents.each_with_index.map do |human, idx|
         Thread.new do
-          updated = Algorythmo::Lead
-                    .where(id: lead.id, owner_id: nil)
-                    .update_all(owner_id: human.id, updated_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
-          results[idx] = updated
+          # Default pool size is 5; with 10 threads each holding a connection for the
+          # duration of the thread we hit ConnectionTimeoutError. with_connection
+          # actively returns the connection on block exit so the next thread can grab it.
+          ActiveRecord::Base.connection_pool.with_connection do
+            updated = Algorythmo::Lead
+                      .where(id: lead.id, owner_id: nil)
+                      .update_all(owner_id: human.id, updated_at: Time.current)
+            results[idx] = updated
+          end
         end
       end
 
       threads.each(&:join)
 
       winners = results.count { |r| r == 1 }
-      losers  = results.count { |r| r == 0 }
+      losers  = results.count(&:zero?)
 
       expect(winners).to eq(1),
                          "Expected exactly 1 winner, got #{winners} (results: #{results.inspect})"
