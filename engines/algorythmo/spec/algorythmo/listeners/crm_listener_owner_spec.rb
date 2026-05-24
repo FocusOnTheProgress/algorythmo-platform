@@ -118,12 +118,14 @@ RSpec.describe Algorythmo::CrmListener, type: :listener do
       open_lead.update_column(:deleted, true)
     end
 
-    it 'does not raise and logs at debug level (SDR cold-outbound is high-volume)' do
-      allow(Rails.logger).to receive(:debug)
+    it 'does not raise and does not log at warn level (SDR cold-outbound is high-volume)' do
+      # Contrato: SDR/cold-outbound bate aqui em volume — nao deve poluir o warn log.
+      # Stub apenas warn (debug eh chamado por todo Rails — checar count seria flaky).
+      allow(Rails.logger).to receive(:warn)
       msg = outgoing_message
 
       expect { listener.message_created(build_event(msg)) }.not_to raise_error
-      expect(Rails.logger).to have_received(:debug)
+      expect(Rails.logger).not_to have_received(:warn)
     end
   end
 
