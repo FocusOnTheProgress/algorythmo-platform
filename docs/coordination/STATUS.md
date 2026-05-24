@@ -2,7 +2,7 @@
 
 > **Mantenedor:** Sessão A (orquestradora). Atualizado em tempo real conforme PRs abrem, CI fecha, adversarial revisa, merge acontece.
 
-**Última atualização:** 2026-05-24 (sessão A continua) — PR #49 (C.2) **adversarial pass 4 DONE** em `49cbdab41` (5 carry-over: menu coalesce tuple, reflow helper, toast singleton cleanup, dead-guard removido, swallow-silencioso spec — 77/77 verde, adversarial LGTM). PR #50 (D) commit `fda1e7013` endereçou 5 CRITICAL + 6 HIGH (1ª rodada). PR #49 aguarda PR #50 ficar pronto antes do merge conjunto.
+**Última atualização:** 2026-05-24 (sessão A continua) — PR #49 (C.2) **adversarial pass 4 DONE** em `49cbdab41` (5 carry-over, 77/77 verde, LGTM). PR #50 (D) **adversarial pass 3 DONE** em `05c515569` (2 HIGH: pipeline_rename TOCTOU race entre PATCH e remock + aging_dual_coding coef math off-by-2x; 1 MEDIUM: doc comment serial mode). TS compila, 39 testes em 10 arquivos, todos `.skip()`'d. Ambos PRs prontos pro merge conjunto após CI verde.
 
 ---
 
