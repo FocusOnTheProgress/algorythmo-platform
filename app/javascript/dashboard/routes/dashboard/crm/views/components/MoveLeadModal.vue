@@ -85,11 +85,11 @@ watch(
       applyBackgroundInert();
       firstRadioRef.value?.focus();
     } else {
-      // Symmetric guard: if a later open has superseded this close (rapid
-      // close→open), the newer open branch is the authority on inert state
-      // and focus — skip this close-side cleanup so it doesn't clobber the
-      // new dialog's freshly-applied inert / cached previouslyFocused.
-      if (myGen !== modalGen) return;
+      // No generation guard here: the close branch is sync up to this
+      // point (no await between `modalGen += 1` above and the work below),
+      // so myGen is always equal to modalGen. Releasing inert + restoring
+      // focus immediately is what we want — adding a nextTick would only
+      // delay the user's focus restore without preventing a real race.
       releaseBackgroundInert();
       if (
         previouslyFocused.value instanceof HTMLElement &&

@@ -1,4 +1,5 @@
 <script setup>
+import { onBeforeUnmount } from 'vue';
 import AlgToast from './AlgToast.vue';
 import { useToast } from 'dashboard/composables/algorythmo/useToast.js';
 
@@ -9,7 +10,16 @@ defineProps({
   },
 });
 
-const { toasts, dismiss } = useToast();
+const { toasts, dismiss, clearAll } = useToast();
+
+// Toast state lives in a module-level singleton, but the container is
+// route-scoped (mounted by KanbanBoard). When the user navigates away,
+// error toasts with AUTO_DISMISS_MS.error = null would survive the
+// teardown and resurface on the next CRM mount — so we wipe the singleton
+// on unmount.
+onBeforeUnmount(() => {
+  clearAll();
+});
 </script>
 
 <template>

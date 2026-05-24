@@ -28,6 +28,15 @@ function dismiss(id) {
   if (idx !== -1) toasts.splice(idx, 1);
 }
 
+// Wipe the singleton. Called when the toast container unmounts (route
+// teardown) so error toasts with AUTO_DISMISS_MS.error = null don't linger
+// in memory and pop on the next mount with stale messages.
+function clearAll() {
+  timerIds.forEach(timer => clearTimeout(timer));
+  timerIds.clear();
+  toasts.splice(0);
+}
+
 function add({ type, message, retry }) {
   // Cap: evict oldest toast to prevent unbounded growth under error storms.
   while (toasts.length >= MAX_TOASTS) {
@@ -59,6 +68,7 @@ export function useToast() {
   return {
     toasts: readonly(toasts),
     dismiss,
+    clearAll,
     success(message) {
       return add({ type: 'success', message });
     },

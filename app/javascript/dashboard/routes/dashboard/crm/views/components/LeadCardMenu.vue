@@ -93,29 +93,52 @@ function handleMove() {
   emit('move', { lead: props.lead });
 }
 
+// Re-measure + re-clamp together: a viewport resize can both shift the
+// anchor (so the menu's top/left need updating) AND change which side of
+// the viewport the menu collides with. Measuring without clamping would
+// leave the menu off-screen on narrow windows.
+async function reflow() {
+  measurePosition();
+  await nextTick();
+  clampPosition();
+}
+
 function attachListeners() {
   document.addEventListener('mousedown', handleDocumentClick, true);
   document.addEventListener('keydown', handleKeydown);
-  window.addEventListener('scroll', measurePosition, true);
-  window.addEventListener('resize', measurePosition);
+  window.addEventListener('scroll', reflow, true);
+  window.addEventListener('resize', reflow);
 }
 
 function detachListeners() {
   document.removeEventListener('mousedown', handleDocumentClick, true);
   document.removeEventListener('keydown', handleKeydown);
-  window.removeEventListener('scroll', measurePosition, true);
-  window.removeEventListener('resize', measurePosition);
+  window.removeEventListener('scroll', reflow, true);
+  window.removeEventListener('resize', reflow);
 }
 
+// Watch the (open, anchor, leadId) tuple — not just `open` — because Vue
+// coalesces sequential changes via Object.is. When the user clicks card
+// A's ⋮ then card B's ⋮ without closing in between, `open` stays true
+// (true→true is a no-op) and a single-source watcher would not fire, so
+// the menu would render B's items at A's coordinates. Including anchor
+// and leadId in the tuple forces a re-measure on every transition.
+let listenersAttached = false;
 watch(
-  () => props.open,
-  async open => {
+  () => [props.open, props.anchor, props.lead?.id],
+  async ([open]) => {
     if (!open) {
-      detachListeners();
+      if (listenersAttached) {
+        detachListeners();
+        listenersAttached = false;
+      }
       return;
     }
     measurePosition();
-    attachListeners();
+    if (!listenersAttached) {
+      attachListeners();
+      listenersAttached = true;
+    }
     await nextTick();
     clampPosition();
     firstItemRef.value?.focus();
