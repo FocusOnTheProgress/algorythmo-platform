@@ -2,7 +2,7 @@
 
 > **Mantenedor:** Sessão A (orquestradora). Atualizado em tempo real conforme PRs abrem, CI fecha, adversarial revisa, merge acontece.
 
-**Última atualização:** 2026-05-24 (sessão A continua) — PRs #47 e #48 MERGED. C.2 e D despachados em paralelo (engineer agent + codex como segunda opinião).
+**Última atualização:** 2026-05-24 (sessão A continua) — PR #49 (C.2) **adversarial pass 4 DONE** em `49cbdab41` (5 carry-over: menu coalesce tuple, reflow helper, toast singleton cleanup, dead-guard removido, swallow-silencioso spec — 77/77 verde, adversarial LGTM). PR #50 (D) commit `fda1e7013` endereçou 5 CRITICAL + 6 HIGH (1ª rodada). PR #49 aguarda PR #50 ficar pronto antes do merge conjunto.
 
 ---
 
