@@ -105,6 +105,22 @@ RSpec.describe Algorythmo::FeatureGate do
       Rails.cache.clear
       expect(described_class.cut_enabled?(other_account, 'campaigns')).to be false
     end
+
+    it 'returns false and logs warning when algorythmo_cut_enabled? raises ActiveRecord::StatementInvalid (partial deploy)' do
+      allow(account).to receive(:algorythmo_cut_enabled?).and_raise(
+        ActiveRecord::StatementInvalid, 'column algorythmo_feature_flags does not exist'
+      )
+      expect(Rails.logger).to receive(:warn).with(/ActiveRecord::StatementInvalid/)
+      Rails.cache.clear
+      expect(described_class.cut_enabled?(account, 'campaigns')).to be false
+    end
+
+    it 'returns false and logs warning when algorythmo_cut_enabled? raises a generic StandardError' do
+      allow(account).to receive(:algorythmo_cut_enabled?).and_raise(StandardError, 'unexpected')
+      expect(Rails.logger).to receive(:warn).with(/StandardError/)
+      Rails.cache.clear
+      expect(described_class.cut_enabled?(account, 'campaigns')).to be false
+    end
   end
 
   # CI guard: all 15 cut flags occupy positions 1–15 in algorythmo_feature_flags column.

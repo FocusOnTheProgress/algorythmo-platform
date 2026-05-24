@@ -78,49 +78,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_23_223001) do
     t.index ["status"], name: "index_accounts_on_status"
   end
 
-  create_table "algorythmo_leads", force: :cascade do |t|
-    t.bigint "account_id", null: false
-    t.bigint "contact_id", null: false
-    t.bigint "stage_id", null: false
-    t.float "position"
-    t.integer "stage_kind", default: 0, null: false
-    t.bigint "previous_lead_id"
-    t.string "channel_origin"
-    t.jsonb "channel_metadata"
-    t.jsonb "custom_fields"
-    t.datetime "stage_entered_at", precision: nil
-    t.datetime "closed_at", precision: nil
-    t.datetime "last_message_at", precision: nil
-    t.boolean "deleted", default: false, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["account_id"], name: "index_algorythmo_leads_on_account_id"
-    t.index ["account_id", "stage_id", "position"], name: "idx_leads_kanban_cursor"
-    t.index ["contact_id"], name: "index_algorythmo_leads_on_contact_id"
-    t.index ["contact_id", "account_id"], name: "idx_leads_open_unique_per_contact", unique: true, where: "stage_kind = 0"
-    t.index ["stage_id"], name: "index_algorythmo_leads_on_stage_id"
-    t.index ["stage_id", "stage_entered_at"], name: "idx_leads_stage_entered_at", order: { stage_entered_at: :desc }
-  end
-
-  create_table "algorythmo_pipelines", force: :cascade do |t|
-    t.bigint "account_id", null: false
-    t.string "name", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["account_id"], name: "index_algorythmo_pipelines_on_account_id"
-  end
-
-  create_table "algorythmo_stages", force: :cascade do |t|
-    t.bigint "pipeline_id", null: false
-    t.string "name", null: false
-    t.integer "position", default: 0, null: false
-    t.integer "kind", default: 0, null: false
-    t.float "aging_coefficient", default: 1.0, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["pipeline_id"], name: "index_algorythmo_stages_on_pipeline_id"
-  end
-
   create_table "action_mailbox_inbound_emails", force: :cascade do |t|
     t.integer "status", default: 0, null: false
     t.string "message_id", null: false
@@ -188,6 +145,49 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_23_223001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_agent_capacity_policies_on_account_id"
+  end
+
+  create_table "algorythmo_leads", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.bigint "stage_id", null: false
+    t.float "position"
+    t.integer "stage_kind", default: 0, null: false
+    t.bigint "previous_lead_id"
+    t.string "channel_origin"
+    t.jsonb "channel_metadata"
+    t.jsonb "custom_fields"
+    t.datetime "stage_entered_at", precision: nil
+    t.datetime "closed_at", precision: nil
+    t.datetime "last_message_at", precision: nil
+    t.boolean "deleted", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_algorythmo_leads_on_account_id"
+    t.index ["account_id", "stage_id", "position"], name: "idx_leads_kanban_cursor"
+    t.index ["contact_id"], name: "index_algorythmo_leads_on_contact_id"
+    t.index ["contact_id", "account_id"], name: "idx_leads_open_unique_per_contact", unique: true, where: "stage_kind = 0"
+    t.index ["stage_id"], name: "index_algorythmo_leads_on_stage_id"
+    t.index ["stage_id", "stage_entered_at"], name: "idx_leads_stage_entered_at", order: { stage_entered_at: :desc }
+  end
+
+  create_table "algorythmo_pipelines", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_algorythmo_pipelines_on_account_id"
+  end
+
+  create_table "algorythmo_stages", force: :cascade do |t|
+    t.bigint "pipeline_id", null: false
+    t.string "name", null: false
+    t.integer "position", default: 0, null: false
+    t.integer "kind", default: 0, null: false
+    t.float "aging_coefficient", default: 1.0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["pipeline_id"], name: "index_algorythmo_stages_on_pipeline_id"
   end
 
   create_table "applied_slas", force: :cascade do |t|
@@ -1297,6 +1297,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_23_223001) do
     t.index ["name", "account_id"], name: "index_teams_on_name_and_account_id", unique: true
   end
 
+  create_table "telemetry_events", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "event_type", limit: 255, null: false
+    t.jsonb "payload", default: {}
+    t.datetime "created_at", precision: 6, null: false
+    t.index ["account_id"], name: "index_telemetry_events_on_account_id"
+    t.index ["created_at"], name: "index_telemetry_events_on_created_at"
+    t.index ["account_id", "created_at"], name: "index_telemetry_events_on_account_id_and_created_at"
+  end
+
   create_table "users", id: :serial, force: :cascade do |t|
     t.string "provider", default: "email", null: false
     t.string "uid", default: "", null: false
@@ -1364,16 +1374,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_23_223001) do
     t.boolean "open_all_day", default: false
     t.index ["account_id"], name: "index_working_hours_on_account_id"
     t.index ["inbox_id"], name: "index_working_hours_on_inbox_id"
-  end
-
-  create_table "telemetry_events", force: :cascade do |t|
-    t.bigint "account_id", null: false
-    t.string "event_type", limit: 255, null: false
-    t.jsonb "payload", default: {}
-    t.datetime "created_at", precision: 6, null: false
-    t.index ["account_id"], name: "index_telemetry_events_on_account_id"
-    t.index ["created_at"], name: "index_telemetry_events_on_created_at"
-    t.index ["account_id", "created_at"], name: "index_telemetry_events_on_account_id_and_created_at"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
