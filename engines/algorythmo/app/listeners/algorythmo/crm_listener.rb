@@ -46,8 +46,6 @@ class Algorythmo::CrmListener < BaseListener
     # algorythmo: ChatwootExceptionTracker forwards to Sentry/Honeybadger when configured — do not swallow silently
     ChatwootExceptionTracker.new(e, account: message&.conversation&.account).capture_exception
     Rails.logger.error("[CrmListener] #{e.class}: #{e.message}\n#{e.backtrace.first(20).join("\n")}")
-    # algorythmo:DIAG-PR51 — temporary: re-raise in test env so CI surfaces swallowed errors
-    raise e if Rails.env.test?
   end
 
   private
