@@ -194,7 +194,18 @@ export function useLeadStore(accountId) {
 
   async function commitMove({ leadId, toStageId }) {
     const seqAtCall = moveSeqMap.get(leadId);
-    const res = await moveLead(accountId, leadId, toStageId);
+    let res;
+    try {
+      res = await moveLead(accountId, leadId, toStageId);
+    } catch (err) {
+      // Stale-failure swallow: a newer move has superseded this one. The
+      // caller would react by rolling back to *this* call's fromStageId,
+      // which would wipe the newer optimistic state. The newer move's own
+      // commit/rollback is authoritative — silently discard this error so
+      // the caller's catch block never runs.
+      if (!isLatestMove(leadId, seqAtCall)) return;
+      throw err;
+    }
     const updated = res.data;
 
     if (!updated?.id) {

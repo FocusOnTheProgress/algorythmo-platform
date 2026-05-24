@@ -85,6 +85,11 @@ watch(
       applyBackgroundInert();
       firstRadioRef.value?.focus();
     } else {
+      // Symmetric guard: if a later open has superseded this close (rapid
+      // close→open), the newer open branch is the authority on inert state
+      // and focus — skip this close-side cleanup so it doesn't clobber the
+      // new dialog's freshly-applied inert / cached previouslyFocused.
+      if (myGen !== modalGen) return;
       releaseBackgroundInert();
       if (
         previouslyFocused.value instanceof HTMLElement &&

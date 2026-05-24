@@ -8,7 +8,8 @@
       "STAGE_COUNT": "{count} leads",
       "STAGE_COUNT_ONE": "1 lead",
       "STAGE_COUNT_ZERO": "No leads",
-      "LOADING": "Loading leads"
+      "LOADING": "Loading leads",
+      "TOAST_REGION_LABEL": "CRM notifications"
     },
     "STAGE": {
       "EMPTY": "No leads here yet",

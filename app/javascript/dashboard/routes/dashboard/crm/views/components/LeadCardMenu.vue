@@ -9,14 +9,7 @@
 // We re-measure on open so account switches / scrolling don't desync the
 // overlay. The Teleport target is body so the menu z-index always beats
 // any kanban column overflow.
-import {
-  ref,
-  computed,
-  onMounted,
-  onBeforeUnmount,
-  watch,
-  nextTick,
-} from 'vue';
+import { ref, computed, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
@@ -32,14 +25,45 @@ const menuRef = ref(null);
 const firstItemRef = ref(null);
 const position = ref({ top: 0, left: 0 });
 
+const VIEWPORT_PADDING = 8;
+
 function measurePosition() {
   if (!props.anchor) return;
   const rect = props.anchor.getBoundingClientRect();
-  // Anchor menu directly below the trigger, right-aligned to the trigger.
+  // Initial placement: right-aligned to the trigger, just below it. The CSS
+  // `transform: translateX(-100%)` pulls the menu's left edge to match this
+  // anchor x — so we must clamp against viewport width *after* the menu has
+  // rendered (see clampPosition below).
   position.value = {
     top: rect.bottom + window.scrollY + 4,
     left: rect.right + window.scrollX,
   };
+}
+
+function clampPosition() {
+  const menu = menuRef.value;
+  if (!menu) return;
+  const menuRect = menu.getBoundingClientRect();
+  const viewportLeft = window.scrollX + VIEWPORT_PADDING;
+  const viewportRight =
+    window.scrollX + document.documentElement.clientWidth - VIEWPORT_PADDING;
+
+  // Menu's effective on-screen left edge after the -100% transform.
+  const onscreenLeft = menuRect.left + window.scrollX;
+  const onscreenRight = menuRect.right + window.scrollX;
+  let nextLeft = position.value.left;
+
+  if (onscreenLeft < viewportLeft) {
+    // Trigger sits near the viewport's left edge — shift the anchor so the
+    // menu's left edge sits at viewportLeft (cancels the negative transform).
+    nextLeft += viewportLeft - onscreenLeft;
+  } else if (onscreenRight > viewportRight) {
+    nextLeft -= onscreenRight - viewportRight;
+  }
+
+  if (nextLeft !== position.value.left) {
+    position.value = { ...position.value, left: nextLeft };
+  }
 }
 
 function handleDocumentClick(event) {
@@ -54,8 +78,13 @@ function handleDocumentClick(event) {
 function handleKeydown(event) {
   if (event.key === 'Escape') {
     event.preventDefault();
+    // Cache the anchor *before* emit('close'): the parent reacts to close by
+    // clearing menuAnchor to null, so reading props.anchor after the emit
+    // gives null and the trigger never regains focus. WCAG 2.4.3 requires
+    // focus to return to the invoking element on dialog/menu dismiss.
+    const anchorEl = props.anchor instanceof HTMLElement ? props.anchor : null;
     emit('close');
-    if (props.anchor instanceof HTMLElement) props.anchor.focus();
+    if (anchorEl && anchorEl.isConnected) anchorEl.focus();
   }
 }
 
@@ -64,28 +93,38 @@ function handleMove() {
   emit('move', { lead: props.lead });
 }
 
-watch(
-  () => props.open,
-  async open => {
-    if (!open) return;
-    measurePosition();
-    await nextTick();
-    firstItemRef.value?.focus();
-  }
-);
-
-onMounted(() => {
+function attachListeners() {
   document.addEventListener('mousedown', handleDocumentClick, true);
   document.addEventListener('keydown', handleKeydown);
   window.addEventListener('scroll', measurePosition, true);
   window.addEventListener('resize', measurePosition);
-});
+}
 
-onBeforeUnmount(() => {
+function detachListeners() {
   document.removeEventListener('mousedown', handleDocumentClick, true);
   document.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('scroll', measurePosition, true);
   window.removeEventListener('resize', measurePosition);
+}
+
+watch(
+  () => props.open,
+  async open => {
+    if (!open) {
+      detachListeners();
+      return;
+    }
+    measurePosition();
+    attachListeners();
+    await nextTick();
+    clampPosition();
+    firstItemRef.value?.focus();
+  },
+  { immediate: true }
+);
+
+onBeforeUnmount(() => {
+  detachListeners();
 });
 
 const menuAriaLabel = computed(() =>

@@ -16,8 +16,14 @@
 import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import { usePipelineStore } from 'dashboard/composables/algorythmo/usePipelineStore.js';
-import { useLeadStore } from 'dashboard/composables/algorythmo/useLeadStore.js';
+import {
+  usePipelineStore,
+  clearPipelineStoreForAccount,
+} from 'dashboard/composables/algorythmo/usePipelineStore.js';
+import {
+  useLeadStore,
+  clearLeadStoreForAccount,
+} from 'dashboard/composables/algorythmo/useLeadStore.js';
 import { useDragLead } from 'dashboard/composables/algorythmo/useDragLead.js';
 import {
   elapsedSince,
@@ -25,6 +31,7 @@ import {
   humanizeDurationLongPtBr,
 } from 'dashboard/helper/algorythmo/timeFormat.js';
 import { useToast } from 'dashboard/composables/algorythmo/useToast.js';
+import AlgToastContainer from 'dashboard/components-next/algorythmo/AlgToastContainer.vue';
 import StageColumn from './components/StageColumn.vue';
 import KanbanEmptyState from './components/KanbanEmptyState.vue';
 import MoveLeadModal from './components/MoveLeadModal.vue';
@@ -180,14 +187,21 @@ onBeforeUnmount(() => {
 // Re-fetch when accountId changes. The store refs above re-bind to the new
 // account via `computed`, but pipeline data still has to be (re)loaded for
 // the new tenant, and any stale local UI state (menu / move modal) referring
-// to the previous account's leads must be dropped.
-watch(accountId, async newId => {
+// to the previous account's leads must be dropped. The previous account's
+// store caches are evicted so they don't sit in memory indefinitely after a
+// tenant switch (and so a return to the previous account refetches fresh
+// data instead of showing a stale snapshot).
+watch(accountId, async (newId, oldId) => {
   if (!newId) return;
   menuOpen.value = false;
   menuLead.value = null;
   menuAnchor.value = null;
   moveModalOpen.value = false;
   moveModalLead.value = null;
+  if (oldId && oldId !== newId) {
+    clearLeadStoreForAccount(oldId);
+    clearPipelineStoreForAccount(oldId);
+  }
   await loadPipeline();
   await Promise.all(stages.value.map(s => fetchStage(s.id)));
 });
@@ -233,21 +247,29 @@ function findRawLead(leadId) {
   );
 }
 
+function closeMenu() {
+  menuOpen.value = false;
+  menuLead.value = null;
+  menuAnchor.value = null;
+}
+
 function handleOpenMenu({ lead, anchor }) {
   // CONTRACT §6 — the ⋮ trigger opens [data-testid="lead-card-menu"], not
   // the move modal directly. The menu then routes to the modal via the
   // "Mover para…" menuitem (handleMenuMove).
+  //
+  // Toggle: a second click on the same trigger closes the menu instead of
+  // re-positioning. Mirrors macOS/Windows menu-button conventions and the
+  // user's most common "I opened the wrong card" recovery gesture.
+  if (menuOpen.value && menuLead.value?.id === lead.id) {
+    closeMenu();
+    return;
+  }
   const raw = findRawLead(lead.id);
   if (!raw) return;
   menuLead.value = raw;
   menuAnchor.value = anchor instanceof HTMLElement ? anchor : null;
   menuOpen.value = true;
-}
-
-function closeMenu() {
-  menuOpen.value = false;
-  menuLead.value = null;
-  menuAnchor.value = null;
 }
 
 function handleMenuMove() {
@@ -367,6 +389,14 @@ async function handleConfirmMove({ leadId, stage }) {
       @close="moveModalOpen = false"
       @confirm="handleConfirmMove"
     />
+
+    <!--
+      Toast outlet for Algorythmo surfaces. Mounted here (not at App root) to
+      keep the M1-B blast radius inside the feature-gated CRM zone. When more
+      Algorythmo surfaces ship, promote this mount to a shared authenticated
+      layout so a single container serves the whole dashboard.
+    -->
+    <AlgToastContainer :label="t('ALGORYTHMO_CRM.KANBAN.TOAST_REGION_LABEL')" />
   </main>
 </template>
 
