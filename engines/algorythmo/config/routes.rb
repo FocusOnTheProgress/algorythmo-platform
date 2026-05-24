@@ -16,12 +16,13 @@ Algorythmo::Engine.routes.draw do
           end
         end
 
-        # Lead CRUD + move + reopen + conversations (B.0)
+        # Lead CRUD + move + reopen + conversations (B.0) + stage_history (M1-C PR3)
         resources :leads, only: %i[index show create update destroy] do
           member do
             patch :move
             post  :reopen
             get   :conversations
+            get   :stage_history
           end
         end
 
