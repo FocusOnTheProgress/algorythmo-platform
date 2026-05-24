@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# LeadsController — CRUD + move + reopen + conversations for Algorythmo::Lead.
+# LeadsController — CRUD + move + reopen + conversations + stage_history for Algorythmo::Lead.
 #
 # A.11 — Cursor pagination (P2):
 #   GET index uses a (position, id) cursor — never offset.
@@ -14,9 +14,16 @@
 #   GET :id/conversations returns cursor-paginated Conversation records for the
 #   lead's contact, supporting the LeadDetailDrawer history view (Q-B5).
 #
+# M1-C PR3 — Stage history read endpoint:
+#   GET :id/stage_history returns the lead's transitions in newest-first order.
+#   Capped at MAX_STAGE_HISTORY_ENTRIES with an explicit `truncated` flag so the
+#   client knows the list may be incomplete. Actor resolution (user / agent_bot
+#   / system) happens through actor_summary with a single batched preload per
+#   actor type to avoid N+1 against the User and AgentBot tables.
+#
 # Offset pagination is intentionally absent from this controller.
 class Algorythmo::Api::V1::LeadsController < Algorythmo::Api::V1::BaseController
-  before_action :set_lead, only: %i[show update destroy move reopen conversations]
+  before_action :set_lead, only: %i[show update destroy move reopen conversations stage_history]
   # algorythmo: admin-only — soft-delete is irreversible via API; agents cannot delete leads
   before_action :check_admin_authorization?, only: %i[destroy]
 
@@ -25,6 +32,11 @@ class Algorythmo::Api::V1::LeadsController < Algorythmo::Api::V1::BaseController
   DEFAULT_CONVERSATIONS_LIMIT = 10
   MAX_CONVERSATIONS_LIMIT     = 100
   MAX_LEADS_PER_CONTACT       = 50
+  # M1-C PR3 — defensive cap on stage_history payload. Typical lead has < 20
+  # transitions; 100 covers heavy reopen/move flows while keeping the response
+  # bounded. When hit, the response carries `truncated: true` so the client can
+  # surface a "showing latest N" note (CONTRACT v1.1.0 footer in the drawer).
+  MAX_STAGE_HISTORY_ENTRIES   = 100
   # Upper bound for Postgres bigint (2**63 - 1). Cursors carrying ids beyond
   # this value would cause a PG::NumericValueOutOfRange on the WHERE clause.
   MAX_BIGINT                  = 9_223_372_036_854_775_807
@@ -179,6 +191,43 @@ class Algorythmo::Api::V1::LeadsController < Algorythmo::Api::V1::BaseController
     }
   end
 
+  # GET /algorythmo/api/v1/accounts/:account_id/leads/:id/stage_history
+  # Returns the lead's stage transitions in newest-first order, capped at
+  # MAX_STAGE_HISTORY_ENTRIES. The response carries `truncated: true` when the
+  # cap is reached so the client can render a "showing latest N" footer.
+  #
+  # Each entry includes a resolved `actor_summary` block (id, name, thumbnail)
+  # when actor_type is 'user' or 'agent_bot'; nil for 'system'. Actor lookups
+  # are batched per type (one SELECT per User / AgentBot id set) so the payload
+  # is rendered in three queries total regardless of list length:
+  #   1. stage_histories (with from_stage / to_stage preload)
+  #   2. users (one IN query for all user actors)
+  #   3. agent_bots (one IN query for all agent_bot actors)
+  #
+  # IDOR: set_lead before_action constrains @lead to current_account.id and
+  # filters out soft-deleted leads, so a cross-account or deleted lead returns
+  # 404 before any history row is touched.
+  def stage_history
+    # Fetch MAX+1 so we can tell "exactly MAX rows exist" from "MAX returned, more
+    # rows behind the cap". Comparing entries.size == MAX as the truncated signal
+    # lies when the lead has exactly MAX transitions and no 101st row.
+    entries = @lead.stage_histories
+                   .includes(:from_stage, :to_stage)
+                   .order(created_at: :desc, id: :desc)
+                   .limit(MAX_STAGE_HISTORY_ENTRIES + 1)
+                   .to_a
+
+    truncated = entries.size > MAX_STAGE_HISTORY_ENTRIES
+    entries = entries.first(MAX_STAGE_HISTORY_ENTRIES) if truncated
+
+    actors = preload_actors_for(entries)
+
+    render json: {
+      stage_history: entries.map { |entry| stage_history_json(entry, actors) },
+      truncated: truncated
+    }
+  end
+
   private
 
   def index_by_contact
@@ -302,6 +351,60 @@ class Algorythmo::Api::V1::LeadsController < Algorythmo::Api::V1::BaseController
       inbox_id: conversation.inbox_id,
       last_activity_at: conversation.last_activity_at,
       created_at: conversation.created_at
+    }
+  end
+
+  # M1-C PR3 — Serializes a single StageHistory entry to the contract shape
+  # from plan §7.1. from_stage_id/from_stage_name are nullable (creation has
+  # no source stage). actor_summary is nil for system transitions and resolves
+  # to a User/AgentBot snapshot otherwise via the prebuilt `actors` index.
+  def stage_history_json(entry, actors)
+    {
+      id: entry.id,
+      from_stage_id: entry.from_stage_id,
+      from_stage_name: entry.from_stage&.name,
+      to_stage_id: entry.to_stage_id,
+      to_stage_name: entry.to_stage&.name,
+      actor_type: entry.actor_type,
+      actor_id: entry.actor_id,
+      actor_summary: actor_summary(entry, actors),
+      created_at: entry.created_at
+    }
+  end
+
+  # M1-C PR3 — Resolves the actor block for a single entry using the prebuilt
+  # `actors` index. Stays nil for 'system' transitions and degrades gracefully
+  # to nil when actor_id no longer exists (user / agent_bot was deleted) so the
+  # frontend can render "Usuário removido" without crashing (plan §8.5).
+  def actor_summary(entry, actors)
+    case entry.actor_type
+    when 'user'
+      user = actors[:users][entry.actor_id]
+      # Avatarable#avatar_url returns '' (not nil) when no avatar is attached;
+      # .presence normalizes to nil so the frontend can branch on truthy.
+      user && { id: user.id, name: user.name, thumbnail: user.avatar_url.presence }
+    when 'agent_bot'
+      bot = actors[:agent_bots][entry.actor_id]
+      bot && { id: bot.id, name: bot.name, thumbnail: bot.avatar_url.presence }
+    end
+  end
+
+  # M1-C PR3 — Batches actor lookups for the whole entry set. Returns a
+  # two-table index ({ users: {id => User}, agent_bots: {id => AgentBot} })
+  # so actor_summary stays O(1) per entry. Three queries total regardless of
+  # list size — see #stage_history doc comment.
+  #
+  # Defense-in-depth: AgentBot rows can be global (account_id NULL) or owned by
+  # a specific account; scoping by AgentBot.accessible_to(current_account)
+  # prevents a bug in the write path (or a manual data row) from leaking another
+  # account's private bot name through this read path.
+  def preload_actors_for(entries)
+    user_ids      = entries.filter_map { |e| e.actor_id if e.actor_type == 'user' }.uniq
+    agent_bot_ids = entries.filter_map { |e| e.actor_id if e.actor_type == 'agent_bot' }.uniq
+
+    {
+      users: user_ids.any? ? User.where(id: user_ids).index_by(&:id) : {},
+      agent_bots: agent_bot_ids.any? ? AgentBot.accessible_to(current_account).where(id: agent_bot_ids).index_by(&:id) : {}
     }
   end
 

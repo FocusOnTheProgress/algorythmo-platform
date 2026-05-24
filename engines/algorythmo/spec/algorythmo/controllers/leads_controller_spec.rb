@@ -882,4 +882,263 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       end
     end
   end
+
+  # ── M1-C PR3 — GET #stage_history ────────────────────────────────────────────
+
+  describe 'GET #stage_history' do
+    let(:lead) { create_lead }
+
+    # M1-C PR3 — Seeds history rows directly via create! (the readonly? guard
+    # only fires on UPDATE, not INSERT), so specs do not depend on the PR2
+    # Recorder service. Recorder behavior is exercised in its own spec.
+    def seed_history(actor_type:, actor_id: nil, from_stage: nil, to_stage: nil, created_at: Time.current)
+      Algorythmo::StageHistory.create!(
+        lead: lead,
+        from_stage: from_stage,
+        to_stage: to_stage || qual_stage,
+        actor_type: actor_type,
+        actor_id: actor_id,
+        created_at: created_at
+      )
+    end
+
+    context 'happy path' do
+      it 'returns the history in newest-first order with truncated:false' do
+        older = seed_history(actor_type: 'system',
+                             from_stage: nil, to_stage: novo_stage,
+                             created_at: 2.hours.ago)
+        newer = seed_history(actor_type: 'user', actor_id: admin.id,
+                             from_stage: novo_stage, to_stage: qual_stage,
+                             created_at: 1.hour.ago)
+
+        get :stage_history, params: { account_id: account.id, id: lead.id }
+
+        expect(response).to have_http_status(:ok)
+        body = JSON.parse(response.body)
+        expect(body['truncated']).to be false
+        expect(body['stage_history'].map { |e| e['id'] }).to eq([newer.id, older.id])
+      end
+
+      it 'serializes user actor with id, name, and thumbnail keys' do
+        seed_history(actor_type: 'user', actor_id: admin.id,
+                     from_stage: novo_stage, to_stage: qual_stage)
+
+        get :stage_history, params: { account_id: account.id, id: lead.id }
+        body = JSON.parse(response.body)
+        entry = body['stage_history'].first
+
+        expect(entry['actor_type']).to eq('user')
+        expect(entry['actor_id']).to eq(admin.id)
+        expect(entry['actor_summary']).to include(
+          'id' => admin.id,
+          'name' => admin.name
+        )
+        expect(entry['actor_summary']).to have_key('thumbnail')
+      end
+
+      it 'returns actor_summary nil for system transitions' do
+        seed_history(actor_type: 'system', from_stage: nil, to_stage: novo_stage)
+
+        get :stage_history, params: { account_id: account.id, id: lead.id }
+        body = JSON.parse(response.body)
+        entry = body['stage_history'].first
+
+        expect(entry['actor_type']).to eq('system')
+        expect(entry['actor_id']).to be_nil
+        expect(entry['actor_summary']).to be_nil
+      end
+
+      it 'returns actor_summary nil when actor user no longer exists' do
+        ghost_user_id = User.maximum(:id).to_i + 9_999
+        seed_history(actor_type: 'user', actor_id: ghost_user_id,
+                     from_stage: novo_stage, to_stage: qual_stage)
+
+        get :stage_history, params: { account_id: account.id, id: lead.id }
+        body = JSON.parse(response.body)
+        entry = body['stage_history'].first
+
+        expect(entry['actor_type']).to eq('user')
+        expect(entry['actor_id']).to eq(ghost_user_id)
+        expect(entry['actor_summary']).to be_nil
+      end
+
+      it 'serializes from_stage_name as nil for the creation entry' do
+        seed_history(actor_type: 'system', from_stage: nil, to_stage: novo_stage)
+
+        get :stage_history, params: { account_id: account.id, id: lead.id }
+        entry = JSON.parse(response.body)['stage_history'].first
+
+        expect(entry['from_stage_id']).to be_nil
+        expect(entry['from_stage_name']).to be_nil
+        expect(entry['to_stage_id']).to eq(novo_stage.id)
+        expect(entry['to_stage_name']).to eq(novo_stage.name)
+      end
+
+      it 'returns an empty list with truncated:false when no history exists' do
+        get :stage_history, params: { account_id: account.id, id: lead.id }
+
+        expect(response).to have_http_status(:ok)
+        body = JSON.parse(response.body)
+        expect(body['stage_history']).to eq([])
+        expect(body['truncated']).to be false
+      end
+    end
+
+    # IDOR — cross-account access must surface as 404 before any history row is read.
+    context 'IDOR — cross-account isolation' do
+      let(:account_b) { create(:account) }
+      let(:pipeline_b) do
+        p = Algorythmo::Pipeline.create!(account: account_b, name: 'B Main')
+        Algorythmo::Stage.create!(pipeline: p, name: 'Novo', kind: :open, position: 0, aging_coefficient: 1.0)
+        p.reload
+      end
+      let(:stage_b)   { pipeline_b.stages.first }
+      let(:contact_b) { create(:contact, account: account_b) }
+      let(:lead_b) do
+        Algorythmo::Lead.create!(account: account_b, contact: contact_b, stage: stage_b,
+                                 position: 1.0, stage_entered_at: Time.current)
+      end
+
+      let!(:leaked_history) do
+        # Seed one history entry on the other account's lead so we can prove
+        # nothing from it leaks into the response.
+        Algorythmo::StageHistory.create!(
+          lead: lead_b, from_stage: nil, to_stage: stage_b,
+          actor_type: 'system'
+        )
+      end
+
+      it 'returns 404 with no leaked history when requesting another account lead' do
+        get :stage_history, params: { account_id: account.id, id: lead_b.id }
+        expect(response).to have_http_status(:not_found)
+        expect(response.body).not_to include(leaked_history.id.to_s)
+      end
+
+      it 'returns 404 for soft-deleted leads' do
+        lead.update!(deleted: true)
+        get :stage_history, params: { account_id: account.id, id: lead.id }
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    # Cap — confirm both that the list length is bounded and that truncated:true
+    # fires exactly when the cap is hit. Uses the controller constant so a future
+    # bump of the cap stays in sync with the spec.
+    context 'cap and truncated flag' do
+      let(:cap) { described_class::MAX_STAGE_HISTORY_ENTRIES }
+
+      it "returns at most #{Algorythmo::Api::V1::LeadsController::MAX_STAGE_HISTORY_ENTRIES} entries with truncated:true when cap reached" do
+        (cap + 5).times do |i|
+          seed_history(actor_type: 'system', from_stage: nil, to_stage: novo_stage,
+                       created_at: Time.current - i.seconds)
+        end
+
+        get :stage_history, params: { account_id: account.id, id: lead.id }
+
+        body = JSON.parse(response.body)
+        expect(body['stage_history'].size).to eq(cap)
+        expect(body['truncated']).to be true
+      end
+
+      it 'returns truncated:false when entry count equals cap minus one' do
+        (cap - 1).times do |i|
+          seed_history(actor_type: 'system', from_stage: nil, to_stage: novo_stage,
+                       created_at: Time.current - i.seconds)
+        end
+
+        get :stage_history, params: { account_id: account.id, id: lead.id }
+
+        body = JSON.parse(response.body)
+        expect(body['stage_history'].size).to eq(cap - 1)
+        expect(body['truncated']).to be false
+      end
+
+      # Boundary case — entry count equals cap exactly. The previous
+      # `entries.size == MAX` truncated check lied here (true even though the
+      # entire history was returned). With `limit(MAX + 1)`, the response must
+      # return exactly `cap` rows and `truncated:false`.
+      it 'returns truncated:false when entry count equals cap exactly' do
+        cap.times do |i|
+          seed_history(actor_type: 'system', from_stage: nil, to_stage: novo_stage,
+                       created_at: Time.current - i.seconds)
+        end
+
+        get :stage_history, params: { account_id: account.id, id: lead.id }
+
+        body = JSON.parse(response.body)
+        expect(body['stage_history'].size).to eq(cap)
+        expect(body['truncated']).to be false
+      end
+    end
+
+    # N+1 — batched actor preload must keep query count flat regardless of the
+    # number of distinct user actors in the list.
+    context 'N+1 prevention' do
+      it 'resolves all user actors with a single IN query (no per-actor lookup)' do
+        users = create_list(:user, 10, account: account, role: :agent)
+        users.each_with_index do |u, i|
+          seed_history(actor_type: 'user', actor_id: u.id,
+                       from_stage: novo_stage, to_stage: qual_stage,
+                       created_at: Time.current - i.seconds)
+        end
+
+        # Count only queries that match the actor preload signature:
+        # SELECT ... FROM "users" WHERE "users"."id" IN (...). The auth path
+        # also queries the users table, but with WHERE "id" = ? (singular),
+        # so the IN-clause filter isolates the preload SQL and gives the
+        # spec real teeth — a regression to per-actor lookup raises the
+        # count to 10+, not the off-by-noise level.
+        actor_in_query_count = 0
+        counter = lambda { |_, _, _, _, payload|
+          sql = payload[:sql].to_s
+          actor_in_query_count += 1 if sql.match?(/FROM "users".*"id" IN|FROM "agent_bots".*"id" IN/m)
+        }
+        ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
+          get :stage_history, params: { account_id: account.id, id: lead.id }
+        end
+
+        expect(response).to have_http_status(:ok)
+        expect(actor_in_query_count).to eq(1)
+      end
+
+      it 'flattens mixed user + agent_bot actors to two IN queries (one per table)' do
+        users = create_list(:user, 3, account: account, role: :agent)
+        bot1 = AgentBot.create!(name: 'Bot 1', account: account, outgoing_url: 'https://x.test/1')
+        bot2 = AgentBot.create!(name: 'Bot 2', account: account, outgoing_url: 'https://x.test/2')
+        users.each_with_index do |u, i|
+          seed_history(actor_type: 'user', actor_id: u.id,
+                       from_stage: novo_stage, to_stage: qual_stage,
+                       created_at: Time.current - i.seconds)
+        end
+        [bot1, bot2].each_with_index do |b, i|
+          seed_history(actor_type: 'agent_bot', actor_id: b.id,
+                       from_stage: novo_stage, to_stage: qual_stage,
+                       created_at: Time.current - (10 + i).seconds)
+        end
+
+        in_query_count = 0
+        counter = lambda { |_, _, _, _, payload|
+          sql = payload[:sql].to_s
+          in_query_count += 1 if sql.match?(/FROM "users".*"id" IN|FROM "agent_bots".*"id" IN/m)
+        }
+        ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
+          get :stage_history, params: { account_id: account.id, id: lead.id }
+        end
+
+        expect(response).to have_http_status(:ok)
+        # Exactly two: one per actor table, regardless of how many actors per type.
+        expect(in_query_count).to eq(2)
+      end
+    end
+
+    # Feature gate — must match the rest of the controller. Disabled flag → 403.
+    context 'when CRM feature is disabled' do
+      before { allow(Algorythmo::FeatureGate).to receive(:cut_enabled?).and_return(false) }
+
+      it 'returns 403' do
+        get :stage_history, params: { account_id: account.id, id: lead.id }
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+  end
 end
