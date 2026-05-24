@@ -9,7 +9,7 @@
 #
 # Position 65 is entirely out of signed bigint range (2^64 — unrepresentable).
 # No reliable data could have been stored there; crm (pos 15) is left at 0.
-class BackfillAlgorythmoShowCaptainAndCrmToCutFlags < ActiveRecord::Migration[7.0]
+class BackfillAlgorythmoShowCaptainAndCrmToCutFlags < ActiveRecord::Migration[7.1]
   # Position 14 in algorythmo_feature_flags = bit index 13 (0-based) = 2^13 = 8192
   SHOW_CAPTAIN_NEW_BIT = 2**13
 

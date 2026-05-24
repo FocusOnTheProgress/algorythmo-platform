@@ -48,6 +48,7 @@ export const getters = {
     return diffDays <= TRIAL_PERIOD_DAYS;
   },
   isFeatureEnabledonAccount: $state => (id, featureName) => {
+    if (!featureName) return false;
     const { features = {}, algorythmo_cut_flags: cutFlags = {} } =
       findRecordById($state, id);
     // algorythmo_ prefixed flags live in algorythmo_cut_flags (dedicated bigint column).
