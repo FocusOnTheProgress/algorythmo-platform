@@ -157,9 +157,9 @@ RSpec.describe Algorythmo::StageHistoryRecorder do
       expect(entry.actor_id).to be_nil
     end
 
-    it 'resolves "system" for an unrecognised class (stale thread state defence)' do
-      # Simulates Current.user set to an arbitrary object from a prior Sidekiq job
-      # on a reused thread (thread_mattr_accessor does not auto-reset unlike CurrentAttributes).
+    it 'resolves "system" for an unrecognised class (secondary type guard)' do
+      # Simulates Current.user set to an arbitrary object (e.g. a bug elsewhere
+      # assigning the wrong type). Catches future regressions.
       Current.user = Object.new
 
       described_class.record_transition(lead, from: novo_stage, to: qual_stage)
@@ -167,6 +167,31 @@ RSpec.describe Algorythmo::StageHistoryRecorder do
 
       expect(entry.actor_type).to eq('system')
       expect(entry.actor_id).to be_nil
+    end
+
+    # Adversarial review M1-C PR #52 (C1') — honest contract spec.
+    #
+    # The recorder CANNOT distinguish a stale ::User leaked from a prior Sidekiq
+    # job from a legitimate one. Both match `when ::User`. This spec proves that
+    # explicitly: if a stale User lands in Current.user and reaches the recorder,
+    # the recorder will attribute the entry to that user. WRONG ATTRIBUTION.
+    #
+    # The DEFENCE is upstream — Algorythmo::Sidekiq::CurrentResetMiddleware
+    # clears Current.reset before every Sidekiq job runs, so the recorder
+    # never sees a stale User in practice. See:
+    #   engines/algorythmo/config/initializers/algorythmo_sidekiq_current_reset.rb
+    #   engines/algorythmo/spec/algorythmo/sidekiq/current_reset_middleware_spec.rb
+    it 'TRUSTS Current.user — defence against staleness lives in Sidekiq middleware' do
+      stale_alice = create(:user, account: account) # represents a User leaked from a prior job
+      Current.user = stale_alice
+
+      described_class.record_transition(lead, from: novo_stage, to: qual_stage)
+      entry = Algorythmo::StageHistory.last
+
+      # Recorder honestly attributes to whoever Current.user is. This is why the
+      # middleware must run BEFORE the listener fires inside a job.
+      expect(entry.actor_type).to eq('user')
+      expect(entry.actor_id).to eq(stale_alice.id)
     end
   end
 end

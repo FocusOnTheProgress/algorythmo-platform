@@ -55,10 +55,20 @@ module Algorythmo
 
     # Resolves the actor from Current.user.
     #
-    # Chatwoot uses thread_mattr_accessor — unlike CurrentAttributes it does NOT
-    # auto-reset between Sidekiq jobs on reused threads. Recorder defends against
-    # stale state: only AgentBot or ::User are accepted; anything else (including
-    # nil, or a stale object of an unexpected class) falls through to 'system'.
+    # CONTRACT: this method TRUSTS whatever is in Current.user — it cannot
+    # distinguish a stale User instance (leaked from a prior Sidekiq job) from a
+    # legitimate one. Both match `when ::User` and get attributed identically.
+    #
+    # The DEFENCE against stale Current state lives UPSTREAM:
+    #   engines/algorythmo/config/initializers/algorythmo_sidekiq_current_reset.rb
+    # which installs a Sidekiq server middleware calling `Current.reset` before
+    # and after every job. By the time the recorder runs inside a job, Current
+    # is guaranteed to reflect only what the current job itself set (or nil).
+    #
+    # Type filtering here is a secondary guard: an unrecognised class (e.g.
+    # Object.new) falls through to 'system'. This catches future bugs where a
+    # non-User/non-AgentBot gets assigned to Current.user, but it is NOT the
+    # stale-state defence.
     def self.resolve_actor
       actor = Current.user
       case actor

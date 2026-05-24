@@ -209,6 +209,20 @@ RSpec.describe Algorythmo::Lead, type: :model do
     it 'allows updates to other fields when stage is unchanged' do
       expect { lead.update!(deleted: true) }.not_to raise_error
     end
+
+    # KNOWN GAP — adversarial review M1-C PR #52 (sério).
+    # The guard is a `before_update` callback. ActiveRecord's `update_columns`,
+    # `update_all`, and `update_attribute` BYPASS callbacks by design. This spec
+    # documents the gap so future developers don't assume the guard is total.
+    #
+    # Mitigation today: no caller in the codebase uses these APIs on stage_id.
+    # Convention enforced by review. If we ever need a stronger guarantee, we
+    # can override these methods on the model, but doing so violates the Rails
+    # idiom that "_columns/_all are explicit bypasses" — likely the wrong fix.
+    it 'DOES NOT defend against update_columns(stage_id:) — documented gap' do
+      expect { lead.update_columns(stage_id: qual_stage.id) }.not_to raise_error # rubocop:disable Rails/SkipsModelValidations
+      expect(lead.reload.stage).to eq(qual_stage)
+    end
   end
 
   describe 'scopes' do

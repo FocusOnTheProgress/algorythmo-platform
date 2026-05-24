@@ -14,7 +14,7 @@
 # It is NOT a FK because User and AgentBot live in different tables. The leads
 # controller resolves actor_summary at read time via preload.
 class Algorythmo::StageHistory < Algorythmo::ApplicationRecord
-  ACTOR_TYPES = %w[user system agent_bot].freeze
+  ACTOR_TYPES = %w[agent_bot system user].freeze
 
   belongs_to :lead,       class_name: 'Algorythmo::Lead'
   belongs_to :from_stage, class_name: 'Algorythmo::Stage', optional: true
