@@ -1,25 +1,19 @@
 /**
- * Aging chip dual-coding — color + glyph for colorblind accessibility (D10 + D11)
+ * Aging chip dual-coding — CONTRACT_M1B v1.0.0 §4
  *
- * Validates that the LeadAgingChip component:
- * 1. Shows the correct glyph per state: ● green / ◐ yellow / ○ red / — neutral.
- * 2. Applies the correct CSS data-state attribute (drives the color).
- * 3. Works correctly with aging_coefficient = 0 (closed stages, F6 guard).
- * 4. Renders all 4 states correctly (snapshot-grade behavior).
+ * Validates [data-testid="lead-aging-chip"]:
+ *   - data-state ∈ {"neutral", "green", "yellow", "red"} drives color.
+ *   - data-testid="lead-aging-chip-glyph" carries the colorblind affordance.
+ *   - glyph is aria-hidden (state is in aria-label of the chip wrapper).
  *
- * Acceptance criteria ref:
- *   docs/plans/0001-mvp-algorythmo-os.md D10 + D11
- *   docs/plans/0002-m1-trilha-b-frontend-crm.md §3 T-B6 (LeadAgingChip spec)
- *   docs/plans/0002-m1-trilha-b-frontend-crm.md §5 B.4 (DoD snapshot tests)
- *   docs/plans/0002-m1-trilha-b-frontend-crm.md §6 R9 (divide-by-zero guard)
+ * Glyph table (CONTRACT §4):
+ *   neutral → —   (won/lost OR aging_coefficient ∈ {0, null})
+ *   green   → ●   (ratio < 1)
+ *   yellow  → ◐   (1 ≤ ratio < 2)
+ *   red     → ○   (ratio ≥ 2)
  *
- * Glyph table (from design system _tokens.scss):
- *   neutral → —
- *   green   → ●
- *   yellow  → ◐
- *   red     → ○
- *
- * Status: SCAFFOLD — tests .skip() until Sessão C ships LeadAgingChip.vue (B-PR4).
+ * Status: SCAFFOLD — tests .skip() until backend endpoints in CONTRACT §9 are
+ * live AND test account has `algorythmo_crm` enabled.
  */
 
 import { test, expect, loginAsAdmin, goToCrm } from './_fixture';
@@ -86,8 +80,9 @@ test.describe('Aging chip — dual-coding (D10 + D11)', () => {
           contentType: 'application/json',
           body: JSON.stringify({
             pipeline: { id: 1, name: 'Default' },
+            // CONTRACT §2 — stage.kind ∈ {'open' | 'won' | 'lost'}.
             stages: [
-              { id: 1, name: 'Novo', kind: 'new', position: 1, aging_coefficient: lead.aging_coefficient },
+              { id: 1, name: 'Novo', kind: 'open', position: 1, aging_coefficient: lead.aging_coefficient },
               { id: 4, name: 'Fechado ganho', kind: 'won', position: 4, aging_coefficient: 0.0 },
             ],
           }),
@@ -125,19 +120,19 @@ test.describe('Aging chip — dual-coding (D10 + D11)', () => {
 
       await goToCrm(page);
 
-      const leadCard = page.locator(`[data-lead-id="${lead.id}"]`);
+      const leadCard = page.locator(
+        `[data-testid="lead-card"][data-lead-id="${lead.id}"]`
+      );
       await expect(leadCard).toBeVisible({ timeout: 5_000 });
 
-      const chip = leadCard.locator('.alg-chip--aging');
+      const chip = leadCard.locator('[data-testid="lead-aging-chip"]');
       await expect(chip).toBeVisible();
-
-      // Verify data-state attribute (drives CSS color)
       await expect(chip).toHaveAttribute('data-state', lead.expected_state);
 
-      // Verify glyph text (dual-coding for colorblind)
-      const glyph = chip.locator('.alg-chip__glyph');
+      // Dual-coding: glyph carries the colorblind affordance and is hidden
+      // from AT (state is announced via the chip's aria-label).
+      const glyph = chip.locator('[data-testid="lead-aging-chip-glyph"]');
       await expect(glyph).toHaveText(lead.expected_glyph);
-      // Glyph must be aria-hidden (purely decorative, state is in aria-label)
       await expect(glyph).toHaveAttribute('aria-hidden', 'true');
     });
   }

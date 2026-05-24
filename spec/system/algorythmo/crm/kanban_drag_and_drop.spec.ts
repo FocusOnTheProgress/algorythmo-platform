@@ -1,24 +1,23 @@
 /**
  * Kanban drag-and-drop — Lead between stages
  *
- * Validates:
+ * Validates against CONTRACT_M1B v1.0.0 (§2, §3, §8):
  * 1. Optimistic move: card visually moves immediately (before server response).
  * 2. Persistence: after browser refresh, card remains in target stage.
  * 3. Rollback: network failure restores card to origin stage + toast shown.
  * 4. Intra-stage drag: dragging within same column does nothing (Q-B3 decision).
- * 5. aria-live announces the move to screen readers.
+ * 5. aria-live region announces the move to screen readers.
  *
- * Acceptance criteria ref:
- *   docs/plans/0001-mvp-algorythmo-os.md §3 criterio 4
- *   docs/plans/0002-m1-trilha-b-frontend-crm.md §5 B.14 cenários 4 + 5
- *   docs/plans/0002-m1-trilha-b-frontend-crm.md §3 T-B4 (optimistic update)
- *   Q-B3: intra-stage reorder disabled
+ * Stage selectors:
+ *   CONTRACT §2 — stage.kind ∈ { 'open' | 'won' | 'lost' }.
+ *   Three open stages (Novo / Qualificado / Proposta) share kind='open' and
+ *   MUST be selected by `data-stage-id`, not by kind.
  *
- * Status: SCAFFOLD — all tests .skip() until Sessão C ships KanbanBoard + drag
- * (B-PR5) and Sessão B ships useKanbanDragDrop (B.2).
+ * Status: SCAFFOLD — all tests .skip() until backend endpoints in CONTRACT §9
+ * are live AND test account has `algorythmo_crm` enabled.
  */
 
-import { test, expect, loginAsAdmin, goToCrm, dragLeadCard, BASE_URL } from './_fixture';
+import { test, expect, loginAsAdmin, goToCrm, dragLeadCard } from './_fixture';
 
 test.describe('Kanban — Drag and Drop', () => {
   test.beforeEach(async ({ page }) => {
@@ -61,12 +60,11 @@ test.describe('Kanban — Drag and Drop', () => {
 
       await goToCrm(page);
 
-      const leadCard = page.locator('[data-lead-id="1"]');
-      const novoColumn = page.locator('[data-stage-kind="new"]');
-      const qualifiedColumn = page.locator('[data-stage-kind="qualified"]');
+      const leadCard = page.locator('[data-testid="lead-card"][data-lead-id="1"]');
+      const novoColumn = page.locator('[data-testid="stage-column"][data-stage-id="1"]');
+      const qualifiedColumn = page.locator('[data-testid="stage-column"][data-stage-id="2"]');
 
-      // Use dragLeadCard (mouse events) — NOT dragTo (HTML5 drag events).
-      // vuedraggable@4/SortableJS only fires on pointer/mouse events.
+      // dragLeadCard dispatches HTML5 drag events — matches useDragLead listeners.
       await dragLeadCard(page, leadCard, qualifiedColumn);
 
       // Optimistic: card immediately visible in target
@@ -80,14 +78,13 @@ test.describe('Kanban — Drag and Drop', () => {
     async ({ page }) => {
       await goToCrm(page);
 
-      const leadCard = page.locator('[data-lead-id="1"]');
-      const qualifiedColumn = page.locator('[data-stage-kind="qualified"]');
+      const leadCard = page.locator('[data-testid="lead-card"][data-lead-id="1"]');
+      const qualifiedColumn = page.locator('[data-testid="stage-column"][data-stage-id="2"]');
 
       await dragLeadCard(page, leadCard, qualifiedColumn);
       await page.reload({ waitUntil: 'networkidle' });
 
-      // After reload, card should still be in Qualificado (server persisted)
-      await expect(qualifiedColumn.locator('[data-lead-id="1"]')).toBeVisible({
+      await expect(qualifiedColumn.locator('[data-testid="lead-card"][data-lead-id="1"]')).toBeVisible({
         timeout: 10_000,
       });
     }
@@ -102,20 +99,20 @@ test.describe('Kanban — Drag and Drop', () => {
 
       await goToCrm(page);
 
-      const leadCard = page.locator('[data-lead-id="1"]');
-      const novoColumn = page.locator('[data-stage-kind="new"]');
-      const qualifiedColumn = page.locator('[data-stage-kind="qualified"]');
+      const leadCard = page.locator('[data-testid="lead-card"][data-lead-id="1"]');
+      const novoColumn = page.locator('[data-testid="stage-column"][data-stage-id="1"]');
+      const qualifiedColumn = page.locator('[data-testid="stage-column"][data-stage-id="2"]');
 
       await dragLeadCard(page, leadCard, qualifiedColumn);
 
-      // Rollback: card returns to origin
-      await expect(novoColumn.locator('[data-lead-id="1"]')).toBeVisible({
+      // Rollback: card returns to origin column.
+      await expect(novoColumn.locator('[data-testid="lead-card"][data-lead-id="1"]')).toBeVisible({
         timeout: 8_000,
       });
-      // Toast with retry button
-      const toast = page.locator('[data-testid="toast-error"]');
-      await expect(toast).toBeVisible();
-      await expect(toast.getByRole('button', { name: /tentar de novo|retry/i })).toBeVisible();
+      // Failure is announced via the contract aria-live region (CONTRACT §8) —
+      // toast styling is a UI concern, not a contract guarantee.
+      const live = page.locator('[data-testid="aria-live-region"]');
+      await expect(live).toContainText(/falh|erro|fail/i, { timeout: 5_000 });
     }
   );
 
@@ -124,11 +121,10 @@ test.describe('Kanban — Drag and Drop', () => {
     async ({ page }) => {
       await goToCrm(page);
 
-      const novoColumn = page.locator('[data-stage-kind="new"]');
-      const firstCard = novoColumn.locator('[data-lead-id]').first();
+      const novoColumn = page.locator('[data-testid="stage-column"][data-stage-id="1"]');
+      const firstCard = novoColumn.locator('[data-testid="lead-card"]').first();
       const leadIdBefore = await firstCard.getAttribute('data-lead-id');
 
-      // Drag card within same column (from top to bottom area)
       const columnBounds = await novoColumn.boundingBox();
       if (columnBounds) {
         await firstCard.dragTo(novoColumn, {
@@ -136,8 +132,8 @@ test.describe('Kanban — Drag and Drop', () => {
         });
       }
 
-      // First card must remain the same (no reorder within stage)
-      const firstCardAfter = novoColumn.locator('[data-lead-id]').first();
+      // Q-B3: intra-stage drag is a no-op — first card preserved.
+      const firstCardAfter = novoColumn.locator('[data-testid="lead-card"]').first();
       const leadIdAfter = await firstCardAfter.getAttribute('data-lead-id');
       expect(leadIdAfter).toBe(leadIdBefore);
     }
@@ -148,13 +144,14 @@ test.describe('Kanban — Drag and Drop', () => {
     async ({ page }) => {
       await goToCrm(page);
 
-      const leadCard = page.locator('[data-lead-id="1"]');
-      const qualifiedColumn = page.locator('[data-stage-kind="qualified"]');
-      const liveRegion = page.locator('[aria-live="polite"]');
+      const leadCard = page.locator('[data-testid="lead-card"][data-lead-id="1"]');
+      const qualifiedColumn = page.locator('[data-testid="stage-column"][data-stage-id="2"]');
+      // CONTRACT §8 — single live region with stable testid.
+      const liveRegion = page.locator('[data-testid="aria-live-region"]');
+      await expect(liveRegion).toHaveAttribute('aria-live', 'polite');
+      await expect(liveRegion).toHaveAttribute('aria-atomic', 'true');
 
       await dragLeadCard(page, leadCard, qualifiedColumn);
-
-      // aria-live must announce the transition
       await expect(liveRegion).toContainText(/Qualificado/i, { timeout: 5_000 });
     }
   );

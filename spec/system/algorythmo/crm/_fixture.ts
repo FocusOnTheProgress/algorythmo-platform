@@ -1,6 +1,14 @@
 /**
  * Shared fixtures for the Algorythmo CRM Playwright suite.
  *
+ * CONTRACT REFERENCE: docs/coordination/CONTRACT_M1B.md v1.0.0
+ *   — single source of truth for data-testid + aria attributes consumed here.
+ *
+ * SCAFFOLD STATE: every spec is wrapped in test.skip() until the backend
+ * endpoints in CONTRACT §9 are live AND the test account has `algorythmo_crm`
+ * enabled. The suite is shipped now so reviews of C.2 can read what D will
+ * assert once the gates open.
+ *
  * Provides:
  * - `crmPage`       — authenticated page navigated to /crm. FAILS (not skips) if
  *                     the route is unreachable so misconfig is visible in CI.
@@ -115,10 +123,13 @@ export function mockLead(opts: MockLeadOptions = {}) {
 // Pipeline mock helper
 // ---------------------------------------------------------------------------
 
+// CONTRACT_M1B v1.0.0 §2 — stage.kind ∈ { 'open' | 'won' | 'lost' }.
+// Earlier scaffolds used 'new'/'qualified'/'proposal' — these are NOT in the
+// contract. Open stages are differentiated by `data-stage-id`, not kind.
 export const DEFAULT_PIPELINE_STAGES = [
-  { id: 1, name: 'Novo', kind: 'new', position: 1, aging_coefficient: 1.0 },
-  { id: 2, name: 'Qualificado', kind: 'qualified', position: 2, aging_coefficient: 4.0 },
-  { id: 3, name: 'Proposta', kind: 'proposal', position: 3, aging_coefficient: 7.0 },
+  { id: 1, name: 'Novo', kind: 'open', position: 1, aging_coefficient: 1.0 },
+  { id: 2, name: 'Qualificado', kind: 'open', position: 2, aging_coefficient: 4.0 },
+  { id: 3, name: 'Proposta', kind: 'open', position: 3, aging_coefficient: 7.0 },
   { id: 4, name: 'Fechado ganho', kind: 'won', position: 4, aging_coefficient: 0.0 },
   { id: 5, name: 'Fechado perdido', kind: 'lost', position: 5, aging_coefficient: 0.0 },
 ];
@@ -154,58 +165,19 @@ export async function mockDefaultPipeline(
 /**
  * Drag a Lead card from its current position to a target stage column.
  *
- * WHY NOT dragTo: Playwright's `locator.dragTo()` dispatches HTML5 dragstart/
- * dragover/drop events. SortableJS (which powers vuedraggable@4) listens to
- * pointer/mouse events ONLY. Using dragTo causes no-op silently — no error, no
- * card movement. This helper replicates the actual pointer path SortableJS needs.
- *
- * SortableJS requires:
- *   1. mousedown on the card
- *   2. Multiple mousemove events (>= 2 moves) to trigger drag start
- *   3. Final mousemove over the target drop zone
- *   4. mouseup to drop
- *
- * Reference: github.com/SortableJS/Sortable#readme, Playwright dragTo docs
+ * Why dragTo (HTML5), not pointer events:
+ *   C.2 ships native HTML5 drag-and-drop via the useDragLead composable —
+ *   dragstart/dragenter/dragover/drop/dragend handlers wired on the card +
+ *   column. SortableJS was considered and rejected (Q-B drag-impl).
+ *   Playwright's `locator.dragTo()` dispatches the same HTML5 events the
+ *   composable listens to, so it is the correct mechanism here.
  */
 export async function dragLeadCard(
-  page: Page,
+  _page: Page,
   cardLocator: Locator,
   targetColumnLocator: Locator
 ): Promise<void> {
-  const cardBox = await cardLocator.boundingBox();
-  const targetBox = await targetColumnLocator.boundingBox();
-
-  if (!cardBox || !targetBox) {
-    throw new Error(
-      'dragLeadCard: could not get bounding boxes for card or target column'
-    );
-  }
-
-  const startX = cardBox.x + cardBox.width / 2;
-  const startY = cardBox.y + cardBox.height / 2;
-  const endX = targetBox.x + targetBox.width / 2;
-  const endY = targetBox.y + targetBox.height / 2;
-
-  await page.mouse.move(startX, startY);
-  await page.mouse.down();
-
-  // SortableJS needs a few pixels of movement before it recognizes a drag
-  await page.mouse.move(startX + 5, startY + 2, { steps: 3 });
-  await page.mouse.move(startX + 10, startY + 5, { steps: 3 });
-
-  // Move toward target
-  await page.mouse.move(
-    startX + (endX - startX) * 0.5,
-    startY + (endY - startY) * 0.5,
-    { steps: 10 }
-  );
-  await page.mouse.move(endX, endY, { steps: 10 });
-
-  // Wait for SortableJS to process the pointer events before dropping.
-  // rAF fires after the browser has processed the last mousemove — avoids
-  // the arbitrary 50 ms timer while still giving the event loop a full cycle.
-  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())));
-  await page.mouse.up();
+  await cardLocator.dragTo(targetColumnLocator);
 }
 
 // ---------------------------------------------------------------------------
