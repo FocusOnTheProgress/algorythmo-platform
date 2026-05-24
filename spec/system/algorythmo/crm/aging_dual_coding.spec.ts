@@ -62,7 +62,8 @@ const LEADS_BY_AGING = [
     seconds_in_stage: 86400, // 24h
     expected_state: 'neutral',
     expected_glyph: '—',
-    description: 'chip shows neutral — when aging_coefficient = 0 (F6 guard, no divide)',
+    description:
+      'chip shows neutral — when aging_coefficient = 0 (F6 guard, no divide)',
   },
 ];
 
@@ -74,49 +75,67 @@ test.describe('Aging chip — dual-coding (D10 + D11)', () => {
   for (const lead of LEADS_BY_AGING) {
     test.skip(lead.description, async ({ page }) => {
       // Mock pipeline with stage aging_coefficient matching lead
-      await page.route(`**/algorythmo/api/v1/accounts/*/pipelines/default`, async (route) => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            pipeline: { id: 1, name: 'Default' },
-            // CONTRACT §2 — stage.kind ∈ {'open' | 'won' | 'lost'}.
-            stages: [
-              { id: 1, name: 'Novo', kind: 'open', position: 1, aging_coefficient: lead.aging_coefficient },
-              { id: 4, name: 'Fechado ganho', kind: 'won', position: 4, aging_coefficient: 0.0 },
-            ],
-          }),
-        });
-      });
+      await page.route(
+        `**/algorythmo/api/v1/accounts/*/pipelines/default`,
+        async route => {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              pipeline: { id: 1, name: 'Default' },
+              // CONTRACT §2 — stage.kind ∈ {'open' | 'won' | 'lost'}.
+              stages: [
+                {
+                  id: 1,
+                  name: 'Novo',
+                  kind: 'open',
+                  position: 1,
+                  aging_coefficient: lead.aging_coefficient,
+                },
+                {
+                  id: 4,
+                  name: 'Fechado ganho',
+                  kind: 'won',
+                  position: 4,
+                  aging_coefficient: 0.0,
+                },
+              ],
+            }),
+          });
+        }
+      );
 
-      await page.route(`**/algorythmo/api/v1/accounts/*/leads*`, async (route) => {
-        const url = route.request().url();
-        const stageId = new URL(url).searchParams.get('stage_id');
-        // Return lead in its target stage
-        const targetStage = lead.stage_id.toString();
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            leads:
-              stageId === targetStage
-                ? [
-                    {
-                      id: lead.id,
-                      stage_id: lead.stage_id,
-                      channel_origin: 'widget',
-                      channel_metadata: { name: `Test Lead ${lead.id}` },
-                      stage_entered_at: new Date(
-                        Date.now() - lead.seconds_in_stage * 1000
-                      ).toISOString(),
-                      last_message_at: new Date().toISOString(),
-                    },
-                  ]
-                : [],
-            next_cursor: null,
-          }),
-        });
-      });
+      await page.route(
+        `**/algorythmo/api/v1/accounts/*/leads*`,
+        async route => {
+          const url = route.request().url();
+          const stageId = new URL(url).searchParams.get('stage_id');
+          // Return lead in its target stage
+          const targetStage = lead.stage_id.toString();
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              leads:
+                stageId === targetStage
+                  ? [
+                      {
+                        id: lead.id,
+                        stage_id: lead.stage_id,
+                        channel_origin: 'widget',
+                        channel_metadata: { name: `Test Lead ${lead.id}` },
+                        stage_entered_at: new Date(
+                          Date.now() - lead.seconds_in_stage * 1000
+                        ).toISOString(),
+                        last_message_at: new Date().toISOString(),
+                      },
+                    ]
+                  : [],
+              next_cursor: null,
+            }),
+          });
+        }
+      );
 
       await goToCrm(page);
 

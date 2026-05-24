@@ -24,7 +24,13 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { loginAsAdmin, goToCrm, goToPipelineConfig } from './_fixture';
+import {
+  loginAsAdmin,
+  goToCrm,
+  goToPipelineConfig,
+  mockDefaultPipeline,
+  mockLeads,
+} from './_fixture';
 
 const GATING_IMPACTS = new Set(['critical', 'serious']);
 
@@ -44,112 +50,113 @@ async function getAxeBuilder() {
 }
 
 test.describe('A11y smoke — axe-core WCAG AA gate', () => {
-  test.skip(
-    '/crm returns zero axe violations (critical + serious)',
-    async ({ page }) => {
-      const AxeBuilder = await getAxeBuilder();
-      if (!AxeBuilder) {
-        test.skip(
-          true,
-          '@axe-core/playwright not installed — run: pnpm add -D @axe-core/playwright'
-        );
-        return;
-      }
-
-      await loginAsAdmin(page);
-      await goToCrm(page);
-
-      const results = await new AxeBuilder({ page })
-        .withTags(['wcag2a', 'wcag2aa'])
-        .analyze();
-
-      const gating = results.violations.filter((v) =>
-        GATING_IMPACTS.has(v.impact ?? '')
+  test.skip('/crm returns zero axe violations (critical + serious)', async ({
+    page,
+  }) => {
+    const AxeBuilder = await getAxeBuilder();
+    if (!AxeBuilder) {
+      test.skip(
+        true,
+        '@axe-core/playwright not installed — run: pnpm add -D @axe-core/playwright'
       );
-
-      if (gating.length > 0) {
-        const summary = gating
-          .map(
-            (v) =>
-              `[${v.impact}] ${v.id}: ${v.description}\n  Nodes: ${v.nodes
-                .slice(0, 3)
-                .map((n) => n.html)
-                .join(', ')}`
-          )
-          .join('\n\n');
-        throw new Error(
-          `axe found ${gating.length} gating violation(s) on /crm:\n\n${summary}`
-        );
-      }
-
-      // Non-gating violations are surfaced for visibility but do not fail CI
-      const nonGating = results.violations.filter(
-        (v) => !GATING_IMPACTS.has(v.impact ?? '')
-      );
-      if (nonGating.length > 0) {
-        console.warn(
-          `[axe] ${nonGating.length} non-gating violation(s) on /crm (moderate/minor) — not blocking:`
-        );
-        nonGating.forEach((v) =>
-          console.warn(`  [${v.impact}] ${v.id}: ${v.description}`)
-        );
-      }
-
-      expect(gating).toHaveLength(0);
+      return;
     }
-  );
 
-  test.skip(
-    '/crm/pipeline returns zero axe violations (critical + serious)',
-    async ({ page }) => {
-      const AxeBuilder = await getAxeBuilder();
-      if (!AxeBuilder) {
-        test.skip(
-          true,
-          '@axe-core/playwright not installed — run: pnpm add -D @axe-core/playwright'
-        );
-        return;
-      }
+    await loginAsAdmin(page);
+    await mockDefaultPipeline(page);
+    await mockLeads(page, []);
+    await goToCrm(page);
 
-      await loginAsAdmin(page);
-      await goToPipelineConfig(page);
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .analyze();
 
-      const results = await new AxeBuilder({ page })
-        .withTags(['wcag2a', 'wcag2aa'])
-        .analyze();
+    const gating = results.violations.filter(v =>
+      GATING_IMPACTS.has(v.impact ?? '')
+    );
 
-      const gating = results.violations.filter((v) =>
-        GATING_IMPACTS.has(v.impact ?? '')
+    if (gating.length > 0) {
+      const summary = gating
+        .map(
+          v =>
+            `[${v.impact}] ${v.id}: ${v.description}\n  Nodes: ${v.nodes
+              .slice(0, 3)
+              .map(n => n.html)
+              .join(', ')}`
+        )
+        .join('\n\n');
+      throw new Error(
+        `axe found ${gating.length} gating violation(s) on /crm:\n\n${summary}`
       );
-
-      if (gating.length > 0) {
-        const summary = gating
-          .map(
-            (v) =>
-              `[${v.impact}] ${v.id}: ${v.description}\n  Nodes: ${v.nodes
-                .slice(0, 3)
-                .map((n) => n.html)
-                .join(', ')}`
-          )
-          .join('\n\n');
-        throw new Error(
-          `axe found ${gating.length} gating violation(s) on /crm/pipeline:\n\n${summary}`
-        );
-      }
-
-      const nonGating = results.violations.filter(
-        (v) => !GATING_IMPACTS.has(v.impact ?? '')
-      );
-      if (nonGating.length > 0) {
-        console.warn(
-          `[axe] ${nonGating.length} non-gating violation(s) on /crm/pipeline (moderate/minor):`
-        );
-        nonGating.forEach((v) =>
-          console.warn(`  [${v.impact}] ${v.id}: ${v.description}`)
-        );
-      }
-
-      expect(gating).toHaveLength(0);
     }
-  );
+
+    // Non-gating violations are surfaced for visibility but do not fail CI
+    const nonGating = results.violations.filter(
+      v => !GATING_IMPACTS.has(v.impact ?? '')
+    );
+    if (nonGating.length > 0) {
+      console.warn(
+        `[axe] ${nonGating.length} non-gating violation(s) on /crm (moderate/minor) — not blocking:`
+      );
+      nonGating.forEach(v =>
+        console.warn(`  [${v.impact}] ${v.id}: ${v.description}`)
+      );
+    }
+
+    expect(gating).toHaveLength(0);
+  });
+
+  test.skip('/crm/pipeline returns zero axe violations (critical + serious)', async ({
+    page,
+  }) => {
+    const AxeBuilder = await getAxeBuilder();
+    if (!AxeBuilder) {
+      test.skip(
+        true,
+        '@axe-core/playwright not installed — run: pnpm add -D @axe-core/playwright'
+      );
+      return;
+    }
+
+    await loginAsAdmin(page);
+    await mockDefaultPipeline(page);
+    await goToPipelineConfig(page);
+
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .analyze();
+
+    const gating = results.violations.filter(v =>
+      GATING_IMPACTS.has(v.impact ?? '')
+    );
+
+    if (gating.length > 0) {
+      const summary = gating
+        .map(
+          v =>
+            `[${v.impact}] ${v.id}: ${v.description}\n  Nodes: ${v.nodes
+              .slice(0, 3)
+              .map(n => n.html)
+              .join(', ')}`
+        )
+        .join('\n\n');
+      throw new Error(
+        `axe found ${gating.length} gating violation(s) on /crm/pipeline:\n\n${summary}`
+      );
+    }
+
+    const nonGating = results.violations.filter(
+      v => !GATING_IMPACTS.has(v.impact ?? '')
+    );
+    if (nonGating.length > 0) {
+      console.warn(
+        `[axe] ${nonGating.length} non-gating violation(s) on /crm/pipeline (moderate/minor):`
+      );
+      nonGating.forEach(v =>
+        console.warn(`  [${v.impact}] ${v.id}: ${v.description}`)
+      );
+    }
+
+    expect(gating).toHaveLength(0);
+  });
 });

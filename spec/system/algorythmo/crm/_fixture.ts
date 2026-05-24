@@ -10,15 +10,17 @@
  * assert once the gates open.
  *
  * Provides:
- * - `crmPage`       — authenticated page navigated to /crm. FAILS (not skips) if
- *                     the route is unreachable so misconfig is visible in CI.
  * - `mockLead()`    — builds a full Lead JSON matching the actual API shape
  *                     (includes embedded contact: {} block from B.0).
  * - `mockDefaultPipeline()` — stubs GET /pipelines/default for specs that need
  *                     the full 5-stage pipeline without a live backend.
- * - `dragLeadCard()` — SortableJS-compatible drag via page.mouse (NOT dragTo).
- *                     Playwright's dragTo sends HTML5 drag events which SortableJS
- *                     (vuedraggable@4) ignores — only pointer/mouse events work.
+ * - `mockLeads()`   — stubs per-stage GET /leads?stage_id=:sid so the board
+ *                     hydrates against deterministic data and `networkidle`
+ *                     actually settles.
+ * - `dragLeadCard()` — HTML5 drag-and-drop via `locator.dragTo()`. C.2 uses
+ *                     native dragstart/dragover/drop (composable `useDragLead`);
+ *                     dragTo dispatches the events that composable listens to.
+ *                     SortableJS was considered and rejected in design (Q-B drag-impl).
  * - `seedLeads()`   — seeds N leads into the default pipeline via API (stub until
  *                     B-PR1 ships).
  * - `loginAsAdmin()` — log in with the test admin credentials.
@@ -137,6 +139,10 @@ export const DEFAULT_PIPELINE_STAGES = [
 /**
  * Stub GET /pipelines/default so the Kanban can initialize without a live backend.
  * Call this in beforeEach for specs that need the board to render.
+ *
+ * The route is scoped to `TEST_ACCOUNT_ID` — wildcard `accounts/*` would also
+ * fire for the wrong account if login resolves a different one, silently
+ * masking misconfig.
  */
 export async function mockDefaultPipeline(
   page: Page,
@@ -144,7 +150,7 @@ export async function mockDefaultPipeline(
 ): Promise<void> {
   const stages = stageOverrides ?? DEFAULT_PIPELINE_STAGES;
   await page.route(
-    `**/algorythmo/api/v1/accounts/*/pipelines/default`,
+    `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/pipelines/default`,
     async (route) => {
       await route.fulfill({
         status: 200,
@@ -158,22 +164,53 @@ export async function mockDefaultPipeline(
   );
 }
 
+/**
+ * Stub the per-stage GET /leads?stage_id=:sid endpoint that KanbanBoard
+ * fires for all 5 stages on mount. Returns the matching subset from `leads`
+ * (or [] for empty stages).
+ *
+ * Without this, `goToCrm`'s `waitUntil: 'networkidle'` hangs because the
+ * 5 parallel /leads requests never settle.
+ */
+export async function mockLeads(
+  page: Page,
+  leads: ReturnType<typeof mockLead>[] = []
+): Promise<void> {
+  await page.route(
+    `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/leads*`,
+    async (route) => {
+      const url = new URL(route.request().url());
+      const stageIdParam = url.searchParams.get('stage_id');
+      const stageLeads = stageIdParam
+        ? leads.filter((l) => String(l.stage_id) === stageIdParam)
+        : leads;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ leads: stageLeads, next_cursor: null }),
+      });
+    }
+  );
+}
+
 // ---------------------------------------------------------------------------
-// SortableJS-compatible drag helper
+// HTML5 drag helper
 // ---------------------------------------------------------------------------
 
 /**
- * Drag a Lead card from its current position to a target stage column.
+ * Drag a Lead card to a target stage column via Playwright's HTML5 dragTo.
  *
- * Why dragTo (HTML5), not pointer events:
- *   C.2 ships native HTML5 drag-and-drop via the useDragLead composable —
- *   dragstart/dragenter/dragover/drop/dragend handlers wired on the card +
- *   column. SortableJS was considered and rejected (Q-B drag-impl).
- *   Playwright's `locator.dragTo()` dispatches the same HTML5 events the
- *   composable listens to, so it is the correct mechanism here.
+ * C.2 ships native HTML5 drag-and-drop via the `useDragLead` composable —
+ * dragstart/dragenter/dragover/drop/dragend handlers wired on the card +
+ * column. SortableJS was considered and rejected (Q-B drag-impl).
+ * `locator.dragTo()` dispatches the same HTML5 events the composable listens
+ * to, so it is the correct mechanism here.
+ *
+ * NOTE: when un-skipping in Fase 2, run the first pass `--headed` in both
+ * Chromium AND Firefox to confirm dragTo's synthesized DataTransfer survives
+ * dragstart → dragover → drop in this Playwright version.
  */
 export async function dragLeadCard(
-  _page: Page,
   cardLocator: Locator,
   targetColumnLocator: Locator
 ): Promise<void> {
@@ -202,30 +239,6 @@ export async function loginAsAdmin(page: Page): Promise<void> {
   await page.getByRole('button', { name: /sign in|log in|login/i }).click();
   await page.waitForURL(/\/app\/accounts\/\d+/, { timeout: 30_000 });
   await page.waitForLoadState('networkidle', { timeout: 20_000 });
-}
-
-/**
- * Enable `algorythmo_crm` feature flag for the test account.
- *
- * STATUS: STUB — the Chatwoot admin feature-flag API endpoint is not yet
- * documented. Once Sessão B ships B-PR1 (flag infrastructure), this should
- * call the actual endpoint. For now, the test environment must have the flag
- * enabled BEFORE running the suite.
- *
- * To enable manually in a dev environment:
- *   bundle exec rails algorythmo:seed:enable_crm ACCOUNT_ID=1
- *   — OR —
- *   In rails console: Account.find(1).enable_feature!(:algorythmo_crm)
- *
- * IMPORTANT: This function does NOT silently succeed. If the suite runs
- * and /crm is unreachable, `crmPage` fixture will throw (not skip).
- */
-export async function enableCrmFlag(
-  _request: APIRequestContext,
-  _accountId: number = TEST_ACCOUNT_ID
-): Promise<void> {
-  // TODO(D — Fase 2): implement once Sessão B ships flag toggle API endpoint.
-  // Until then, enabling the flag is a manual precondition (see docstring above).
 }
 
 /**
@@ -261,7 +274,8 @@ export async function goToPipelineConfig(
 
 export interface SeedLeadOptions {
   count?: number;
-  stageKind?: 'new' | 'qualified' | 'proposal' | 'won' | 'lost';
+  // CONTRACT_M1B v1.0.0 §2 — only 'open' | 'won' | 'lost' are valid.
+  stageKind?: 'open' | 'won' | 'lost';
   channelOrigin?: 'whatsapp' | 'email' | 'instagram' | 'widget';
 }
 
@@ -279,41 +293,8 @@ export async function seedLeads(
 }
 
 // ---------------------------------------------------------------------------
-// Extended test fixture
+// Re-exports
 // ---------------------------------------------------------------------------
 
-type CrmFixtures = {
-  /**
-   * Logged-in page navigated to the CRM Kanban.
-   *
-   * FAILS (throws) if the CRM route is not reachable — this makes CI failures
-   * visible rather than silently skipping all tests due to a misconfigured flag.
-   * If the CRM route isn't live yet (Sessão C work in progress), use direct
-   * `loginAsAdmin + goToCrm` instead of this fixture and gate with test.skip.
-   */
-  crmPage: Page;
-};
-
-export const test = base.extend<CrmFixtures>({
-  crmPage: async ({ page }, use) => {
-    await loginAsAdmin(page);
-    await goToCrm(page);
-
-    // FAIL loudly if CRM route is not reachable (flag disabled or route not wired).
-    // Using expect() instead of test.skip() so CI fails visibly on misconfiguration.
-    // To suppress: either enable the flag or use loginAsAdmin+goToCrm directly.
-    const currentUrl = page.url();
-    expect(
-      currentUrl,
-      [
-        'CRM route is not reachable — got redirected to: ' + currentUrl,
-        'Ensure algorythmo_crm flag is enabled for the test account.',
-        'Enable via: bundle exec rails algorythmo:seed:enable_crm ACCOUNT_ID=1',
-      ].join('\n')
-    ).toContain('/crm');
-
-    await use(page);
-  },
-});
-
+export const test = base;
 export { expect };
