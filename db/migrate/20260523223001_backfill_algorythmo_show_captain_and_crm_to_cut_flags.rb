@@ -15,7 +15,7 @@ class BackfillAlgorythmoShowCaptainAndCrmToCutFlags < ActiveRecord::Migration[7.
 
   def up
     # Accounts where feature_flags sign bit was set = algorythmo_show_captain was "enabled"
-    execute(<<~SQL)
+    execute(<<~SQL.squish)
       UPDATE accounts
       SET algorythmo_feature_flags = algorythmo_feature_flags | #{SHOW_CAPTAIN_NEW_BIT}
       WHERE feature_flags < 0
@@ -24,7 +24,7 @@ class BackfillAlgorythmoShowCaptainAndCrmToCutFlags < ActiveRecord::Migration[7.
   end
 
   def down
-    execute(<<~SQL)
+    execute(<<~SQL.squish)
       UPDATE accounts
       SET algorythmo_feature_flags = algorythmo_feature_flags & ~#{SHOW_CAPTAIN_NEW_BIT}
     SQL
