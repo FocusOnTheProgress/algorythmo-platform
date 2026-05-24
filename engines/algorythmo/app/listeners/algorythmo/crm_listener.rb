@@ -50,10 +50,20 @@ class Algorythmo::CrmListener < BaseListener
 
   private
 
-  # §6.2 — True when message is outgoing from a human User (not AgentBot, not Contact).
-  # AgentBot responds arrive as outgoing but sender.is_a?(AgentBot) — excluded here.
+  # §6.2 — True when message is a real human reply to the customer (not nota interna,
+  # not campanha massiva, not regra de automação, not AgentBot, not external_echo).
+  #
+  # Delegates to Chatwoot's canonical Message#human_response? (single source of truth —
+  # see app/models/message.rb:362) which excludes automation_rule_id, campaign_id and
+  # AgentBot/Captain. We add !private? (notas internas) and an explicit sender.is_a?(User)
+  # to filter external_echo (where human_response? is true but sender is nil — message
+  # mirrored from the native WhatsApp/Instagram app, not an in-Chatwoot reply by an agent).
+  #
+  # Semântica do produto: "primeiro vendedor que atender" = primeira resposta visível ao
+  # cliente, feita por um humano agente registrado, fora de campanha/automação.
   def outgoing_from_human?(message)
-    message.message_type == 'outgoing' &&
+    message.human_response? &&
+      !message.private? &&
       message.sender.is_a?(User) &&
       message.conversation&.contact_id.present?
   end
@@ -66,7 +76,8 @@ class Algorythmo::CrmListener < BaseListener
     contact_id = message.conversation.contact_id
     open_lead  = Algorythmo::Lead.active.open.find_by(contact_id: contact_id, account_id: account.id)
     unless open_lead
-      Rails.logger.warn("[CrmListener] outgoing from user=#{message.sender_id} but no open lead for contact_id=#{contact_id}")
+      # Debug (não warn): SDR/cold-outbound legitimamente bate aqui em volume.
+      Rails.logger.debug { "[CrmListener] outgoing from user=#{message.sender_id} but no open lead for contact_id=#{contact_id}" }
       return
     end
 

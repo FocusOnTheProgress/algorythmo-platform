@@ -111,19 +111,19 @@ RSpec.describe Algorythmo::CrmListener, type: :listener do
     end
   end
 
-  # ── Scenario 4: Outgoing from User, no open lead → no-op + warning ───────────
+  # ── Scenario 4: Outgoing from User, no open lead → no-op + debug log ─────────
 
   describe 'outgoing message from User when no open lead exists for the contact' do
     before do
       open_lead.update_column(:deleted, true)
     end
 
-    it 'does not raise and logs a warning' do
-      allow(Rails.logger).to receive(:warn)
+    it 'does not raise and logs at debug level (SDR cold-outbound is high-volume)' do
+      allow(Rails.logger).to receive(:debug)
       msg = outgoing_message
 
       expect { listener.message_created(build_event(msg)) }.not_to raise_error
-      expect(Rails.logger).to have_received(:warn).with(/no open lead/)
+      expect(Rails.logger).to have_received(:debug)
     end
   end
 
@@ -160,6 +160,72 @@ RSpec.describe Algorythmo::CrmListener, type: :listener do
 
     it 'does not set owner_id' do
       msg = outgoing_message
+      listener.message_created(build_event(msg))
+      expect(open_lead.reload.owner_id).to be_nil
+    end
+  end
+
+  # ── Scenario 8a: private note (nota interna) → NOT counted as first reply ────
+  #
+  # Adversarial review PR #51 — Crítico #1.
+  # Vendedor escreve "vou passar pro Bruno" como nota interna (private: true).
+  # Cliente não vê. Não deve atribuir owner. Filtro: !message.private?
+
+  describe 'outgoing private note (nota interna) from User' do
+    it 'does not set owner_id (nota interna não é primeira resposta ao cliente)' do
+      msg = create(:message,
+                   message_type: :outgoing,
+                   account: account,
+                   inbox: inbox,
+                   conversation: conversation,
+                   sender: agent,
+                   private: true)
+
+      listener.message_created(build_event(msg))
+      expect(open_lead.reload.owner_id).to be_nil
+    end
+  end
+
+  # ── Scenario 8b: campaign message → NOT counted as first reply ───────────────
+  #
+  # Adversarial review PR #51 — Crítico #2.
+  # Disparo de campanha em massa: sender = User (operador), message_type = outgoing,
+  # additional_attributes['campaign_id'] presente. NÃO deve atribuir o operador
+  # como owner — ele não atendeu, só puxou o gatilho da blast.
+  # Filtro herdado de Message#human_response? (additional_attributes['campaign_id'].blank?).
+
+  describe 'outgoing campaign message from User' do
+    it 'does not set owner_id (campanha massiva não é atendimento)' do
+      msg = create(:message,
+                   message_type: :outgoing,
+                   account: account,
+                   inbox: inbox,
+                   conversation: conversation,
+                   sender: agent,
+                   additional_attributes: { 'campaign_id' => 42 })
+
+      listener.message_created(build_event(msg))
+      expect(open_lead.reload.owner_id).to be_nil
+    end
+  end
+
+  # ── Scenario 8c: automation rule message → NOT counted as first reply ────────
+  #
+  # Adversarial review PR #51 — defesa em profundidade.
+  # Regras de automação do Chatwoot disparam outgoing messages com
+  # content_attributes['automation_rule_id'] presente. Filtro herdado de
+  # Message#human_response? (content_attributes['automation_rule_id'].blank?).
+
+  describe 'outgoing automation-rule message from User' do
+    it 'does not set owner_id (mensagem disparada por regra de automação)' do
+      msg = create(:message,
+                   message_type: :outgoing,
+                   account: account,
+                   inbox: inbox,
+                   conversation: conversation,
+                   sender: agent,
+                   content_attributes: { 'automation_rule_id' => 7 })
+
       listener.message_created(build_event(msg))
       expect(open_lead.reload.owner_id).to be_nil
     end
