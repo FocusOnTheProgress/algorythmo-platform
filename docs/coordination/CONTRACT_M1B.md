@@ -1,10 +1,20 @@
 # Contrato M1-B — selectors + aria (Fase 2)
 
+> **Versão atual: 1.1.0** — bump M1-C, ver Changelog abaixo.
+>
 > **Por que esse doc existe.** Na Fase 2, o agente de componentes constrói LeadCard/Kanban e o agente de testes escreve Playwright contra esses componentes. Pra rodarem de verdade em paralelo, os dois acordam HOJE o contrato de superfície. Esta é a fonte única de verdade.
 >
 > **Quem altera.** Apenas a orquestradora (Sessão A). Qualquer agente que precise estender PARA e abre PR `[BLOCKED]` pedindo bump.
 >
 > **Como usar.** Componentes emitem os atributos EXATAMENTE como listado. Specs Playwright usam APENAS estes seletores (nada de `nth-child`, classe CSS ou regex em texto).
+
+## Changelog
+
+- **v1.1.0 (2026-05-24) — M1-C bump.** Reserva no §7 LeadDetailDrawer dois `data-testid` consumidos pelo wire-up real do drawer (PR 4 do plano `0003-m1-c-backend-leads-reais`):
+  - `drawer-owner-name` — exibição do dono do lead, vindo do campo `owner` no `lead_json` (introduzido pelo PR 1 do M1-C).
+  - `drawer-stage-history-list` — lista renderizada a partir de `GET /leads/:id/stage_history` (endpoint do PR 3 do M1-C).
+  Adição pura: zero alteração nos testids existentes. Suite Playwright PR #50 (ainda `.skip()` até o PR 5 do M1-C) permanece retrocompatível.
+- **v1.0.0 (2026-05-24) — Inicial.** Dispatch da Fase 2 (LeadCard, Kanban, LeadAgingChip, drawer scaffold).
 
 ---
 
@@ -146,12 +156,23 @@
   <span data-testid="drawer-contact-email">…</span>
   <span data-testid="drawer-contact-phone">…</span>
   <span data-testid="drawer-channel-origin">…</span>
+  <!-- v1.1.0 — owner do lead (lead.owner do lead_json). Renderiza placeholder quando null. -->
+  <span data-testid="drawer-owner-name">{{ ownerNameOrPlaceholder }}</span>
   <a data-testid="drawer-conversation-link" :data-conversation-id="c.id" v-for="c in convs" />
   <button data-testid="drawer-conversations-load-more" v-if="hasMore">Ver mais</button>
+  <!-- v1.1.0 — histórico de etapas (GET /leads/:id/stage_history). Lazy-load no abrir do drawer. -->
+  <ol data-testid="drawer-stage-history-list">
+    <li v-for="entry in stageHistory" :data-stage-history-id="entry.id">…</li>
+  </ol>
   <textarea data-testid="drawer-notes-input" />
   <button v-if="isClosed" data-testid="drawer-reopen-button">Reabrir como novo Lead</button>
 </aside>
 ```
+
+**Notas v1.1.0:**
+
+- `drawer-owner-name` renderiza `lead.owner.name` quando presente, ou string i18n de placeholder ("Sem dono") quando `lead.owner` é `null`. O elemento DEVE existir em ambos os casos para que Playwright assercione presença + texto.
+- `drawer-stage-history-list` é a raiz da lista; itens são li com `data-stage-history-id`. Quando `truncated: true` no payload, o rodapé "Mostrando últimos 100" é um elemento separado (não bloqueia este contrato — testid pode ser definido pelo PR 4 sem novo bump por estar dentro do envelope da lista).
 
 ---
 
@@ -187,5 +208,6 @@ PATCH  /algorythmo/api/v1/accounts/:id/stages/:sid          { aging_coefficient 
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0.0 | 2026-05-24 | Inicial — dispatch Fase 2 |
+| 1.1.0 | 2026-05-24 | M1-C: adiciona `drawer-owner-name` + `drawer-stage-history-list` no §7. Sem breaking changes. |
 
 Mudanças = PR `[CONTRACT_BUMP]`, aprovação da orquestradora antes de C/D consumirem versão nova.
