@@ -799,4 +799,69 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       end
     end
   end
+
+  # ── §7.2 — owner embed in lead_json (M1-C PR 1) ──────────────────────────────
+
+  describe '§7.2 — owner embed in lead_json' do
+    it 'includes owner key in #show response (nil when no owner)' do
+      lead = create_lead
+      get :show, params: { account_id: account.id, id: lead.id }
+      body = JSON.parse(response.body)
+      expect(body).to have_key('owner')
+      expect(body['owner']).to be_nil
+    end
+
+    it 'includes owner with id, name, thumbnail when owner is set' do
+      lead = create_lead
+      lead.update_columns(owner_id: admin.id)
+      get :show, params: { account_id: account.id, id: lead.id }
+      body = JSON.parse(response.body)
+      expect(body['owner']).to include('id' => admin.id, 'name' => admin.name)
+      expect(body['owner'].keys).to include('thumbnail')
+    end
+
+    it 'does NOT include time_in_stage in lead_json' do
+      lead = create_lead
+      get :show, params: { account_id: account.id, id: lead.id }
+      body = JSON.parse(response.body)
+      expect(body).not_to have_key('time_in_stage')
+    end
+
+    it 'includes owner key in index (stage) response' do
+      create_lead
+      get :index, params: { account_id: account.id, stage_id: novo_stage.id }
+      body = JSON.parse(response.body)
+      expect(body['leads'].first).to have_key('owner')
+    end
+
+    it 'includes owner key in index (contact) response' do
+      create_lead
+      get :index, params: { account_id: account.id, contact_id: contact.id }
+      body = JSON.parse(response.body)
+      expect(body['leads'].first).to have_key('owner')
+    end
+
+    describe 'N+1 — includes(:owner) prevents extra queries on index_by_stage' do
+      it 'does not fire per-lead owner queries' do
+        owner_users = create_list(:user, 5, account: account)
+        contacts    = create_list(:contact, 5, account: account)
+        contacts.each_with_index do |c, i|
+          l = Algorythmo::Lead.create!(account: account, contact: c, stage: novo_stage,
+                                       position: i.to_f + 1, stage_entered_at: Time.current)
+          l.update_columns(owner_id: owner_users[i].id)
+        end
+
+        query_count = 0
+        counter = ->(*, **) { query_count += 1 }
+        ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
+          get :index, params: { account_id: account.id, stage_id: novo_stage.id }
+        end
+        expect(response).to have_http_status(:ok)
+        # With includes(:owner): leads query + 1 batch owner query (not N queries).
+        # Threshold: baseline ~10 (auth + leads + stage + contacts + attachments + blobs + owner).
+        # Without includes, each of 5 leads fires 1 extra owner query = 5 extra, pushing > 15.
+        expect(query_count).to be < 16
+      end
+    end
+  end
 end
