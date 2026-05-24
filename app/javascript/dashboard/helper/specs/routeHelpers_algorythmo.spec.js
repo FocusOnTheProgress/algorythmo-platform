@@ -1,4 +1,7 @@
-import { isRouteBlockedByAlgorythmoGate } from '../routeHelpers';
+import {
+  isRouteBlockedByAlgorythmoGate,
+  resetAlgorythmoCutFlagWarningsForTests,
+} from '../routeHelpers';
 
 // M0.5 — Camada 3': Vue router guard for algorythmo_show_captain
 // Tests the pure helper function used by the router's beforeEach guard.
@@ -86,6 +89,111 @@ describe('isRouteBlockedByAlgorythmoGate', () => {
       expect(isRouteBlockedByAlgorythmoGate(to, () => null, ACCOUNT_ID)).toBe(
         true
       );
+    });
+  });
+
+  describe('when the route has algorythmoCutFlag (M2 Onda 2 cut surfaces)', () => {
+    const to = {
+      meta: {
+        algorythmoCutFlag: 'algorythmo_cut_campaigns',
+        permissions: ['administrator'],
+      },
+    };
+
+    it('returns true (blocks) when the cut flag is enabled (hide the surface)', () => {
+      expect(
+        isRouteBlockedByAlgorythmoGate(to, makeGetter(true), ACCOUNT_ID)
+      ).toBe(true);
+    });
+
+    it('returns false (allows) when the cut flag is disabled (show the surface)', () => {
+      expect(
+        isRouteBlockedByAlgorythmoGate(to, makeGetter(false), ACCOUNT_ID)
+      ).toBe(false);
+    });
+
+    it('passes the correct accountId and cut flag name to the getter', () => {
+      const getterSpy = vi.fn(() => false);
+      isRouteBlockedByAlgorythmoGate(to, getterSpy, ACCOUNT_ID);
+      expect(getterSpy).toHaveBeenCalledWith(
+        ACCOUNT_ID,
+        'algorythmo_cut_campaigns'
+      );
+    });
+
+    it('returns false (allows, fail-open) when the getter throws', () => {
+      const throwingGetter = () => {
+        throw new Error('store not ready');
+      };
+      expect(
+        isRouteBlockedByAlgorythmoGate(to, throwingGetter, ACCOUNT_ID)
+      ).toBe(false);
+    });
+
+    it('returns false (allows) when the getter returns undefined', () => {
+      expect(
+        isRouteBlockedByAlgorythmoGate(to, () => undefined, ACCOUNT_ID)
+      ).toBe(false);
+    });
+
+    it('returns false (allows) when the getter returns a truthy non-boolean (strict === true required)', () => {
+      // Defensive: only the exact boolean true blocks. Anything else fails open.
+      expect(isRouteBlockedByAlgorythmoGate(to, () => 1, ACCOUNT_ID)).toBe(
+        false
+      );
+    });
+  });
+
+  describe('when the route has BOTH algorythmoFeatureFlag and algorythmoCutFlag', () => {
+    // The enable (opt-in) flag takes precedence; cut flag is not consulted.
+    const to = {
+      meta: {
+        algorythmoFeatureFlag: 'algorythmo_show_captain',
+        algorythmoCutFlag: 'algorythmo_cut_campaigns',
+      },
+    };
+
+    it('blocks based on the enable flag, ignoring the cut flag', () => {
+      // Enable flag off, cut flag also off — helper must read enable first and block.
+      const getter = (_, name) => name !== 'algorythmo_show_captain';
+      expect(isRouteBlockedByAlgorythmoGate(to, getter, ACCOUNT_ID)).toBe(true);
+    });
+
+    it('allows when the enable flag is on, regardless of the cut flag', () => {
+      // Enable flag on, cut flag also on — helper short-circuits on enable and allows.
+      const getter = () => true;
+      expect(isRouteBlockedByAlgorythmoGate(to, getter, ACCOUNT_ID)).toBe(
+        false
+      );
+    });
+  });
+
+  describe('dev-time warning for unknown algorythmoCutFlag values', () => {
+    let warnSpy;
+
+    beforeEach(() => {
+      resetAlgorythmoCutFlagWarningsForTests();
+      warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      warnSpy.mockRestore();
+    });
+
+    it('warns once when a route declares an unknown cut flag (typo guard)', () => {
+      const to = {
+        meta: { algorythmoCutFlag: 'algorythmo_cut_compaigns' /* typo */ },
+      };
+      isRouteBlockedByAlgorythmoGate(to, () => false, ACCOUNT_ID);
+      isRouteBlockedByAlgorythmoGate(to, () => false, ACCOUNT_ID);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('algorythmo_cut_compaigns');
+    });
+
+    it('does not warn for known cut flag keys', () => {
+      const to = { meta: { algorythmoCutFlag: 'algorythmo_cut_campaigns' } };
+      isRouteBlockedByAlgorythmoGate(to, () => false, ACCOUNT_ID);
+      expect(warnSpy).not.toHaveBeenCalled();
     });
   });
 

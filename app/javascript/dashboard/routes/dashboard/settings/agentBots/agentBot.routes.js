@@ -19,6 +19,8 @@ export default {
           meta: {
             featureFlag: FEATURE_FLAGS.AGENT_BOTS,
             permissions: ['administrator'],
+            // algorythmo: feature-gate algorythmo_cut_agent_bots
+            algorythmoCutFlag: 'algorythmo_cut_agent_bots',
           },
         },
       ],

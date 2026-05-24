@@ -22,9 +22,13 @@ const PortalsLocalesIndexPage = () =>
 const PortalsSettingsIndexPage = () =>
   import('./pages/PortalsSettingsIndexPage.vue');
 
+// algorythmo: feature-gate algorythmo_cut_help_center
+// Cut flag (inverted semantic): when enabled, all portal routes redirect to
+// the account dashboard via the router guard. Default disabled.
 const meta = {
   featureFlag: FEATURE_FLAGS.HELP_CENTER,
   permissions: ['administrator', 'agent', 'knowledge_base_manage'],
+  algorythmoCutFlag: 'algorythmo_cut_help_center',
 };
 const portalRoutes = [
   {
@@ -96,6 +100,8 @@ const portalRoutes = [
     meta: {
       featureFlag: FEATURE_FLAGS.HELP_CENTER,
       permissions: ['administrator', 'knowledge_base_manage'],
+      // algorythmo: feature-gate algorythmo_cut_help_center
+      algorythmoCutFlag: 'algorythmo_cut_help_center',
     },
     component: PortalsNew,
   },
@@ -105,6 +111,8 @@ const portalRoutes = [
     meta: {
       featureFlag: FEATURE_FLAGS.HELP_CENTER,
       permissions: ['administrator', 'knowledge_base_manage'],
+      // algorythmo: feature-gate algorythmo_cut_help_center
+      algorythmoCutFlag: 'algorythmo_cut_help_center',
     },
     component: PortalsIndex,
   },

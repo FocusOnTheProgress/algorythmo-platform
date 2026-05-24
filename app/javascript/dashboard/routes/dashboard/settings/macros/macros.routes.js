@@ -23,6 +23,8 @@ export default {
           meta: {
             featureFlag: FEATURE_FLAGS.MACROS,
             permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
+            // algorythmo: feature-gate algorythmo_cut_macros
+            algorythmoCutFlag: 'algorythmo_cut_macros',
           },
         },
       ],
@@ -45,6 +47,8 @@ export default {
           meta: {
             featureFlag: FEATURE_FLAGS.MACROS,
             permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
+            // algorythmo: feature-gate algorythmo_cut_macros
+            algorythmoCutFlag: 'algorythmo_cut_macros',
           },
         },
         {
@@ -54,6 +58,8 @@ export default {
           meta: {
             featureFlag: FEATURE_FLAGS.MACROS,
             permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
+            // algorythmo: feature-gate algorythmo_cut_macros
+            algorythmoCutFlag: 'algorythmo_cut_macros',
           },
         },
       ],

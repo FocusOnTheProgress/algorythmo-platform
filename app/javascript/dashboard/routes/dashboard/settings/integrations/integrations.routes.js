@@ -33,6 +33,8 @@ export default {
           meta: {
             featureFlag: FEATURE_FLAGS.INTEGRATIONS,
             permissions: ['administrator'],
+            // algorythmo: feature-gate algorythmo_cut_dashboard_apps
+            algorythmoCutFlag: 'algorythmo_cut_dashboard_apps',
           },
         },
         {

@@ -28,6 +28,8 @@ export default {
           meta: {
             featureFlag: FEATURE_FLAGS.ASSIGNMENT_V2,
             permissions: ['administrator'],
+            // algorythmo: feature-gate algorythmo_cut_advanced_assignment
+            algorythmoCutFlag: 'algorythmo_cut_advanced_assignment',
           },
         },
         {
@@ -37,6 +39,8 @@ export default {
           meta: {
             featureFlag: FEATURE_FLAGS.ASSIGNMENT_V2,
             permissions: ['administrator'],
+            // algorythmo: feature-gate algorythmo_cut_advanced_assignment
+            algorythmoCutFlag: 'algorythmo_cut_advanced_assignment',
           },
         },
         {
@@ -46,6 +50,8 @@ export default {
           meta: {
             featureFlag: FEATURE_FLAGS.ASSIGNMENT_V2,
             permissions: ['administrator'],
+            // algorythmo: feature-gate algorythmo_cut_advanced_assignment
+            algorythmoCutFlag: 'algorythmo_cut_advanced_assignment',
           },
         },
         {
@@ -55,6 +61,8 @@ export default {
           meta: {
             featureFlag: FEATURE_FLAGS.ASSIGNMENT_V2,
             permissions: ['administrator'],
+            // algorythmo: feature-gate algorythmo_cut_advanced_assignment
+            algorythmoCutFlag: 'algorythmo_cut_advanced_assignment',
           },
         },
         {
@@ -64,6 +72,8 @@ export default {
           meta: {
             featureFlag: FEATURE_FLAGS.ADVANCED_ASSIGNMENT,
             permissions: ['administrator'],
+            // algorythmo: feature-gate algorythmo_cut_advanced_assignment
+            algorythmoCutFlag: 'algorythmo_cut_advanced_assignment',
           },
         },
         {
@@ -73,6 +83,8 @@ export default {
           meta: {
             featureFlag: FEATURE_FLAGS.ADVANCED_ASSIGNMENT,
             permissions: ['administrator'],
+            // algorythmo: feature-gate algorythmo_cut_advanced_assignment
+            algorythmoCutFlag: 'algorythmo_cut_advanced_assignment',
           },
         },
         {
@@ -82,6 +94,8 @@ export default {
           meta: {
             featureFlag: FEATURE_FLAGS.ADVANCED_ASSIGNMENT,
             permissions: ['administrator'],
+            // algorythmo: feature-gate algorythmo_cut_advanced_assignment
+            algorythmoCutFlag: 'algorythmo_cut_advanced_assignment',
           },
         },
       ],

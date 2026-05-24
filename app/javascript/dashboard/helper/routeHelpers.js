@@ -11,6 +11,15 @@ import {
   REPORTS_PERMISSIONS,
   PORTAL_PERMISSIONS,
 } from 'dashboard/constants/permissions.js';
+// algorythmo: feature-gate algorythmo_cut_*
+import { isKnownAlgorythmoCutFlag } from 'dashboard/constants/algorythmoCutFlags';
+
+// Modules that have already logged an "unknown cut flag" warning, so we don't
+// spam the dev console on every navigation. Cleared by tests via the
+// `resetAlgorythmoCutFlagWarningsForTests` helper exported below.
+const warnedAlgorythmoCutFlags = new Set();
+export const resetAlgorythmoCutFlagWarningsForTests = () =>
+  warnedAlgorythmoCutFlags.clear();
 
 export const routeIsAccessibleFor = (route, userPermissions = []) => {
   const { meta: { permissions: routePermissions = [] } = {} } = route;
@@ -146,34 +155,79 @@ export const isNotificationRoute = routeName =>
   routeName === 'notifications_index';
 
 // algorythmo: feature-gate algorythmo_show_captain
+// algorythmo: feature-gate algorythmo_cut_*
 /**
  * Checks whether a route is blocked by an Algorythmo OS feature gate.
  *
- * Routes declare their gate via `meta.algorythmoFeatureFlag`. If the flag is set
- * and the store reports the feature as disabled for the current account, the route
- * is blocked and the caller should redirect to the account dashboard.
+ * Two gate semantics are supported via separate meta keys:
  *
- * Fail-closed: any error reading the flag (store not ready, getter missing) treats
- * the feature as disabled to avoid leaking gated UI accidentally.
+ * - `meta.algorythmoFeatureFlag` (opt-in / enable flag):
+ *   route is blocked when the flag is FALSE. Used by Captain and the future CRM,
+ *   where the surface is hidden by default and must be turned on explicitly.
+ *   Fail-closed: any error treats the flag as disabled (route blocked), so a
+ *   broken store cannot leak gated UI.
+ *
+ * - `meta.algorythmoCutFlag` (cut flag, inverted semantic):
+ *   route is blocked when the flag is TRUE. Used by the 13 M2 cut surfaces
+ *   (campaigns, help center, sla, audit logs, etc.) where the upstream surface
+ *   exists by default and the operator enables the cut to hide it for PME tenants.
+ *   Fail-open: any error treats the cut as inactive (route allowed). Cuts are
+ *   UX polish, not security — hiding a useful page on a transient store error
+ *   would be worse than briefly showing a surface the tenant is choosing to hide.
+ *
+ * If both meta keys are present, `algorythmoFeatureFlag` is evaluated first.
  *
  * @param {Object} to - Vue Router destination route object
  * @param {Function} isFeatureEnabledonAccount - Vuex getter: (accountId, flagName) => boolean
  * @param {number} accountId - Current account ID
- * @returns {boolean} true if the route is blocked by the feature gate
+ * @returns {boolean} true if the route is blocked by an Algorythmo feature gate
  */
 export const isRouteBlockedByAlgorythmoGate = (
   to,
   isFeatureEnabledonAccount,
   accountId
 ) => {
-  const flagName = to?.meta?.algorythmoFeatureFlag;
-  if (!flagName) return false;
+  const meta = to?.meta || {};
+  const enableFlag = meta.algorythmoFeatureFlag;
+  const cutFlag = meta.algorythmoCutFlag;
 
-  try {
-    const enabled = isFeatureEnabledonAccount(accountId, flagName);
-    return !enabled;
-  } catch {
-    // Fail-closed: treat as disabled if the check itself errors.
-    return true;
+  if (enableFlag) {
+    try {
+      const enabled = isFeatureEnabledonAccount(accountId, enableFlag);
+      return !enabled;
+    } catch {
+      // Fail-closed: opt-in features must not leak on store error.
+      return true;
+    }
   }
+
+  if (cutFlag) {
+    // Dev-time guard: catch typos like `algorythmo_cut_compaigns` that would
+    // otherwise silently leave the surface ungated forever. Production builds
+    // strip this branch via `process.env.NODE_ENV`.
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      !isKnownAlgorythmoCutFlag(cutFlag) &&
+      !warnedAlgorythmoCutFlags.has(cutFlag)
+    ) {
+      warnedAlgorythmoCutFlags.add(cutFlag);
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[algorythmo] Unknown cut flag on route meta: ${cutFlag}. ` +
+          `Expected one of dashboard/constants/algorythmoCutFlags ` +
+          `ALGORYTHMO_CUT_FLAG_KEYS. The route will NOT be gated.`
+      );
+    }
+
+    try {
+      const cutEnabled = isFeatureEnabledonAccount(accountId, cutFlag);
+      return cutEnabled === true;
+    } catch {
+      // Fail-open: hiding a useful surface on a transient store error is worse
+      // than briefly showing one the tenant is choosing to hide.
+      return false;
+    }
+  }
+
+  return false;
 };

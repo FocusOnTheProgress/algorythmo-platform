@@ -57,9 +57,13 @@ export const validateAuthenticateRoutePermission = async (to, next) => {
   if (nextRoute) return next(frontendURL(nextRoute));
 
   // algorythmo: feature-gate algorythmo_show_captain
+  // algorythmo: feature-gate algorythmo_cut_*
   // Check Algorythmo feature gate AFTER permission validation.
-  // Routes declare the gate via meta.algorythmoFeatureFlag.
-  // Fail-closed: if the flag check errors, the route is blocked.
+  // Routes declare the gate via one of two meta keys:
+  //   meta.algorythmoFeatureFlag — enable / opt-in semantic, fail-closed.
+  //   meta.algorythmoCutFlag     — cut / inverted semantic, fail-open.
+  // See `isRouteBlockedByAlgorythmoGate` in `helper/routeHelpers.js` for
+  // the full contract and precedence rules.
   const isFeatureEnabledonAccount =
     store.getters['accounts/isFeatureEnabledonAccount'];
   if (

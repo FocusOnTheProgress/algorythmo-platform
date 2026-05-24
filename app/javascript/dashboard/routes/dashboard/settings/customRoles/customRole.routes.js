@@ -25,6 +25,8 @@ export default {
               INSTALLATION_TYPES.ENTERPRISE,
             ],
             permissions: ['administrator'],
+            // algorythmo: feature-gate algorythmo_cut_custom_roles
+            algorythmoCutFlag: 'algorythmo_cut_custom_roles',
           },
           component: CustomRolesHome,
         },

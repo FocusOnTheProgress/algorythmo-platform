@@ -25,6 +25,8 @@ export default {
           meta: {
             installationTypes: [INSTALLATION_TYPES.CLOUD],
             permissions: ['administrator'],
+            // algorythmo: feature-gate algorythmo_cut_billing_settings
+            algorythmoCutFlag: 'algorythmo_cut_billing_settings',
           },
         },
       ],
