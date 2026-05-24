@@ -888,13 +888,9 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
   describe 'GET #stage_history' do
     let(:lead) { create_lead }
 
-    # M1-C PR3 — Bypass the model's readonly? guard so specs can seed history
-    # rows directly without going through the Recorder service (which lives
-    # in PR2 and is already covered by its own spec). Using insert_all would
-    # skip validations; create! with a transient :allow_seeding flag is too
-    # invasive — the simplest path is to write via the model and then save_changes!
-    # is not needed because we don't update after create. Persisting via .new + save
-    # keeps the assertion that the readonly guard fires only on UPDATE.
+    # M1-C PR3 — Seeds history rows directly via create! (the readonly? guard
+    # only fires on UPDATE, not INSERT), so specs do not depend on the PR2
+    # Recorder service. Recorder behavior is exercised in its own spec.
     def seed_history(actor_type:, actor_id: nil, from_stage: nil, to_stage: nil, created_at: Time.current)
       Algorythmo::StageHistory.create!(
         lead: lead,
@@ -1003,7 +999,7 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
                                  position: 1.0, stage_entered_at: Time.current)
       end
 
-      before do
+      let!(:leaked_history) do
         # Seed one history entry on the other account's lead so we can prove
         # nothing from it leaks into the response.
         Algorythmo::StageHistory.create!(
@@ -1012,9 +1008,10 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
         )
       end
 
-      it 'returns 404 when requesting stage_history for a lead from another account' do
+      it 'returns 404 with no leaked history when requesting another account lead' do
         get :stage_history, params: { account_id: account.id, id: lead_b.id }
         expect(response).to have_http_status(:not_found)
+        expect(response.body).not_to include(leaked_history.id.to_s)
       end
 
       it 'returns 404 for soft-deleted leads' do
@@ -1055,12 +1052,29 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
         expect(body['stage_history'].size).to eq(cap - 1)
         expect(body['truncated']).to be false
       end
+
+      # Boundary case — entry count equals cap exactly. The previous
+      # `entries.size == MAX` truncated check lied here (true even though the
+      # entire history was returned). With `limit(MAX + 1)`, the response must
+      # return exactly `cap` rows and `truncated:false`.
+      it 'returns truncated:false when entry count equals cap exactly' do
+        cap.times do |i|
+          seed_history(actor_type: 'system', from_stage: nil, to_stage: novo_stage,
+                       created_at: Time.current - i.seconds)
+        end
+
+        get :stage_history, params: { account_id: account.id, id: lead.id }
+
+        body = JSON.parse(response.body)
+        expect(body['stage_history'].size).to eq(cap)
+        expect(body['truncated']).to be false
+      end
     end
 
     # N+1 — batched actor preload must keep query count flat regardless of the
     # number of distinct user actors in the list.
     context 'N+1 prevention' do
-      it 'keeps user-actor query count below the actor seed size (no per-actor lookup)' do
+      it 'resolves all user actors with a single IN query (no per-actor lookup)' do
         users = create_list(:user, 10, account: account, role: :agent)
         users.each_with_index do |u, i|
           seed_history(actor_type: 'user', actor_id: u.id,
@@ -1068,22 +1082,52 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
                        created_at: Time.current - i.seconds)
         end
 
-        # Filter for queries that hit the users/agent_bots tables — these are the
-        # ones the batched preload is supposed to collapse. With batching: 1 actor
-        # query + a small constant from auth (current_user lookup). Without batching:
-        # one per distinct actor_id (≥ users.size). Assertion uses users.size as
-        # the boundary so the bound auto-scales if the seed count changes.
-        actor_query_count = 0
+        # Count only queries that match the actor preload signature:
+        # SELECT ... FROM "users" WHERE "users"."id" IN (...). The auth path
+        # also queries the users table, but with WHERE "id" = ? (singular),
+        # so the IN-clause filter isolates the preload SQL and gives the
+        # spec real teeth — a regression to per-actor lookup raises the
+        # count to 10+, not the off-by-noise level.
+        actor_in_query_count = 0
         counter = lambda { |_, _, _, _, payload|
           sql = payload[:sql].to_s
-          actor_query_count += 1 if sql.match?(/FROM "users"|FROM "agent_bots"/)
+          actor_in_query_count += 1 if sql.match?(/FROM "users".*"id" IN|FROM "agent_bots".*"id" IN/m)
         }
         ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
           get :stage_history, params: { account_id: account.id, id: lead.id }
         end
 
         expect(response).to have_http_status(:ok)
-        expect(actor_query_count).to be < users.size
+        expect(actor_in_query_count).to eq(1)
+      end
+
+      it 'flattens mixed user + agent_bot actors to two IN queries (one per table)' do
+        users = create_list(:user, 3, account: account, role: :agent)
+        bot1 = AgentBot.create!(name: 'Bot 1', account: account, outgoing_url: 'https://x.test/1')
+        bot2 = AgentBot.create!(name: 'Bot 2', account: account, outgoing_url: 'https://x.test/2')
+        users.each_with_index do |u, i|
+          seed_history(actor_type: 'user', actor_id: u.id,
+                       from_stage: novo_stage, to_stage: qual_stage,
+                       created_at: Time.current - i.seconds)
+        end
+        [bot1, bot2].each_with_index do |b, i|
+          seed_history(actor_type: 'agent_bot', actor_id: b.id,
+                       from_stage: novo_stage, to_stage: qual_stage,
+                       created_at: Time.current - (10 + i).seconds)
+        end
+
+        in_query_count = 0
+        counter = lambda { |_, _, _, _, payload|
+          sql = payload[:sql].to_s
+          in_query_count += 1 if sql.match?(/FROM "users".*"id" IN|FROM "agent_bots".*"id" IN/m)
+        }
+        ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
+          get :stage_history, params: { account_id: account.id, id: lead.id }
+        end
+
+        expect(response).to have_http_status(:ok)
+        # Exactly two: one per actor table, regardless of how many actors per type.
+        expect(in_query_count).to eq(2)
       end
     end
 

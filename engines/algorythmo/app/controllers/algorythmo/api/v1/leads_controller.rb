@@ -208,17 +208,23 @@ class Algorythmo::Api::V1::LeadsController < Algorythmo::Api::V1::BaseController
   # filters out soft-deleted leads, so a cross-account or deleted lead returns
   # 404 before any history row is touched.
   def stage_history
+    # Fetch MAX+1 so we can tell "exactly MAX rows exist" from "MAX returned, more
+    # rows behind the cap". Comparing entries.size == MAX as the truncated signal
+    # lies when the lead has exactly MAX transitions and no 101st row.
     entries = @lead.stage_histories
                    .includes(:from_stage, :to_stage)
                    .order(created_at: :desc, id: :desc)
-                   .limit(MAX_STAGE_HISTORY_ENTRIES)
+                   .limit(MAX_STAGE_HISTORY_ENTRIES + 1)
                    .to_a
+
+    truncated = entries.size > MAX_STAGE_HISTORY_ENTRIES
+    entries = entries.first(MAX_STAGE_HISTORY_ENTRIES) if truncated
 
     actors = preload_actors_for(entries)
 
     render json: {
       stage_history: entries.map { |entry| stage_history_json(entry, actors) },
-      truncated: entries.size == MAX_STAGE_HISTORY_ENTRIES
+      truncated: truncated
     }
   end
 
@@ -374,10 +380,12 @@ class Algorythmo::Api::V1::LeadsController < Algorythmo::Api::V1::BaseController
     case entry.actor_type
     when 'user'
       user = actors[:users][entry.actor_id]
-      user && { id: user.id, name: user.name, thumbnail: user.avatar_url }
+      # Avatarable#avatar_url returns '' (not nil) when no avatar is attached;
+      # .presence normalizes to nil so the frontend can branch on truthy.
+      user && { id: user.id, name: user.name, thumbnail: user.avatar_url.presence }
     when 'agent_bot'
       bot = actors[:agent_bots][entry.actor_id]
-      bot && { id: bot.id, name: bot.name, thumbnail: nil }
+      bot && { id: bot.id, name: bot.name, thumbnail: bot.avatar_url.presence }
     end
   end
 
@@ -385,13 +393,18 @@ class Algorythmo::Api::V1::LeadsController < Algorythmo::Api::V1::BaseController
   # two-table index ({ users: {id => User}, agent_bots: {id => AgentBot} })
   # so actor_summary stays O(1) per entry. Three queries total regardless of
   # list size — see #stage_history doc comment.
+  #
+  # Defense-in-depth: AgentBot rows can be global (account_id NULL) or owned by
+  # a specific account; scoping by AgentBot.accessible_to(current_account)
+  # prevents a bug in the write path (or a manual data row) from leaking another
+  # account's private bot name through this read path.
   def preload_actors_for(entries)
     user_ids      = entries.filter_map { |e| e.actor_id if e.actor_type == 'user' }.uniq
     agent_bot_ids = entries.filter_map { |e| e.actor_id if e.actor_type == 'agent_bot' }.uniq
 
     {
       users: user_ids.any? ? User.where(id: user_ids).index_by(&:id) : {},
-      agent_bots: agent_bot_ids.any? ? AgentBot.where(id: agent_bot_ids).index_by(&:id) : {}
+      agent_bots: agent_bot_ids.any? ? AgentBot.accessible_to(current_account).where(id: agent_bot_ids).index_by(&:id) : {}
     }
   end
 
