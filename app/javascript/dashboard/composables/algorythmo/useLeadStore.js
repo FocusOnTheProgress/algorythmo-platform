@@ -22,6 +22,20 @@ import {
 /** @type {Map<string, import('vue').UnwrapNestedRefs<Map<string|number, StageState>>>} */
 const accountStore = new Map();
 
+// Per-account, per-lead monotonic move counter. Each optimistic move
+// increments the counter; commitMove captures the counter before awaiting
+// the network and discards the response if a newer move has happened since.
+// Without this guard, A→B then B→C can roll back to A if the first request
+// resolves after the second.
+/** @type {Map<string, Map<string|number, number>>} */
+const moveSeqByAccount = new Map();
+
+function getMoveSeqMap(accountId) {
+  const key = String(accountId);
+  if (!moveSeqByAccount.has(key)) moveSeqByAccount.set(key, new Map());
+  return moveSeqByAccount.get(key);
+}
+
 function getStageMap(accountId) {
   const key = String(accountId);
   if (!accountStore.has(key)) {
@@ -56,6 +70,7 @@ function ensureStage(stageMap, stageId) {
  */
 export function useLeadStore(accountId) {
   const stageMap = getStageMap(accountId);
+  const moveSeqMap = getMoveSeqMap(accountId);
 
   // -------------------------------------------------------------------------
   // Getters
@@ -150,23 +165,47 @@ export function useLeadStore(accountId) {
   }
 
   // -------------------------------------------------------------------------
-  // Optimistic move
+  // Optimistic move (with monotonic seq guard against A→B→C race)
   // -------------------------------------------------------------------------
+  function bumpMoveSeq(leadId) {
+    const next = (moveSeqMap.get(leadId) ?? 0) + 1;
+    moveSeqMap.set(leadId, next);
+    return next;
+  }
+
+  function isLatestMove(leadId, seq) {
+    return moveSeqMap.get(leadId) === seq;
+  }
+
   function moveLeadOptimistic({ leadId, fromStageId, toStageId }) {
     const fromState = stageMap.get(fromStageId);
     const toState = ensureStage(stageMap, toStageId);
 
-    if (!fromState) return;
+    if (!fromState) return 0;
 
     const idx = fromState.leads.findIndex(l => l.id === leadId);
-    if (idx === -1) return;
+    if (idx === -1) return 0;
 
+    const seq = bumpMoveSeq(leadId);
     const [lead] = fromState.leads.splice(idx, 1);
     toState.leads.unshift({ ...lead, stage_id: toStageId, movePending: true });
+    return seq;
   }
 
   async function commitMove({ leadId, toStageId }) {
-    const res = await moveLead(accountId, leadId, toStageId);
+    const seqAtCall = moveSeqMap.get(leadId);
+    let res;
+    try {
+      res = await moveLead(accountId, leadId, toStageId);
+    } catch (err) {
+      // Stale-failure swallow: a newer move has superseded this one. The
+      // caller would react by rolling back to *this* call's fromStageId,
+      // which would wipe the newer optimistic state. The newer move's own
+      // commit/rollback is authoritative — silently discard this error so
+      // the caller's catch block never runs.
+      if (!isLatestMove(leadId, seqAtCall)) return;
+      throw err;
+    }
     const updated = res.data;
 
     if (!updated?.id) {
@@ -174,6 +213,12 @@ export function useLeadStore(accountId) {
         `algorythmo:commitMove: invalid response for lead ${leadId}`
       );
     }
+
+    // Discard stale response: a newer optimistic move has happened on this
+    // lead, so applying this older server truth would clobber the newer
+    // local state. The newer move's commit (or rollback) will be the one
+    // that lands.
+    if (!isLatestMove(leadId, seqAtCall)) return;
 
     // Remove from every bucket (covers rapid re-drag mid-flight and dedup).
     stageMap.forEach(state => {
@@ -234,5 +279,7 @@ export function useLeadStore(accountId) {
  * @param {string|number} accountId
  */
 export function clearLeadStoreForAccount(accountId) {
-  accountStore.delete(String(accountId));
+  const key = String(accountId);
+  accountStore.delete(key);
+  moveSeqByAccount.delete(key);
 }

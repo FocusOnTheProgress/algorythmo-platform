@@ -1,0 +1,55 @@
+{
+  "ALGORYTHMO_CRM": {
+    "KANBAN": {
+      "TITLE": "Pipeline de leads",
+      "SEARCH_PLACEHOLDER": "Buscar lead",
+      "BOARD_ARIA_LABEL": "Kanban CRM",
+      "PIPELINE_CONFIG_LINK": "Configurar pipeline",
+      "STAGE_COUNT": "{count} leads",
+      "STAGE_COUNT_ONE": "1 lead",
+      "STAGE_COUNT_ZERO": "Sem leads",
+      "LOADING": "Carregando leads",
+      "TOAST_REGION_LABEL": "Notificações do CRM"
+    },
+    "STAGE": {
+      "EMPTY": "Nenhum lead aqui ainda",
+      "DROP_HINT": "Solte para mover"
+    },
+    "EMPTY_STATE": {
+      "TITLE": "Seu pipeline ainda está vazio",
+      "BODY": "Conecte um canal — WhatsApp, Instagram ou e-mail — para que cada nova conversa vire um lead automaticamente.",
+      "CTA": "Conectar primeiro canal"
+    },
+    "LEAD_CARD": {
+      "ARIA_LABEL": "Lead {name}, etapa {stage}, {time} nesta etapa, canal {channel}",
+      "AGING_CHIP_ARIA_LABEL": "{time} nesta etapa",
+      "MENU_BUTTON_LABEL": "Ações para lead {name}",
+      "MENU_ARIA_LABEL": "Ações para lead {name}"
+    },
+    "MENU": {
+      "MOVE_TO": "Mover para…"
+    },
+    "MOVE_MODAL": {
+      "TITLE": "Mover lead",
+      "DESCRIPTION": "Escolha a etapa de destino para {leadName}.",
+      "RADIOGROUP_LABEL": "Etapas disponíveis",
+      "CONFIRM": "Mover",
+      "CANCEL": "Cancelar"
+    },
+    "ANNOUNCE": {
+      "MOVED": "Lead {leadName} movido para {stageName}",
+      "MOVE_FAILED": "Não foi possível mover {leadName}, retornando à etapa anterior"
+    },
+    "LEAD_DETAIL": {
+      "COMING_SOON": "Detalhes do lead — em breve"
+    },
+    "PIPELINE_CONFIG": {
+      "PLACEHOLDER_TITLE": "Configuração do pipeline",
+      "PLACEHOLDER_BODY": "Esta tela ficará disponível em breve."
+    },
+    "SIDEBAR": {
+      "CRM": "CRM",
+      "PIPELINE": "Pipeline"
+    }
+  }
+}

@@ -236,6 +236,37 @@ describe('useLeadStore', () => {
         store.commitMove({ leadId: 5, toStageId: 2 })
       ).rejects.toThrow('Network error');
     });
+
+    it('swallows stale-failure when a newer move has bumped the seq', async () => {
+      // A→B is in flight when B→C bumps the seq. When A→B rejects, commitMove
+      // must resolve undefined — if it threw, the caller's catch would roll
+      // back to A and wipe the newer optimistic state. The newer move's
+      // commit/rollback is the authority.
+      store.stageMap.set(1, {
+        leads: [lead(7, 1)],
+        cursor: null,
+        isLoading: false,
+        hasMore: false,
+        error: null,
+      });
+      store.moveLeadOptimistic({ leadId: 7, fromStageId: 1, toStageId: 2 });
+
+      let rejectFirst;
+      moveLead.mockImplementationOnce(
+        () =>
+          new Promise((_, reject) => {
+            rejectFirst = reject;
+          })
+      );
+      const oldPromise = store.commitMove({ leadId: 7, toStageId: 2 });
+
+      // Bump the seq before the first request settles.
+      store.moveLeadOptimistic({ leadId: 7, fromStageId: 2, toStageId: 3 });
+
+      rejectFirst(new Error('Network error'));
+
+      await expect(oldPromise).resolves.toBeUndefined();
+    });
   });
 
   describe('rollbackMove', () => {

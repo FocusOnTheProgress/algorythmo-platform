@@ -50,6 +50,9 @@ export const FEATURE_FLAGS = {
   // algorythmo: feature-gate algorythmo_show_captain
   // Controls visibility of all Captain AI surfaces. Default false = hidden.
   ALGORYTHMO_SHOW_CAPTAIN: 'algorythmo_show_captain',
+  // algorythmo: feature-gate algorythmo_crm
+  // Enables the Algorythmo CRM kanban surface (sidebar + /crm route + APIs).
+  ALGORYTHMO_CRM: 'algorythmo_crm',
 };
 
 export const PREMIUM_FEATURES = [

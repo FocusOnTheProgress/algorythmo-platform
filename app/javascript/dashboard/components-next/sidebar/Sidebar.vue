@@ -72,6 +72,16 @@ const hasCaptain = computed(() => {
   );
 });
 
+// algorythmo: feature-gate algorythmo_crm
+// CRM sidebar entry + /crm route are hidden until algorythmo_crm flips on.
+// The route itself stays registered so deep-links keep resolving once enabled.
+const hasAlgorythmoCrm = computed(() => {
+  return isFeatureEnabledonAccount.value(
+    accountId.value,
+    FEATURE_FLAGS.ALGORYTHMO_CRM
+  );
+});
+
 // algorythmo: feature-gate algorythmo_cut_*
 // Cut flags use inverted semantic: when enabled, the surface is HIDDEN.
 // All 13 cut flags default false → upstream surfaces remain visible until a
@@ -418,6 +428,21 @@ const menuItems = computed(() => {
         },
       ],
     },
+    // algorythmo: feature-gate algorythmo_crm
+    // CRM kanban entry only rendered when algorythmo_crm flag is true.
+    // Placed right after Conversations so PME tenants see their pipeline
+    // adjacent to the inbox flow that feeds it.
+    ...(hasAlgorythmoCrm.value
+      ? [
+          {
+            name: 'AlgorythmoCrm',
+            icon: 'i-lucide-kanban',
+            label: t('ALGORYTHMO_CRM.SIDEBAR.CRM'),
+            activeOn: ['algorythmo_crm_kanban'],
+            to: accountScopedRoute('algorythmo_crm_kanban'),
+          },
+        ]
+      : []),
     // algorythmo: feature-gate algorythmo_show_captain
     // Captain section only rendered when algorythmo_show_captain flag is true.
     // Default: false — PME clients never see Captain UI.

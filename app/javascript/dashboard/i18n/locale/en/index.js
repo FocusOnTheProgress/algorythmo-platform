@@ -1,3 +1,4 @@
+import algorythmoCrm from './algorythmoCrm.json';
 import advancedFilters from './advancedFilters.json';
 import agentBots from './agentBots.json';
 import agentMgmt from './agentMgmt.json';
@@ -43,6 +44,7 @@ import onboarding from './onboarding.json';
 import yearInReview from './yearInReview.json';
 
 export default {
+  ...algorythmoCrm,
   ...advancedFilters,
   ...agentBots,
   ...agentMgmt,
