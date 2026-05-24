@@ -2,7 +2,7 @@
 
 > **Mantenedor:** Sessão A (orquestradora). Atualizado em tempo real conforme PRs abrem, CI fecha, adversarial revisa, merge acontece.
 
-**Última atualização:** 2026-05-24 (sessão A continua) — PR #49 (C.2) **adversarial pass 4 DONE** em `49cbdab41` (5 carry-over, 77/77 verde, LGTM). PR #50 (D) **adversarial pass 3 DONE** em `05c515569` (2 HIGH: pipeline_rename TOCTOU race entre PATCH e remock + aging_dual_coding coef math off-by-2x; 1 MEDIUM: doc comment serial mode). TS compila, 39 testes em 10 arquivos, todos `.skip()`'d. Ambos PRs prontos pro merge conjunto após CI verde.
+**Última atualização:** 2026-05-24 (sessão A continua) — **Fase 2 do M1-B FECHADA.** PR #49 (C.2 Kanban) mergeado em `a1d6b1fa3` às 19:38:34Z e PR #50 (D Playwright) mergeado em `c6e684ef9` às 19:39:14Z. Quatro rodadas de adversarial review no #49, três no #50. Próxima fase: PR follow-up removendo `.skip()`s da suite D quando o flag `algorythmo_crm` ligar + backend §9 estiver live.
 
 ---
 
@@ -10,9 +10,7 @@
 
 | Agente | Worktree | Branch | Tarefa atual | Status | PR |
 |---|---|---|---|---|---|
-| **A** (orquestradora) | `Fork Chatwoot/` (main) | `algorythmo/main` | Monitora C.2 + D, despacha adversarial pós-PR | 🟢 em execução | — |
-| **C.2** (engineer agent) | `algorythmo-c-onda2/` | `algorythmo/m1b-kanban` | KanbanBoard + StageColumn + rota `/crm` + sidebar + i18n + drag composable + MoveLeadModal | 🟡 em construção | — |
-| **D** (engineer agent) | `algorythmo-d/` | `algorythmo/m1b-playwright-suite` | 9 specs Playwright contra CONTRACT v1.0.0, com `.skip()` até C.2 mergear | 🟡 em construção | — |
+| **A** (orquestradora) | `Fork Chatwoot/` (main) | `algorythmo/main` | Fase 2 fechada. Aguardando dispatch da Fase 3 (un-skip suite D quando backend §9 live) | 🟢 ociosa | — |
 
 **Contrato compartilhado C↔D:** [`docs/coordination/CONTRACT_M1B.md`](CONTRACT_M1B.md) v1.0.0. Single source of truth pros selectors/aria.
 
@@ -23,7 +21,8 @@
 **O que está no ar agora:**
 - ✅ PR #47 mergeado em `8d81b789e` (2026-05-24 15:09Z) — 13 sidebar gates + route guards.
 - ✅ PR #48 mergeado em `8b74e0516` (2026-05-24 15:10Z) — B.4: timeFormat + LeadAgingChip + LeadCard.
-- 🟡 C.2 e D despachados em worktrees independentes via engineer agent (paralelo).
+- ✅ PR #49 mergeado em `a1d6b1fa3` (2026-05-24 19:38Z) — C.2 Kanban + rota `/crm` + sidebar + MoveLeadModal + useDragLead. 4 rodadas de adversarial.
+- ✅ PR #50 mergeado em `c6e684ef9` (2026-05-24 19:39Z) — D suite Playwright (39 testes `.skip()`d). 3 rodadas de adversarial.
 
 **Workflow ativo:**
 1. Aguardar engineer C.2 abrir PR. Spawn adversarial-reviewer + codex (segunda opinião). Endereçar HIGH.
@@ -84,15 +83,15 @@
 - [ ] **C** → M1-B base (PR 2) — pré-requisito de M1-B componentes
 - [ ] **D** → M1-B test harness + docs (PR 3) — paralelo a C, independente
 
-### Fase 2 — Em execução (Sessão A reassumiu sequencial 2026-05-24)
-- [x] **B** → PR #47 aberto, READY_FOR_MERGE. M2 Onda 2 sidebar gates (13 cuts) + route guards + dev-warn + coverage spec.
-- [x] **C.1** → PR #48 aberto, READY_FOR_MERGE. B.4 isolado: `timeFormat` helper, `LeadAgingChip`, `LeadCard`. 42 vitest specs verdes. Adversarial H1+H2+H3 resolvidos em `d3353af1d`.
-- [ ] **C.2** → KanbanBoard + StageColumn + rota `/crm` + sidebar entry + i18n pt_BR + drag composable + MoveLeadModal + empty states. **Aguarda #48 mergear** pra rebasar branch nova `algorythmo/m1b-kanban`.
-- [ ] **D** → 9 specs Playwright contra CONTRACT v1.0.0, com `.skip()` no topo até C.2 mergear. Pode começar paralelo a C.2 (lê só o contrato, não o código).
+### Fase 2 — FECHADA (2026-05-24)
+- [x] **B** → PR #47 mergeado. M2 Onda 2 sidebar gates (13 cuts) + route guards + dev-warn + coverage spec.
+- [x] **C.1** → PR #48 mergeado. B.4 isolado: `timeFormat` helper, `LeadAgingChip`, `LeadCard`. 42 vitest specs verdes.
+- [x] **C.2** → PR #49 mergeado em `a1d6b1fa3`. KanbanBoard + StageColumn + rota `/crm` + sidebar entry + i18n pt_BR + drag composable + MoveLeadModal + empty states. 4 rodadas adversarial.
+- [x] **D** → PR #50 mergeado em `c6e684ef9`. 39 specs Playwright contra CONTRACT v1.0.0 (todos `.skip()`d). 3 rodadas adversarial.
 
 ### Fase 3 — Convergência final
 - [ ] **B** → M2 batch 1 Playwright assertions — valida toggle de cada flag
-- [ ] **D** → remove `.skip()` da suite Playwright após C.2 mergear
+- [ ] **D** → remove `.skip()` da suite Playwright quando flag `algorythmo_crm` ligar + backend §9 estiver live
 - [ ] **A** → fechar tracking issue #46 (follow-ups M2-FLW-001..011) conforme cada um for endereçado
 
 ---
@@ -167,10 +166,5 @@ Nenhuma no momento. Qualquer dúvida levantada em PR `[BLOCKED]` por B/C/D apare
 
 | #47 | M2-C.3 Onda 2 — 13 sidebar gates + route guards | 2026-05-24 15:09Z | A (executou B) |
 | #48 | M1-B/B.4 — LeadAgingChip + LeadCard + timeFormat | 2026-05-24 15:10Z | A (executou C.1) |
-
-### Em construção (Fase 2 final)
-
-| Branch | Worktree | Sessão | Escopo |
-|---|---|---|---|
-| `algorythmo/m1b-kanban` | `algorythmo-c-onda2` | C.2 (engineer agent) | KanbanBoard + StageColumn + MoveLeadModal + rota /crm + sidebar entry + i18n + drag composable |
-| `algorythmo/m1b-playwright-suite` | `algorythmo-d` | D (engineer agent) | 9 specs Playwright contra CONTRACT v1.0.0 (`.skip()` até C.2 mergear) |
+| #49 | M1-B/C.2 — Kanban + /crm + sidebar + MoveLeadModal + useDragLead | 2026-05-24 19:38Z | A (executou C.2) — 4 rodadas adversarial |
+| #50 | M1-B/D — Playwright suite reconciliada com CONTRACT v1.0.0 (39 testes `.skip()`d) | 2026-05-24 19:39Z | A (executou D) — 3 rodadas adversarial |
