@@ -36,6 +36,31 @@ const descriptionText = computed(() =>
 
 const canConfirm = computed(() => selectedStageId.value !== null);
 
+// Background tree to inert while the dialog is open — prevents AT virtual
+// cursor + Tab navigation from reaching the kanban behind the dialog. We
+// remember the chosen element so cleanup restores its inert state precisely
+// instead of toggling a permanent attribute.
+let inertTarget = null;
+
+function applyBackgroundInert() {
+  if (typeof document === 'undefined') return;
+  const root =
+    document.querySelector('.app-wrapper') ||
+    document.querySelector('main.app-content') ||
+    document.body;
+  if (!root || root === inertTarget) return;
+  inertTarget = root;
+  inertTarget.setAttribute('inert', '');
+  inertTarget.setAttribute('aria-hidden', 'true');
+}
+
+function releaseBackgroundInert() {
+  if (!inertTarget) return;
+  inertTarget.removeAttribute('inert');
+  inertTarget.removeAttribute('aria-hidden');
+  inertTarget = null;
+}
+
 watch(
   () => props.open,
   async open => {
@@ -46,19 +71,60 @@ watch(
           : null;
       selectedStageId.value = targetStages.value[0]?.id ?? null;
       await nextTick();
+      // Apply inert AFTER caching the activeElement — otherwise the cached
+      // element would already be inside an inert subtree.
+      applyBackgroundInert();
       firstRadioRef.value?.focus();
-    } else if (previouslyFocused.value instanceof HTMLElement) {
-      previouslyFocused.value.focus();
+    } else {
+      releaseBackgroundInert();
+      if (
+        previouslyFocused.value instanceof HTMLElement &&
+        previouslyFocused.value.isConnected
+      ) {
+        previouslyFocused.value.focus();
+      }
       previouslyFocused.value = null;
     }
   },
   { immediate: true }
 );
 
+function getFocusable() {
+  const root = dialogRef.value;
+  if (!root) return [];
+  return Array.from(
+    root.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter(el => el.offsetParent !== null || el === document.activeElement);
+}
+
+function trapTab(event) {
+  const focusable = getFocusable();
+  if (focusable.length === 0) {
+    event.preventDefault();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const active = document.activeElement;
+  if (event.shiftKey && active === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && active === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
 function handleKeydown(event) {
   if (event.key === 'Escape') {
     event.preventDefault();
     emit('close');
+    return;
+  }
+  if (event.key === 'Tab') {
+    trapTab(event);
   }
 }
 
@@ -70,6 +136,7 @@ function handleSubmit(event) {
 }
 
 onBeforeUnmount(() => {
+  releaseBackgroundInert();
   previouslyFocused.value = null;
 });
 </script>

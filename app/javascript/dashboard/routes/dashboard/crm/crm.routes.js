@@ -13,7 +13,7 @@ export default {
       name: 'algorythmo_crm_kanban',
       meta: {
         permissions: ['administrator', 'agent', 'custom_role'],
-        algorythmoFeatureGate: 'algorythmo_crm',
+        algorythmoFeatureFlag: 'algorythmo_crm',
       },
       component: KanbanBoard,
     },

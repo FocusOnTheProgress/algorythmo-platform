@@ -13,7 +13,7 @@
 // The transform stays here (not inside LeadCard) so the presenter shape
 // remains pure data — easier to test, easier to reason about, and one
 // allocation per snapshot instead of one per render.
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { usePipelineStore } from 'dashboard/composables/algorythmo/usePipelineStore.js';
@@ -40,7 +40,11 @@ const CHANNEL_GLYPHS = Object.freeze({
 });
 
 function channelGlyph(origin) {
-  return CHANNEL_GLYPHS[origin] ?? '\u{1F4E5}'; // 📥 fallback
+  // Normalize: API may serialize as "Whatsapp" or "Channel::WebWidget".
+  const key = String(origin ?? '')
+    .toLowerCase()
+    .replace(/^channel::/, '');
+  return CHANNEL_GLYPHS[key] ?? '\u{1F4E5}'; // 📥 fallback
 }
 
 // Aging state per CONTRACT §4. Coefficient is days-per-stage; ratio = elapsed/coef.
@@ -100,10 +104,14 @@ const {
 
 const now = ref(Date.now());
 
-// Move modal + announce state
+// Move modal + announce + search state
 const moveModalOpen = ref(false);
 const moveModalLead = ref(null);
 const announceText = ref('');
+const searchQuery = ref('');
+const pipelineConfigPath = computed(
+  () => `/app/accounts/${accountId.value}/crm/pipeline`
+);
 
 const drag = useDragLead({
   onMove: async ({ leadId, fromStageId, toStageId }) => {
@@ -128,9 +136,23 @@ const drag = useDragLead({
   },
 });
 
+// CONTRACT §4 — aging state crosses thresholds as time passes. Without a tick,
+// a card opened at "green" would stay "green" until the route remounts. 30s is
+// fast enough to feel live and slow enough to be invisible in CPU profiles.
+const AGING_TICK_MS = 30_000;
+let agingTimer = null;
+
 onMounted(async () => {
   await loadPipeline();
   await Promise.all(stages.value.map(s => fetchStage(s.id)));
+  agingTimer = setInterval(() => {
+    now.value = Date.now();
+  }, AGING_TICK_MS);
+});
+
+onBeforeUnmount(() => {
+  if (agingTimer !== null) clearInterval(agingTimer);
+  agingTimer = null;
 });
 
 // Re-fetch when accountId changes (account switch keeps the same route component).
@@ -142,14 +164,18 @@ watch(accountId, async newId => {
 
 const presenterByStage = computed(() => {
   const snapshotNow = now.value;
+  const needle = searchQuery.value.trim().toLowerCase();
   const out = new Map();
   stages.value.forEach(stage => {
     const leads = leadsByStage(stage.id);
+    const presenters = leads.map(l =>
+      toPresenter(l, stageById.value.get(l.stage_id) ?? stage, snapshotNow)
+    );
     out.set(
       stage.id,
-      leads.map(l =>
-        toPresenter(l, stageById.value.get(l.stage_id) ?? stage, snapshotNow)
-      )
+      needle
+        ? presenters.filter(p => p.name.toLowerCase().includes(needle))
+        : presenters
     );
   });
   return out;
@@ -218,6 +244,23 @@ async function handleConfirmMove({ leadId, stage }) {
       <h1 class="alg-kanban__title" data-testid="kanban-title">
         {{ t('ALGORYTHMO_CRM.KANBAN.TITLE') }}
       </h1>
+      <div class="alg-kanban__header-actions">
+        <input
+          v-model="searchQuery"
+          type="search"
+          class="alg-kanban__search"
+          data-testid="kanban-search-input"
+          :placeholder="t('ALGORYTHMO_CRM.KANBAN.SEARCH_PLACEHOLDER')"
+          :aria-label="t('ALGORYTHMO_CRM.KANBAN.SEARCH_PLACEHOLDER')"
+        />
+        <router-link
+          class="alg-kanban__pipeline-link"
+          data-testid="pipeline-config-link"
+          :to="pipelineConfigPath"
+        >
+          {{ t('ALGORYTHMO_CRM.KANBAN.PIPELINE_CONFIG_LINK') }}
+        </router-link>
+      </div>
     </header>
 
     <KanbanEmptyState v-if="showGlobalEmpty" />
@@ -275,8 +318,49 @@ async function handleConfirmMove({ leadId, stage }) {
 }
 
 .alg-kanban__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--alg-board-divider, #e5e7eb);
+}
+
+.alg-kanban__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.alg-kanban__search {
+  min-width: 16rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--alg-board-divider, #e5e7eb);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  background-color: var(--alg-board-bg, #ffffff);
+  color: var(--alg-modal-fg, #111827);
+
+  &:focus-visible {
+    outline: 2px solid var(--alg-focus-ring, #2563eb);
+    outline-offset: 1px;
+  }
+}
+
+.alg-kanban__pipeline-link {
+  font-size: 0.875rem;
+  text-decoration: none;
+  color: var(--alg-cta-bg, #2563eb);
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--alg-focus-ring, #2563eb);
+    outline-offset: 2px;
+    border-radius: 0.125rem;
+  }
 }
 
 .alg-kanban__title {

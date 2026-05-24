@@ -7,14 +7,16 @@
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { computed } from 'vue';
-import { frontendURL } from 'dashboard/helper/URLHelper';
 
 const { t } = useI18n();
 const route = useRoute();
 
-const connectChannelUrl = computed(() =>
-  frontendURL(`accounts/${route.params.accountId}/settings/inboxes/new`)
-);
+// router-link target keeps SPA navigation — a plain href causes a full reload
+// and re-hydrates Vuex from scratch, which feels broken next to the rest of
+// the dashboard. CONTRACT §5 requires the href to point at inboxes/new.
+const connectChannelRoute = computed(() => ({
+  path: `/app/accounts/${route.params.accountId}/settings/inboxes/new`,
+}));
 </script>
 
 <template>
@@ -25,13 +27,13 @@ const connectChannelUrl = computed(() =>
     <p class="alg-kanban-empty__body">
       {{ t('ALGORYTHMO_CRM.EMPTY_STATE.BODY') }}
     </p>
-    <a
-      :href="connectChannelUrl"
+    <router-link
+      :to="connectChannelRoute"
       class="alg-kanban-empty__cta"
       data-testid="kanban-empty-cta"
     >
       {{ t('ALGORYTHMO_CRM.EMPTY_STATE.CTA') }}
-    </a>
+    </router-link>
   </div>
 </template>
 
