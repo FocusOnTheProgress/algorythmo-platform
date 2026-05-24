@@ -23,6 +23,8 @@ class CreateCrmTables < ActiveRecord::Migration[7.1]
       t.integer :kind,              null: false, default: 0 # enum: open, won, lost
       t.float   :aging_coefficient, null: false, default: 1.0 # D10
       t.timestamps
+
+      t.index %i[pipeline_id name], unique: true, name: 'idx_stages_unique_name_per_pipeline'
     end
 
     create_table :algorythmo_leads do |t|

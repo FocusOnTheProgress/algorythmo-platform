@@ -9,8 +9,8 @@ RSpec.describe Algorythmo::Api::V1::PipelinesController, type: :controller do
   let(:admin)   { create(:user, account: account, role: :administrator) }
 
   before do
-    allow(Algorythmo::FeatureGate).to receive(:feature_enabled?)
-      .with(account, 'algorythmo_crm')
+    allow(Algorythmo::FeatureGate).to receive(:cut_enabled?)
+      .with(account, 'crm')
       .and_return(true)
     request.headers['api_access_token'] = admin.access_token.token
   end
@@ -69,8 +69,8 @@ RSpec.describe Algorythmo::Api::V1::PipelinesController, type: :controller do
 
       before do
         create_pipeline_with_stages(account_b)
-        allow(Algorythmo::FeatureGate).to receive(:feature_enabled?)
-          .with(account_b, 'algorythmo_crm')
+        allow(Algorythmo::FeatureGate).to receive(:cut_enabled?)
+          .with(account_b, 'crm')
           .and_return(true)
       end
 
@@ -83,7 +83,7 @@ RSpec.describe Algorythmo::Api::V1::PipelinesController, type: :controller do
 
     context 'feature gate off' do
       before do
-        allow(Algorythmo::FeatureGate).to receive(:feature_enabled?).and_return(false)
+        allow(Algorythmo::FeatureGate).to receive(:cut_enabled?).and_return(false)
       end
 
       it 'returns 403' do

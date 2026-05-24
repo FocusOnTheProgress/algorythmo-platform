@@ -1,0 +1,70 @@
+<% content_for(:title) { "Algorythmo Flags — #{@account.name}" } %>
+
+<header class="main-content__header">
+  <h2 class="main-content__page-title">
+    Algorythmo Cut Flags
+    <span class="main-content__page-sub-title">— <%= @account.name %></span>
+  </h2>
+</header>
+
+<div class="main-content__body">
+  <p class="u-margin-bottom-16">
+    Flags stored in <code>accounts.algorythmo_feature_flags</code> (dedicated bigint, positions 1–15).
+    Isolated from Chatwoot&rsquo;s <code>feature_flags</code> column — no bit conflicts.
+  </p>
+
+  <%= form_with url: super_admin_account_algorythmo_flags_path(@account), method: :patch, local: true do %>
+
+    <h3 class="u-margin-bottom-8">Cut flags (positions 1–13) — <strong>marcar = esconder</strong> a superfície</h3>
+    <table class="resource-table u-margin-bottom-24">
+      <thead>
+        <tr>
+          <th>Surface (cut flag)</th>
+          <th>Enabled (surface is hidden)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% (Algorythmo::FeatureFlagBits::CUT_FLAG_NAMES - Algorythmo::FeatureFlagBits::ENABLE_FLAG_NAMES).each do |flag| %>
+          <tr>
+            <td><code>algorythmo_cut_<%= flag %></code></td>
+            <td>
+              <%= check_box_tag "algorythmo_flags[#{flag}]", '1',
+                    @account.algorythmo_cut_enabled?(flag),
+                    id: "algorythmo_flag_#{flag}" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <h3 class="u-margin-bottom-8">Enable flags (positions 14–15) — <strong>marcar = mostrar</strong> a feature</h3>
+    <table class="resource-table u-margin-bottom-16">
+      <thead>
+        <tr>
+          <th>Feature (enable flag)</th>
+          <th>Enabled (feature is shown)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% Algorythmo::FeatureFlagBits::ENABLE_FLAG_NAMES.each do |flag| %>
+          <tr>
+            <td><code>algorythmo_cut_<%= flag %></code></td>
+            <td>
+              <%= check_box_tag "algorythmo_flags[#{flag}]", '1',
+                    @account.algorythmo_cut_enabled?(flag),
+                    id: "algorythmo_flag_#{flag}" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <div class="u-margin-top-16">
+      <%= submit_tag 'Update Algorythmo Flags', class: 'button' %>
+    </div>
+  <% end %>
+
+  <p class="u-margin-top-16">
+    <%= link_to '← Back to Account', super_admin_account_path(@account) %>
+  </p>
+</div>

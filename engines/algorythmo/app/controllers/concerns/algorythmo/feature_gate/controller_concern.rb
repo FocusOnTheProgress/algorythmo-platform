@@ -18,7 +18,7 @@ module Algorythmo::FeatureGate::ControllerConcern
   private
 
   def ensure_algorythmo_show_captain_enabled!
-    return if Algorythmo::FeatureGate.feature_enabled?(Current.account, 'algorythmo_show_captain')
+    return if Algorythmo::FeatureGate.cut_enabled?(Current.account, 'show_captain')
 
     render json: { error: 'Feature not enabled' }, status: :forbidden
   end

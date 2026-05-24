@@ -242,19 +242,3 @@
   display_name: Advanced Assignment
   enabled: false
   premium: true
-# algorythmo: feature-gate algorythmo_show_captain
-# Controls all Captain AI surfaces in the UI.
-# false = hidden (default for all Algorythmo OS accounts).
-# Set to true ONLY for internal engineering/QA accounts to test Captain.
-# Decision: A6 in docs/plans/0001-mvp-algorythmo-os.md
-- name: algorythmo_show_captain
-  display_name: Show Captain AI (Algorythmo internal)
-  enabled: false
-# algorythmo: feature-gate algorythmo_crm
-# Controls the CRM Kanban surface (M1). Default false — fail-closed.
-# Listener (CrmListener) and controllers check this gate before any work.
-# Enable per-account in admin when the account is ready for CRM.
-# Decision: M1/A.9 in docs/plans/0001-mvp-algorythmo-os.md
-- name: algorythmo_crm
-  display_name: CRM Kanban (Algorythmo)
-  enabled: false

@@ -22,6 +22,7 @@ if resource.custom_attributes.present?
 end
 json.domain @account.domain
 json.features @account.enabled_features
+json.algorythmo_cut_flags @account.all_algorythmo_cut_flags
 json.id @account.id
 json.locale @account.locale
 json.name @account.name

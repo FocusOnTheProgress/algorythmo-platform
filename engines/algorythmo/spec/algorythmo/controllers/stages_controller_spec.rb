@@ -20,7 +20,7 @@ RSpec.describe Algorythmo::Api::V1::StagesController, type: :controller do
   let(:stage) { pipeline.stages.first }
 
   before do
-    allow(Algorythmo::FeatureGate).to receive(:feature_enabled?).and_return(true)
+    allow(Algorythmo::FeatureGate).to receive(:cut_enabled?).and_return(true)
     request.headers['api_access_token'] = user.access_token.token
     pipeline
   end

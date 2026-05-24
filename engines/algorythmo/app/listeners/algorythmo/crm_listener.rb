@@ -29,7 +29,7 @@ class Algorythmo::CrmListener < BaseListener
     message, account = extract_message_and_account(event)
 
     # algorythmo: feature-gate algorythmo_crm
-    return unless Algorythmo::FeatureGate.feature_enabled?(account, 'algorythmo_crm')
+    return unless Algorythmo::FeatureGate.cut_enabled?(account, 'crm')
 
     # C1 — filter: only incoming messages from a Contact with a known contact_id.
     return unless eligible_message?(message)

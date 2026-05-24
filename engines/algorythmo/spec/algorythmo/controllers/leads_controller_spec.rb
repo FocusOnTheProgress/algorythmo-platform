@@ -26,8 +26,8 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
   let(:won_stage)  { pipeline.stages.find_by(kind: :won) }
 
   before do
-    allow(Algorythmo::FeatureGate).to receive(:feature_enabled?)
-      .with(account, 'algorythmo_crm')
+    allow(Algorythmo::FeatureGate).to receive(:cut_enabled?)
+      .with(account, 'crm')
       .and_return(true)
     request.headers['api_access_token'] = user.access_token.token
     pipeline
@@ -455,7 +455,7 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
 
   describe 'feature gate enforcement' do
     it 'returns 403 when algorythmo_crm is disabled' do
-      allow(Algorythmo::FeatureGate).to receive(:feature_enabled?).and_return(false)
+      allow(Algorythmo::FeatureGate).to receive(:cut_enabled?).and_return(false)
       get :index, params: { account_id: account.id, stage_id: novo_stage.id }
       expect(response).to have_http_status(:forbidden)
     end
@@ -791,7 +791,7 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
 
     # LOW-R2-1 — Feature gate must be enforced on #conversations the same way as other actions.
     context 'when CRM feature is disabled' do
-      before { allow(Algorythmo::FeatureGate).to receive(:feature_enabled?).and_return(false) }
+      before { allow(Algorythmo::FeatureGate).to receive(:cut_enabled?).and_return(false) }
 
       it 'returns 403' do
         get :conversations, params: { account_id: account.id, id: lead.id }
