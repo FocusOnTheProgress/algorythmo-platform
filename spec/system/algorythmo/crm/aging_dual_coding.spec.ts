@@ -24,12 +24,15 @@ import {
   TEST_ACCOUNT_ID,
 } from './_fixture';
 
+// ratio = elapsed / (aging_coefficient * 1 day) — coefficient is in DAYS.
+// With coef = 1.0 the bucket boundaries land at 24h (yellow) and 48h (red).
+const ONE_DAY_SECONDS = 86_400;
 const LEADS_BY_AGING = [
   {
     id: 101,
     stage_id: 1,
     aging_coefficient: 1.0,
-    seconds_in_stage: 3600, // 1h — ratio 1/12 ≈ 0.08 → green
+    seconds_in_stage: 3600, // 1h → ratio 1/24 ≈ 0.04 → green
     expected_state: 'green',
     expected_glyph: '●',
     description: 'chip shows green ● when ratio < 1',
@@ -38,7 +41,7 @@ const LEADS_BY_AGING = [
     id: 102,
     stage_id: 1,
     aging_coefficient: 1.0,
-    seconds_in_stage: 14400, // 4h — ratio 4/12 ≈ 0.33 → still green
+    seconds_in_stage: 14400, // 4h → ratio 4/24 ≈ 0.17 → still green
     expected_state: 'green',
     expected_glyph: '●',
     description: 'chip shows green ● when ratio slightly above 0',
@@ -47,7 +50,7 @@ const LEADS_BY_AGING = [
     id: 103,
     stage_id: 1,
     aging_coefficient: 1.0,
-    seconds_in_stage: 43200 * 1.5, // 18h — ratio 1.5 → yellow
+    seconds_in_stage: ONE_DAY_SECONDS * 1.5, // 36h → ratio 1.5 → yellow
     expected_state: 'yellow',
     expected_glyph: '◐',
     description: 'chip shows yellow ◐ when ratio >= 1 and < 2',
@@ -56,7 +59,7 @@ const LEADS_BY_AGING = [
     id: 104,
     stage_id: 1,
     aging_coefficient: 1.0,
-    seconds_in_stage: 43200 * 2.5, // 30h — ratio 2.5 → red
+    seconds_in_stage: ONE_DAY_SECONDS * 2.5, // 60h → ratio 2.5 → red
     expected_state: 'red',
     expected_glyph: '○',
     description: 'chip shows red ○ when ratio >= 2',
@@ -64,8 +67,8 @@ const LEADS_BY_AGING = [
   {
     id: 105,
     stage_id: 4,
-    aging_coefficient: 0.0, // closed stage — F6 guard
-    seconds_in_stage: 86400, // 24h
+    aging_coefficient: 0.0, // closed stage — F6 guard short-circuits to neutral
+    seconds_in_stage: ONE_DAY_SECONDS, // 24h — coefficient=0 forces neutral regardless
     expected_state: 'neutral',
     expected_glyph: '—',
     description:

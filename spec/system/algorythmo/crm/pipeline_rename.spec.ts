@@ -72,15 +72,19 @@ test.describe('Pipeline rename', () => {
     );
     await expect(propostaInput).toBeVisible({ timeout: 5_000 });
 
-    await propostaInput.clear();
-    await propostaInput.fill(RENAMED_STAGE_NAME);
-    await propostaInput.press('Enter');
-
-    // Post-rename: /pipelines/default must return the new name on the next fetch.
+    // Remock /pipelines/default with RENAMED_STAGES BEFORE pressing Enter so
+    // any post-PATCH refetch (form success handler may call loadPipeline before
+    // we get the chance to unroute) hits the new body. Without this, there's
+    // a TOCTOU where the refetch races the unroute and rehydrates the store
+    // with the stale "Proposta" body.
     await page.unroute(
       `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/pipelines/default`
     );
     await mockDefaultPipeline(page, RENAMED_STAGES);
+
+    await propostaInput.clear();
+    await propostaInput.fill(RENAMED_STAGE_NAME);
+    await propostaInput.press('Enter');
 
     await goToCrm(page);
 
@@ -108,15 +112,19 @@ test.describe('Pipeline rename', () => {
     const propostaInput = page.locator(
       '[data-stage-id="3"] [data-testid="stage-name-input"]'
     );
-    await propostaInput.clear();
-    await propostaInput.fill(RENAMED_STAGE_NAME);
-    await propostaInput.press('Enter');
+    await expect(propostaInput).toBeVisible({ timeout: 5_000 });
 
-    // Post-rename: /pipelines/default must return the new name on the next fetch.
+    // Remock /pipelines/default BEFORE Enter — see rationale in the previous
+    // test. TOCTOU between PATCH success and unroute would otherwise rehydrate
+    // the store with the stale body.
     await page.unroute(
       `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/pipelines/default`
     );
     await mockDefaultPipeline(page, RENAMED_STAGES);
+
+    await propostaInput.clear();
+    await propostaInput.fill(RENAMED_STAGE_NAME);
+    await propostaInput.press('Enter');
 
     await goToCrm(page);
 

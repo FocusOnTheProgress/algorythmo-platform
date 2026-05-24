@@ -40,6 +40,9 @@ const AGING_LEAD = mockLead({
 const VALID_AGING_STATES = ['neutral', 'green', 'yellow', 'red'];
 const VALID_AGING_GLYPHS = ['—', '●', '◐', '○'];
 
+// Intentionally NOT serial — each test owns its mock setup so a §2 failure
+// doesn't mask §3-§8 drift. Running parallel surfaces every contract delta
+// in one CI pass instead of stopping at the first broken section.
 test.describe('CONTRACT_M1B v1.0.0 — surface conformance', () => {
   test.skip('§2 — root, header, board region, and stage columns render', async ({
     page,
