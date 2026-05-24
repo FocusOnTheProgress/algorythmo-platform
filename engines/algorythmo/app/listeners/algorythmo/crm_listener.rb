@@ -31,6 +31,11 @@ class Algorythmo::CrmListener < BaseListener
     # algorythmo: feature-gate algorythmo_crm
     return unless Algorythmo::FeatureGate.cut_enabled?(account, 'crm')
 
+    if outgoing_from_human?(message)
+      set_owner_on_first_reply(account: account, message: message)
+      return
+    end
+
     # C1 — filter: only incoming messages from a Contact with a known contact_id.
     return unless eligible_message?(message)
 
@@ -44,6 +49,33 @@ class Algorythmo::CrmListener < BaseListener
   end
 
   private
+
+  # §6.2 — True when message is outgoing from a human User (not AgentBot, not Contact).
+  # AgentBot responds arrive as outgoing but sender.is_a?(AgentBot) — excluded here.
+  def outgoing_from_human?(message)
+    message.message_type == 'outgoing' &&
+      message.sender.is_a?(User) &&
+      message.conversation&.contact_id.present?
+  end
+
+  # §6.2 — Atomic first-writer-wins owner assignment.
+  # Uses UPDATE ... WHERE owner_id IS NULL so that two concurrent Sidekiq workers
+  # racing on the same lead never corrupt the owner field. The second UPDATE receives
+  # 0 rows because the WHERE no longer matches after the first commits.
+  def set_owner_on_first_reply(account:, message:)
+    contact_id = message.conversation.contact_id
+    open_lead  = Algorythmo::Lead.active.open.find_by(contact_id: contact_id, account_id: account.id)
+    unless open_lead
+      Rails.logger.warn("[CrmListener] outgoing from user=#{message.sender_id} but no open lead for contact_id=#{contact_id}")
+      return
+    end
+
+    updated = Algorythmo::Lead
+              .where(id: open_lead.id, owner_id: nil)
+              .update_all(owner_id: message.sender_id, updated_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
+
+    Rails.logger.debug("[CrmListener] owner already set for lead=#{open_lead.id}") if updated.zero?
+  end
 
   # C1 — Eligibility filter. Returns false for:
   #   - outgoing / activity / template messages
