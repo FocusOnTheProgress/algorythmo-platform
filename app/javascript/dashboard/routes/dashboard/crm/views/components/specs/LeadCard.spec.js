@@ -139,5 +139,17 @@ describe('LeadCard (CONTRACT_M1B §3)', () => {
       await card.trigger('keydown', { key: 'ArrowDown' });
       expect(wrapper.emitted('open')).toBeUndefined();
     });
+
+    it('does NOT emit "open" when Enter/Space is pressed on the menu trigger', async () => {
+      // Regression guard. Without the `event.target !== event.currentTarget`
+      // check in handleKeydown, a keydown on the focused menu button bubbles
+      // to the article and double-fires (drawer + menu). Adversarial review
+      // PR #48 H1.
+      const wrapper = mountCard();
+      const trigger = wrapper.find('[data-testid="lead-card-menu-trigger"]');
+      await trigger.trigger('keydown', { key: 'Enter' });
+      await trigger.trigger('keydown', { key: ' ' });
+      expect(wrapper.emitted('open')).toBeUndefined();
+    });
   });
 });

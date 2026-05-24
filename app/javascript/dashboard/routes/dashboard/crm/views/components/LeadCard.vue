@@ -31,20 +31,15 @@ const emit = defineEmits(['open', 'menu']);
 // rule doesn't catch it — the icon is decorative, not user-facing copy.
 const MENU_TRIGGER_GLYPH = '\u22EE';
 
-const ariaLabel = computed(() => {
-  const name = props.lead?.name ?? '';
-  const stage = props.lead?.stage_name ?? '';
-  const timeAria = props.lead?.time_aria_long ?? '';
-  const channel = props.lead?.channel_origin ?? '';
-  return `Lead ${name}, etapa ${stage}, ${timeAria} nesta etapa, canal ${channel}`;
-});
-
-const menuAriaLabel = computed(
-  () => `Ações para lead ${props.lead?.name ?? ''}`
+const ariaLabel = computed(
+  () =>
+    `Lead ${props.lead.name}, etapa ${props.lead.stage_name}, ${props.lead.time_aria_long} nesta etapa, canal ${props.lead.channel_origin}`
 );
 
+const menuAriaLabel = computed(() => `Ações para lead ${props.lead.name}`);
+
 const chipAriaLabel = computed(
-  () => `${props.lead?.time_aria_long ?? ''} nesta etapa`
+  () => `${props.lead.time_aria_long} nesta etapa`
 );
 
 function handleActivate() {
@@ -52,6 +47,13 @@ function handleActivate() {
 }
 
 function handleKeydown(event) {
+  // Only activate when the article itself is the focused target. Without this
+  // guard, pressing Enter / Space on the nested menu trigger button would
+  // bubble a keydown to the article and double-fire (drawer + menu). The
+  // mouse path is handled separately via `event.stopPropagation` in
+  // `handleMenuClick`; keyboard bubbling can't be stopped from the button
+  // because the browser still fires its own click for Enter/Space.
+  if (event.target !== event.currentTarget) return;
   // Enter and Space are the standard activation keys for role="button" per
   // WAI-ARIA Authoring Practices. preventDefault on Space stops page scroll.
   if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
@@ -61,7 +63,9 @@ function handleKeydown(event) {
 }
 
 function handleMenuClick(event) {
-  // Stop propagation so the click doesn't ALSO open the drawer behind the menu.
+  // Stop propagation so the mouse click doesn't ALSO open the drawer behind
+  // the menu. Keyboard activation on this button is isolated by the
+  // `event.target !== event.currentTarget` guard in `handleKeydown`.
   event.stopPropagation();
   emit('menu', { lead: props.lead, anchor: event.currentTarget });
 }

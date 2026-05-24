@@ -15,15 +15,16 @@
 // Aging math itself (deciding which state to pass) lives in the LeadCard
 // parent — this component is a pure presenter. Tests assert that.
 import { computed } from 'vue';
+import {
+  LEAD_AGING_STATES,
+  LEAD_AGING_GLYPH_BY_STATE,
+} from './leadAgingChipConstants';
 
 const props = defineProps({
-  // Validator inlines the literal list because Vue's <script setup> compiler
-  // hoists defineProps outside the setup function — it cannot reference
-  // module-scope const arrays. Keep this list in sync with VALID_STATES above.
   state: {
     type: String,
     required: true,
-    validator: value => ['neutral', 'green', 'yellow', 'red'].includes(value),
+    validator: value => LEAD_AGING_STATES.includes(value),
   },
   timeHuman: {
     type: String,
@@ -35,23 +36,14 @@ const props = defineProps({
   },
 });
 
-const VALID_STATES = ['neutral', 'green', 'yellow', 'red'];
-
-const GLYPH_BY_STATE = {
-  neutral: '—',
-  green: '\u25CF', // ●
-  yellow: '\u25D0', // ◐
-  red: '\u25CB', // ○
-};
-
 // Defensive: a bad upstream payload should not break the layout. If the
 // validator throws in production (warnings are stripped), fall back to
 // 'neutral' so the chip still renders something coherent.
 const safeState = computed(() =>
-  VALID_STATES.includes(props.state) ? props.state : 'neutral'
+  LEAD_AGING_STATES.includes(props.state) ? props.state : 'neutral'
 );
 
-const glyph = computed(() => GLYPH_BY_STATE[safeState.value]);
+const glyph = computed(() => LEAD_AGING_GLYPH_BY_STATE[safeState.value]);
 </script>
 
 <template>
