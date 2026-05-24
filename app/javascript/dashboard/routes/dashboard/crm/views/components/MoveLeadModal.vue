@@ -41,6 +41,11 @@ const canConfirm = computed(() => selectedStageId.value !== null);
 // remember the chosen element so cleanup restores its inert state precisely
 // instead of toggling a permanent attribute.
 let inertTarget = null;
+// Monotonic generation guards against rapid open/close/open races: if the
+// modal closes while the open-side awaits nextTick, the captured gen no
+// longer matches and the inert apply is skipped — otherwise the background
+// stays inert forever and the user has to refresh.
+let modalGen = 0;
 
 function applyBackgroundInert() {
   if (typeof document === 'undefined') return;
@@ -64,6 +69,8 @@ function releaseBackgroundInert() {
 watch(
   () => props.open,
   async open => {
+    modalGen += 1;
+    const myGen = modalGen;
     if (open) {
       previouslyFocused.value =
         document.activeElement instanceof HTMLElement
@@ -71,6 +78,8 @@ watch(
           : null;
       selectedStageId.value = targetStages.value[0]?.id ?? null;
       await nextTick();
+      // Bail if a later open/close has superseded this transition.
+      if (myGen !== modalGen || !props.open) return;
       // Apply inert AFTER caching the activeElement — otherwise the cached
       // element would already be inside an inert subtree.
       applyBackgroundInert();

@@ -12,6 +12,7 @@
 // Channel-icon: parent passes an already-resolved icon string (e.g. 'fluent-call'
 // or an emoji); the card doesn't know about channel→icon mapping.
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import LeadAgingChip from 'dashboard/components-next/algorythmo/LeadAgingChip.vue';
 
 const props = defineProps({
@@ -26,20 +27,30 @@ const props = defineProps({
 
 const emit = defineEmits(['open', 'menu']);
 
+const { t } = useI18n();
+
 // Vertical-ellipsis (U+22EE) is the standard kanban menu trigger glyph
 // (Trello/Linear/Notion). Bound as a constant so the bare-string-in-template
 // rule doesn't catch it — the icon is decorative, not user-facing copy.
 const MENU_TRIGGER_GLYPH = '\u22EE';
 
-const ariaLabel = computed(
-  () =>
-    `Lead ${props.lead.name}, etapa ${props.lead.stage_name}, ${props.lead.time_aria_long} nesta etapa, canal ${props.lead.channel_origin}`
+const ariaLabel = computed(() =>
+  t('ALGORYTHMO_CRM.LEAD_CARD.ARIA_LABEL', {
+    name: props.lead.name,
+    stage: props.lead.stage_name,
+    time: props.lead.time_aria_long,
+    channel: props.lead.channel_origin,
+  })
 );
 
-const menuAriaLabel = computed(() => `Ações para lead ${props.lead.name}`);
+const menuAriaLabel = computed(() =>
+  t('ALGORYTHMO_CRM.LEAD_CARD.MENU_BUTTON_LABEL', { name: props.lead.name })
+);
 
-const chipAriaLabel = computed(
-  () => `${props.lead.time_aria_long} nesta etapa`
+const chipAriaLabel = computed(() =>
+  t('ALGORYTHMO_CRM.LEAD_CARD.AGING_CHIP_ARIA_LABEL', {
+    time: props.lead.time_aria_long,
+  })
 );
 
 function handleActivate() {

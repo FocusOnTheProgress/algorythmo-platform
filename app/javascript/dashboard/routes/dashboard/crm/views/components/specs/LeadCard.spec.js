@@ -1,7 +1,15 @@
 // algorythmo: feature-gate algorythmo_crm
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { createI18n } from 'vue-i18n';
 import LeadCard from '../LeadCard.vue';
+import algorythmoCrm from 'dashboard/i18n/locale/pt_BR/algorythmoCrm.json';
+
+const i18n = createI18n({
+  legacy: false,
+  locale: 'pt_BR',
+  messages: { pt_BR: algorythmoCrm },
+});
 
 const baseLead = () => ({
   id: 42,
@@ -19,6 +27,7 @@ const mountCard = (overrides = {}) =>
   mount(LeadCard, {
     props: { lead: { ...baseLead(), ...overrides } },
     global: {
+      plugins: [i18n],
       stubs: {
         // Keep LeadAgingChip real — we assert on its rendered output below.
       },

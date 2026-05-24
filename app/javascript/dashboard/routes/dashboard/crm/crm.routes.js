@@ -5,6 +5,7 @@
 // docs, and bookmarks still resolve to the kanban view once the flag flips on.
 import { frontendURL } from 'dashboard/helper/URLHelper';
 import KanbanBoard from './views/KanbanBoard.vue';
+import PipelineConfigPlaceholder from './views/PipelineConfigPlaceholder.vue';
 
 export default {
   routes: [
@@ -16,6 +17,17 @@ export default {
         algorythmoFeatureFlag: 'algorythmo_crm',
       },
       component: KanbanBoard,
+    },
+    {
+      // Stub — real PipelineConfigView ships in B-PR6 (Sessão C).
+      // Registered now so the "Configurar pipeline" link doesn't 404.
+      path: frontendURL('accounts/:accountId/crm/pipeline'),
+      name: 'algorythmo_crm_pipeline_config',
+      meta: {
+        permissions: ['administrator'],
+        algorythmoFeatureFlag: 'algorythmo_crm',
+      },
+      component: PipelineConfigPlaceholder,
     },
   ],
 };

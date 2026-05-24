@@ -24,9 +24,11 @@ import {
   timeSinceLabel,
   humanizeDurationLongPtBr,
 } from 'dashboard/helper/algorythmo/timeFormat.js';
+import { useToast } from 'dashboard/composables/algorythmo/useToast.js';
 import StageColumn from './components/StageColumn.vue';
 import KanbanEmptyState from './components/KanbanEmptyState.vue';
 import MoveLeadModal from './components/MoveLeadModal.vue';
+import LeadCardMenu from './components/LeadCardMenu.vue';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -84,29 +86,49 @@ function toPresenter(lead, stage, now) {
 const route = useRoute();
 const accountId = computed(() => route.params.accountId);
 const { t } = useI18n();
+const toast = useToast();
 
-const {
-  stages,
-  isLoading: isPipelineLoading,
-  stageById,
-  loadPipeline,
-} = usePipelineStore(accountId.value);
+// Stores are bound via `computed` keyed on accountId so a tenant switch
+// (Vue Router reuses the route component across /app/accounts/:accountId/crm
+// transitions) returns fresh, account-correct refs and methods. Without this
+// indirection the destructured methods stay closure-bound to the previous
+// account and the next fetch leaks tenant A data into tenant B's board.
+const pipelineStoreRef = computed(() => usePipelineStore(accountId.value));
+const leadStoreRef = computed(() => useLeadStore(accountId.value));
 
-const leadStore = useLeadStore(accountId.value);
-const {
-  stageMap,
-  leadsByStage,
-  fetchStage,
-  moveLeadOptimistic,
-  commitMove,
-  rollbackMove,
-} = leadStore;
+const stages = computed(() => pipelineStoreRef.value.stages.value);
+const isPipelineLoading = computed(
+  () => pipelineStoreRef.value.isLoading.value
+);
+const stageById = computed(() => pipelineStoreRef.value.stageById.value);
+
+function loadPipeline() {
+  return pipelineStoreRef.value.loadPipeline();
+}
+function fetchStage(stageId) {
+  return leadStoreRef.value.fetchStage(stageId);
+}
+function leadsByStage(stageId) {
+  return leadStoreRef.value.leadsByStage(stageId);
+}
+function moveLeadOptimistic(args) {
+  return leadStoreRef.value.moveLeadOptimistic(args);
+}
+function commitMove(args) {
+  return leadStoreRef.value.commitMove(args);
+}
+function rollbackMove(args) {
+  return leadStoreRef.value.rollbackMove(args);
+}
 
 const now = ref(Date.now());
 
-// Move modal + announce + search state
+// Move modal + menu + announce + search state
 const moveModalOpen = ref(false);
 const moveModalLead = ref(null);
+const menuOpen = ref(false);
+const menuLead = ref(null);
+const menuAnchor = ref(null);
 const announceText = ref('');
 const searchQuery = ref('');
 const pipelineConfigPath = computed(
@@ -155,9 +177,17 @@ onBeforeUnmount(() => {
   agingTimer = null;
 });
 
-// Re-fetch when accountId changes (account switch keeps the same route component).
+// Re-fetch when accountId changes. The store refs above re-bind to the new
+// account via `computed`, but pipeline data still has to be (re)loaded for
+// the new tenant, and any stale local UI state (menu / move modal) referring
+// to the previous account's leads must be dropped.
 watch(accountId, async newId => {
   if (!newId) return;
+  menuOpen.value = false;
+  menuLead.value = null;
+  menuAnchor.value = null;
+  moveModalOpen.value = false;
+  moveModalLead.value = null;
   await loadPipeline();
   await Promise.all(stages.value.map(s => fetchStage(s.id)));
 });
@@ -193,6 +223,9 @@ const showGlobalEmpty = computed(
 );
 
 function findRawLead(leadId) {
+  // stageMap is per-account and re-read on every call so an account switch
+  // does not look up a lead in the previous tenant's map.
+  const stageMap = leadStoreRef.value.stageMap;
   return (
     Array.from(stageMap.values())
       .flatMap(state => state.leads)
@@ -200,15 +233,35 @@ function findRawLead(leadId) {
   );
 }
 
-function handleOpenMenu({ lead }) {
+function handleOpenMenu({ lead, anchor }) {
+  // CONTRACT §6 — the ⋮ trigger opens [data-testid="lead-card-menu"], not
+  // the move modal directly. The menu then routes to the modal via the
+  // "Mover para…" menuitem (handleMenuMove).
   const raw = findRawLead(lead.id);
   if (!raw) return;
-  moveModalLead.value = raw;
+  menuLead.value = raw;
+  menuAnchor.value = anchor instanceof HTMLElement ? anchor : null;
+  menuOpen.value = true;
+}
+
+function closeMenu() {
+  menuOpen.value = false;
+  menuLead.value = null;
+  menuAnchor.value = null;
+}
+
+function handleMenuMove() {
+  if (!menuLead.value) return;
+  moveModalLead.value = menuLead.value;
   moveModalOpen.value = true;
+  closeMenu();
 }
 
 function handleOpenLead() {
-  // LeadDetailDrawer lands in Fase 3; emit kept here so the contract is honored.
+  // LeadDetailDrawer ships in B-PR6. Until then, give the click observable
+  // feedback so the card is not a silent no-op — a single toast that removes
+  // itself after 4s. Replace this line when the drawer lands.
+  toast.info(t('ALGORYTHMO_CRM.LEAD_DETAIL.COMING_SOON'));
 }
 
 async function handleConfirmMove({ leadId, stage }) {
@@ -298,6 +351,14 @@ async function handleConfirmMove({ leadId, stage }) {
     >
       {{ announceText }}
     </div>
+
+    <LeadCardMenu
+      :open="menuOpen"
+      :lead="menuLead"
+      :anchor="menuAnchor"
+      @close="closeMenu"
+      @move="handleMenuMove"
+    />
 
     <MoveLeadModal
       :open="moveModalOpen"
