@@ -11,6 +11,15 @@ import {
   REPORTS_PERMISSIONS,
   PORTAL_PERMISSIONS,
 } from 'dashboard/constants/permissions.js';
+// algorythmo: feature-gate algorythmo_cut_*
+import { isKnownAlgorythmoCutFlag } from 'dashboard/constants/algorythmoCutFlags';
+
+// Modules that have already logged an "unknown cut flag" warning, so we don't
+// spam the dev console on every navigation. Cleared by tests via the
+// `resetAlgorythmoCutFlagWarningsForTests` helper exported below.
+const warnedAlgorythmoCutFlags = new Set();
+export const resetAlgorythmoCutFlagWarningsForTests = () =>
+  warnedAlgorythmoCutFlags.clear();
 
 export const routeIsAccessibleFor = (route, userPermissions = []) => {
   const { meta: { permissions: routePermissions = [] } = {} } = route;
@@ -193,6 +202,23 @@ export const isRouteBlockedByAlgorythmoGate = (
   }
 
   if (cutFlag) {
+    // Dev-time guard: catch typos like `algorythmo_cut_compaigns` that would
+    // otherwise silently leave the surface ungated forever. Production builds
+    // strip this branch via `process.env.NODE_ENV`.
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      !isKnownAlgorythmoCutFlag(cutFlag) &&
+      !warnedAlgorythmoCutFlags.has(cutFlag)
+    ) {
+      warnedAlgorythmoCutFlags.add(cutFlag);
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[algorythmo] Unknown cut flag on route meta: ${cutFlag}. ` +
+          `Expected one of dashboard/constants/algorythmoCutFlags ` +
+          `ALGORYTHMO_CUT_FLAG_KEYS. The route will NOT be gated.`
+      );
+    }
+
     try {
       const cutEnabled = isFeatureEnabledonAccount(accountId, cutFlag);
       return cutEnabled === true;

@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n';
 import { useSidebarKeyboardShortcuts } from './useSidebarKeyboardShortcuts';
 import { vOnClickOutside } from '@vueuse/components';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
+import { ALGORYTHMO_CUT_FLAG_NAMES } from 'dashboard/constants/algorythmoCutFlags';
 import { useWindowSize, useEventListener } from '@vueuse/core';
 
 import Button from 'dashboard/components-next/button/Button.vue';
@@ -75,32 +76,26 @@ const hasCaptain = computed(() => {
 // Cut flags use inverted semantic: when enabled, the surface is HIDDEN.
 // All 13 cut flags default false → upstream surfaces remain visible until a
 // super-admin enables the cut for a specific tenant via the Algorythmo flags UI.
-// Source of truth for names: Algorythmo::FeatureFlagBits::CUT_FLAG_NAMES.
-const isAlgorythmoCutHidden = cutName =>
-  computed(() =>
-    isFeatureEnabledonAccount.value(
-      accountId.value,
-      `algorythmo_cut_${cutName}`
-    )
+// The set of cut flag names lives in `constants/algorythmoCutFlags.js` and is
+// mirrored from `Algorythmo::FeatureFlagBits::CUT_FLAG_NAMES`. Adding a new
+// cut here requires updating both the constant and the Ruby bit-map; the
+// coverage spec asserts the two ends agree.
+const algorythmoCutHidden = computed(() => {
+  const id = accountId.value;
+  return Object.fromEntries(
+    ALGORYTHMO_CUT_FLAG_NAMES.map(name => [
+      name,
+      isFeatureEnabledonAccount.value(id, `algorythmo_cut_${name}`) === true,
+    ])
   );
-
-const hideCampaigns = isAlgorythmoCutHidden('campaigns');
-const hideHelpCenter = isAlgorythmoCutHidden('help_center');
-const hideSla = isAlgorythmoCutHidden('sla');
-const hideAuditLogs = isAlgorythmoCutHidden('audit_logs');
-const hideCustomRoles = isAlgorythmoCutHidden('custom_roles');
-const hideSecuritySettings = isAlgorythmoCutHidden('security_settings');
-const hideBillingSettings = isAlgorythmoCutHidden('billing_settings');
-const hideAgentBots = isAlgorythmoCutHidden('agent_bots');
-const hideMacros = isAlgorythmoCutHidden('macros');
-const hideAdvancedAssignment = isAlgorythmoCutHidden('advanced_assignment');
-const hideReportsBot = isAlgorythmoCutHidden('reports_bot');
-const hideConversationWorkflow = isAlgorythmoCutHidden('conversation_workflow');
+});
 
 // Even when the upstream ADVANCED_ASSIGNMENT capability is present, the cut
 // suppresses the sidebar item so PME tenants never see capacity-planning UI.
 const showAdvancedAssignment = computed(
-  () => hasAdvancedAssignment.value && !hideAdvancedAssignment.value
+  () =>
+    hasAdvancedAssignment.value &&
+    !algorythmoCutHidden.value.advanced_assignment
 );
 
 const hasConversationUnreadCounts = computed(() => {
@@ -608,7 +603,7 @@ const menuItems = computed(() => {
           to: accountScopedRoute('sla_reports'),
         },
         // algorythmo: feature-gate algorythmo_cut_reports_bot
-        ...(hideReportsBot.value
+        ...(algorythmoCutHidden.value.reports_bot
           ? []
           : [
               {
@@ -620,7 +615,7 @@ const menuItems = computed(() => {
       ],
     },
     // algorythmo: feature-gate algorythmo_cut_campaigns
-    ...(hideCampaigns.value
+    ...(algorythmoCutHidden.value.campaigns
       ? []
       : [
           {
@@ -647,7 +642,7 @@ const menuItems = computed(() => {
           },
         ]),
     // algorythmo: feature-gate algorythmo_cut_help_center
-    ...(hideHelpCenter.value
+    ...(algorythmoCutHidden.value.help_center
       ? []
       : [
           {
@@ -791,7 +786,7 @@ const menuItems = computed(() => {
           to: accountScopedRoute('automation_list'),
         },
         // algorythmo: feature-gate algorythmo_cut_agent_bots
-        ...(hideAgentBots.value
+        ...(algorythmoCutHidden.value.agent_bots
           ? []
           : [
               {
@@ -802,7 +797,7 @@ const menuItems = computed(() => {
               },
             ]),
         // algorythmo: feature-gate algorythmo_cut_macros
-        ...(hideMacros.value
+        ...(algorythmoCutHidden.value.macros
           ? []
           : [
               {
@@ -825,7 +820,7 @@ const menuItems = computed(() => {
           to: accountScopedRoute('settings_applications'),
         },
         // algorythmo: feature-gate algorythmo_cut_audit_logs
-        ...(hideAuditLogs.value
+        ...(algorythmoCutHidden.value.audit_logs
           ? []
           : [
               {
@@ -836,7 +831,7 @@ const menuItems = computed(() => {
               },
             ]),
         // algorythmo: feature-gate algorythmo_cut_custom_roles
-        ...(hideCustomRoles.value
+        ...(algorythmoCutHidden.value.custom_roles
           ? []
           : [
               {
@@ -847,7 +842,7 @@ const menuItems = computed(() => {
               },
             ]),
         // algorythmo: feature-gate algorythmo_cut_sla
-        ...(hideSla.value
+        ...(algorythmoCutHidden.value.sla
           ? []
           : [
               {
@@ -858,7 +853,7 @@ const menuItems = computed(() => {
               },
             ]),
         // algorythmo: feature-gate algorythmo_cut_conversation_workflow
-        ...(hideConversationWorkflow.value
+        ...(algorythmoCutHidden.value.conversation_workflow
           ? []
           : [
               {
@@ -869,7 +864,7 @@ const menuItems = computed(() => {
               },
             ]),
         // algorythmo: feature-gate algorythmo_cut_security_settings
-        ...(hideSecuritySettings.value
+        ...(algorythmoCutHidden.value.security_settings
           ? []
           : [
               {
@@ -880,7 +875,7 @@ const menuItems = computed(() => {
               },
             ]),
         // algorythmo: feature-gate algorythmo_cut_billing_settings
-        ...(hideBillingSettings.value
+        ...(algorythmoCutHidden.value.billing_settings
           ? []
           : [
               {

@@ -1,4 +1,7 @@
-import { isRouteBlockedByAlgorythmoGate } from '../routeHelpers';
+import {
+  isRouteBlockedByAlgorythmoGate,
+  resetAlgorythmoCutFlagWarningsForTests,
+} from '../routeHelpers';
 
 // M0.5 — Camada 3': Vue router guard for algorythmo_show_captain
 // Tests the pure helper function used by the router's beforeEach guard.
@@ -162,6 +165,35 @@ describe('isRouteBlockedByAlgorythmoGate', () => {
       expect(isRouteBlockedByAlgorythmoGate(to, getter, ACCOUNT_ID)).toBe(
         false
       );
+    });
+  });
+
+  describe('dev-time warning for unknown algorythmoCutFlag values', () => {
+    let warnSpy;
+
+    beforeEach(() => {
+      resetAlgorythmoCutFlagWarningsForTests();
+      warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      warnSpy.mockRestore();
+    });
+
+    it('warns once when a route declares an unknown cut flag (typo guard)', () => {
+      const to = {
+        meta: { algorythmoCutFlag: 'algorythmo_cut_compaigns' /* typo */ },
+      };
+      isRouteBlockedByAlgorythmoGate(to, () => false, ACCOUNT_ID);
+      isRouteBlockedByAlgorythmoGate(to, () => false, ACCOUNT_ID);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('algorythmo_cut_compaigns');
+    });
+
+    it('does not warn for known cut flag keys', () => {
+      const to = { meta: { algorythmoCutFlag: 'algorythmo_cut_campaigns' } };
+      isRouteBlockedByAlgorythmoGate(to, () => false, ACCOUNT_ID);
+      expect(warnSpy).not.toHaveBeenCalled();
     });
   });
 
