@@ -78,6 +78,12 @@ class Algorythmo::CrmListener < BaseListener
   # Runs inside the transaction + advisory lock taken by process_lead_for.
   # Three paths: existing open lead → bump timestamp; recently closed → reopen;
   # otherwise → create new (chained via previous_lead_id if older closed lead exists).
+  #
+  # M1-C — StageHistory:
+  #   New lead: record_creation records from=nil (no after_update_commit fires on create).
+  #   Reopen:   Lead#after_update_commit fires record_stage_transition (from=Won/Lost, to=Novo).
+  #             record_creation is NOT called for reopens to avoid double-entry —
+  #             the hook already captures the transition with from_stage populated.
   def upsert_lead_under_lock(account:, contact_id:, message:)
     open_lead = Algorythmo::Lead.active.open.find_by(contact_id: contact_id, account_id: account.id)
     if open_lead
@@ -93,7 +99,8 @@ class Algorythmo::CrmListener < BaseListener
       reopen_closed_lead(recent_closed_lead, message)
     else
       any_closed_lead = most_recent_closed_lead(account.id, contact_id)
-      create_new_lead(account: account, contact_id: contact_id, message: message, previous_lead: any_closed_lead)
+      new_lead = create_new_lead(account: account, contact_id: contact_id, message: message, previous_lead: any_closed_lead)
+      Algorythmo::StageHistoryRecorder.record_creation(new_lead) if new_lead
     end
   end
 
@@ -119,6 +126,8 @@ class Algorythmo::CrmListener < BaseListener
   end
 
   # C2 — Reopen an existing closed Lead back into the first open stage.
+  # Uses _via_move_to_stage flag to bypass the guard_stage_id_change before_update callback
+  # (§5.4). The after_update_commit hook records StageHistory(from=Won/Lost, to=Novo).
   def reopen_closed_lead(lead, _message)
     pipeline = Algorythmo::Pipeline.cached_default_for(lead.account)
     return unless pipeline
@@ -126,12 +135,15 @@ class Algorythmo::CrmListener < BaseListener
     novo_stage = pipeline.stages.find(&:open?)
     return unless novo_stage
 
+    lead._via_move_to_stage = true
     lead.update!(
       stage: novo_stage,
       stage_entered_at: Time.current,
       closed_at: nil,
       last_message_at: Time.current
     )
+  ensure
+    lead._via_move_to_stage = false
   end
 
   def create_new_lead(account:, contact_id:, message:, previous_lead:)
