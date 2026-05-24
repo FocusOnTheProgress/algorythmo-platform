@@ -85,6 +85,9 @@ module Algorythmo::FeatureGate
     cache_key = "algorythmo:cut:#{account.id}:#{name}"
     Rails.cache.fetch(cache_key, expires_in: 30.seconds) do
       account.algorythmo_cut_enabled?(name)
+    rescue StandardError => e
+      Rails.logger.warn("[Algorythmo::FeatureGate] #{e.class} checking cut:#{name} on #{account.class}: #{e.message}")
+      false
     end
   end
 end

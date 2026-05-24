@@ -11,11 +11,12 @@
   <p class="u-margin-bottom-16">
     Flags stored in <code>accounts.algorythmo_feature_flags</code> (dedicated bigint, positions 1–15).
     Isolated from Chatwoot&rsquo;s <code>feature_flags</code> column — no bit conflicts.
-    <strong>Check a flag to cut (hide) that surface for this account.</strong>
   </p>
 
   <%= form_with url: super_admin_account_algorythmo_flags_path(@account), method: :patch, local: true do %>
-    <table class="resource-table">
+
+    <h3 class="u-margin-bottom-8">Cut flags (positions 1–13) — <strong>marcar = esconder</strong> a superfície</h3>
+    <table class="resource-table u-margin-bottom-24">
       <thead>
         <tr>
           <th>Surface (cut flag)</th>
@@ -23,7 +24,29 @@
         </tr>
       </thead>
       <tbody>
-        <% Algorythmo::FeatureFlagBits::CUT_FLAG_NAMES.each do |flag| %>
+        <% (Algorythmo::FeatureFlagBits::CUT_FLAG_NAMES - Algorythmo::FeatureFlagBits::ENABLE_FLAG_NAMES).each do |flag| %>
+          <tr>
+            <td><code>algorythmo_cut_<%= flag %></code></td>
+            <td>
+              <%= check_box_tag "algorythmo_flags[#{flag}]", '1',
+                    @account.algorythmo_cut_enabled?(flag),
+                    id: "algorythmo_flag_#{flag}" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <h3 class="u-margin-bottom-8">Enable flags (positions 14–15) — <strong>marcar = mostrar</strong> a feature</h3>
+    <table class="resource-table u-margin-bottom-16">
+      <thead>
+        <tr>
+          <th>Feature (enable flag)</th>
+          <th>Enabled (feature is shown)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% Algorythmo::FeatureFlagBits::ENABLE_FLAG_NAMES.each do |flag| %>
           <tr>
             <td><code>algorythmo_cut_<%= flag %></code></td>
             <td>

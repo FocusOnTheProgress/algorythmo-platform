@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_15_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_05_23_223001) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -73,7 +73,52 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_15_000000) do
     t.integer "status", default: 0
     t.jsonb "internal_attributes", default: {}, null: false
     t.jsonb "settings", default: {}
+    t.bigint "algorythmo_feature_flags", default: 0, null: false
+    t.boolean "telemetry_consent", default: false, null: false
     t.index ["status"], name: "index_accounts_on_status"
+  end
+
+  create_table "algorythmo_leads", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.bigint "stage_id", null: false
+    t.float "position"
+    t.integer "stage_kind", default: 0, null: false
+    t.bigint "previous_lead_id"
+    t.string "channel_origin"
+    t.jsonb "channel_metadata"
+    t.jsonb "custom_fields"
+    t.datetime "stage_entered_at", precision: nil
+    t.datetime "closed_at", precision: nil
+    t.datetime "last_message_at", precision: nil
+    t.boolean "deleted", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_algorythmo_leads_on_account_id"
+    t.index ["account_id", "stage_id", "position"], name: "idx_leads_kanban_cursor"
+    t.index ["contact_id"], name: "index_algorythmo_leads_on_contact_id"
+    t.index ["contact_id", "account_id"], name: "idx_leads_open_unique_per_contact", unique: true, where: "stage_kind = 0"
+    t.index ["stage_id"], name: "index_algorythmo_leads_on_stage_id"
+    t.index ["stage_id", "stage_entered_at"], name: "idx_leads_stage_entered_at", order: { stage_entered_at: :desc }
+  end
+
+  create_table "algorythmo_pipelines", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_algorythmo_pipelines_on_account_id"
+  end
+
+  create_table "algorythmo_stages", force: :cascade do |t|
+    t.bigint "pipeline_id", null: false
+    t.string "name", null: false
+    t.integer "position", default: 0, null: false
+    t.integer "kind", default: 0, null: false
+    t.float "aging_coefficient", default: 1.0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["pipeline_id"], name: "index_algorythmo_stages_on_pipeline_id"
   end
 
   create_table "action_mailbox_inbound_emails", force: :cascade do |t|
@@ -1321,9 +1366,26 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_15_000000) do
     t.index ["inbox_id"], name: "index_working_hours_on_inbox_id"
   end
 
+  create_table "telemetry_events", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "event_type", limit: 255, null: false
+    t.jsonb "payload", default: {}
+    t.datetime "created_at", precision: 6, null: false
+    t.index ["account_id"], name: "index_telemetry_events_on_account_id"
+    t.index ["created_at"], name: "index_telemetry_events_on_created_at"
+    t.index ["account_id", "created_at"], name: "index_telemetry_events_on_account_id_and_created_at"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "algorythmo_leads", "accounts"
+  add_foreign_key "algorythmo_leads", "algorythmo_leads", column: "previous_lead_id", on_delete: :nullify
+  add_foreign_key "algorythmo_leads", "algorythmo_stages", column: "stage_id"
+  add_foreign_key "algorythmo_leads", "contacts", column: "contact_id", on_delete: :cascade
+  add_foreign_key "algorythmo_pipelines", "accounts"
+  add_foreign_key "algorythmo_stages", "algorythmo_pipelines", column: "pipeline_id"
   add_foreign_key "inboxes", "portals"
+  add_foreign_key "telemetry_events", "accounts", on_delete: :cascade
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").
       after(:insert).

@@ -32,6 +32,9 @@ module Algorythmo::FeatureFlagBits
     crm
   ].freeze
 
+  # Positions 14–15: "enable flags" — check means SHOW the feature (opposite semantic from cut flags).
+  ENABLE_FLAG_NAMES = CUT_FLAG_NAMES.last(2).freeze
+
   # FlagShihTzu flag map: position (1-based) => method name symbol.
   CUT_FLAG_MAP = CUT_FLAG_NAMES
                  .each_with_index
