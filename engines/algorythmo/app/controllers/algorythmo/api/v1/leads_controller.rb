@@ -386,12 +386,12 @@ class Algorythmo::Api::V1::LeadsController < Algorythmo::Api::V1::BaseController
   # so actor_summary stays O(1) per entry. Three queries total regardless of
   # list size — see #stage_history doc comment.
   def preload_actors_for(entries)
-    user_ids      = entries.select { |e| e.actor_type == 'user' }.map(&:actor_id).compact.uniq
-    agent_bot_ids = entries.select { |e| e.actor_type == 'agent_bot' }.map(&:actor_id).compact.uniq
+    user_ids      = entries.filter_map { |e| e.actor_id if e.actor_type == 'user' }.uniq
+    agent_bot_ids = entries.filter_map { |e| e.actor_id if e.actor_type == 'agent_bot' }.uniq
 
     {
-      users:      user_ids.any?      ? User.where(id: user_ids).index_by(&:id)           : {},
-      agent_bots: agent_bot_ids.any? ? AgentBot.where(id: agent_bot_ids).index_by(&:id)  : {}
+      users: user_ids.any? ? User.where(id: user_ids).index_by(&:id) : {},
+      agent_bots: agent_bot_ids.any? ? AgentBot.where(id: agent_bot_ids).index_by(&:id) : {}
     }
   end
 

@@ -934,8 +934,8 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
         expect(entry['actor_type']).to eq('user')
         expect(entry['actor_id']).to eq(admin.id)
         expect(entry['actor_summary']).to include(
-          'id'        => admin.id,
-          'name'      => admin.name
+          'id' => admin.id,
+          'name' => admin.name
         )
         expect(entry['actor_summary']).to have_key('thumbnail')
       end
@@ -1068,16 +1068,22 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
                        created_at: Time.current - i.seconds)
         end
 
-        query_count = 0
-        counter = ->(*, **) { query_count += 1 }
+        # Count specifically the per-actor queries the batched preload should collapse:
+        # SELECT FROM "users" / "agent_bots". With batching we expect ≤ 1 of each
+        # (single IN-list query). Without batching, this would be ≥ 5 (one per
+        # distinct actor_id). Filtering on table avoids noise from framework/auth
+        # queries unrelated to actor resolution.
+        actor_query_count = 0
+        counter = lambda { |_, _, _, _, payload|
+          sql = payload[:sql].to_s
+          actor_query_count += 1 if sql.match?(/FROM "users"|FROM "agent_bots"/)
+        }
         ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
           get :stage_history, params: { account_id: account.id, id: lead.id }
         end
 
         expect(response).to have_http_status(:ok)
-        # Without batch preload, each of the 5 user actors fires a SELECT on users,
-        # pushing total above 12. With batching, total stays under ~10.
-        expect(query_count).to be < 12
+        expect(actor_query_count).to be <= 2
       end
     end
 
