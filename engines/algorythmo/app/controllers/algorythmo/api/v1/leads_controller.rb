@@ -191,7 +191,7 @@ class Algorythmo::Api::V1::LeadsController < Algorythmo::Api::V1::BaseController
     leads = Algorythmo::Lead
             .open
             .where(account_id: current_account.id, contact_id: params[:contact_id])
-            .includes(:stage, contact: { avatar_attachment: :blob })
+            .includes(:stage, :owner, contact: { avatar_attachment: :blob })
             .order(:id)
             .limit(MAX_LEADS_PER_CONTACT)
 
@@ -204,7 +204,7 @@ class Algorythmo::Api::V1::LeadsController < Algorythmo::Api::V1::BaseController
     base = Algorythmo::Lead
            .active
            .where(account_id: current_account.id, stage_id: params[:stage_id])
-           .includes(:stage, contact: { avatar_attachment: :blob })
+           .includes(:stage, :owner, contact: { avatar_attachment: :blob })
            .order(:position, :id)
 
     leads = apply_lead_cursor(base, params[:cursor], limit + 1)
@@ -258,7 +258,19 @@ class Algorythmo::Api::V1::LeadsController < Algorythmo::Api::V1::BaseController
       deleted: lead.deleted,
       created_at: lead.created_at,
       updated_at: lead.updated_at,
+      owner: owner_summary(lead.owner),
       contact: contact_summary(lead.contact)
+    }
+  end
+
+  # §7.2 — Compact owner summary embedded in lead JSON. Nullable when owner_id is nil.
+  def owner_summary(user)
+    return nil unless user
+
+    {
+      id: user.id,
+      name: user.name,
+      thumbnail: user.avatar_url
     }
   end
 
