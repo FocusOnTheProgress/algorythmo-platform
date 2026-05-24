@@ -5,6 +5,7 @@ class Algorythmo::Lead < ApplicationRecord
   belongs_to :contact
   belongs_to :stage, class_name: 'Algorythmo::Stage'
   belongs_to :previous_lead, class_name: 'Algorythmo::Lead', optional: true
+  belongs_to :owner, class_name: 'User', optional: true
 
   has_many :subsequent_leads, class_name: 'Algorythmo::Lead',
                               foreign_key: :previous_lead_id,

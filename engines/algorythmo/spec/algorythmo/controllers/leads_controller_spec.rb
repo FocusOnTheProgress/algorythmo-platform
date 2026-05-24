@@ -799,4 +799,87 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
       end
     end
   end
+
+  # ── §7.2 — owner embed in lead_json (M1-C PR 1) ──────────────────────────────
+
+  describe '§7.2 — owner embed in lead_json' do
+    it 'includes owner key in #show response (nil when no owner)' do
+      lead = create_lead
+      get :show, params: { account_id: account.id, id: lead.id }
+      body = JSON.parse(response.body)
+      expect(body).to have_key('owner')
+      expect(body['owner']).to be_nil
+    end
+
+    it 'includes owner with id, name, thumbnail when owner is set' do
+      lead = create_lead
+      lead.update_columns(owner_id: admin.id)
+      get :show, params: { account_id: account.id, id: lead.id }
+      body = JSON.parse(response.body)
+      expect(body['owner']).to include('id' => admin.id, 'name' => admin.name)
+      expect(body['owner'].keys).to include('thumbnail')
+    end
+
+    it 'does NOT include time_in_stage in lead_json' do
+      lead = create_lead
+      get :show, params: { account_id: account.id, id: lead.id }
+      body = JSON.parse(response.body)
+      expect(body).not_to have_key('time_in_stage')
+    end
+
+    it 'includes owner key in index (stage) response' do
+      create_lead
+      get :index, params: { account_id: account.id, stage_id: novo_stage.id }
+      body = JSON.parse(response.body)
+      expect(body['leads'].first).to have_key('owner')
+    end
+
+    it 'includes owner key in index (contact) response' do
+      create_lead
+      get :index, params: { account_id: account.id, contact_id: contact.id }
+      body = JSON.parse(response.body)
+      expect(body['leads'].first).to have_key('owner')
+    end
+
+    describe 'N+1 — includes(:owner) prevents extra queries on index_by_stage' do
+      it 'does not fire per-lead user/avatar_attachment/blob queries' do
+        # Adversarial review PR #51 — Crítico #1: the regression test must have teeth.
+        # Without real avatars attached, Avatarable#avatar_url short-circuits on
+        # avatar.attached? before hitting active_storage_blobs, masking the N+1.
+        # Attach actual files so the eager-load chain (owner → attachment → blob) fires.
+        owner_users = create_list(:user, 5, account: account)
+        owner_users.each do |u|
+          u.avatar.attach(
+            io: Rails.root.join('spec/assets/avatar.png').open,
+            filename: 'avatar.png',
+            content_type: 'image/png'
+          )
+        end
+        contacts = create_list(:contact, 5, account: account)
+        contacts.each_with_index do |c, i|
+          l = Algorythmo::Lead.create!(account: account, contact: c, stage: novo_stage,
+                                       position: i.to_f + 1, stage_entered_at: Time.current)
+          l.update_columns(owner_id: owner_users[i].id)
+        end
+
+        # Tally specifically the per-row queries the eager-load chain is supposed to batch:
+        # SELECT FROM "users", "active_storage_attachments", "active_storage_blobs".
+        # With includes(owner: { avatar_attachment: :blob }) we expect ≤ 1 of each
+        # (batched IN-list). Without it we'd see 5+ of each (one per lead).
+        per_row_query_count = 0
+        counter = lambda { |_, _, _, _, payload|
+          sql = payload[:sql].to_s
+          per_row_query_count += 1 if sql.match?(/FROM "users"|FROM "active_storage_attachments"|FROM "active_storage_blobs"/)
+        }
+        ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
+          get :index, params: { account_id: account.id, stage_id: novo_stage.id }
+        end
+        expect(response).to have_http_status(:ok)
+        # Eager-load budget: 1 users + 1 attachments (contact) + 1 attachments (owner) +
+        # 1 blobs (contact) + 1 blobs (owner) = 5. Add small buffer for auth lookups.
+        # Without owner eager-load: at least 5 extra (one user query per lead) → would blow past.
+        expect(per_row_query_count).to be < 10
+      end
+    end
+  end
 end

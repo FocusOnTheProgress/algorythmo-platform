@@ -31,6 +31,11 @@ class Algorythmo::CrmListener < BaseListener
     # algorythmo: feature-gate algorythmo_crm
     return unless Algorythmo::FeatureGate.cut_enabled?(account, 'crm')
 
+    if outgoing_from_human?(message)
+      set_owner_on_first_reply(account: account, message: message)
+      return
+    end
+
     # C1 — filter: only incoming messages from a Contact with a known contact_id.
     return unless eligible_message?(message)
 
@@ -44,6 +49,62 @@ class Algorythmo::CrmListener < BaseListener
   end
 
   private
+
+  # §6.2 — True when message is a real human reply to the customer (not nota interna,
+  # not campanha massiva, not regra de automação, not AgentBot, not external_echo).
+  #
+  # Inlines the same predicate as Chatwoot's Message#human_response? (app/models/message.rb:362)
+  # because that method is `private` and can't be called from external classes.
+  # Filters:
+  #   - outgoing? — message goes to the customer (not incoming)
+  #   - !private? — not a nota interna
+  #   - sender.is_a?(User) — real agent (excludes AgentBot, Captain, external_echo)
+  #   - automation_rule_id.blank? — not fired by an automation rule
+  #   - campaign_id.blank? — not part of a mass campaign blast
+  #   - conversation.contact_id.present? — known customer
+  #
+  # Semântica do produto: "primeiro vendedor que atender" = primeira resposta visível ao
+  # cliente, feita por um humano agente registrado, fora de campanha/automação.
+  def outgoing_from_human?(message)
+    message.outgoing? &&
+      !message.private? &&
+      message.sender.is_a?(User) &&
+      message.content_attributes['automation_rule_id'].blank? &&
+      message.additional_attributes['campaign_id'].blank? &&
+      message.conversation&.contact_id.present?
+  end
+
+  # §6.2 — Atomic first-writer-wins owner assignment.
+  # Uses UPDATE ... WHERE owner_id IS NULL so that two concurrent Sidekiq workers
+  # racing on the same lead never corrupt the owner field. The second UPDATE receives
+  # 0 rows because the WHERE no longer matches after the first commits.
+  def set_owner_on_first_reply(account:, message:)
+    contact_id = message.conversation.contact_id
+
+    # Adversarial review PR #51 — Crítico #2: cross-account integrity.
+    # sender.is_a?(User) is not enough — SuperAdmin/staff users can reply to any conversation
+    # without being members of that account. Without this guard, owner_id ends up pointing to
+    # a user who isn't on the account → broken JOINs, leaked emails, frontend explodes.
+    # Membership check is also a cheap second line of defense if a future Chatwoot patch
+    # widens who can reply via API.
+    unless AccountUser.exists?(account_id: account.id, user_id: message.sender_id)
+      Rails.logger.debug { "[CrmListener] sender user=#{message.sender_id} is not a member of account=#{account.id}; skipping owner set" }
+      return
+    end
+
+    open_lead = Algorythmo::Lead.active.open.find_by(contact_id: contact_id, account_id: account.id)
+    unless open_lead
+      # Debug (não warn): SDR/cold-outbound legitimamente bate aqui em volume.
+      Rails.logger.debug { "[CrmListener] outgoing from user=#{message.sender_id} but no open lead for contact_id=#{contact_id}" }
+      return
+    end
+
+    updated = Algorythmo::Lead
+              .where(id: open_lead.id, owner_id: nil)
+              .update_all(owner_id: message.sender_id, updated_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
+
+    Rails.logger.debug { "[CrmListener] owner already set for lead=#{open_lead.id}" } if updated.zero?
+  end
 
   # C1 — Eligibility filter. Returns false for:
   #   - outgoing / activity / template messages
