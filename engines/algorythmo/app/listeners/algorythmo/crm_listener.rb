@@ -25,7 +25,7 @@ class Algorythmo::CrmListener < BaseListener
   include ::Events::Types
 
   # Entry point — called by AsyncDispatcher for every 'message.created' event.
-  def message_created(event) # rubocop:disable Metrics/CyclomaticComplexity
+  def message_created(event)
     message, account = extract_message_and_account(event)
 
     # algorythmo: feature-gate algorythmo_crm
@@ -46,8 +46,6 @@ class Algorythmo::CrmListener < BaseListener
     # algorythmo: ChatwootExceptionTracker forwards to Sentry/Honeybadger when configured — do not swallow silently
     ChatwootExceptionTracker.new(e, account: message&.conversation&.account).capture_exception
     Rails.logger.error("[CrmListener] #{e.class}: #{e.message}\n#{e.backtrace.first(20).join("\n")}")
-    # algorythmo:DIAG-PR51 — temporary: re-raise in test env so CI surfaces swallowed errors
-    raise e if Rails.env.test?
   end
 
   private
@@ -55,18 +53,24 @@ class Algorythmo::CrmListener < BaseListener
   # §6.2 — True when message is a real human reply to the customer (not nota interna,
   # not campanha massiva, not regra de automação, not AgentBot, not external_echo).
   #
-  # Delegates to Chatwoot's canonical Message#human_response? (single source of truth —
-  # see app/models/message.rb:362) which excludes automation_rule_id, campaign_id and
-  # AgentBot/Captain. We add !private? (notas internas) and an explicit sender.is_a?(User)
-  # to filter external_echo (where human_response? is true but sender is nil — message
-  # mirrored from the native WhatsApp/Instagram app, not an in-Chatwoot reply by an agent).
+  # Inlines the same predicate as Chatwoot's Message#human_response? (app/models/message.rb:362)
+  # because that method is `private` and can't be called from external classes.
+  # Filters:
+  #   - outgoing? — message goes to the customer (not incoming)
+  #   - !private? — not a nota interna
+  #   - sender.is_a?(User) — real agent (excludes AgentBot, Captain, external_echo)
+  #   - automation_rule_id.blank? — not fired by an automation rule
+  #   - campaign_id.blank? — not part of a mass campaign blast
+  #   - conversation.contact_id.present? — known customer
   #
   # Semântica do produto: "primeiro vendedor que atender" = primeira resposta visível ao
   # cliente, feita por um humano agente registrado, fora de campanha/automação.
   def outgoing_from_human?(message)
-    message.human_response? &&
+    message.outgoing? &&
       !message.private? &&
       message.sender.is_a?(User) &&
+      message.content_attributes['automation_rule_id'].blank? &&
+      message.additional_attributes['campaign_id'].blank? &&
       message.conversation&.contact_id.present?
   end
 
