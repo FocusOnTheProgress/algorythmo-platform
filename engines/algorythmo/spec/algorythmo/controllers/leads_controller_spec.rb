@@ -842,27 +842,43 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
     end
 
     describe 'N+1 — includes(:owner) prevents extra queries on index_by_stage' do
-      it 'does not fire per-lead owner queries' do
+      it 'does not fire per-lead user/avatar_attachment/blob queries' do
+        # Adversarial review PR #51 — Crítico #1: the regression test must have teeth.
+        # Without real avatars attached, Avatarable#avatar_url short-circuits on
+        # avatar.attached? before hitting active_storage_blobs, masking the N+1.
+        # Attach actual files so the eager-load chain (owner → attachment → blob) fires.
         owner_users = create_list(:user, 5, account: account)
-        contacts    = create_list(:contact, 5, account: account)
+        owner_users.each do |u|
+          u.avatar.attach(
+            io: Rails.root.join('spec/assets/avatar.png').open,
+            filename: 'avatar.png',
+            content_type: 'image/png'
+          )
+        end
+        contacts = create_list(:contact, 5, account: account)
         contacts.each_with_index do |c, i|
           l = Algorythmo::Lead.create!(account: account, contact: c, stage: novo_stage,
                                        position: i.to_f + 1, stage_entered_at: Time.current)
           l.update_columns(owner_id: owner_users[i].id)
         end
 
-        query_count = 0
-        counter = ->(*, **) { query_count += 1 }
+        # Tally specifically the per-row queries the eager-load chain is supposed to batch:
+        # SELECT FROM "users", "active_storage_attachments", "active_storage_blobs".
+        # With includes(owner: { avatar_attachment: :blob }) we expect ≤ 1 of each
+        # (batched IN-list). Without it we'd see 5+ of each (one per lead).
+        per_row_query_count = 0
+        counter = lambda { |_, _, _, _, payload|
+          sql = payload[:sql].to_s
+          per_row_query_count += 1 if sql =~ /FROM "users"|FROM "active_storage_attachments"|FROM "active_storage_blobs"/
+        }
         ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
           get :index, params: { account_id: account.id, stage_id: novo_stage.id }
         end
         expect(response).to have_http_status(:ok)
-        # With includes(:owner): leads query + 1 batch owner query (not N queries).
-        # Threshold: baseline ~10-12 (auth + leads + stage + contacts + attachments + blobs + owner).
-        # Without includes, each of 5 leads fires 1 extra owner query = 5 extra, pushing > 17.
-        # The exact number depends on the eager-load chain; the assertion guards against
-        # the per-lead N+1 explosion (which would push > 20), not absolute count.
-        expect(query_count).to be < 18
+        # Eager-load budget: 1 users + 1 attachments (contact) + 1 attachments (owner) +
+        # 1 blobs (contact) + 1 blobs (owner) = 5. Add small buffer for auth lookups.
+        # Without owner eager-load: at least 5 extra (one user query per lead) → would blow past.
+        expect(per_row_query_count).to be < 10
       end
     end
   end

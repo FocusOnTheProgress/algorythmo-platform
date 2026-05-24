@@ -80,7 +80,19 @@ class Algorythmo::CrmListener < BaseListener
   # 0 rows because the WHERE no longer matches after the first commits.
   def set_owner_on_first_reply(account:, message:)
     contact_id = message.conversation.contact_id
-    open_lead  = Algorythmo::Lead.active.open.find_by(contact_id: contact_id, account_id: account.id)
+
+    # Adversarial review PR #51 — Crítico #2: cross-account integrity.
+    # sender.is_a?(User) is not enough — SuperAdmin/staff users can reply to any conversation
+    # without being members of that account. Without this guard, owner_id ends up pointing to
+    # a user who isn't on the account → broken JOINs, leaked emails, frontend explodes.
+    # Membership check is also a cheap second line of defense if a future Chatwoot patch
+    # widens who can reply via API.
+    unless AccountUser.exists?(account_id: account.id, user_id: message.sender_id)
+      Rails.logger.debug { "[CrmListener] sender user=#{message.sender_id} is not a member of account=#{account.id}; skipping owner set" }
+      return
+    end
+
+    open_lead = Algorythmo::Lead.active.open.find_by(contact_id: contact_id, account_id: account.id)
     unless open_lead
       # Debug (não warn): SDR/cold-outbound legitimamente bate aqui em volume.
       Rails.logger.debug { "[CrmListener] outgoing from user=#{message.sender_id} but no open lead for contact_id=#{contact_id}" }

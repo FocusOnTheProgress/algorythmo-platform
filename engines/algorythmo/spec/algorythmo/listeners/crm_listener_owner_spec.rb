@@ -233,6 +233,31 @@ RSpec.describe Algorythmo::CrmListener, type: :listener do
     end
   end
 
+  # ── Scenario 8d: sender User is NOT an AccountUser of this account ───────────
+  #
+  # Adversarial review PR #51 — Crítico #2: cross-account integrity.
+  # SuperAdmin / staff / a User mistakenly granted reply rights from another account
+  # would otherwise be written into owner_id, leaving a Lead pointing at a non-member.
+  # Frontend joins owner against AccountUser → user disappears from /agents → owner
+  # avatar 404s, name "Unknown", drawer crashes. Guard: AccountUser.exists?
+
+  describe 'outgoing message from User who is NOT a member of the account' do
+    let(:other_account) { create(:account) }
+    let(:foreign_user)  { create(:user, account: other_account) } # member of other_account only
+
+    it 'does not set owner_id (membership guard)' do
+      msg = create(:message,
+                   message_type: :outgoing,
+                   account: account,
+                   inbox: inbox,
+                   conversation: conversation,
+                   sender: foreign_user)
+
+      listener.message_created(build_event(msg))
+      expect(open_lead.reload.owner_id).to be_nil
+    end
+  end
+
   # ── Scenario 8: outgoing from User but conversation has no contact_id ─────────
 
   describe 'outgoing message from User on conversation with nil contact_id' do
