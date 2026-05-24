@@ -33,7 +33,8 @@ RSpec.describe Algorythmo::FeatureGate do
     end
 
     it 'returns false and logs warning when account does not respond to feature_enabled? (H1)' do
-      dummy = double('NotAnAccount', id: 999)
+      # Use a real Account double (verifying) but force it to raise NoMethodError.
+      dummy = instance_double(Account, id: 999)
       allow(dummy).to receive(:feature_enabled?).and_raise(NoMethodError, 'undefined method')
       expect(Rails.logger).to receive(:warn).with(/NoMethodError/)
       expect(described_class.feature_enabled?(dummy, 'ip_lookup')).to be false

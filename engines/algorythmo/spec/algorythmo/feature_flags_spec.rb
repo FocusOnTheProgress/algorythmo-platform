@@ -43,7 +43,7 @@ RSpec.describe 'Algorythmo feature flags', type: :model do
     it 'uses the algorythmo_feature_flags column (not the upstream feature_flags column)' do
       account.algorythmo_cut_crm = true
       account.save!
-      expect(account.reload.algorythmo_feature_flags).to be > 0
+      expect(account.reload.algorythmo_feature_flags).to be_positive
     end
   end
 
