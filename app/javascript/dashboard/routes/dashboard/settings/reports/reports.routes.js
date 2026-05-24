@@ -165,7 +165,11 @@ export default {
         {
           path: 'bot',
           name: 'bot_reports',
-          meta,
+          meta: {
+            ...meta,
+            // algorythmo: feature-gate algorythmo_cut_reports_bot
+            algorythmoCutFlag: 'algorythmo_cut_reports_bot',
+          },
           component: BotReports,
         },
       ],

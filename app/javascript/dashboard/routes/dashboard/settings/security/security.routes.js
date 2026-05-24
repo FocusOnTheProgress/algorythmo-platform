@@ -33,6 +33,8 @@ export default {
               INSTALLATION_TYPES.CLOUD,
               INSTALLATION_TYPES.ENTERPRISE,
             ],
+            // algorythmo: feature-gate algorythmo_cut_security_settings
+            algorythmoCutFlag: 'algorythmo_cut_security_settings',
           },
         },
       ],

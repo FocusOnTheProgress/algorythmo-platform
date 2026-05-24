@@ -14,6 +14,8 @@ export default {
           component: ConversationWorkflowIndex,
           meta: {
             permissions: ['administrator'],
+            // algorythmo: feature-gate algorythmo_cut_conversation_workflow
+            algorythmoCutFlag: 'algorythmo_cut_conversation_workflow',
           },
         },
       ],

@@ -27,6 +27,8 @@ export default {
               INSTALLATION_TYPES.ENTERPRISE,
             ],
             permissions: ['administrator'],
+            // algorythmo: feature-gate algorythmo_cut_audit_logs
+            algorythmoCutFlag: 'algorythmo_cut_audit_logs',
           },
           component: AuditLogsHome,
         },

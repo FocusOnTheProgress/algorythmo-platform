@@ -89,6 +89,82 @@ describe('isRouteBlockedByAlgorythmoGate', () => {
     });
   });
 
+  describe('when the route has algorythmoCutFlag (M2 Onda 2 cut surfaces)', () => {
+    const to = {
+      meta: {
+        algorythmoCutFlag: 'algorythmo_cut_campaigns',
+        permissions: ['administrator'],
+      },
+    };
+
+    it('returns true (blocks) when the cut flag is enabled (hide the surface)', () => {
+      expect(
+        isRouteBlockedByAlgorythmoGate(to, makeGetter(true), ACCOUNT_ID)
+      ).toBe(true);
+    });
+
+    it('returns false (allows) when the cut flag is disabled (show the surface)', () => {
+      expect(
+        isRouteBlockedByAlgorythmoGate(to, makeGetter(false), ACCOUNT_ID)
+      ).toBe(false);
+    });
+
+    it('passes the correct accountId and cut flag name to the getter', () => {
+      const getterSpy = vi.fn(() => false);
+      isRouteBlockedByAlgorythmoGate(to, getterSpy, ACCOUNT_ID);
+      expect(getterSpy).toHaveBeenCalledWith(
+        ACCOUNT_ID,
+        'algorythmo_cut_campaigns'
+      );
+    });
+
+    it('returns false (allows, fail-open) when the getter throws', () => {
+      const throwingGetter = () => {
+        throw new Error('store not ready');
+      };
+      expect(
+        isRouteBlockedByAlgorythmoGate(to, throwingGetter, ACCOUNT_ID)
+      ).toBe(false);
+    });
+
+    it('returns false (allows) when the getter returns undefined', () => {
+      expect(
+        isRouteBlockedByAlgorythmoGate(to, () => undefined, ACCOUNT_ID)
+      ).toBe(false);
+    });
+
+    it('returns false (allows) when the getter returns a truthy non-boolean (strict === true required)', () => {
+      // Defensive: only the exact boolean true blocks. Anything else fails open.
+      expect(isRouteBlockedByAlgorythmoGate(to, () => 1, ACCOUNT_ID)).toBe(
+        false
+      );
+    });
+  });
+
+  describe('when the route has BOTH algorythmoFeatureFlag and algorythmoCutFlag', () => {
+    // The enable (opt-in) flag takes precedence; cut flag is not consulted.
+    const to = {
+      meta: {
+        algorythmoFeatureFlag: 'algorythmo_show_captain',
+        algorythmoCutFlag: 'algorythmo_cut_campaigns',
+      },
+    };
+
+    it('blocks based on the enable flag, ignoring the cut flag', () => {
+      // Enable flag off, cut flag also off — helper must read enable first and block.
+      const getter = (_, name) => name !== 'algorythmo_show_captain';
+      expect(isRouteBlockedByAlgorythmoGate(to, getter, ACCOUNT_ID)).toBe(true);
+    });
+
+    it('allows when the enable flag is on, regardless of the cut flag', () => {
+      // Enable flag on, cut flag also on — helper short-circuits on enable and allows.
+      const getter = () => true;
+      expect(isRouteBlockedByAlgorythmoGate(to, getter, ACCOUNT_ID)).toBe(
+        false
+      );
+    });
+  });
+
   describe('redirect destination (integration with router index.js logic)', () => {
     it('redirect path format matches accounts/:accountId/dashboard convention', () => {
       // Verify the format the router uses for redirecting — not testing the router itself,

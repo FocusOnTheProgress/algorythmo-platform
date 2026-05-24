@@ -6,9 +6,14 @@ import SMSCampaignsPage from './pages/SMSCampaignsPage.vue';
 import WhatsAppCampaignsPage from './pages/WhatsAppCampaignsPage.vue';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
+// algorythmo: feature-gate algorythmo_cut_campaigns
+// Cut flag (inverted semantic): when enabled, the route guard in
+// routeHelpers.js#isRouteBlockedByAlgorythmoGate redirects to the dashboard.
+// Default is disabled → upstream campaigns surface remains available.
 const meta = {
   featureFlag: FEATURE_FLAGS.CAMPAIGNS,
   permissions: ['administrator'],
+  algorythmoCutFlag: 'algorythmo_cut_campaigns',
 };
 
 const campaignsRoutes = {

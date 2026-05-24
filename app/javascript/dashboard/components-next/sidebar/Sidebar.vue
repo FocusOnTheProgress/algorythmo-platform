@@ -71,6 +71,38 @@ const hasCaptain = computed(() => {
   );
 });
 
+// algorythmo: feature-gate algorythmo_cut_*
+// Cut flags use inverted semantic: when enabled, the surface is HIDDEN.
+// All 13 cut flags default false → upstream surfaces remain visible until a
+// super-admin enables the cut for a specific tenant via the Algorythmo flags UI.
+// Source of truth for names: Algorythmo::FeatureFlagBits::CUT_FLAG_NAMES.
+const isAlgorythmoCutHidden = cutName =>
+  computed(() =>
+    isFeatureEnabledonAccount.value(
+      accountId.value,
+      `algorythmo_cut_${cutName}`
+    )
+  );
+
+const hideCampaigns = isAlgorythmoCutHidden('campaigns');
+const hideHelpCenter = isAlgorythmoCutHidden('help_center');
+const hideSla = isAlgorythmoCutHidden('sla');
+const hideAuditLogs = isAlgorythmoCutHidden('audit_logs');
+const hideCustomRoles = isAlgorythmoCutHidden('custom_roles');
+const hideSecuritySettings = isAlgorythmoCutHidden('security_settings');
+const hideBillingSettings = isAlgorythmoCutHidden('billing_settings');
+const hideAgentBots = isAlgorythmoCutHidden('agent_bots');
+const hideMacros = isAlgorythmoCutHidden('macros');
+const hideAdvancedAssignment = isAlgorythmoCutHidden('advanced_assignment');
+const hideReportsBot = isAlgorythmoCutHidden('reports_bot');
+const hideConversationWorkflow = isAlgorythmoCutHidden('conversation_workflow');
+
+// Even when the upstream ADVANCED_ASSIGNMENT capability is present, the cut
+// suppresses the sidebar item so PME tenants never see capacity-planning UI.
+const showAdvancedAssignment = computed(
+  () => hasAdvancedAssignment.value && !hideAdvancedAssignment.value
+);
+
 const hasConversationUnreadCounts = computed(() => {
   return isFeatureEnabledonAccount.value(
     accountId.value,
@@ -575,82 +607,97 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.REPORTS_SLA'),
           to: accountScopedRoute('sla_reports'),
         },
-        {
-          name: 'Reports Bot',
-          label: t('SIDEBAR.REPORTS_BOT'),
-          to: accountScopedRoute('bot_reports'),
-        },
+        // algorythmo: feature-gate algorythmo_cut_reports_bot
+        ...(hideReportsBot.value
+          ? []
+          : [
+              {
+                name: 'Reports Bot',
+                label: t('SIDEBAR.REPORTS_BOT'),
+                to: accountScopedRoute('bot_reports'),
+              },
+            ]),
       ],
     },
-    {
-      name: 'Campaigns',
-      label: t('SIDEBAR.CAMPAIGNS'),
-      icon: 'i-lucide-megaphone',
-      children: [
-        {
-          name: 'Live chat',
-          label: t('SIDEBAR.LIVE_CHAT'),
-          to: accountScopedRoute('campaigns_livechat_index'),
-        },
-        {
-          name: 'SMS',
-          label: t('SIDEBAR.SMS'),
-          to: accountScopedRoute('campaigns_sms_index'),
-        },
-        {
-          name: 'WhatsApp',
-          label: t('SIDEBAR.WHATSAPP'),
-          to: accountScopedRoute('campaigns_whatsapp_index'),
-        },
-      ],
-    },
-    {
-      name: 'Portals',
-      label: t('SIDEBAR.HELP_CENTER.TITLE'),
-      icon: 'i-lucide-library-big',
-      children: [
-        {
-          name: 'Articles',
-          label: t('SIDEBAR.HELP_CENTER.ARTICLES'),
-          activeOn: [
-            'portals_articles_index',
-            'portals_articles_new',
-            'portals_articles_edit',
-          ],
-          to: accountScopedRoute('portals_index', {
-            navigationPath: 'portals_articles_index',
-          }),
-        },
-        {
-          name: 'Categories',
-          label: t('SIDEBAR.HELP_CENTER.CATEGORIES'),
-          activeOn: [
-            'portals_categories_index',
-            'portals_categories_articles_index',
-            'portals_categories_articles_edit',
-          ],
-          to: accountScopedRoute('portals_index', {
-            navigationPath: 'portals_categories_index',
-          }),
-        },
-        {
-          name: 'Locales',
-          label: t('SIDEBAR.HELP_CENTER.LOCALES'),
-          activeOn: ['portals_locales_index'],
-          to: accountScopedRoute('portals_index', {
-            navigationPath: 'portals_locales_index',
-          }),
-        },
-        {
-          name: 'Settings',
-          label: t('SIDEBAR.HELP_CENTER.SETTINGS'),
-          activeOn: ['portals_settings_index'],
-          to: accountScopedRoute('portals_index', {
-            navigationPath: 'portals_settings_index',
-          }),
-        },
-      ],
-    },
+    // algorythmo: feature-gate algorythmo_cut_campaigns
+    ...(hideCampaigns.value
+      ? []
+      : [
+          {
+            name: 'Campaigns',
+            label: t('SIDEBAR.CAMPAIGNS'),
+            icon: 'i-lucide-megaphone',
+            children: [
+              {
+                name: 'Live chat',
+                label: t('SIDEBAR.LIVE_CHAT'),
+                to: accountScopedRoute('campaigns_livechat_index'),
+              },
+              {
+                name: 'SMS',
+                label: t('SIDEBAR.SMS'),
+                to: accountScopedRoute('campaigns_sms_index'),
+              },
+              {
+                name: 'WhatsApp',
+                label: t('SIDEBAR.WHATSAPP'),
+                to: accountScopedRoute('campaigns_whatsapp_index'),
+              },
+            ],
+          },
+        ]),
+    // algorythmo: feature-gate algorythmo_cut_help_center
+    ...(hideHelpCenter.value
+      ? []
+      : [
+          {
+            name: 'Portals',
+            label: t('SIDEBAR.HELP_CENTER.TITLE'),
+            icon: 'i-lucide-library-big',
+            children: [
+              {
+                name: 'Articles',
+                label: t('SIDEBAR.HELP_CENTER.ARTICLES'),
+                activeOn: [
+                  'portals_articles_index',
+                  'portals_articles_new',
+                  'portals_articles_edit',
+                ],
+                to: accountScopedRoute('portals_index', {
+                  navigationPath: 'portals_articles_index',
+                }),
+              },
+              {
+                name: 'Categories',
+                label: t('SIDEBAR.HELP_CENTER.CATEGORIES'),
+                activeOn: [
+                  'portals_categories_index',
+                  'portals_categories_articles_index',
+                  'portals_categories_articles_edit',
+                ],
+                to: accountScopedRoute('portals_index', {
+                  navigationPath: 'portals_categories_index',
+                }),
+              },
+              {
+                name: 'Locales',
+                label: t('SIDEBAR.HELP_CENTER.LOCALES'),
+                activeOn: ['portals_locales_index'],
+                to: accountScopedRoute('portals_index', {
+                  navigationPath: 'portals_locales_index',
+                }),
+              },
+              {
+                name: 'Settings',
+                label: t('SIDEBAR.HELP_CENTER.SETTINGS'),
+                activeOn: ['portals_settings_index'],
+                to: accountScopedRoute('portals_index', {
+                  navigationPath: 'portals_settings_index',
+                }),
+              },
+            ],
+          },
+        ]),
     {
       name: 'Settings',
       label: t('SIDEBAR.SETTINGS'),
@@ -690,7 +737,9 @@ const menuItems = computed(() => {
           ],
           to: accountScopedRoute('settings_teams_list'),
         },
-        ...(hasAdvancedAssignment.value
+        // algorythmo: feature-gate algorythmo_cut_advanced_assignment
+        // Upstream capability AND cut must both allow the item.
+        ...(showAdvancedAssignment.value
           ? [
               {
                 name: 'Settings Agent Assignment',
@@ -741,18 +790,28 @@ const menuItems = computed(() => {
           icon: 'i-lucide-repeat',
           to: accountScopedRoute('automation_list'),
         },
-        {
-          name: 'Settings Agent Bots',
-          label: t('SIDEBAR.AGENT_BOTS'),
-          icon: 'i-lucide-bot',
-          to: accountScopedRoute('agent_bots'),
-        },
-        {
-          name: 'Settings Macros',
-          label: t('SIDEBAR.MACROS'),
-          icon: 'i-lucide-toy-brick',
-          to: accountScopedRoute('macros_wrapper'),
-        },
+        // algorythmo: feature-gate algorythmo_cut_agent_bots
+        ...(hideAgentBots.value
+          ? []
+          : [
+              {
+                name: 'Settings Agent Bots',
+                label: t('SIDEBAR.AGENT_BOTS'),
+                icon: 'i-lucide-bot',
+                to: accountScopedRoute('agent_bots'),
+              },
+            ]),
+        // algorythmo: feature-gate algorythmo_cut_macros
+        ...(hideMacros.value
+          ? []
+          : [
+              {
+                name: 'Settings Macros',
+                label: t('SIDEBAR.MACROS'),
+                icon: 'i-lucide-toy-brick',
+                to: accountScopedRoute('macros_wrapper'),
+              },
+            ]),
         {
           name: 'Settings Canned Responses',
           label: t('SIDEBAR.CANNED_RESPONSES'),
@@ -765,42 +824,72 @@ const menuItems = computed(() => {
           icon: 'i-lucide-blocks',
           to: accountScopedRoute('settings_applications'),
         },
-        {
-          name: 'Settings Audit Logs',
-          label: t('SIDEBAR.AUDIT_LOGS'),
-          icon: 'i-lucide-briefcase',
-          to: accountScopedRoute('auditlogs_list'),
-        },
-        {
-          name: 'Settings Custom Roles',
-          label: t('SIDEBAR.CUSTOM_ROLES'),
-          icon: 'i-lucide-shield-plus',
-          to: accountScopedRoute('custom_roles_list'),
-        },
-        {
-          name: 'Settings Sla',
-          label: t('SIDEBAR.SLA'),
-          icon: 'i-lucide-clock-alert',
-          to: accountScopedRoute('sla_list'),
-        },
-        {
-          name: 'Conversation Workflow',
-          label: t('SIDEBAR.CONVERSATION_WORKFLOW'),
-          icon: 'i-lucide-workflow',
-          to: accountScopedRoute('conversation_workflow_index'),
-        },
-        {
-          name: 'Settings Security',
-          label: t('SIDEBAR.SECURITY'),
-          icon: 'i-lucide-shield',
-          to: accountScopedRoute('security_settings_index'),
-        },
-        {
-          name: 'Settings Billing',
-          label: t('SIDEBAR.BILLING'),
-          icon: 'i-lucide-credit-card',
-          to: accountScopedRoute('billing_settings_index'),
-        },
+        // algorythmo: feature-gate algorythmo_cut_audit_logs
+        ...(hideAuditLogs.value
+          ? []
+          : [
+              {
+                name: 'Settings Audit Logs',
+                label: t('SIDEBAR.AUDIT_LOGS'),
+                icon: 'i-lucide-briefcase',
+                to: accountScopedRoute('auditlogs_list'),
+              },
+            ]),
+        // algorythmo: feature-gate algorythmo_cut_custom_roles
+        ...(hideCustomRoles.value
+          ? []
+          : [
+              {
+                name: 'Settings Custom Roles',
+                label: t('SIDEBAR.CUSTOM_ROLES'),
+                icon: 'i-lucide-shield-plus',
+                to: accountScopedRoute('custom_roles_list'),
+              },
+            ]),
+        // algorythmo: feature-gate algorythmo_cut_sla
+        ...(hideSla.value
+          ? []
+          : [
+              {
+                name: 'Settings Sla',
+                label: t('SIDEBAR.SLA'),
+                icon: 'i-lucide-clock-alert',
+                to: accountScopedRoute('sla_list'),
+              },
+            ]),
+        // algorythmo: feature-gate algorythmo_cut_conversation_workflow
+        ...(hideConversationWorkflow.value
+          ? []
+          : [
+              {
+                name: 'Conversation Workflow',
+                label: t('SIDEBAR.CONVERSATION_WORKFLOW'),
+                icon: 'i-lucide-workflow',
+                to: accountScopedRoute('conversation_workflow_index'),
+              },
+            ]),
+        // algorythmo: feature-gate algorythmo_cut_security_settings
+        ...(hideSecuritySettings.value
+          ? []
+          : [
+              {
+                name: 'Settings Security',
+                label: t('SIDEBAR.SECURITY'),
+                icon: 'i-lucide-shield',
+                to: accountScopedRoute('security_settings_index'),
+              },
+            ]),
+        // algorythmo: feature-gate algorythmo_cut_billing_settings
+        ...(hideBillingSettings.value
+          ? []
+          : [
+              {
+                name: 'Settings Billing',
+                label: t('SIDEBAR.BILLING'),
+                icon: 'i-lucide-credit-card',
+                to: accountScopedRoute('billing_settings_index'),
+              },
+            ]),
       ],
     },
   ];
