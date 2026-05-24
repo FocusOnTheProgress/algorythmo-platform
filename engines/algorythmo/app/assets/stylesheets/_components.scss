@@ -615,3 +615,359 @@
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.55; }
 }
+
+// =============================================================================
+// DRAWER — side-panel (420px) with slide-in animation and scrim
+// =============================================================================
+// Vue wrapper: AlgDrawer.vue (components-next/algorythmo/AlgDrawer.vue)
+// Usage: <AlgDrawer v-model:open="isOpen" title="Lead Detail">...</AlgDrawer>
+
+.alg-drawer-scrim {
+  position: fixed;
+  inset: 0;
+  background-color: var(--alg-bg-overlay);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  z-index: var(--alg-z-overlay);
+  animation: alg-fade-in var(--alg-duration-base) var(--alg-ease-out);
+}
+
+.alg-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--alg-drawer-width);  // 420px (token)
+  max-width: 100vw;
+  z-index: var(--alg-z-modal);
+
+  display: flex;
+  flex-direction: column;
+  background-color: var(--alg-bg-raised);
+  border-left: 1px solid var(--alg-border);
+  box-shadow: var(--alg-shadow-xl);
+
+  animation: alg-drawer-in var(--alg-duration-slow) var(--alg-ease-out);
+  will-change: transform;
+
+  @media (max-width: 768px) {
+    width: 100vw;
+    border-left: none;
+  }
+}
+
+.alg-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--alg-space-4);
+  padding: var(--alg-space-5) var(--alg-space-6);
+  border-bottom: 1px solid var(--alg-border);
+  flex-shrink: 0;
+}
+
+.alg-drawer__title {
+  font-family: var(--alg-font-display);
+  font-size: var(--alg-text-md);
+  font-weight: var(--alg-weight-semibold);
+  letter-spacing: var(--alg-tracking-tight);
+  color: var(--alg-text-primary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alg-drawer__body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--alg-space-6);
+  color: var(--alg-text-secondary);
+  font-size: var(--alg-text-sm);
+}
+
+.alg-drawer__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--alg-space-2);
+  padding: var(--alg-space-4) var(--alg-space-6);
+  border-top: 1px solid var(--alg-border);
+  flex-shrink: 0;
+}
+
+@keyframes alg-drawer-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes alg-drawer-out {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+
+.alg-drawer--leaving {
+  animation: alg-drawer-out var(--alg-duration-base) var(--alg-ease-in) forwards;
+}
+
+// =============================================================================
+// MENU — ⋮ dropdown / context menu
+// =============================================================================
+// Vue wrapper: AlgMenu.vue
+// Positioning: @vueuse/core useFloating (already in deps).
+// Trigger: click (not hover). Keyboard: ↑↓ navigate, Enter selects, Esc closes.
+
+.alg-menu {
+  position: absolute;
+  z-index: var(--alg-z-dropdown);
+  min-width: 10rem;
+
+  background-color: var(--alg-bg-raised);
+  border: 1px solid var(--alg-border);
+  border-radius: var(--alg-radius-lg);
+  box-shadow: var(--alg-shadow-lg);
+  padding: var(--alg-space-1) 0;
+
+  animation: alg-menu-in var(--alg-duration-fast) var(--alg-ease-out);
+}
+
+.alg-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--alg-space-2);
+  width: 100%;
+  padding: var(--alg-space-2) var(--alg-space-3);
+  font-size: var(--alg-text-sm);
+  font-weight: var(--alg-weight-regular);
+  color: var(--alg-text-secondary);
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  border-radius: calc(var(--alg-radius-lg) - 2px);
+  margin: 0 var(--alg-space-1);
+  width: calc(100% - var(--alg-space-2));
+  transition:
+    background-color var(--alg-duration-instant) var(--alg-ease-out),
+    color var(--alg-duration-instant) var(--alg-ease-out);
+
+  &:hover,
+  &:focus,
+  &[data-focused='true'] {
+    background-color: var(--alg-bg-raised-hover);
+    color: var(--alg-text-primary);
+    outline: none;
+  }
+
+  &[aria-disabled='true'],
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  > .alg-menu__item-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    color: var(--alg-text-tertiary);
+  }
+}
+
+.alg-menu__item--danger {
+  color: var(--alg-text-danger);
+
+  &:hover,
+  &:focus,
+  &[data-focused='true'] {
+    background-color: var(--alg-color-danger-subtle);
+    color: var(--alg-color-danger);
+  }
+}
+
+.alg-menu__separator {
+  height: 1px;
+  background-color: var(--alg-border);
+  margin: var(--alg-space-1) 0;
+}
+
+@keyframes alg-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// =============================================================================
+// TOAST — notification stack (bottom-right, managed by AlgToastContainer.vue)
+// =============================================================================
+
+.alg-toast-container {
+  position: fixed;
+  bottom: var(--alg-space-6);
+  right: var(--alg-space-6);
+  z-index: var(--alg-z-toast);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--alg-space-2);
+  pointer-events: none;
+
+  @media (max-width: 640px) {
+    bottom: var(--alg-space-4);
+    right: var(--alg-space-4);
+    left: var(--alg-space-4);
+  }
+}
+
+.alg-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--alg-space-3);
+  min-width: 18rem;
+  max-width: 26rem;
+  padding: var(--alg-space-3) var(--alg-space-4);
+  background-color: var(--alg-color-neutral-3);
+  border: 1px solid var(--alg-border-hover);
+  border-radius: var(--alg-radius-lg);
+  box-shadow: var(--alg-shadow-lg);
+  font-size: var(--alg-text-sm);
+  color: var(--alg-text-primary);
+
+  animation: alg-toast-in var(--alg-duration-base) var(--alg-ease-out);
+
+  @media (max-width: 640px) {
+    max-width: 100%;
+  }
+}
+
+.alg-toast--success { border-left: 3px solid var(--alg-color-success); }
+.alg-toast--error   { border-left: 3px solid var(--alg-color-danger); }
+.alg-toast--info    { border-left: 3px solid var(--alg-color-info); }
+
+.alg-toast__icon {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.125rem;
+}
+
+.alg-toast__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-space-1);
+}
+
+.alg-toast__message {
+  line-height: var(--alg-leading-snug);
+}
+
+.alg-toast__action {
+  // Compose with .alg-btn .alg-btn--ghost .alg-btn--sm
+  // Self-sizing to message.
+  align-self: flex-start;
+  padding: 0;
+  font-size: var(--alg-text-xs);
+  font-weight: var(--alg-weight-medium);
+  color: var(--alg-text-brand);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover { opacity: 0.85; }
+  &:focus-visible { outline: 2px solid var(--alg-color-brand-primary); outline-offset: 2px; }
+}
+
+.alg-toast__close {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--alg-text-tertiary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--alg-radius-sm);
+  padding: 0;
+  transition: color var(--alg-duration-instant) var(--alg-ease-out);
+
+  &:hover { color: var(--alg-text-primary); }
+  &:focus-visible { outline: 2px solid var(--alg-color-brand-primary); outline-offset: 2px; }
+}
+
+.alg-toast--leaving {
+  animation: alg-toast-out var(--alg-duration-fast) var(--alg-ease-in) forwards;
+}
+
+@keyframes alg-toast-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes alg-toast-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.95); }
+}
+
+// =============================================================================
+// AVATAR — channel/contact photo with gradient fallback
+// =============================================================================
+// Sizes: sm (24px), md (32px), lg (48px)
+// Fallback: deterministic gradient + initials when no src.
+
+.alg-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--alg-radius-pill);
+  overflow: hidden;
+  font-family: var(--alg-font-sans);
+  font-weight: var(--alg-weight-semibold);
+  font-size: var(--alg-text-xs);
+  color: var(--alg-text-inverse);
+  user-select: none;
+  background-color: var(--alg-color-neutral-5);
+
+  // Default size: md (32px)
+  width: 2rem;
+  height: 2rem;
+  font-size: var(--alg-text-xs);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.alg-avatar--sm {
+  width: 1.5rem;   // 24px
+  height: 1.5rem;
+  font-size: var(--alg-text-2xs);
+}
+
+.alg-avatar--lg {
+  width: 3rem;     // 48px
+  height: 3rem;
+  font-size: var(--alg-text-sm);
+}
+
+// Presence ring variants (channel indicators)
+.alg-avatar--ring {
+  box-shadow: 0 0 0 2px var(--alg-bg-raised), 0 0 0 3.5px var(--alg-color-brand-primary);
+}
+
+.alg-avatar--ring-success {
+  box-shadow: 0 0 0 2px var(--alg-bg-raised), 0 0 0 3.5px var(--alg-color-success);
+}

@@ -274,6 +274,101 @@ Placeholder shimmer. Animação 1.4s easing in-out. Em `prefers-reduced-motion: 
 </div>
 ```
 
+### 3.7 `.alg-drawer` — Painel lateral (M1-B)
+
+**Vue wrapper:** `AlgDrawer.vue` (`app/javascript/dashboard/components-next/algorythmo/AlgDrawer.vue`).
+Usa `<teleport to="body">` para garantir stacking context correto sobre todos os outros layers.
+
+**Características:**
+- Largura: `var(--alg-drawer-width)` = 420px. Em `<768px`: `100vw` (full-screen mobile).
+- Slide-in `translateX(100%) → 0` em `--alg-duration-slow` (`var(--alg-ease-out)`).
+- Scrim: `var(--alg-bg-overlay)` + `backdrop-filter: blur(8px)`. Click no scrim fecha (prop `closeOnBackdrop`, default true).
+- Focus trap: Tab/Shift+Tab loop dentro do drawer. Esc fecha. Focus retorna ao trigger ao fechar.
+- `role="dialog"` + `aria-modal="true"` + `aria-label` = título.
+
+**Props:** `open: boolean`, `title: string`, `closeOnBackdrop: boolean` (default true), `closeLabel: string`.
+**Emits:** `update:open`, `close`.
+**Slots:** `default` (corpo), `footer` (ações, renderizado em `.alg-drawer__footer` apenas quando preenchido).
+
+```html
+<AlgDrawer v-model:open="isOpen" title="Detalhes do Lead">
+  <LeadDetailContent :lead="lead" />
+  <template #footer>
+    <button class="alg-btn alg-btn--primary">Salvar</button>
+  </template>
+</AlgDrawer>
+```
+
+### 3.8 `.alg-menu` — Menu de contexto / dropdown ⋮ (M1-B)
+
+**Vue wrapper:** `AlgMenu.vue` (`app/javascript/dashboard/components-next/algorythmo/AlgMenu.vue`).
+Usa `<teleport to="body">` para posicionamento global sem overflow-hidden issues.
+
+**Características:**
+- Posicionamento: calculado com base no bounding rect do trigger + `window.scroll` (sem dependência de `@vueuse/useFloating` que exige `FloatingUI` DOM; implementação leve inline).
+- Auto-flip: `placement` prop (`'bottom-end'` | `'bottom-start'`).
+- Keyboard: ↑↓ navegam entre `[role="menuitem"]`, Enter seleciona, Esc fecha, Tab fecha.
+- Click outside fecha. Focus retorna ao trigger.
+- Trigger via slot scoped `#trigger="{ toggle, isOpen }"`.
+
+**Props:** `label: string`, `placement: string` (default `'bottom-end'`).
+**Emits:** `open`, `close`.
+
+```html
+<AlgMenu label="Ações do Lead">
+  <template #trigger="{ toggle }">
+    <button class="alg-btn alg-btn--ghost alg-btn--icon alg-btn--sm"
+            aria-label="Mais ações" @click="toggle">⋮</button>
+  </template>
+  <button role="menuitem" @click="moveToStage">Mover para...</button>
+  <button role="menuitem" @click="reopen">Reabrir como novo Lead</button>
+  <hr class="alg-menu__separator" />
+  <button role="menuitem" class="alg-menu__item--danger">Deletar</button>
+</AlgMenu>
+```
+
+### 3.9 `.alg-toast` — Notificações transitórias (M1-B)
+
+**Vue wrappers:**
+- `AlgToast.vue` — render individual de um toast (tipo, mensagem, botão retry, botão fechar).
+- `AlgToastContainer.vue` — singleton que usa `<teleport to="body">`, renderizado uma vez no app shell. Consome o `useToast()` composable.
+
+**Composable:** `useToast()` em `app/javascript/dashboard/composables/algorythmo/useToast.js`.
+
+```js
+const { success, error, info } = useToast();
+success('Lead movido com sucesso');
+error('Falha ao mover — tente de novo', { retry: () => retryMove() });
+```
+
+**Comportamento:**
+- Posição: bottom-right. Em mobile (<640px): full-width com margem.
+- Auto-dismiss: success e info = 4s. Error = persiste até o usuário fechar (ou clicar "Tentar de novo").
+- Empilha (queue) — múltiplos toasts simultâneos sobem em coluna.
+- Botão retry em toasts de erro: chama `retry()` e fecha o toast.
+
+**CSS classes:** `.alg-toast`, `.alg-toast--success`, `.alg-toast--error`, `.alg-toast--info`, `.alg-toast-container`.
+
+### 3.10 `.alg-avatar` — Foto de perfil / canal (M1-B)
+
+**Vue wrapper:** `AlgAvatar.vue` (`app/javascript/dashboard/components-next/algorythmo/AlgAvatar.vue`).
+
+**Características:**
+- Fallback determinístico: quando `src` ausente ou falha no load (`@error`), exibe iniciais + gradiente OKLCH gerado via hash do nome. Mesmo nome sempre produz mesmo gradiente — consistência visual mesmo sem foto.
+- Iniciais: dois-word name → primeira letra + última. Single-word → primeiras 2 letras. Sempre uppercase.
+- `border-radius: var(--alg-radius-pill)` = círculo.
+- `role="img"` + `aria-label` = nome do contato/canal.
+
+**Props:** `src?: string`, `name: string`, `size: 'sm'|'md'|'lg'` (24/32/48px).
+
+```html
+<AlgAvatar :src="lead.channel_metadata.photo_url" :name="lead.channel_metadata.name" size="md" />
+<AlgAvatar name="WhatsApp Business" size="sm" /> <!-- fallback gradient com iniciais "WB" -->
+```
+
+**Variants CSS:** `alg-avatar--sm` (24px), default (32px), `alg-avatar--lg` (48px).
+**Ring variants:** `alg-avatar--ring` (brand), `alg-avatar--ring-success` (online/active).
+
 ---
 
 ## 4. LeadAgingChip (D10 + D11) — detalhe operacional
@@ -442,17 +537,20 @@ Light theme foi tunado matematicamente mas não passou por sessão de design ded
 
 ### 7.4 Component coverage — gaps conhecidos
 
-A trilha D entrega o núcleo. A trilha B (Kanban) e M4 (Manu) vão precisar de novos componentes que ainda não existem:
+A trilha D entregou o núcleo. A trilha B (M1-B base) fechou os gaps para o CRM:
 
-- `.alg-toast` — feedback transitório (pós-drag, pós-save).
+**Entregues em M1-B (base PR #2):**
+- ✅ `.alg-drawer` — `AlgDrawer.vue` (§3.7)
+- ✅ `.alg-menu` — `AlgMenu.vue` (§3.8)
+- ✅ `.alg-toast` — `AlgToast.vue` + `AlgToastContainer.vue` + `useToast()` (§3.9)
+- ✅ `.alg-avatar` — `AlgAvatar.vue` (§3.10)
+
+**Ainda pendentes (próximas trilhas):**
 - `.alg-tooltip` — dica contextual hover-only.
-- `.alg-dropdown` / `.alg-menu` — menu ⋮ do card, popover de stage rename.
-- `.alg-drawer` — `LeadDetailDrawer` (B.5). Pode ser implementado como variant lateral do `.alg-modal` ou componente novo.
-- `.alg-avatar` — foto de perfil do Lead (canal). Vir do upstream Chatwoot ou rebuild?
 - `.alg-tabs` — telas de configuração de pipeline.
 - Form fundamentals: `.alg-label`, `.alg-fieldset`, `.alg-select`, `.alg-checkbox`, `.alg-radio`, `.alg-switch`.
 
-Estes serão adicionados em iterações conforme trilha B / M4 demandar. Quem implementar **adiciona aqui no DESIGN.md** na seção 3 e mantém o doc vivo.
+Quem implementar **adiciona aqui no DESIGN.md** na seção 3 e mantém o doc vivo.
 
 ### 7.5 Quando re-revisar este doc
 

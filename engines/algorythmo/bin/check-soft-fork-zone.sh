@@ -32,9 +32,9 @@ check_file() {
     return
   fi
 
-  if ! grep -qE "algorythmo: (rebrand-m0|soft-fork|widget-i18n-overlay|survey-i18n-overlay)" "${full_path}"; then
+  if ! grep -qE "algorythmo: (rebrand-m0|soft-fork|widget-i18n-overlay|survey-i18n-overlay|design-system-import|feature-gate)" "${full_path}"; then
     echo "[FAIL] No algorythmo tag in: ${path}" >&2
-    echo "       Expected tag matching: algorythmo: (rebrand-m0|soft-fork|widget-i18n-overlay|survey-i18n-overlay)" >&2
+    echo "       Expected tag matching: algorythmo: (rebrand-m0|soft-fork|widget-i18n-overlay|survey-i18n-overlay|design-system-import|feature-gate)" >&2
     FAILURES=$(( FAILURES + 1 ))
     return
   fi
@@ -53,6 +53,9 @@ check_file "app/javascript/widget/i18n/index.js" "widget-i18n-overlay"
 check_file "app/javascript/survey/i18n/index.js" "survey-i18n-overlay"
 check_file "app/javascript/survey/views/Response.vue" "rebrand-m0"
 check_file "config/installation_config.yml" "rebrand-m0"
+# M1-B design-system-import entries
+check_file "vite.config.ts" "design-system-import"
+check_file "app/javascript/dashboard/assets/scss/_woot.scss" "design-system-import"
 
 echo ""
 if [[ "${FAILURES}" -gt 0 ]]; then
