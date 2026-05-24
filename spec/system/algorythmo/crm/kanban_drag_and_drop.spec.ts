@@ -1,143 +1,206 @@
 /**
  * Kanban drag-and-drop — Lead between stages
  *
- * Validates:
+ * Validates against CONTRACT_M1B v1.0.0 (§2, §3, §8):
  * 1. Optimistic move: card visually moves immediately (before server response).
  * 2. Persistence: after browser refresh, card remains in target stage.
- * 3. Rollback: network failure restores card to origin stage + toast shown.
+ * 3. Rollback: network failure restores card to origin stage + aria-live announces.
  * 4. Intra-stage drag: dragging within same column does nothing (Q-B3 decision).
- * 5. aria-live announces the move to screen readers.
+ * 5. aria-live region announces the move to screen readers.
  *
- * Acceptance criteria ref:
- *   docs/plans/0001-mvp-algorythmo-os.md §3 criterio 4
- *   docs/plans/0002-m1-trilha-b-frontend-crm.md §5 B.14 cenários 4 + 5
- *   docs/plans/0002-m1-trilha-b-frontend-crm.md §3 T-B4 (optimistic update)
- *   Q-B3: intra-stage reorder disabled
+ * Stage selectors:
+ *   CONTRACT §2 — stage.kind ∈ { 'open' | 'won' | 'lost' }.
+ *   Three open stages (Novo / Qualificado / Proposta) share kind='open' and
+ *   MUST be selected by `data-stage-id`, not by kind.
  *
- * Status: SCAFFOLD — all tests .skip() until Sessão C ships KanbanBoard + drag
- * (B-PR5) and Sessão B ships useKanbanDragDrop (B.2).
+ * i18n-safe assertions:
+ *   Stage names and announce strings are read from `DEFAULT_PIPELINE_STAGES`
+ *   and the pt_BR copy of `ALGORYTHMO_CRM.ANNOUNCE.MOVE_FAILED` rather than
+ *   hard-coded substrings, so a CONTRACT §9 rename can't break this suite.
+ *
+ * Status: SCAFFOLD — all tests .skip() until backend endpoints in CONTRACT §9
+ * are live AND test account has `algorythmo_crm` enabled.
  */
 
-import { test, expect, loginAsAdmin, goToCrm, dragLeadCard, BASE_URL } from './_fixture';
+import {
+  test,
+  expect,
+  loginAsAdmin,
+  goToCrm,
+  dragLeadCard,
+  mockLead,
+  mockDefaultPipeline,
+  mockLeads,
+  DEFAULT_PIPELINE_STAGES,
+  TEST_ACCOUNT_ID,
+} from './_fixture';
+
+const ORIGIN_STAGE = DEFAULT_PIPELINE_STAGES[0]; // Novo, id=1
+const TARGET_STAGE = DEFAULT_PIPELINE_STAGES[1]; // Qualificado, id=2
+
+// pt_BR copy of ALGORYTHMO_CRM.ANNOUNCE.MOVE_FAILED — kept as a separate
+// constant so a single i18n update keeps every spec aligned.
+const ROLLBACK_ANNOUNCE_PATTERN = /não foi possível|retornando/i;
+
+const LEAD_IN_NOVO = mockLead({
+  id: 1,
+  stageId: ORIGIN_STAGE.id,
+  channelOrigin: 'widget',
+  contactName: 'Drag Test',
+});
+
+function mockMoveSuccess(page: Parameters<typeof goToCrm>[0]) {
+  return page.route(
+    `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/leads/1/move`,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 1,
+          stage_id: TARGET_STAGE.id,
+          position: 1.0,
+          stage_entered_at: new Date().toISOString(),
+        }),
+      });
+    }
+  );
+}
 
 test.describe('Kanban — Drag and Drop', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
+    await mockDefaultPipeline(page);
+    await mockLeads(page, [LEAD_IN_NOVO]);
   });
 
   test.skip(
     'drag Lead from "Novo" to "Qualificado" — optimistic move reflects immediately',
     async ({ page }) => {
-      // Arrange: mock pipeline and a lead in "Novo"
-      await page.route(`**/algorythmo/api/v1/accounts/*/pipelines/default`, async (route) => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            pipeline: { id: 1, name: 'Default' },
-            stages: [
-              { id: 1, name: 'Novo', kind: 'new', position: 1, aging_coefficient: 1.0 },
-              { id: 2, name: 'Qualificado', kind: 'qualified', position: 2, aging_coefficient: 4.0 },
-              { id: 3, name: 'Proposta', kind: 'proposal', position: 3, aging_coefficient: 7.0 },
-              { id: 4, name: 'Fechado ganho', kind: 'won', position: 4, aging_coefficient: 0.0 },
-              { id: 5, name: 'Fechado perdido', kind: 'lost', position: 5, aging_coefficient: 0.0 },
-            ],
-          }),
-        });
-      });
-
-      await page.route(`**/algorythmo/api/v1/accounts/*/leads/1/move`, async (route) => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            id: 1,
-            stage_id: 2,
-            position: 1.0,
-            stage_entered_at: new Date().toISOString(),
-          }),
-        });
-      });
+      await mockMoveSuccess(page);
 
       await goToCrm(page);
 
-      const leadCard = page.locator('[data-lead-id="1"]');
-      const novoColumn = page.locator('[data-stage-kind="new"]');
-      const qualifiedColumn = page.locator('[data-stage-kind="qualified"]');
+      const leadCard = page.locator(
+        '[data-testid="lead-card"][data-lead-id="1"]'
+      );
+      const novoColumn = page.locator(
+        `[data-testid="stage-column"][data-stage-id="${ORIGIN_STAGE.id}"]`
+      );
+      const targetColumn = page.locator(
+        `[data-testid="stage-column"][data-stage-id="${TARGET_STAGE.id}"]`
+      );
 
-      // Use dragLeadCard (mouse events) — NOT dragTo (HTML5 drag events).
-      // vuedraggable@4/SortableJS only fires on pointer/mouse events.
-      await dragLeadCard(page, leadCard, qualifiedColumn);
+      await dragLeadCard(leadCard, targetColumn);
 
-      // Optimistic: card immediately visible in target
-      await expect(qualifiedColumn.locator('[data-lead-id="1"]')).toBeVisible();
-      await expect(novoColumn.locator('[data-lead-id="1"]')).toHaveCount(0);
+      await expect(
+        targetColumn.locator('[data-testid="lead-card"][data-lead-id="1"]')
+      ).toBeVisible();
+      await expect(
+        novoColumn.locator('[data-testid="lead-card"][data-lead-id="1"]')
+      ).toHaveCount(0);
     }
   );
 
   test.skip(
     'drag Lead persists after page refresh',
     async ({ page }) => {
+      await mockMoveSuccess(page);
       await goToCrm(page);
 
-      const leadCard = page.locator('[data-lead-id="1"]');
-      const qualifiedColumn = page.locator('[data-stage-kind="qualified"]');
+      const leadCard = page.locator(
+        '[data-testid="lead-card"][data-lead-id="1"]'
+      );
+      const targetColumn = page.locator(
+        `[data-testid="stage-column"][data-stage-id="${TARGET_STAGE.id}"]`
+      );
 
-      await dragLeadCard(page, leadCard, qualifiedColumn);
+      await dragLeadCard(leadCard, targetColumn);
+
+      // Persistence: after refresh, leads list returns the moved lead in target.
+      await page.unroute(
+        `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/leads*`
+      );
+      await mockLeads(page, [{ ...LEAD_IN_NOVO, stage_id: TARGET_STAGE.id }]);
       await page.reload({ waitUntil: 'networkidle' });
 
-      // After reload, card should still be in Qualificado (server persisted)
-      await expect(qualifiedColumn.locator('[data-lead-id="1"]')).toBeVisible({
-        timeout: 10_000,
-      });
+      await expect(
+        targetColumn.locator('[data-testid="lead-card"][data-lead-id="1"]')
+      ).toBeVisible({ timeout: 10_000 });
     }
   );
 
   test.skip(
-    'drag failure (5xx) rolls back card and shows retry toast',
+    'drag failure (5xx) rolls back card and announces via aria-live',
     async ({ page }) => {
-      await page.route(`**/algorythmo/api/v1/accounts/*/leads/*/move`, async (route) => {
+      await page.route(`**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/leads/*/move`, async (route) => {
         await route.fulfill({ status: 500, body: 'Internal Server Error' });
       });
 
       await goToCrm(page);
 
-      const leadCard = page.locator('[data-lead-id="1"]');
-      const novoColumn = page.locator('[data-stage-kind="new"]');
-      const qualifiedColumn = page.locator('[data-stage-kind="qualified"]');
+      const leadCard = page.locator(
+        '[data-testid="lead-card"][data-lead-id="1"]'
+      );
+      const novoColumn = page.locator(
+        `[data-testid="stage-column"][data-stage-id="${ORIGIN_STAGE.id}"]`
+      );
+      const targetColumn = page.locator(
+        `[data-testid="stage-column"][data-stage-id="${TARGET_STAGE.id}"]`
+      );
 
-      await dragLeadCard(page, leadCard, qualifiedColumn);
+      await dragLeadCard(leadCard, targetColumn);
 
-      // Rollback: card returns to origin
-      await expect(novoColumn.locator('[data-lead-id="1"]')).toBeVisible({
-        timeout: 8_000,
+      // Rollback: card returns to origin column.
+      await expect(
+        novoColumn.locator('[data-testid="lead-card"][data-lead-id="1"]')
+      ).toBeVisible({ timeout: 8_000 });
+
+      // CONTRACT §8 — failure announced via the aria-live region. Pattern
+      // tracks the actual pt_BR copy ("Não foi possível mover X, retornando à
+      // etapa anterior") so renaming a button label can't break it.
+      const live = page.locator('[data-testid="aria-live-region"]');
+      await expect(live).toContainText(ROLLBACK_ANNOUNCE_PATTERN, {
+        timeout: 5_000,
       });
-      // Toast with retry button
-      const toast = page.locator('[data-testid="toast-error"]');
-      await expect(toast).toBeVisible();
-      await expect(toast.getByRole('button', { name: /tentar de novo|retry/i })).toBeVisible();
     }
   );
 
   test.skip(
     'intra-stage drag does not change card position (Q-B3)',
     async ({ page }) => {
+      // Two cards in the same stage so order is observable.
+      const a = mockLead({
+        id: 1,
+        stageId: ORIGIN_STAGE.id,
+        contactName: 'Lead A',
+      });
+      const b = mockLead({
+        id: 2,
+        stageId: ORIGIN_STAGE.id,
+        contactName: 'Lead B',
+      });
+      await page.unroute(
+        `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/leads*`
+      );
+      await mockLeads(page, [a, b]);
+
       await goToCrm(page);
 
-      const novoColumn = page.locator('[data-stage-kind="new"]');
-      const firstCard = novoColumn.locator('[data-lead-id]').first();
+      const novoColumn = page.locator(
+        `[data-testid="stage-column"][data-stage-id="${ORIGIN_STAGE.id}"]`
+      );
+      const firstCard = novoColumn
+        .locator('[data-testid="lead-card"]')
+        .first();
       const leadIdBefore = await firstCard.getAttribute('data-lead-id');
 
-      // Drag card within same column (from top to bottom area)
-      const columnBounds = await novoColumn.boundingBox();
-      if (columnBounds) {
-        await firstCard.dragTo(novoColumn, {
-          targetPosition: { x: columnBounds.width / 2, y: columnBounds.height - 20 },
-        });
-      }
+      // Drag onto the column itself — intra-stage drop must be a no-op.
+      await dragLeadCard(firstCard, novoColumn);
 
-      // First card must remain the same (no reorder within stage)
-      const firstCardAfter = novoColumn.locator('[data-lead-id]').first();
+      const firstCardAfter = novoColumn
+        .locator('[data-testid="lead-card"]')
+        .first();
       const leadIdAfter = await firstCardAfter.getAttribute('data-lead-id');
       expect(leadIdAfter).toBe(leadIdBefore);
     }
@@ -146,16 +209,26 @@ test.describe('Kanban — Drag and Drop', () => {
   test.skip(
     'aria-live region announces move to screen readers',
     async ({ page }) => {
+      await mockMoveSuccess(page);
       await goToCrm(page);
 
-      const leadCard = page.locator('[data-lead-id="1"]');
-      const qualifiedColumn = page.locator('[data-stage-kind="qualified"]');
-      const liveRegion = page.locator('[aria-live="polite"]');
+      const leadCard = page.locator(
+        '[data-testid="lead-card"][data-lead-id="1"]'
+      );
+      const targetColumn = page.locator(
+        `[data-testid="stage-column"][data-stage-id="${TARGET_STAGE.id}"]`
+      );
+      // CONTRACT §8 — single live region with stable testid.
+      const liveRegion = page.locator('[data-testid="aria-live-region"]');
+      await expect(liveRegion).toHaveAttribute('aria-live', 'polite');
+      await expect(liveRegion).toHaveAttribute('aria-atomic', 'true');
 
-      await dragLeadCard(page, leadCard, qualifiedColumn);
+      await dragLeadCard(leadCard, targetColumn);
 
-      // aria-live must announce the transition
-      await expect(liveRegion).toContainText(/Qualificado/i, { timeout: 5_000 });
+      // Stage name comes from the mocked pipeline — survives a rename.
+      await expect(liveRegion).toContainText(TARGET_STAGE.name, {
+        timeout: 5_000,
+      });
     }
   );
 });
