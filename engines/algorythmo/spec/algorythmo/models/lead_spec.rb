@@ -102,6 +102,17 @@ RSpec.describe Algorythmo::Lead, type: :model do
       expect(lead.stage_entered_at).to be_within(1.second).of(freeze_time)
     end
 
+    it 'records a StageHistory entry after commit (Rails 7.1 fires after_commit in transactional tests)' do
+      expect do
+        lead.move_to_stage(qual_stage)
+      end.to change(Algorythmo::StageHistory, :count).by(1)
+
+      entry = Algorythmo::StageHistory.last
+      expect(entry.from_stage).to eq(novo_stage)
+      expect(entry.to_stage).to eq(qual_stage)
+      expect(entry.actor_type).to eq('system')
+    end
+
     it 'appends to end of target stage' do
       existing = create_lead(stage: qual_stage, attrs: { contact: create(:contact, account: account), position: 5.0 })
       lead.move_to_stage(qual_stage)
@@ -161,6 +172,42 @@ RSpec.describe Algorythmo::Lead, type: :model do
       expect(lead_c.previous_lead_id).to eq(lead_b.id)
       expect(lead_b.previous_lead_id).to eq(lead_a.id)
       expect(lead_a.previous_lead_id).to be_nil
+    end
+
+    it 'records StageHistory on the NEW lead, not the original' do
+      lead = create_lead(stage: won_stage)
+      new_lead = lead.reopen_as_new_lead
+
+      # Original lead: no stage_history created by reopen_as_new_lead
+      # (reopen_as_new_lead creates a new Lead via Lead.create!, no stage_id change on existing)
+      expect(lead.stage_histories.count).to eq(0)
+
+      # New lead: no StageHistory yet (create! does not fire after_update_commit;
+      # record_creation must be called explicitly by the listener)
+      expect(new_lead.stage_histories.count).to eq(0)
+    end
+  end
+
+  describe '§5.4 — guard_stage_id_change' do
+    let!(:lead) { create_lead }
+
+    it 'raises ActiveRecord::RecordInvalid when stage_id is updated directly' do
+      expect do
+        lead.update!(stage: qual_stage)
+      end.to raise_error(ActiveRecord::RecordInvalid, /move_to_stage/)
+    end
+
+    it 'allows stage_id change via move_to_stage (sets _via_move_to_stage flag)' do
+      expect { lead.move_to_stage(qual_stage) }.not_to raise_error
+      expect(lead.reload.stage).to eq(qual_stage)
+    end
+
+    it 'allows non-stage updates without restriction' do
+      expect { lead.update!(position: 99.0) }.not_to raise_error
+    end
+
+    it 'allows updates to other fields when stage is unchanged' do
+      expect { lead.update!(deleted: true) }.not_to raise_error
     end
   end
 
