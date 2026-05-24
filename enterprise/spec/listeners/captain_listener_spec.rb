@@ -15,16 +15,15 @@ RSpec.describe CaptainListener, type: :listener do
     # Default any other feature flag check (e.g. ip_lookup from Contact creation)
     # to false so partial stubs below don't raise MissingStubError.
     allow_any_instance_of(Account).to receive(:feature_enabled?).and_return(false)
+    # Default cut gate to disabled; individual contexts override as needed.
+    allow(Algorythmo::FeatureGate).to receive(:cut_enabled?).and_return(false)
   end
 
   describe '#conversation_resolved' do
     context 'when algorythmo_show_captain flag is disabled (default)' do
       before do
-        # Feature disabled — default state for all Algorythmo OS accounts.
-        # Stub on the class level to catch any Account instance (including lazy-loaded
-        # conversation.account which may be a different Ruby object than `account`).
-        allow_any_instance_of(Account).to receive(:feature_enabled?)
-          .with('algorythmo_show_captain').and_return(false)
+        allow(Algorythmo::FeatureGate).to receive(:cut_enabled?)
+          .with(anything, 'show_captain').and_return(false)
       end
 
       it 'returns early without calling any Captain AI services' do
@@ -49,8 +48,8 @@ RSpec.describe CaptainListener, type: :listener do
 
     context 'when algorythmo_show_captain flag is enabled' do
       before do
-        allow_any_instance_of(Account).to receive(:feature_enabled?)
-          .with('algorythmo_show_captain').and_return(true)
+        allow(Algorythmo::FeatureGate).to receive(:cut_enabled?)
+          .with(anything, 'show_captain').and_return(true)
       end
 
       context 'when the inbox is not captain_active' do

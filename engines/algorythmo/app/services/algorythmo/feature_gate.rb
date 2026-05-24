@@ -11,17 +11,18 @@
 #   Rails.cache with a 30s TTL is intentional:
 #   - In the MVP (single-server, laptop), this is in-memory MemoryStore — zero network.
 #   - In a future multi-tenant deploy, this becomes a shared Redis/Memcache entry.
-#   - 30 seconds is short enough that a flag toggle takes effect within one minute
+#   - 30 seconds is short enough that a flag toggle takes effect within 30 seconds
 #     across all workers — acceptable for a feature flag (not a security boundary).
 #   - Alternative of a pure per-request memoization (@ivar) would be lost after
 #     each Sidekiq job hop; Rails.cache survives across job boundaries within the window.
 #   - We do NOT use pub/sub invalidation per P2 (over-engineered for the laptop MVP).
 module Algorythmo::FeatureGate
-  # Short names of the 13 M2 surfaces that can be cut per-account.
+  # Short names of the 15 cut surfaces, in bit-position order matching FeatureFlagBits.
   # These flags live in accounts.algorythmo_feature_flags (dedicated bigint column),
   # NOT in accounts.feature_flags — zero conflict with Chatwoot upstream bits.
-  # Positions 1–13 in the new column: all safely within signed bigint range.
-  # docs/plans/cuts.md
+  # Positions 1–15: all safely within signed bigint range (max: 63).
+  # Positions 14 (show_captain) and 15 (crm) were migrated from features.yml positions
+  # 64/65 where they caused signed bigint overflow. docs/plans/cuts.md
   ALGORYTHMO_CUT_FLAGS = %w[
     campaigns
     help_center
@@ -36,6 +37,8 @@ module Algorythmo::FeatureGate
     advanced_assignment
     reports_bot
     conversation_workflow
+    show_captain
+    crm
   ].freeze
 
   # Returns true if the given Algorythmo feature flag is enabled for the account.
@@ -57,6 +60,9 @@ module Algorythmo::FeatureGate
 
     Rails.cache.fetch(cache_key, expires_in: 30.seconds) do
       account.feature_enabled?(flag_name)
+    rescue NoMethodError => e
+      Rails.logger.warn("[Algorythmo::FeatureGate] NoMethodError checking #{flag_name} on #{account.class}: #{e.message}")
+      false
     end
   end
 

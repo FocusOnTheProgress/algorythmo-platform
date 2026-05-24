@@ -16,16 +16,12 @@ RSpec.describe 'Captain API feature gate (algorythmo_show_captain)', type: :requ
   let(:admin) { create(:user, account: account, role: :administrator) }
   let(:headers) { admin.create_new_auth_token }
 
-  # Helper to simulate the flag state
+  # Helper to simulate the flag state via the cut_enabled? service layer.
+  # Stubs at the gate level so cache and FlagShihTzu internals are bypassed.
   def set_captain_flag(enabled)
-    allow_any_instance_of(Account).to receive(:feature_enabled?)
-      .with('algorythmo_show_captain')
+    allow(Algorythmo::FeatureGate).to receive(:cut_enabled?)
+      .with(anything, 'show_captain')
       .and_return(enabled)
-    # Also stub Rails.cache.fetch to bypass caching in tests
-    allow(Rails.cache).to receive(:fetch).and_call_original
-    allow(Rails.cache).to receive(:fetch)
-      .with(/algorythmo:gate:#{account.id}:algorythmo_show_captain/, anything)
-      .and_yield
   end
 
   shared_examples 'gated by algorythmo_show_captain' do |http_method, path_template|

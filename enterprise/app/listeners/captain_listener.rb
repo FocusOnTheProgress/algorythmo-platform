@@ -10,7 +10,7 @@ class CaptainListener < BaseListener
     # no background AI work fires for accounts that have Captain hidden.
     # Use the centralized FeatureGate so this listener shares the 30s cache
     # with the controller layer, and so flag policy lives in ONE place.
-    return unless Algorythmo::FeatureGate.feature_enabled?(account, 'algorythmo_show_captain')
+    return unless Algorythmo::FeatureGate.cut_enabled?(account, 'show_captain')
 
     assistant = conversation.inbox.captain_assistant
 

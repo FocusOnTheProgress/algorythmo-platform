@@ -48,7 +48,16 @@ export const getters = {
     return diffDays <= TRIAL_PERIOD_DAYS;
   },
   isFeatureEnabledonAccount: $state => (id, featureName) => {
-    const { features = {} } = findRecordById($state, id);
+    const { features = {}, algorythmo_cut_flags: cutFlags = {} } =
+      findRecordById($state, id);
+    // algorythmo_ prefixed flags live in algorythmo_cut_flags (dedicated bigint column).
+    // Strip the prefix and check there first; fall through to upstream features for everything else.
+    const shortName = featureName
+      .replace(/^algorythmo_cut_/, '')
+      .replace(/^algorythmo_/, '');
+    if (shortName !== featureName && shortName in cutFlags) {
+      return cutFlags[shortName] === true;
+    }
     return features[featureName] || false;
   },
 };

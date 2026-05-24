@@ -11,7 +11,7 @@ class Algorythmo::Api::V1::BaseController < Api::V1::Accounts::BaseController
   private
 
   def ensure_algorythmo_crm_enabled!
-    return if Algorythmo::FeatureGate.feature_enabled?(current_account, 'algorythmo_crm')
+    return if Algorythmo::FeatureGate.cut_enabled?(current_account, 'crm')
 
     render json: { error: 'Feature not enabled' }, status: :forbidden
   end

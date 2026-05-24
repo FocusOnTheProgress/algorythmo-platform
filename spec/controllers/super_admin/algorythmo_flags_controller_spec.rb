@@ -24,7 +24,7 @@ RSpec.describe 'SuperAdmin::AlgorythmoFlagsController', type: :request do
         expect(response.body).to include('Update Algorythmo Flags')
       end
 
-      it 'shows all 13 cut flags' do
+      it 'shows all 15 cut flags' do
         get "/super_admin/accounts/#{account.id}/algorythmo_flags"
         Algorythmo::FeatureFlagBits::CUT_FLAG_NAMES.each do |flag|
           expect(response.body).to include("algorythmo_flags[#{flag}]")
@@ -74,6 +74,41 @@ RSpec.describe 'SuperAdmin::AlgorythmoFlagsController', type: :request do
 
       it 'migration rollback: new column defaults to 0' do
         expect(account.algorythmo_feature_flags).to eq(0)
+      end
+
+      it 'silently ignores unknown flag names in params (whitelist enforced)' do
+        expect do
+          patch "/super_admin/accounts/#{account.id}/algorythmo_flags",
+                params: { algorythmo_flags: { 'nonexistent_flag' => '1', 'destroy' => '1' } }
+        end.not_to raise_error
+        expect(response).to redirect_to(super_admin_account_algorythmo_flags_path(account))
+        expect(account.reload.algorythmo_feature_flags).to eq(0)
+      end
+
+      it 'treats non-hash algorythmo_flags param as empty (injection-safe)' do
+        patch "/super_admin/accounts/#{account.id}/algorythmo_flags",
+              params: { algorythmo_flags: 'malicious_string' }
+        expect(response).to redirect_to(super_admin_account_algorythmo_flags_path(account))
+        expect(account.reload.algorythmo_feature_flags).to eq(0)
+      end
+
+      it 'does not change other accounts when flags param omits their id' do
+        other = create(:account)
+        patch "/super_admin/accounts/#{account.id}/algorythmo_flags",
+              params: { algorythmo_flags: { 'campaigns' => '1' } }
+        expect(other.reload.algorythmo_feature_flags).to eq(0)
+      end
+    end
+
+    context 'when authenticated as regular user (not super_admin)' do
+      let(:regular_user) { create(:user) }
+
+      it 'denies access with redirect (not a super_admin)' do
+        sign_in(regular_user)
+        patch "/super_admin/accounts/#{account.id}/algorythmo_flags",
+              params: { algorythmo_flags: { 'campaigns' => '1' } }
+        expect(response).to have_http_status(:redirect)
+        expect(account.reload.algorythmo_cut_enabled?('campaigns')).to be false
       end
     end
   end

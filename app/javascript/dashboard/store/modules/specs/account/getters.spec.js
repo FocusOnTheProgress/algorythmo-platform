@@ -35,17 +35,57 @@ describe('#getters', () => {
     });
   });
 
-  it('isFeatureEnabledonAccount', () => {
-    const state = {
-      records: [accountData],
-    };
-    expect(
-      getters.isFeatureEnabledonAccount(
-        state,
-        null,
-        null
-      )(1, 'auto_resolve_conversations')
-    ).toEqual(true);
+  describe('isFeatureEnabledonAccount', () => {
+    it('returns upstream feature flag value', () => {
+      const state = { records: [accountData] };
+      expect(
+        getters.isFeatureEnabledonAccount(
+          state,
+          null,
+          null
+        )(1, 'auto_resolve_conversations')
+      ).toEqual(true);
+    });
+
+    it('delegates algorythmo_ prefixed flags to algorythmo_cut_flags', () => {
+      const state = {
+        records: [
+          {
+            ...accountData,
+            algorythmo_cut_flags: { show_captain: true, crm: false },
+          },
+        ],
+      };
+      expect(
+        getters.isFeatureEnabledonAccount(
+          state,
+          null,
+          null
+        )(1, 'algorythmo_show_captain')
+      ).toBe(true);
+      expect(
+        getters.isFeatureEnabledonAccount(
+          state,
+          null,
+          null
+        )(1, 'algorythmo_crm')
+      ).toBe(false);
+    });
+
+    it('does not check cut_flags for non-algorythmo flags', () => {
+      const state = {
+        records: [
+          {
+            ...accountData,
+            algorythmo_cut_flags: { campaigns: true },
+          },
+        ],
+      };
+      // 'campaigns' has no algorythmo_ prefix → reads from upstream features (false)
+      expect(
+        getters.isFeatureEnabledonAccount(state, null, null)(1, 'campaigns')
+      ).toBe(false);
+    });
   });
 
   describe('isRTL', () => {

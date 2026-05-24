@@ -32,7 +32,7 @@ RSpec.describe Algorythmo::CrmListener, type: :listener do
   end
 
   def enable_crm_gate!
-    allow(Algorythmo::FeatureGate).to receive(:feature_enabled?).with(account, 'algorythmo_crm').and_return(true)
+    allow(Algorythmo::FeatureGate).to receive(:cut_enabled?).with(account, 'crm').and_return(true)
   end
 
   def seed_pipeline!
@@ -63,7 +63,7 @@ RSpec.describe Algorythmo::CrmListener, type: :listener do
 
   describe 'feature gate' do
     it 'does nothing when algorythmo_crm is disabled' do
-      allow(Algorythmo::FeatureGate).to receive(:feature_enabled?).and_return(false)
+      allow(Algorythmo::FeatureGate).to receive(:cut_enabled?).and_return(false)
       seed_pipeline!
       msg = incoming_message
 
