@@ -869,7 +869,7 @@ RSpec.describe Algorythmo::Api::V1::LeadsController, type: :controller do
         per_row_query_count = 0
         counter = lambda { |_, _, _, _, payload|
           sql = payload[:sql].to_s
-          per_row_query_count += 1 if sql =~ /FROM "users"|FROM "active_storage_attachments"|FROM "active_storage_blobs"/
+          per_row_query_count += 1 if sql.match?(/FROM "users"|FROM "active_storage_attachments"|FROM "active_storage_blobs"/)
         }
         ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
           get :index, params: { account_id: account.id, stage_id: novo_stage.id }
