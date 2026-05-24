@@ -2,7 +2,7 @@
 
 > **Mantenedor:** Sessão A (orquestradora). Atualizado em tempo real conforme PRs abrem, CI fecha, adversarial revisa, merge acontece.
 
-**Última atualização:** 2026-05-24 (sessão A continua) — **Fase 2 do M1-B FECHADA.** PR #49 (C.2 Kanban) mergeado em `a1d6b1fa3` às 19:38:34Z e PR #50 (D Playwright) mergeado em `c6e684ef9` às 19:39:14Z. Quatro rodadas de adversarial review no #49, três no #50. Próxima fase: PR follow-up removendo `.skip()`s da suite D quando o flag `algorythmo_crm` ligar + backend §9 estiver live.
+**Última atualização:** 2026-05-24 (sessão A continua) — **Fase 2 do M1-B FECHADA + cleanup completo.** PR #49 (C.2 Kanban) mergeado em `a1d6b1fa3` às 19:38:34Z e PR #50 (D Playwright) mergeado em `c6e684ef9` às 19:39:14Z. Quatro rodadas de adversarial review no #49, três no #50. Worktrees `algorythmo-c-onda2` e `algorythmo-d` removidos; 6 worktrees lockados de agente + 1 órfão (`agent-aa3366c3`) limpos de `.claude/worktrees/` (diretório vazio). Próxima fase: PR follow-up removendo `.skip()`s da suite D quando o flag `algorythmo_crm` ligar + backend §9 estiver live.
 
 ---
 
