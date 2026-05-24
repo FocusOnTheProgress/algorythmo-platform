@@ -188,6 +188,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_23_223001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["pipeline_id"], name: "index_algorythmo_stages_on_pipeline_id"
+    t.index ["pipeline_id", "name"], name: "idx_stages_unique_name_per_pipeline", unique: true
   end
 
   create_table "applied_slas", force: :cascade do |t|

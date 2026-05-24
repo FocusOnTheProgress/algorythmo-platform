@@ -35,7 +35,7 @@ module Algorythmo::FeatureFlagBits
   # Positions 14–15: "enable flags" — check means SHOW the feature (opposite semantic from cut flags).
   # Explicit list (not last(2)) so appending a 16th cut flag doesn't silently corrupt the split.
   ENABLE_FLAG_NAMES = %w[show_captain crm].freeze
-  raise "ENABLE_FLAG_NAMES must be a subset of CUT_FLAG_NAMES" \
+  raise 'ENABLE_FLAG_NAMES must be a subset of CUT_FLAG_NAMES' \
     unless (ENABLE_FLAG_NAMES - CUT_FLAG_NAMES).empty?
 
   # FlagShihTzu flag map: position (1-based) => method name symbol.
