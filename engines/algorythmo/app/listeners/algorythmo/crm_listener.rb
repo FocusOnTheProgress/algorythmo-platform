@@ -25,7 +25,7 @@ class Algorythmo::CrmListener < BaseListener
   include ::Events::Types
 
   # Entry point — called by AsyncDispatcher for every 'message.created' event.
-  def message_created(event)
+  def message_created(event) # rubocop:disable Metrics/CyclomaticComplexity
     message, account = extract_message_and_account(event)
 
     # algorythmo: feature-gate algorythmo_crm
@@ -46,6 +46,8 @@ class Algorythmo::CrmListener < BaseListener
     # algorythmo: ChatwootExceptionTracker forwards to Sentry/Honeybadger when configured — do not swallow silently
     ChatwootExceptionTracker.new(e, account: message&.conversation&.account).capture_exception
     Rails.logger.error("[CrmListener] #{e.class}: #{e.message}\n#{e.backtrace.first(20).join("\n")}")
+    # algorythmo:DIAG-PR51 — temporary: re-raise in test env so CI surfaces swallowed errors
+    raise e if Rails.env.test?
   end
 
   private
