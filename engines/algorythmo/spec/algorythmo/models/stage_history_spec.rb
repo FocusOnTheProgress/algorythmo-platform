@@ -143,8 +143,8 @@ RSpec.describe Algorythmo::StageHistory, type: :model do
       expect(history.reload.from_stage).to eq(novo_stage)
     end
 
-    it 'cascade-destroys with lead' do
-      history = create_history
+    it 'cascade-deletes with lead (dependent: :delete_all bypasses readonly?)' do
+      create_history
       expect { lead.destroy }.to change(described_class, :count).by(-1)
     end
   end
@@ -163,13 +163,14 @@ RSpec.describe Algorythmo::StageHistory, type: :model do
     end
 
     it 'raises ActiveRecord::ReadOnlyRecord on update' do
-      history = create_history
-      expect { history.update!(actor_type: 'user') }.to raise_error(ActiveRecord::ReadOnlyRecord)
+      # Setup with a fully valid record so validations pass and readonly? fires on save.
+      history = create_history(actor_type: 'user', actor_id: 1)
+      expect { history.update!(actor_type: 'agent_bot') }.to raise_error(ActiveRecord::ReadOnlyRecord)
     end
 
     it 'raises ActiveRecord::ReadOnlyRecord on update_attribute' do
-      history = create_history
-      expect { history.update_attribute(:actor_type, 'user') }.to raise_error(ActiveRecord::ReadOnlyRecord)
+      history = create_history(actor_type: 'user', actor_id: 1)
+      expect { history.update_attribute(:actor_type, 'agent_bot') }.to raise_error(ActiveRecord::ReadOnlyRecord)
     end
   end
 end

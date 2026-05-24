@@ -11,9 +11,13 @@ class Algorythmo::Lead < ApplicationRecord
                               inverse_of: :previous_lead,
                               dependent: :nullify
 
+  # dependent: :delete_all (not :destroy) — stage_histories are readonly? once
+  # persisted, so the per-record destroy() chain would raise ReadOnlyRecord.
+  # delete_all issues a single DELETE bypassing callbacks: correct semantics —
+  # when the parent lead is gone, its append-only history has no meaning to retain.
   has_many :stage_histories, class_name: 'Algorythmo::StageHistory',
                              inverse_of: :lead,
-                             dependent: :destroy
+                             dependent: :delete_all
 
   validates :account,  presence: true
   validates :contact,  presence: true
@@ -33,8 +37,14 @@ class Algorythmo::Lead < ApplicationRecord
   # §5.4 — Ghost-history defence: stage_id can only change via move_to_stage.
   # Direct update!(stage_id:) from rake tasks, console, or future jobs is blocked
   # here so that StageHistory always reflects the canonical move path.
+  #
+  # Implemented as a validation (not before_update + throw :abort) so update!
+  # surfaces ActiveRecord::RecordInvalid with the message intact — the standard
+  # Rails contract for write-blocking guards. Known gap: update_columns and
+  # update_all bypass validations by design (see spec lead_spec.rb §5.4).
   attr_accessor :_via_move_to_stage
-  before_update :guard_stage_id_change
+
+  validate :guard_stage_id_change, on: :update
 
   # §6.3 — Record stage transition after the move commits. Runs after_commit so a
   # history insert failure never rolls back the committed stage change.
@@ -85,13 +95,12 @@ class Algorythmo::Lead < ApplicationRecord
   private
 
   # §5.4 — Blocks any update that changes stage_id outside of move_to_stage.
-  # Raises via throw :abort so ActiveRecord surfaces ActiveRecord::RecordInvalid.
+  # Adds a validation error; update! then raises ActiveRecord::RecordInvalid.
   def guard_stage_id_change
     return unless stage_id_changed?
     return if _via_move_to_stage
 
     errors.add(:stage_id, 'só pode ser modificado via Lead#move_to_stage')
-    throw :abort
   end
 
   # §6.3 — Called after_update_commit when stage_id changed.

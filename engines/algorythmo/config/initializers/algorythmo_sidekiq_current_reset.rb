@@ -45,8 +45,8 @@ end
 
 # Register the middleware with the Sidekiq server chain. Client-side does not
 # need it (clients enqueue, they don't execute jobs).
-if defined?(::Sidekiq)
-  ::Sidekiq.configure_server do |config|
+if defined?(Sidekiq)
+  Sidekiq.configure_server do |config|
     config.server_middleware do |chain|
       chain.add Algorythmo::Sidekiq::CurrentResetMiddleware
     end

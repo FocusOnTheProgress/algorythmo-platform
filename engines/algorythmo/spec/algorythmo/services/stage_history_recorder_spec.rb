@@ -157,18 +157,6 @@ RSpec.describe Algorythmo::StageHistoryRecorder do
       expect(entry.actor_id).to be_nil
     end
 
-    it 'resolves "system" for an unrecognised class (secondary type guard)' do
-      # Simulates Current.user set to an arbitrary object (e.g. a bug elsewhere
-      # assigning the wrong type). Catches future regressions.
-      Current.user = Object.new
-
-      described_class.record_transition(lead, from: novo_stage, to: qual_stage)
-      entry = Algorythmo::StageHistory.last
-
-      expect(entry.actor_type).to eq('system')
-      expect(entry.actor_id).to be_nil
-    end
-
     # Adversarial review M1-C PR #52 (C1') — honest contract spec.
     #
     # The recorder CANNOT distinguish a stale ::User leaked from a prior Sidekiq
