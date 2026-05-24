@@ -2,18 +2,20 @@
 
 > **Mantenedor:** Sessão A (orquestradora). Atualizado em tempo real conforme PRs abrem, CI fecha, adversarial revisa, merge acontece.
 
-**Última atualização:** 2026-05-24 — Fase 1 completa: PRs #43, #44, #45 mergeados. Aguardando despacho da Fase 2.
+**Última atualização:** 2026-05-24 — Fase 2 despachada: 3 agentes engineer disparados simultaneamente em worktrees isolados pela Sessão A.
 
 ---
 
 ## Sessões ativas
 
-| Sessão | Worktree | Branch | Tarefa atual | Status | PR |
+| Agente | Worktree | Branch | Tarefa atual | Status | PR |
 |---|---|---|---|---|---|
-| **A** (orquestradora) | `Fork Chatwoot/` (main) | `algorythmo/main` | Coordena B/C/D | 🟢 ativo | — |
-| **B** (executora 1) | `../algorythmo-b` | (a recriar) | Aguardando Fase 2 — Onda 2 cuts | ⚪ idle | — |
-| **C** (executora 2) | `../algorythmo-c` | (a recriar) | Aguardando Fase 2 — componentes Kanban | ⚪ idle | — |
-| **D** (executora 3) | `../algorythmo-d` | (a recriar) | Aguardando Fase 2 — habilitar Playwright | ⚪ idle | — |
+| **A** (orquestradora) | `Fork Chatwoot/` (main) | `algorythmo/main` | Coordena agentes B/C/D | 🟢 ativo | — |
+| **B** (engineer) | auto (worktree) | `algorythmo/m2-onda2-sidebar-gates` | Fase 2 — Onda 2 sidebar gates (13 cuts) | 🟡 rodando | — |
+| **C** (engineer) | auto (worktree) | `algorythmo/m1b-componentes` | Fase 2 — LeadCard+Kanban+empty states (B.4+B.5+B.6) | 🟡 rodando | — |
+| **D** (engineer) | auto (worktree) | `algorythmo/m1b-playwright-suite` | Fase 2 — Playwright specs contra CONTRACT_M1B.md | 🟡 rodando | — |
+
+**Contrato compartilhado C↔D:** [`docs/coordination/CONTRACT_M1B.md`](CONTRACT_M1B.md) v1.0.0. Single source of truth pros selectors/aria.
 
 ## Fase 1 — encerrada
 
@@ -34,10 +36,10 @@
 - [ ] **C** → M1-B base (PR 2) — pré-requisito de M1-B componentes
 - [ ] **D** → M1-B test harness + docs (PR 3) — paralelo a C, independente
 
-### Fase 2 — Pós-merge da Fase 1
-- [ ] **B** (worktree reusado) → M2 Onda 2 sidebar gates (PR 4) — usa fixture de PR 1
-- [ ] **C** (worktree reusado) → M1-B componentes (B.4 + B.5 + B.6 + B.7 + B.8) (PR 5) — usa base de PR 2
-- [ ] **D** (worktree reusado) → M1-B Playwright suite completa (PR 6) — usa scaffolding de PR 3 + componentes de PR 5
+### Fase 2 — Em execução (despachada 2026-05-24)
+- [ ] **B** (engineer) → M2 Onda 2 sidebar gates (13 cuts em Sidebar.vue + route guards) — usa framework do PR #43
+- [ ] **C** (engineer) → M1-B componentes B.4 + B.5 + B.6 (LeadCard, KanbanBoard, empty states) — produz contrato CONTRACT_M1B.md
+- [ ] **D** (engineer) → M1-B Playwright suite (specs contra CONTRACT_M1B.md, `.skip()` até C mergear) — independente de C estruturalmente
 
 ### Fase 3 — Convergência final
 - [ ] **B** → M2 batch 1 Playwright assertions (PR 7) — valida toggle de cada flag
