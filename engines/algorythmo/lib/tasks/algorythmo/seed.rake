@@ -24,25 +24,27 @@ namespace :algorythmo do
       super_email = ENV.fetch('ALGORYTHMO_SEED_SUPER_EMAIL', 'super@algorythmo.com')
       super_password = ENV.fetch('ALGORYTHMO_SEED_SUPER_PASS', 'Test@12345')
 
-      # Regular dashboard user (type IS NULL). Skipped if it already exists so
-      # repeated rake runs in the same workspace stay idempotent.
-      user =
-        if User.exists?(email: email)
-          puts "[algorythmo:seed] Test user #{email} already exists — reusing."
-          User.find_by(email: email)
-        else
-          # SuperAdmin STI rows live in the same table but route through /super_admin.
-          built = User.new(
-            name: 'Algorythmo Test',
-            email: email,
-            password: password,
-            password_confirmation: password
-          )
-          built.skip_confirmation!
-          built.save!
-          puts "[algorythmo:seed] Created test user: #{email}"
-          built
-        end
+      # Regular dashboard user (type IS NULL). When it already exists we bail
+      # out completely — the rest of the body (super-admin, account, features)
+      # is bundled into the same fresh-DB seeding path. CI wipes the DB before
+      # this task runs (db:schema:load), so re-entrancy through the create
+      # branch is the only path that ever fires in CI. Local re-runs against
+      # an already-seeded dev DB are a no-op.
+      if User.exists?(email: email)
+        puts "[algorythmo:seed] Test user #{email} already exists — skipping seed body."
+        next
+      end
+
+      # SuperAdmin STI rows live in the same table but route through /super_admin.
+      user = User.new(
+        name: 'Algorythmo Test',
+        email: email,
+        password: password,
+        password_confirmation: password
+      )
+      user.skip_confirmation!
+      user.save!
+      puts "[algorythmo:seed] Created test user: #{email}"
 
       # Super-admin user — required by the Algorythmo cuts Playwright suite
       # (spec/system/algorythmo/cuts/*) which toggles flags via
@@ -60,13 +62,10 @@ namespace :algorythmo do
         puts "[algorythmo:seed] Created super-admin: #{super_email}"
       end
 
-      account = Account.find_by(name: 'Algorythmo OS Test Account') ||
-                Account.create!(name: 'Algorythmo OS Test Account', locale: :en)
-      puts "[algorythmo:seed] Test account: #{account.name} (id=#{account.id})"
+      account = Account.create!(name: 'Algorythmo OS Test Account', locale: :en)
+      puts "[algorythmo:seed] Created test account: #{account.name} (id=#{account.id})"
 
-      AccountUser.find_or_create_by!(account: account, user: user) do |au|
-        au.role = :administrator
-      end
+      AccountUser.create!(account: account, user: user, role: :administrator)
       puts "[algorythmo:seed] #{email} is administrator of account #{account.id}"
 
       # Enable the upstream Chatwoot feature flags whose surfaces the cuts
@@ -75,13 +74,9 @@ namespace :algorythmo do
       # nothing about our gate. installation_type restrictions on custom_roles
       # are enforced at the policy layer, not at the bitfield level; flipping
       # the bit here is the right primitive for the test fixture.
-      %w[sla audit_logs custom_roles advanced_assignment].each do |feature|
-        next if account.feature_enabled?(feature)
-
-        account.enable_features(feature)
-        puts "[algorythmo:seed] Enabled upstream feature: #{feature}"
-      end
+      account.enable_features('sla', 'audit_logs', 'custom_roles', 'advanced_assignment')
       account.save!
+      puts '[algorythmo:seed] Enabled upstream features: sla, audit_logs, custom_roles, advanced_assignment'
     end
   end
 end
