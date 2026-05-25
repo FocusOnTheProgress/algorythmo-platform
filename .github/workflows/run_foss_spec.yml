@@ -249,6 +249,14 @@ jobs:
             ok = user.valid_password?(ENV.fetch("ALGORYTHMO_SEED_PASSWORD"))
             raise "[verify] valid_password? returned FALSE — seed/login pwd diverge" unless ok
             puts "[verify] OK — user #{email} can authenticate in #{Rails.env}"
+
+            super_email = "super@algorythmo.com"
+            super_pass  = "Test@12345"
+            super_user  = SuperAdmin.find_by(email: super_email)
+            raise "[verify] super-admin not found via STI in #{Rails.env} DB" if super_user.nil?
+            super_ok = super_user.valid_password?(super_pass)
+            raise "[verify] super-admin valid_password? returned FALSE" unless super_ok
+            puts "[verify] OK — super-admin #{super_email} can authenticate in #{Rails.env}"
           '
         env:
           RAILS_ENV: test
@@ -285,6 +293,22 @@ jobs:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           PLAYWRIGHT_EMAIL: test@algorythmo.com
           PLAYWRIGHT_PASSWORD: ${{ secrets.ALGORYTHMO_SEED_PASSWORD }}
+
+      # algorythmo: feature-gate — M2-B1 cuts suite gate (PR 7).
+      # Runs the 13 cut-flag e2e specs against the same server. Uses the
+      # super-admin user seeded above to toggle flags. Defaults match the
+      # _fixture.ts defaults (super@algorythmo.com / Test@12345) so no extra
+      # secrets are needed for the super-admin session; the password is a
+      # test-only credential that never reaches a real environment.
+      - name: Run Playwright algorythmo-cuts suite
+        run: pnpm exec playwright test --project algorythmo-cuts --trace=on
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          PLAYWRIGHT_EMAIL: test@algorythmo.com
+          PLAYWRIGHT_PASSWORD: ${{ secrets.ALGORYTHMO_SEED_PASSWORD }}
+          PLAYWRIGHT_SUPER_ADMIN_EMAIL: super@algorythmo.com
+          PLAYWRIGHT_SUPER_ADMIN_PASS: Test@12345
+          PLAYWRIGHT_ACCOUNT_ID: '1'
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4

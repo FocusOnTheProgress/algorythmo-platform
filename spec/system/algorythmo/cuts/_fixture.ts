@@ -13,6 +13,8 @@
  *   PLAYWRIGHT_BASE_URL          — default: http://localhost:3000
  *   PLAYWRIGHT_SUPER_ADMIN_EMAIL — default: super@algorythmo.com
  *   PLAYWRIGHT_SUPER_ADMIN_PASS  — default: Test@12345
+ *   PLAYWRIGHT_EMAIL             — default: test@algorythmo.com (dashboard admin)
+ *   PLAYWRIGHT_PASSWORD          — required by login helpers (no default)
  *   PLAYWRIGHT_ACCOUNT_ID        — default: 1
  */
 
@@ -22,6 +24,8 @@ const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 const SUPER_ADMIN_EMAIL =
   process.env.PLAYWRIGHT_SUPER_ADMIN_EMAIL ?? 'super@algorythmo.com';
 const SUPER_ADMIN_PASS = process.env.PLAYWRIGHT_SUPER_ADMIN_PASS ?? 'Test@12345';
+const ADMIN_EMAIL = process.env.PLAYWRIGHT_EMAIL ?? 'test@algorythmo.com';
+const ADMIN_PASSWORD: string = process.env.PLAYWRIGHT_PASSWORD ?? 'UNSET';
 const ACCOUNT_ID = process.env.PLAYWRIGHT_ACCOUNT_ID ?? '1';
 
 /** All 13 cut surface names (WITHOUT any prefix). */
@@ -52,14 +56,56 @@ async function loginSuperAdmin(page: Page): Promise<void> {
   await page.waitForLoadState('domcontentloaded');
 
   if (page.url().includes('/super_admin/sign_in')) {
-    await page.getByLabel(/email/i).fill(SUPER_ADMIN_EMAIL);
-    await page.getByLabel(/password/i).fill(SUPER_ADMIN_PASS);
-    await page.getByRole('button', { name: /sign in|log in|login/i }).click();
+    // Active Admin renders the login form with Formtastic, which wraps the
+    // required-field marker in <abbr>*</abbr> inside <label>. That trips
+    // Playwright's getByLabel heuristic, so we target the deterministic IDs
+    // emitted by Formtastic instead.
+    await page.locator('#super_admin_email').fill(SUPER_ADMIN_EMAIL);
+    await page.locator('#super_admin_password').fill(SUPER_ADMIN_PASS);
+    // The login page only renders a single form, so the unscoped submit
+    // selector is unambiguous. Active Admin's form id varies across versions
+    // (new_super_admin / new_user / scoped variants); selecting by submit
+    // type avoids coupling the test to that incidental naming.
+    await page
+      .locator('input[type="submit"], button[type="submit"]')
+      .first()
+      .click();
 
     await page.waitForURL(url => !url.pathname.includes('/sign_in'), {
       timeout: 15_000,
     });
   }
+}
+
+/**
+ * Log in to the dashboard as the regular admin user seeded by
+ * `bundle exec rake algorythmo:seed:smoke_test_account`.
+ *
+ * Devise scopes the super-admin session and the dashboard session under
+ * different cookie keys, so calling this AFTER loginSuperAdmin keeps both
+ * sessions live on the same Page — required for `expectSurfaceVisible` /
+ * `expectSurfaceBlocked`, which toggle flags as super-admin and then assert
+ * sidebar + route guard as the dashboard admin.
+ *
+ * Idempotent — if the page is already inside /app/accounts/:id/..., skip.
+ */
+async function loginAsAdmin(page: Page): Promise<void> {
+  if (/\/app\/accounts\/\d+/.test(page.url())) return;
+
+  if (ADMIN_PASSWORD === 'UNSET') {
+    throw new Error(
+      'PLAYWRIGHT_PASSWORD env var is required to log in as the dashboard admin.\n' +
+        'Local dev: copy spec/system/algorythmo/.env.test.example → .env.test\n' +
+        'CI: set PLAYWRIGHT_PASSWORD as a secret.'
+    );
+  }
+
+  await page.goto(`${BASE_URL}/app/login`);
+  await page.getByTestId('email_input').fill(ADMIN_EMAIL);
+  await page.getByTestId('password_input').fill(ADMIN_PASSWORD);
+  await page.getByRole('button', { name: /sign in|log in|login/i }).click();
+  await page.waitForURL(/\/app\/accounts\/\d+/, { timeout: 30_000 });
+  await page.waitForLoadState('networkidle', { timeout: 20_000 });
 }
 
 /**
@@ -147,10 +193,193 @@ export async function withFlag(
     try {
       await toggleFlag(page, flagName, originalState, accountId);
     } catch (teardownError) {
+      // eslint-disable-next-line no-console
       console.error(
         `[withFlag] teardown failed for flag '${flagName}':`,
         teardownError
       );
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// M2-B1 — positive assertions
+// ---------------------------------------------------------------------------
+
+/** Account-scoped dashboard URL — the redirect target of the route guard
+ *  in `app/javascript/dashboard/routes/index.js` when an `algorythmoCutFlag`
+ *  is active. Used by `expectSurfaceBlocked` to assert hard-block behavior. */
+function dashboardURL(accountId: string | number = ACCOUNT_ID): string {
+  return `/app/accounts/${accountId}/dashboard`;
+}
+
+/** Options consumed by `expectSurfaceVisible` and `expectSurfaceBlocked`. */
+export interface SurfaceAssertOpts {
+  /** Regex matching the sidebar entry's accessible name (text or aria-label).
+   *  Pass `null` when the surface has no sidebar entry (e.g. dashboard_apps —
+   *  an in-page tab inside Settings > Integrations). */
+  sidebarLabel: RegExp | null;
+  /** Frontend path with `:accountId` already substituted, e.g.
+   *  `/app/accounts/1/settings/sla`. */
+  routePath: string;
+  /** Regex matching the heading rendered by the surface once it loads.
+   *  We assert on the actual heading (role=heading) — not the document
+   *  <title>, since Chatwoot uses a single static title.
+   *  Required by `expectSurfaceVisible` — the URL prefix check alone cannot
+   *  prove content rendered. */
+  pageHeadingRegex?: RegExp;
+  /** URL where the sidebar entry SHOULD render when the cut flag is off,
+   *  and SHOULD NOT render when on. Defaults to `routePath` — works for
+   *  top-level entries (campaigns, help_center) and inner pages whose
+   *  surrounding sidebar still lists the active item. For Settings sub-items
+   *  pass a Settings landing URL (e.g. `/app/accounts/1/settings/general`)
+   *  so the Settings nav is mounted regardless of the cut state. */
+  sidebarContext?: string;
+  /** When the surface intentionally redirects from `routePath` to a deeper
+   *  path (e.g. `/campaigns` → `/campaigns/ongoing/live_chat`), pass the
+   *  shortest common prefix here. `expectSurfaceVisible` asserts the final
+   *  URL starts with this prefix. Defaults to `routePath`. */
+  routePathPrefix?: string;
+}
+
+const escapeForRegex = (s: string): string => s.replace(/[\\^$.*+?()[\]{}|/]/g, '\\$&');
+
+async function assertSidebarLinkVisible(
+  page: Page,
+  label: RegExp,
+  contextURL: string
+): Promise<void> {
+  await page.goto(`${BASE_URL}${contextURL}`);
+  await page.waitForLoadState('domcontentloaded');
+  const sidebarLink = page
+    .getByRole('link', { name: label })
+    .or(page.getByRole('button', { name: label }))
+    .first();
+  await expect(sidebarLink).toBeVisible({ timeout: 15_000 });
+}
+
+async function assertSidebarLinkAbsent(
+  page: Page,
+  label: RegExp,
+  contextURL: string
+): Promise<void> {
+  await page.goto(`${BASE_URL}${contextURL}`);
+  await page.waitForLoadState('domcontentloaded');
+  // Wait for the main landmark to mount so a count of 0 is a real absence,
+  // not a race against a slow render.
+  await page
+    .locator('main, aside, nav')
+    .first()
+    .waitFor({ state: 'visible', timeout: 15_000 })
+    .catch(() => {
+      /* Some inner pages don't expose a `<main>`/`<aside>` landmark — the
+         link-count check below remains the source of truth. */
+    });
+  const sidebarLink = page
+    .getByRole('link', { name: label })
+    .or(page.getByRole('button', { name: label }));
+  await expect(sidebarLink).toHaveCount(0);
+}
+
+/**
+ * Assert that with the flag OFF, the surface is fully restored:
+ *   1. (Optional) Sidebar entry is visible at `sidebarContext` (defaults to
+ *      `routePath`).
+ *   2. Direct navigation to `routePath` lands within the surface namespace —
+ *      the final URL must start with `routePath` (or with `routePathPrefix`
+ *      when the surface legitimately redirects to a child path, e.g.
+ *      `/campaigns` → `/campaigns/ongoing/live_chat`). Just checking that the
+ *      page did NOT redirect to /dashboard is a no-op for top-level routes
+ *      that redirect to a sub-route inside the same section — a regression
+ *      pushing them to /settings/foo would still pass.
+ *   3. The page renders a heading matching `pageHeadingRegex`. Required, so
+ *      the spec cannot silently degrade to a URL-only check on a 500/blank
+ *      shell.
+ *
+ * Caller is responsible for wrapping the call in `withFlag(page, name, false, ...)`
+ * so teardown stays exception-safe in one place. `loginAsAdmin` is invoked
+ * defensively here so spec ordering does not matter.
+ */
+export async function expectSurfaceVisible(
+  page: Page,
+  _flagName: CutFlagName,
+  opts: SurfaceAssertOpts
+): Promise<void> {
+  await loginAsAdmin(page);
+
+  const sidebarContext = opts.sidebarContext ?? opts.routePath;
+  const allowedPrefix = opts.routePathPrefix ?? opts.routePath;
+  const allowedPrefixRegex = new RegExp(
+    `^${escapeForRegex(allowedPrefix)}(/|$)`
+  );
+
+  // 1. Sidebar entry visible (when the surface has one).
+  if (opts.sidebarLabel) {
+    await assertSidebarLinkVisible(page, opts.sidebarLabel, sidebarContext);
+  }
+
+  // 2. Direct nav lands within the surface namespace (catches both dashboard
+  //    redirects AND any cross-section redirect that would have passed the
+  //    old "not /dashboard" check trivially).
+  await page.goto(`${BASE_URL}${opts.routePath}`);
+  await page.waitForLoadState('domcontentloaded');
+  await expect
+    .poll(() => new URL(page.url()).pathname, {
+      timeout: 10_000,
+      message: `expected final URL to stay within ${allowedPrefix}, but the route guard or app router moved away from the surface`,
+    })
+    .toMatch(allowedPrefixRegex);
+
+  // 3. Heading rendered. Required — the URL prefix check above proves the
+  //    router did not bail out, but it does not prove the surface actually
+  //    rendered content. The heading is the cheapest stamp that content
+  //    arrived for a real user.
+  if (!opts.pageHeadingRegex) {
+    throw new Error(
+      `expectSurfaceVisible: pageHeadingRegex is required (surface=${opts.routePath}). ` +
+        'Without it the spec cannot prove the page actually rendered.'
+    );
+  }
+  const heading = page.getByRole('heading', { name: opts.pageHeadingRegex });
+  await expect(heading.first()).toBeVisible({ timeout: 15_000 });
+}
+
+/**
+ * Assert that with the flag ON, the surface is hard-blocked:
+ *   1. Direct navigation to `routePath` redirects to `/app/accounts/:id/dashboard`.
+ *   2. (Optional) Sidebar entry is absent in `sidebarContext` (defaults to
+ *      `routePath`, but the redirect will land on dashboard either way —
+ *      the helper re-navigates to `sidebarContext` after the redirect check).
+ *
+ * The current route guard performs a silent `next()` redirect — it does NOT
+ * emit an aria-live message or toast. Asserting on a message that does not
+ * exist would either fail or require a separate guard change. That UX
+ * improvement is intentionally out of scope here; this helper enforces only
+ * the contract the guard ships today.
+ */
+export async function expectSurfaceBlocked(
+  page: Page,
+  _flagName: CutFlagName,
+  opts: SurfaceAssertOpts
+): Promise<void> {
+  await loginAsAdmin(page);
+
+  const dashboardPath = dashboardURL();
+  const dashboardRegex = new RegExp(`^${escapeForRegex(dashboardPath)}/?$`);
+
+  // 1. Direct nav → redirect to /dashboard.
+  await page.goto(`${BASE_URL}${opts.routePath}`);
+  await page.waitForLoadState('domcontentloaded');
+  await expect
+    .poll(() => new URL(page.url()).pathname, {
+      timeout: 10_000,
+      message: `expected guard to redirect ${opts.routePath} → ${dashboardPath}`,
+    })
+    .toMatch(dashboardRegex);
+
+  // 2. Sidebar link absent in the context where it would normally render.
+  if (opts.sidebarLabel) {
+    const sidebarContext = opts.sidebarContext ?? dashboardPath;
+    await assertSidebarLinkAbsent(page, opts.sidebarLabel, sidebarContext);
   }
 }
