@@ -87,7 +87,7 @@ nunca passou pelo listener.)
 O cascade `on_delete: :cascade` em `stage_histories.lead_id` garante
 que histórico legado some junto. Sem risco de órfãos.
 
-### Em dev / staging / teste
+### Em dev / teste
 
 Sem gates. Roda direto:
 
@@ -98,16 +98,20 @@ bundle exec rake algorythmo:crm:cleanup_legacy_leads
 Saída esperada:
 
 ```
-[cleanup_legacy_leads] removed 7 legacy lead(s). Audit log: /app/tmp/cleanup_legacy_leads_1716580000.log
+[cleanup_legacy_leads] removed 7 legacy lead(s). Audit log: /app/tmp/cleanup_legacy_leads_1716580000_42.log
 ```
 
 Re-rodar é seguro: a segunda chamada deleta `0` leads (idempotente) e
 ainda assim grava um log de auditoria para rastreabilidade.
 
-### Em produção — gate duplo
+### Em produção, staging, ou qualquer env != dev/test — gate duplo
 
-Em `Rails.env.production?` o rake exige **as duas** travas
-simultaneamente. Falha qualquer uma → `abort` antes de tocar no banco.
+A ausência de gate é **allowlist** (`development`, `test`), não negação
+de produção. Qualquer outro env (`production`, `staging`, `qa`, `demo`
+ou um ambiente misconfigurado) cai no gate duplo. Operação destrutiva
+opta OUT de safety, não IN.
+
+Falha qualquer trava → `abort` antes de tocar no banco.
 
 **Trava 1 — flag `--force` na linha de comando:**
 
@@ -157,7 +161,7 @@ RAILS_ENV=production ALGORYTHMO_CLEANUP_CONFIRM=YES_I_KNOW \
 Toda execução que passa pelos gates grava um log em:
 
 ```
-tmp/cleanup_legacy_leads_<unix_timestamp>.log
+tmp/cleanup_legacy_leads_<unix_timestamp>_<pid>.log
 ```
 
 Conteúdo:
@@ -170,9 +174,16 @@ force_flag=true
 confirm_env_present=true
 scanned_count=7
 scanned_ids=[12, 13, 17, 22, 23, 24, 25]
+severed_chain_count=1
+severed_chains=[[42, 17]]
 deleted_count=7
 completed_utc=2026-05-24T20:13:20Z
 ```
+
+`severed_chains` lista pares `[reopened_lead_id, legacy_lead_id]` cujo
+`previous_lead_id` foi nullificado pelo FK ao apagar o legacy. Vazio no
+caso normal — se aparecer, é sinal de que um lead reaberto tinha
+pointer pro legado e perdeu rastreabilidade da cadeia.
 
 Em produção, copiar esse arquivo para fora do container imediatamente
 após a execução (`docker cp`). As linhas deletadas são definitivas; o

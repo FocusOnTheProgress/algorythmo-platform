@@ -177,13 +177,48 @@ RSpec.describe Algorythmo::Tasks::CleanupLegacyLeads do
         legacy_ids.each { |id| expect(audit).to include(id.to_s) }
       end
     end
+
+    it 'aborts in staging too (gate is allowlist dev/test, not deny-prod-only)' do
+      staging_env = ActiveSupport::StringInquirer.new('staging')
+      create_legacy_lead!
+
+      expect do
+        execute!(force: false, confirm_env: nil, env: staging_env)
+      end.to raise_error(described_class::AbortedByGate, /staging.*--force/m)
+
+      expect(Algorythmo::Lead.count).to eq(1)
+    end
+  end
+
+  describe 'severed chain audit (FK :nullify on previous_lead_id)' do
+    it 'records reopened leads whose previous_lead_id pointed at a legacy row' do
+      legacy = create_legacy_lead!
+      reopened = create_normal_lead!
+      reopened.update_column(:previous_lead_id, legacy.id)
+
+      result = execute!
+
+      audit = File.read(result[:audit_path])
+      expect(audit).to match(/severed_chain_count=1/)
+      expect(audit).to include("[#{reopened.id}, #{legacy.id}]")
+      # And the FK nullify actually fired:
+      expect(reopened.reload.previous_lead_id).to be_nil
+    end
+
+    it 'reports severed_chain_count=0 in the clean case' do
+      create_legacy_lead!
+
+      result = execute!
+
+      expect(File.read(result[:audit_path])).to match(/severed_chain_count=0/)
+    end
   end
 
   describe 'audit log path naming' do
-    it 'writes to tmp/cleanup_legacy_leads_<unix>.log inside the configured audit dir' do
+    it 'writes to tmp/cleanup_legacy_leads_<unix>_<pid>.log inside the configured audit dir' do
       travel_to(Time.zone.at(1_700_000_000)) do
         result = execute!
-        expected = audit_dir.join('cleanup_legacy_leads_1700000000.log').to_s
+        expected = audit_dir.join("cleanup_legacy_leads_1700000000_#{Process.pid}.log").to_s
         expect(result[:audit_path]).to eq(expected)
       end
     end
@@ -194,12 +229,20 @@ RSpec.describe Algorythmo::Tasks::CleanupLegacyLeads do
     # how the rake task extracts `--force` from ARGV and CONFIRM_TOKEN
     # from ENV. A typo in either name (e.g. `'--Force'`, `'ALGORYTMO_…'`)
     # would silently bypass the gate without breaking any service spec.
-    before do
-      # Force re-load so the rake `task` block re-registers with our
-      # newly-instantiated Rake application below.
-      Rake.application = Rake::Application.new
-      load Rails.root.join('engines/algorythmo/lib/tasks/algorythmo/cleanup.rake')
-      Rake::Task.define_task(:environment) # stub :environment dependency
+    around do |example|
+      # Capture the global Rake.application before any mutation so the
+      # rest of the RSpec process doesn't inherit our throw-away one
+      # (would otherwise cause order-dependent failures in unrelated specs
+      # that later need Rake state).
+      original_app = Rake.application
+      begin
+        Rake.application = Rake::Application.new
+        load Rails.root.join('engines/algorythmo/lib/tasks/algorythmo/cleanup.rake')
+        Rake::Task.define_task(:environment) # stub :environment dependency
+        example.run
+      ensure
+        Rake.application = original_app
+      end
     end
 
     it 'reads --force from ARGV and CONFIRM_TOKEN from ENV in production' do
