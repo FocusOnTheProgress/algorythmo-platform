@@ -37,11 +37,14 @@
 #
 # Cache:
 #   60-second Rails.cache.fetch — same TTL decision as Algorythmo::FeatureGate
-#   (P2/T7). Stale-while-recompute is acceptable: the Kanban surface fetches
-#   once on mount and re-fetches after each drop, so the cache absorbs parallel
-#   reads from multiple agents working the same board. fail-closed on an empty
-#   account (zero leads, zero histories) returns a fully-shaped zero payload —
-#   never an exception.
+#   (P2/T7). The cache key is versioned by the most-recent stage_history
+#   timestamp for the (account, pipeline) tuple, so any move/creation in the
+#   pipeline busts the key instantly — agents never see stale numbers after a
+#   drag-and-drop, even when several agents work the same board in parallel.
+#   The TTL itself is the safety net for the no-write idle case (board open,
+#   no one moves anything): recompute at least once a minute so newly-aged
+#   open stays roll into the avg. Fail-closed on an empty account (zero leads,
+#   zero histories) returns a fully-shaped zero payload — never an exception.
 module Algorythmo
   module Analytics
     class PipelineMetrics
@@ -62,7 +65,23 @@ module Algorythmo
       attr_reader :account, :pipeline
 
       def cache_key
-        "algorythmo:pipeline_metrics:#{account.id}:#{pipeline.id}"
+        "algorythmo:pipeline_metrics:#{account.id}:#{pipeline.id}:#{cache_version_stamp}"
+      end
+
+      # Latest stage_history timestamp scoped to this (account, pipeline). One
+      # indexed MAX() per request — cheap (sub-millisecond on the existing
+      # index_algorythmo_stage_histories_on_lead_id_and_created_at). The cache
+      # key changes the instant any lead in this pipeline moves, so the next
+      # request returns fresh data instead of waiting for the TTL.
+      #
+      # Returns 0 for an empty pipeline so the key is stable across cold reads.
+      def cache_version_stamp
+        ts = Algorythmo::StageHistory
+             .joins(:to_stage, :lead)
+             .where(algorythmo_stages: { pipeline_id: pipeline.id })
+             .where(algorythmo_leads: { account_id: account.id })
+             .maximum(:created_at)
+        ts ? ts.to_i : 0
       end
 
       def compute
@@ -83,7 +102,7 @@ module Algorythmo
                 .where(account_id: account.id, stage_id: stages.map(&:id))
                 .to_a
 
-        histories_by_lead = load_histories(leads.map(&:id))
+        histories_by_lead = load_histories(leads.map(&:id), window_start)
         stays_by_stage = build_stays(histories_by_lead, now)
 
         {
@@ -104,11 +123,22 @@ module Algorythmo
         }
       end
 
-      def load_histories(lead_ids)
+      # Bounds the memory footprint on aged accounts: an account that has run
+      # for years can accumulate 100k+ history rows per pipeline, and the
+      # original unbounded scan loaded all of them. We only need rows from one
+      # window prior to the cutoff — that is enough to (a) build every closed
+      # stay whose exited_at lies inside the window (its entered_at row is at
+      # most WINDOW older), and (b) reconstruct open stays whose entered_at
+      # falls within `[window_start - WINDOW, now]`. Open stays older than
+      # `window_start - WINDOW` are intentionally dropped — they would
+      # otherwise dominate the avg with multi-year durations the funnel was
+      # never meant to surface.
+      def load_histories(lead_ids, window_start)
         return {} if lead_ids.empty?
 
         Algorythmo::StageHistory
           .where(lead_id: lead_ids)
+          .where('created_at >= ?', window_start - WINDOW)
           .order(:created_at, :id)
           .to_a
           .group_by(&:lead_id)

@@ -243,5 +243,44 @@ RSpec.describe Algorythmo::Analytics::PipelineMetrics do
       expect(a_payload[:pipeline_id]).to eq(pipeline.id)
       expect(b_payload[:pipeline_id]).to eq(other_pipeline.id)
     end
+
+    # The cache key is versioned by MAX(stage_histories.created_at) for the
+    # (account, pipeline) tuple. Without this guarantee, a drag-and-drop in
+    # the UI would not surface in the metrics chip until the 60s TTL elapsed.
+    it 'busts the cache when a new stage_history row lands in this pipeline' do
+      lead = create_lead(stage: novo, entered_at: Time.current - 5.days)
+      svc = described_class.new(account: account, pipeline: pipeline)
+
+      first = svc.call
+      expect(first[:stages].find { |s| s[:stage_id] == novo.id }[:lead_count]).to eq(1)
+
+      # Sleep a beat so the new history row has a strictly greater created_at
+      # than the previous max (the lead's creation row).
+      record_move(lead, from: novo, to: qual, at: Time.current)
+
+      second = svc.call
+      expect(second[:stages].find { |s| s[:stage_id] == novo.id }[:lead_count]).to eq(0)
+      expect(second[:stages].find { |s| s[:stage_id] == qual.id }[:lead_count]).to eq(1)
+    end
+  end
+
+  describe 'history load bounding (H2)' do
+    it 'drops open stays whose entered_at is older than one full window' do
+      now = Time.current
+      # Lead has been sitting in Qualificado for 200 days. Without bounding,
+      # this would push the per-stage avg into multi-month territory and bury
+      # the recent signal. The bounded loader excludes the creation row, so
+      # the stay disappears from the average.
+      create_lead(stage: qual, entered_at: now - 200.days)
+
+      # A fresh lead in the same stage with a 2-day open stay.
+      create_lead(stage: qual, entered_at: now - 2.days)
+
+      qual_payload = service.call[:stages].find { |s| s[:stage_id] == qual.id }
+      # Without bounding, avg would be ~(200 + 2) / 2 ≈ 101 days. Bounded, only
+      # the 2-day stay survives — exactly two days of seconds, give or take a
+      # second from rounding.
+      expect(qual_payload[:avg_time_in_stage_seconds]).to be_within(60).of(2.days.to_i)
+    end
   end
 end

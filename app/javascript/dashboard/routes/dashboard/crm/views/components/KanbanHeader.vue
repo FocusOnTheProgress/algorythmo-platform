@@ -22,7 +22,7 @@ import { useI18n } from 'vue-i18n';
 const props = defineProps({
   summary: { type: Object, default: null },
   loading: { type: Boolean, default: false },
-  error: { type: [String, null], default: null },
+  error: { type: String, default: null },
   searchValue: { type: String, default: '' },
   pipelineConfigPath: { type: String, required: true },
 });

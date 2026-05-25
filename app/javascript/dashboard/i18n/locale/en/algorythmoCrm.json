@@ -24,7 +24,7 @@
       "ERROR_TOOLTIP": "Couldn't load metrics. Retry in a few seconds.",
       "PLACEHOLDER": "—",
       "HOURS_SHORT": "{value}h",
-      "MINUTES_SHORT": "{value}m",
+      "MINUTES_SHORT": "{value}min",
       "SECONDS_SHORT": "{value}s",
       "DAYS_SHORT": "{value}d"
     },
