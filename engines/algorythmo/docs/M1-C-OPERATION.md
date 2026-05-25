@@ -18,11 +18,21 @@ manualmente:
 
 ## 1. Smoke checklist (§9.3)
 
-Pré-requisito: flag `algorythmo_crm` ligada para a conta de teste:
+Pré-requisito: flag `algorythmo_cut_crm` ligada para a conta de teste.
+Duas formas:
+
+**Via super-admin UI** (recomendado em produção): logar como super-admin
+e abrir `/super_admin/accounts/1/algorythmo_flags`, marcar **crm** e
+salvar.
+
+**Via console** (dev / staging):
 
 ```bash
-bundle exec rails algorythmo:seed:enable_crm ACCOUNT_ID=1
+bundle exec rails runner "a = Account.find(1); a.algorythmo_cut_crm = true; a.save!"
 ```
+
+A flag é cacheada por 30s (`Algorythmo::FeatureGate`); o smoke pode rodar
+imediatamente — a primeira request invalida o cache.
 
 Passos:
 
@@ -39,6 +49,10 @@ Passos:
    - Card aparece na nova coluna.
    - Aba **Histórico** do drawer lista a transição (entrada nova no
      topo, formato "Sistema → Qualificado" com timestamp).
+   - *Verificação alternativa enquanto o drawer (PR 4) não estiver no
+     ar:* via console, `Algorythmo::StageHistory.where(lead_id: <id>)
+     .order(created_at: :desc).first` deve retornar uma linha com
+     `to_stage_id = 2` (Qualificado).
 5. **Enviar uma segunda mensagem** pelo widget. Resultado esperado:
    - `lead.last_message_at` atualiza.
    - **Nenhum lead novo é criado** (idempotência por conversation).

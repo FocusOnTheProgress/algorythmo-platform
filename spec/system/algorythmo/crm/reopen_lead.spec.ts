@@ -10,7 +10,11 @@
  *     Open "Novo": data-stage-id="1" (kind="open").
  *   - Lead cards:    [data-testid="lead-card"][data-lead-id].
  *
- * Status: LIVE (un-skipped in M1-C/PR5).
+ * Status: SKIPPED — blocked-on PR 4 (LeadDetailDrawer wire). The
+ *   "Reabrir como novo Lead" button lives inside the drawer footer, and
+ *   the drawer is not in main yet (card click fires a toast). Un-skip
+ *   in the follow-up commit on this branch after PR 4 merges, alongside
+ *   owner_assignment and stage_history_drawer specs.
  */
 
 import {
@@ -46,7 +50,7 @@ const REOPENED_LEAD = mockLead({
   contactName: 'Won Lead User',
 });
 
-test.describe('Reopen Lead', () => {
+test.describe.skip('Reopen Lead', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
     await mockDefaultPipeline(page);

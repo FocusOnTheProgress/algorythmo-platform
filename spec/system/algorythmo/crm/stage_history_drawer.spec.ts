@@ -10,9 +10,9 @@
  *   - drawer-stage-history-list → <ol> root; items are <li> with data-stage-history-id.
  *
  * Status: SKIPPED until PR 4 (frontend wire) merges to algorythmo/main —
- *   the drawer-stage-history-list element and the lazy-load on drawer open
- *   do not exist in main until then. To un-skip: delete the
- *   `test.skip(true, ...)` line below.
+ *   the drawer-stage-history-list element and the lazy-load on drawer
+ *   open do not exist in main until then. To un-skip: change
+ *   `test.describe.skip(...)` to `test.describe(...)` below.
  */
 
 import {
@@ -68,12 +68,10 @@ async function mockStageHistory(
   );
 }
 
-test.describe('D6.2 — Stage history drawer (drawer-stage-history-list)', () => {
-  test.skip(
-    true,
-    'Waiting on PR 4 merge — drawer-stage-history-list and lazy-load are not in main yet. Unskip after rebase onto algorythmo/main once PR 4 lands.'
-  );
-
+// test.describe.skip() is the explicit, refactor-safe form for marking
+// the whole describe as skipped. To un-skip after PR 4 merges, delete the
+// `.skip` suffix — one-character grep-replace, no semantics drift.
+test.describe.skip('D6.2 — Stage history drawer (drawer-stage-history-list)', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
     await mockDefaultPipeline(page);

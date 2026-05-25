@@ -11,7 +11,11 @@
  *   - Stage columns: [data-testid="stage-column"][data-stage-id].
  *   - Lead cards:    [data-testid="lead-card"][data-lead-id].
  *
- * Status: LIVE (un-skipped in M1-C/PR5).
+ * Status: SKIPPED — blocked-on B-PR6 (PipelineConfigView). In main, the
+ *   /crm/pipeline route resolves to PipelineConfigPlaceholder.vue (a
+ *   static "em breve" message). The `[data-testid="stage-name-input"]`
+ *   element lives in the real PipelineConfigView shipped by B-PR6.
+ *   Un-skip after B-PR6 merges. NOT blocked on PR 4.
  */
 
 import {
@@ -35,7 +39,7 @@ const RENAMED_STAGES = DEFAULT_PIPELINE_STAGES.map(s =>
   s.id === 3 ? { ...s, name: RENAMED_STAGE_NAME } : s
 );
 
-test.describe('Pipeline rename', () => {
+test.describe.skip('Pipeline rename', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
     await mockDefaultPipeline(page);

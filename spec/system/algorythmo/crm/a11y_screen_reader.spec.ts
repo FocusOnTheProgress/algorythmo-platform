@@ -13,7 +13,11 @@
  * Expected aria-label format per B.12:
  *   "Lead {name}, etapa {stage}, há {timeHuman}, canal {channel}"
  *
- * Status: LIVE (un-skipped in M1-C/PR5).
+ * Status: PARTIALLY LIVE — card aria-label, aria-live announce, and
+ *   aging chip tests are un-skipped in M1-C/PR5. The drawer dialog test
+ *   is individually skipped with `test.skip(true, 'blocked-on PR 4')`
+ *   because the drawer is wired in PR 4 (card click only fires a toast
+ *   in main). Un-skip after PR 4 merges.
  */
 
 import {
@@ -105,6 +109,7 @@ test.describe('A11y — Screen reader', () => {
   test('drawer has role="dialog" with aria-modal and aria-labelledby', async ({
     page,
   }) => {
+    test.skip(true, 'blocked-on PR 4 — LeadDetailDrawer not in main yet (card click fires toast).');
     const leadCard = page.locator(
       '[data-testid="lead-card"][data-lead-id="1"]'
     );

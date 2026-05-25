@@ -16,7 +16,13 @@
  *   - Stage columns: [data-testid="stage-column"][data-stage-id].
  *   - Move modal: [data-testid="move-lead-modal"] (§6).
  *
- * Status: LIVE (un-skipped in M1-C/PR5).
+ * Status: PARTIALLY LIVE — Tab-reaches-card and keyboard move flow are
+ *   un-skipped in M1-C/PR5. Tests that open the LeadDetailDrawer
+ *   (Enter-opens, Esc-closes, focus-trap) are individually skipped with
+ *   `test.skip(true, 'blocked-on PR 4 — drawer wire')` because card click
+ *   only fires a toast in main (KanbanBoard.vue COMING_SOON). Un-skip
+ *   those tests in the follow-up commit on this branch after PR 4
+ *   merges, alongside owner_assignment and stage_history_drawer specs.
  */
 
 import {
@@ -68,6 +74,7 @@ test.describe('A11y — Keyboard navigation', () => {
   test('Enter on focused card opens LeadDetailDrawer', async ({
     page,
   }) => {
+    test.skip(true, 'blocked-on PR 4 — LeadDetailDrawer not in main yet (card click fires toast).');
     for (let i = 0; i < 20; i++) {
       await page.keyboard.press('Tab');
       const onCard = await page.evaluate(
@@ -86,6 +93,7 @@ test.describe('A11y — Keyboard navigation', () => {
   test('Esc closes drawer and returns focus to triggering card', async ({
     page,
   }) => {
+    test.skip(true, 'blocked-on PR 4 — LeadDetailDrawer not in main yet (card click fires toast).');
     const leadCard = page.locator(
       '[data-testid="lead-card"][data-lead-id="1"]'
     );
@@ -101,6 +109,7 @@ test.describe('A11y — Keyboard navigation', () => {
   });
 
   test('Tab loops within open drawer (focus trap)', async ({ page }) => {
+    test.skip(true, 'blocked-on PR 4 — LeadDetailDrawer not in main yet (card click fires toast).');
     const leadCard = page.locator(
       '[data-testid="lead-card"][data-lead-id="1"]'
     );
