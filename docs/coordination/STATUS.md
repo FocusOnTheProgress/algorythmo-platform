@@ -2,7 +2,7 @@
 
 > **Mantenedor:** Sessão A (orquestradora). Atualizado em tempo real conforme PRs abrem, CI fecha, adversarial revisa, merge acontece.
 
-**Última atualização:** 2026-05-24 (sessão A continua) — **Fase 2 do M1-B FECHADA + cleanup completo.** PR #49 (C.2 Kanban) mergeado em `a1d6b1fa3` às 19:38:34Z e PR #50 (D Playwright) mergeado em `c6e684ef9` às 19:39:14Z. Quatro rodadas de adversarial review no #49, três no #50. Worktrees `algorythmo-c-onda2` e `algorythmo-d` removidos; 6 worktrees lockados de agente + 1 órfão (`agent-aa3366c3`) limpos de `.claude/worktrees/` (diretório vazio). Próxima fase: PR follow-up removendo `.skip()`s da suite D quando o flag `algorythmo_crm` ligar + backend §9 estiver live.
+**Última atualização:** 2026-05-24 (sessão A continua) — **Fase 3 do M1-C FECHADA — PRs #51, #52, #53, #54, <PR4_PLACEHOLDER>, <PR5_PLACEHOLDER> mergeados.** Backend completo (M1-C onda 1 ListenerSpine + onda 2 stage_history + #54 stage_history API endpoint), frontend drawer wired (PR 4) e PR 5 fecha o marco com: cleanup rake `algorythmo:crm:cleanup_legacy_leads` (duplo gate em produção: `--force` + `ALGORYTHMO_CLEANUP_CONFIRM=YES_I_KNOW`), 11 specs Playwright reabilitados + 2 specs novos (`owner_assignment`, `stage_history_drawer`), doc operacional `engines/algorythmo/docs/M1-C-OPERATION.md` com smoke checklist do founder. Total da suite Playwright: 13 cenários ativos. Próxima fase: M1-D (polish + observabilidade) ou M2 Onda 2 batch 1.
 
 ---
 
@@ -89,10 +89,14 @@
 - [x] **C.2** → PR #49 mergeado em `a1d6b1fa3`. KanbanBoard + StageColumn + rota `/crm` + sidebar entry + i18n pt_BR + drag composable + MoveLeadModal + empty states. 4 rodadas adversarial.
 - [x] **D** → PR #50 mergeado em `c6e684ef9`. 39 specs Playwright contra CONTRACT v1.0.0 (todos `.skip()`d). 3 rodadas adversarial.
 
-### Fase 3 — Convergência final
-- [ ] **B** → M2 batch 1 Playwright assertions — valida toggle de cada flag
-- [ ] **D** → remove `.skip()` da suite Playwright quando flag `algorythmo_crm` ligar + backend §9 estiver live
-- [ ] **A** → fechar tracking issue #46 (follow-ups M2-FLW-001..011) conforme cada um for endereçado
+### Fase 3 — FECHADA (2026-05-24) — M1-C completo
+- [x] **A** → PRs #51, #52, #53, #54 mergeados (M1-C onda 1 + onda 2 backend).
+- [x] **A (PR 4)** → frontend drawer wired (owner-name + stage-history-list + lazy-load).
+- [x] **A (PR 5)** → cleanup rake (`algorythmo:crm:cleanup_legacy_leads`) com duplo gate em produção + 11 specs Playwright reabilitados + 2 specs novos (`owner_assignment`, `stage_history_drawer`) + doc operacional `engines/algorythmo/docs/M1-C-OPERATION.md`.
+
+### Fase 4 — Próximo (a definir)
+- [ ] **A** → escolher entre M1-D (polish + observabilidade) ou M2 Onda 2 batch 1 Playwright assertions.
+- [ ] **A** → fechar tracking issue #46 (follow-ups M2-FLW-001..011) conforme cada um for endereçado.
 
 ---
 
@@ -168,3 +172,9 @@ Nenhuma no momento. Qualquer dúvida levantada em PR `[BLOCKED]` por B/C/D apare
 | #48 | M1-B/B.4 — LeadAgingChip + LeadCard + timeFormat | 2026-05-24 15:10Z | A (executou C.1) |
 | #49 | M1-B/C.2 — Kanban + /crm + sidebar + MoveLeadModal + useDragLead | 2026-05-24 19:38Z | A (executou C.2) — 4 rodadas adversarial |
 | #50 | M1-B/D — Playwright suite reconciliada com CONTRACT v1.0.0 (39 testes `.skip()`d) | 2026-05-24 19:39Z | A (executou D) — 3 rodadas adversarial |
+| #51 | M1-C/PR1 — CrmListener onda 1 (auto-create + transitions + owner) | 2026-05-24 | A |
+| #52 | M1-C/PR2 — StageHistory model + recorder + listener wire | 2026-05-24 | A |
+| #53 | M1-C — CONTRACT_M1B bump v1.1.0 (drawer owner + stage history testids) | 2026-05-24 | A |
+| #54 | M1-C — stage_history API endpoint + actor_summary preload | 2026-05-24 | A |
+| <PR4_PLACEHOLDER> | M1-C/PR4 — frontend drawer wire (owner-name + stage-history-list + lazy-load) | 2026-05-24 | A |
+| <PR5_PLACEHOLDER> | M1-C/PR5 — cleanup rake + un-skip 11 Playwright + 2 specs novos + doc operacional | 2026-05-24 | A |
