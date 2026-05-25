@@ -87,6 +87,9 @@ function toPresenter(lead, stage, now) {
     time_human: timeSinceLabel(lead.stage_entered_at, now),
     time_aria_long: humanizeDurationLongPtBr(elapsed),
     aging_state: agingStateFor(stage, lead.stage_entered_at, now),
+    // M1-C/PR1: lead_json now carries `owner: { id, name, thumbnail } | null`.
+    // Passed through verbatim — LeadCard renders the avatar or placeholder.
+    owner: lead.owner ?? null,
   };
 }
 
