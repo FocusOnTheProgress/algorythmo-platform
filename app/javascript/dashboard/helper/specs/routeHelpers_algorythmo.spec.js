@@ -121,25 +121,44 @@ describe('isRouteBlockedByAlgorythmoGate', () => {
       );
     });
 
-    it('returns false (allows, fail-open) when the getter throws', () => {
+    it('returns true (blocks, fail-closed) when the getter throws', () => {
+      // D5 promise: Chatwoot surfaces must not leak on transient store errors,
+      // even briefly. Only an explicit boolean `false` allows the surface.
       const throwingGetter = () => {
         throw new Error('store not ready');
       };
       expect(
         isRouteBlockedByAlgorythmoGate(to, throwingGetter, ACCOUNT_ID)
-      ).toBe(false);
+      ).toBe(true);
     });
 
-    it('returns false (allows) when the getter returns undefined', () => {
+    it('returns true (blocks) when the getter returns undefined (flag state unknown)', () => {
+      // The store getter returns `undefined` when the account payload has
+      // not yet loaded, or when `algorythmo_cut_flags` column is missing.
+      // Both must block — the router awaits accounts/get and redirects if
+      // state is still unknown after the fetch.
       expect(
         isRouteBlockedByAlgorythmoGate(to, () => undefined, ACCOUNT_ID)
-      ).toBe(false);
+      ).toBe(true);
     });
 
-    it('returns false (allows) when the getter returns a truthy non-boolean (strict === true required)', () => {
-      // Defensive: only the exact boolean true blocks. Anything else fails open.
+    it('returns true (blocks) when the getter returns null', () => {
+      expect(isRouteBlockedByAlgorythmoGate(to, () => null, ACCOUNT_ID)).toBe(
+        true
+      );
+    });
+
+    it('returns true (blocks) when the getter returns a truthy non-boolean (strict === false required to allow)', () => {
+      // Defensive: only the exact boolean `false` allows. Anything else blocks.
       expect(isRouteBlockedByAlgorythmoGate(to, () => 1, ACCOUNT_ID)).toBe(
-        false
+        true
+      );
+    });
+
+    it('returns true (blocks) when the getter returns 0', () => {
+      // 0 is falsy but not strictly `false` — must still block.
+      expect(isRouteBlockedByAlgorythmoGate(to, () => 0, ACCOUNT_ID)).toBe(
+        true
       );
     });
   });
@@ -180,12 +199,18 @@ describe('isRouteBlockedByAlgorythmoGate', () => {
       warnSpy.mockRestore();
     });
 
-    it('warns once when a route declares an unknown cut flag (typo guard)', () => {
+    it('warns once and blocks every call when a route declares an unknown cut flag (typo guard)', () => {
       const to = {
         meta: { algorythmoCutFlag: 'algorythmo_cut_compaigns' /* typo */ },
       };
-      isRouteBlockedByAlgorythmoGate(to, () => false, ACCOUNT_ID);
-      isRouteBlockedByAlgorythmoGate(to, () => false, ACCOUNT_ID);
+      // Both calls must block — fail-closed on unknown cut flag is the whole
+      // point of the typo guard. Warning is rate-limited; the block is not.
+      expect(isRouteBlockedByAlgorythmoGate(to, () => false, ACCOUNT_ID)).toBe(
+        true
+      );
+      expect(isRouteBlockedByAlgorythmoGate(to, () => false, ACCOUNT_ID)).toBe(
+        true
+      );
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(warnSpy.mock.calls[0][0]).toContain('algorythmo_cut_compaigns');
     });

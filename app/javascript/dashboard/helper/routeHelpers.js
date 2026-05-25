@@ -171,9 +171,10 @@ export const isNotificationRoute = routeName =>
  *   route is blocked when the flag is TRUE. Used by the 13 M2 cut surfaces
  *   (campaigns, help center, sla, audit logs, etc.) where the upstream surface
  *   exists by default and the operator enables the cut to hide it for PME tenants.
- *   Fail-open: any error treats the cut as inactive (route allowed). Cuts are
- *   UX polish, not security — hiding a useful page on a transient store error
- *   would be worse than briefly showing a surface the tenant is choosing to hide.
+ *   Fail-closed: any error or unknown flag state treats the cut as active (route
+ *   blocked). Cuts back the D5 promise that the PME tenant never sees Chatwoot
+ *   surfaces — a transient store error must not leak the cut surface, even briefly.
+ *   The only allow path is an explicit boolean `false` on the cut flag.
  *
  * If both meta keys are present, `algorythmoFeatureFlag` is evaluated first.
  *
@@ -202,30 +203,34 @@ export const isRouteBlockedByAlgorythmoGate = (
   }
 
   if (cutFlag) {
-    // Dev-time guard: catch typos like `algorythmo_cut_compaigns` that would
-    // otherwise silently leave the surface ungated forever. Production builds
-    // strip this branch via `process.env.NODE_ENV`.
-    if (
-      process.env.NODE_ENV !== 'production' &&
-      !isKnownAlgorythmoCutFlag(cutFlag) &&
-      !warnedAlgorythmoCutFlags.has(cutFlag)
-    ) {
-      warnedAlgorythmoCutFlags.add(cutFlag);
-      // eslint-disable-next-line no-console
-      console.warn(
-        `[algorythmo] Unknown cut flag on route meta: ${cutFlag}. ` +
-          `Expected one of dashboard/constants/algorythmoCutFlags ` +
-          `ALGORYTHMO_CUT_FLAG_KEYS. The route will NOT be gated.`
-      );
+    // Unknown cut flag (typo, removed key, drift): always block. Dev builds
+    // also warn once per flag so the typo gets fixed instead of silently
+    // leaking forever. Prod builds skip the warning but still block.
+    if (!isKnownAlgorythmoCutFlag(cutFlag)) {
+      if (
+        process.env.NODE_ENV !== 'production' &&
+        !warnedAlgorythmoCutFlags.has(cutFlag)
+      ) {
+        warnedAlgorythmoCutFlags.add(cutFlag);
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[algorythmo] Unknown cut flag on route meta: ${cutFlag}. ` +
+            `Expected one of dashboard/constants/algorythmoCutFlags ` +
+            `ALGORYTHMO_CUT_FLAG_KEYS. The route will be BLOCKED (fail-closed).`
+        );
+      }
+      return true;
     }
 
     try {
       const cutEnabled = isFeatureEnabledonAccount(accountId, cutFlag);
-      return cutEnabled === true;
+      // Fail-closed: only an explicit boolean `false` allows the surface.
+      // Anything else (undefined, null, truthy non-boolean) blocks.
+      return cutEnabled !== false;
     } catch {
-      // Fail-open: hiding a useful surface on a transient store error is worse
-      // than briefly showing one the tenant is choosing to hide.
-      return false;
+      // Fail-closed: D5 promise — Chatwoot surfaces must not leak on transient
+      // store errors, even briefly. Blocked route lands on dashboard.
+      return true;
     }
   }
 

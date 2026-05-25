@@ -86,6 +86,44 @@ describe('#getters', () => {
         getters.isFeatureEnabledonAccount(state, null, null)(1, 'campaigns')
       ).toBe(false);
     });
+
+    it('returns undefined when algorythmo_cut_flags column is missing on the account', () => {
+      // Account payload exists but the bigint column has not loaded yet
+      // (e.g. fresh login, no migration). The router must treat this as
+      // "unknown" and fail-closed rather than collapsing to a boolean.
+      const state = { records: [accountData] };
+      expect(
+        getters.isFeatureEnabledonAccount(
+          state,
+          null,
+          null
+        )(1, 'algorythmo_cut_campaigns')
+      ).toBeUndefined();
+    });
+
+    it('returns undefined when the specific cut flag key is missing from the column', () => {
+      const state = {
+        records: [{ ...accountData, algorythmo_cut_flags: { sla: true } }],
+      };
+      expect(
+        getters.isFeatureEnabledonAccount(
+          state,
+          null,
+          null
+        )(1, 'algorythmo_cut_campaigns')
+      ).toBeUndefined();
+    });
+
+    it('returns undefined for an algorythmo flag on an unknown account', () => {
+      const state = { records: [] };
+      expect(
+        getters.isFeatureEnabledonAccount(
+          state,
+          null,
+          null
+        )(999, 'algorythmo_cut_campaigns')
+      ).toBeUndefined();
+    });
   });
 
   describe('isRTL', () => {

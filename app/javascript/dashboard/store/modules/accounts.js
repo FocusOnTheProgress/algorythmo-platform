@@ -49,16 +49,23 @@ export const getters = {
   },
   isFeatureEnabledonAccount: $state => (id, featureName) => {
     if (!featureName) return false;
-    const { features = {}, algorythmo_cut_flags: cutFlags = {} } =
-      findRecordById($state, id);
+
+    const account = findRecordById($state, id);
+    const { features = {}, algorythmo_cut_flags: cutFlags } = account || {};
     // algorythmo_ prefixed flags live in algorythmo_cut_flags (dedicated bigint column).
     // Strip the prefix and check there first; fall through to upstream features for everything else.
     const shortName = featureName
       .replace(/^algorythmo_cut_/, '')
       .replace(/^algorythmo_/, '');
-    if (shortName !== featureName && shortName in cutFlags) {
+
+    if (shortName !== featureName) {
+      // Algorythmo-prefixed flag: distinguish "explicit boolean" from "unknown state".
+      // Returning undefined when the account/flag column is missing lets the route
+      // guard fail-closed instead of collapsing unknown → false (= leak).
+      if (!cutFlags || !(shortName in cutFlags)) return undefined;
       return cutFlags[shortName] === true;
     }
+
     return features[featureName] || false;
   },
 };

@@ -15,6 +15,25 @@ const routes = [...dashboard.routes];
 
 export const router = createRouter({ history: createWebHistory(), routes });
 
+const hasAlgorythmoGate = to =>
+  !!(to?.meta?.algorythmoFeatureFlag || to?.meta?.algorythmoCutFlag);
+
+const algorythmoGateFlag = to =>
+  to?.meta?.algorythmoFeatureFlag || to?.meta?.algorythmoCutFlag;
+
+const isAlgorythmoGateStateKnown = (to, accountId) => {
+  const flag = algorythmoGateFlag(to);
+  if (!flag) return true;
+
+  try {
+    const isFeatureEnabledonAccount =
+      store.getters['accounts/isFeatureEnabledonAccount'];
+    return isFeatureEnabledonAccount(accountId, flag) !== undefined;
+  } catch {
+    return false;
+  }
+};
+
 export const validateAuthenticateRoutePermission = async (to, next) => {
   const { isLoggedIn, getCurrentUser: user } = store.getters;
 
@@ -61,11 +80,35 @@ export const validateAuthenticateRoutePermission = async (to, next) => {
   // Check Algorythmo feature gate AFTER permission validation.
   // Routes declare the gate via one of two meta keys:
   //   meta.algorythmoFeatureFlag — enable / opt-in semantic, fail-closed.
-  //   meta.algorythmoCutFlag     — cut / inverted semantic, fail-open.
+  //   meta.algorythmoCutFlag     — cut / inverted semantic, also fail-closed
+  //                                (D5 promise: Chatwoot surfaces must not leak
+  //                                to PME tenants on unknown / loading state).
   // See `isRouteBlockedByAlgorythmoGate` in `helper/routeHelpers.js` for
   // the full contract and precedence rules.
+  //
+  // Race condition: `setUser` is awaited in `beforeEach`, but `accounts/get`
+  // runs from App.vue after the SPA mounts. On a hard reload to a gated URL
+  // the account payload (and its `algorythmo_cut_flags` column) may not yet
+  // exist when this guard fires — the getter returns `undefined`, which the
+  // route helper treats as "unknown → block". We await `accounts/get` once
+  // here so the guard makes its decision on real flag state instead of
+  // false-blocking every direct nav.
   const isFeatureEnabledonAccount =
     store.getters['accounts/isFeatureEnabledonAccount'];
+
+  if (
+    hasAlgorythmoGate(to) &&
+    !isAlgorythmoGateStateKnown(to, routeAccountId)
+  ) {
+    await store.dispatch('accounts/get', { silent: true });
+
+    if (!isAlgorythmoGateStateKnown(to, routeAccountId)) {
+      // Fetch finished but state still unknown (missing column, network
+      // error, typoed flag). Fail-closed: redirect to dashboard.
+      return next(frontendURL(`accounts/${routeAccountId}/dashboard`));
+    }
+  }
+
   if (
     isRouteBlockedByAlgorythmoGate(
       to,
