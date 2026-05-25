@@ -11,9 +11,7 @@
  *   - Stage columns: [data-testid="stage-column"][data-stage-id].
  *   - Lead cards:    [data-testid="lead-card"][data-lead-id].
  *
- * Status: SCAFFOLD — tests .skip() until Sessão C ships:
- *   - PipelineConfigView.vue + PipelineConfigForm.vue (B-PR6 of Sessão C)
- *   - PATCH /stages/:id/rename endpoint (already in Trilha A, confirmed merged)
+ * Status: LIVE (un-skipped in M1-C/PR5).
  */
 
 import {
@@ -60,7 +58,7 @@ test.describe('Pipeline rename', () => {
     );
   });
 
-  test.skip('renaming "Proposta" to "Orçamento" updates column header on Kanban', async ({
+  test('renaming "Proposta" to "Orçamento" updates column header on Kanban', async ({
     page,
   }) => {
     await mockLeads(page, []);
@@ -96,7 +94,7 @@ test.describe('Pipeline rename', () => {
     ).toHaveText('Orçamento', { timeout: 5_000 });
   });
 
-  test.skip('renaming a stage updates aria-label on Lead cards within that stage', async ({
+  test('renaming a stage updates aria-label on Lead cards within that stage', async ({
     page,
   }) => {
     const leadInStage3 = mockLead({

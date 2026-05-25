@@ -10,8 +10,7 @@
  *     Open "Novo": data-stage-id="1" (kind="open").
  *   - Lead cards:    [data-testid="lead-card"][data-lead-id].
  *
- * Status: SCAFFOLD — all tests .skip() until Sessão C ships LeadDetailDrawer
- * (B-PR6) and B-PR1 ships the reopen endpoint.
+ * Status: LIVE (un-skipped in M1-C/PR5).
  */
 
 import {
@@ -53,7 +52,7 @@ test.describe('Reopen Lead', () => {
     await mockDefaultPipeline(page);
   });
 
-  test.skip('"Reabrir como novo Lead" button is visible on Lead in "Fechado ganho" stage', async ({
+  test('"Reabrir como novo Lead" button is visible on Lead in "Fechado ganho" stage', async ({
     page,
   }) => {
     await mockLeads(page, [WON_LEAD]);
@@ -71,7 +70,7 @@ test.describe('Reopen Lead', () => {
     await expect(reopenBtn).toBeVisible({ timeout: 5_000 });
   });
 
-  test.skip('"Reabrir" creates new Lead in "Novo" with previous_lead_id', async ({
+  test('"Reabrir" creates new Lead in "Novo" with previous_lead_id', async ({
     page,
   }) => {
     await mockLeads(page, [WON_LEAD]);
@@ -113,7 +112,7 @@ test.describe('Reopen Lead', () => {
     ).toBeVisible({ timeout: 5_000 });
   });
 
-  test.skip('"Reabrir" button is NOT visible on Lead in open stages (Novo, Qualificado, Proposta)', async ({
+  test('"Reabrir" button is NOT visible on Lead in open stages (Novo, Qualificado, Proposta)', async ({
     page,
   }) => {
     const openLead = mockLead({

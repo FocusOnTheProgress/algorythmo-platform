@@ -8,9 +8,7 @@
  *   - Stage columns: [data-testid="stage-column"][data-stage-id].
  *   - Lead cards:    [data-testid="lead-card"][data-lead-id].
  *
- * Status: SCAFFOLD — tests .skip() until:
- *   - B-PR1 ships the backend listener + idempotency guard.
- *   - B-PR5 ships the polling infrastructure for the Kanban to observe counts.
+ * Status: LIVE (un-skipped in M1-C/PR5).
  */
 
 import {
@@ -29,7 +27,7 @@ test.describe('Lead Idempotency', () => {
     await mockDefaultPipeline(page);
   });
 
-  test.skip('polling upsert does not duplicate a Lead already in the Kanban (client-side dedup)', async ({
+  test('polling upsert does not duplicate a Lead already in the Kanban (client-side dedup)', async ({
     page,
   }) => {
     // Validates useLeadStore.upsertLeads() client-side dedup: polling that
@@ -64,7 +62,7 @@ test.describe('Lead Idempotency', () => {
     );
   });
 
-  test.skip('contact with closed Lead gets a NEW Lead on new message (reopen flow)', async ({
+  test('contact with closed Lead gets a NEW Lead on new message (reopen flow)', async ({
     page,
   }) => {
     // After a lead is won/lost, a new message from the same contact creates

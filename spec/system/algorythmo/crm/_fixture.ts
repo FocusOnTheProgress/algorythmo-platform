@@ -4,10 +4,8 @@
  * CONTRACT REFERENCE: docs/coordination/CONTRACT_M1B.md v1.0.0
  *   — single source of truth for data-testid + aria attributes consumed here.
  *
- * SCAFFOLD STATE: every spec is wrapped in test.skip() until the backend
- * endpoints in CONTRACT §9 are live AND the test account has `algorythmo_crm`
- * enabled. The suite is shipped now so reviews of C.2 can read what D will
- * assert once the gates open.
+ * Suite is LIVE since M1-C/PR5 (CONTRACT §9 endpoints and `algorythmo_crm`
+ * flag are gated by the test account setup — see PRECONDITIONS below).
  *
  * Provides:
  * - `mockLead()`    — builds a full Lead JSON matching the actual API shape

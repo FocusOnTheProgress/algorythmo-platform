@@ -18,8 +18,7 @@
  *   and the pt_BR copy of `ALGORYTHMO_CRM.ANNOUNCE.MOVE_FAILED` rather than
  *   hard-coded substrings, so a CONTRACT §9 rename can't break this suite.
  *
- * Status: SCAFFOLD — all tests .skip() until backend endpoints in CONTRACT §9
- * are live AND test account has `algorythmo_crm` enabled.
+ * Status: LIVE (un-skipped in M1-C/PR5).
  */
 
 import {
@@ -74,7 +73,7 @@ test.describe('Kanban — Drag and Drop', () => {
     await mockLeads(page, [LEAD_IN_NOVO]);
   });
 
-  test.skip(
+  test(
     'drag Lead from "Novo" to "Qualificado" — optimistic move reflects immediately',
     async ({ page }) => {
       await mockMoveSuccess(page);
@@ -102,7 +101,7 @@ test.describe('Kanban — Drag and Drop', () => {
     }
   );
 
-  test.skip(
+  test(
     'drag Lead persists after page refresh',
     async ({ page }) => {
       await mockMoveSuccess(page);
@@ -130,7 +129,7 @@ test.describe('Kanban — Drag and Drop', () => {
     }
   );
 
-  test.skip(
+  test(
     'drag failure (5xx) rolls back card and announces via aria-live',
     async ({ page }) => {
       await page.route(`**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/leads/*/move`, async (route) => {
@@ -166,7 +165,7 @@ test.describe('Kanban — Drag and Drop', () => {
     }
   );
 
-  test.skip(
+  test(
     'intra-stage drag does not change card position (Q-B3)',
     async ({ page }) => {
       // Two cards in the same stage so order is observable.
@@ -206,7 +205,7 @@ test.describe('Kanban — Drag and Drop', () => {
     }
   );
 
-  test.skip(
+  test(
     'aria-live region announces move to screen readers',
     async ({ page }) => {
       await mockMoveSuccess(page);

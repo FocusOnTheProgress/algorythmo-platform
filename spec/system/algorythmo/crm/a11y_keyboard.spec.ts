@@ -16,10 +16,7 @@
  *   - Stage columns: [data-testid="stage-column"][data-stage-id].
  *   - Move modal: [data-testid="move-lead-modal"] (§6).
  *
- * Status: SCAFFOLD — tests .skip() until Sessão C ships:
- *   - KanbanBoard.vue with correct tabindex/role (B-PR5)
- *   - LeadDetailDrawer.vue with focus trap (B-PR6)
- *   - MoveLeadModal.vue (B-PR7 / B.11) [already shipped via PR #49]
+ * Status: LIVE (un-skipped in M1-C/PR5).
  */
 
 import {
@@ -50,7 +47,7 @@ test.describe('A11y — Keyboard navigation', () => {
     await goToCrm(page);
   });
 
-  test.skip('Tab reaches lead card in "Novo" column', async ({ page }) => {
+  test('Tab reaches lead card in "Novo" column', async ({ page }) => {
     let focusedOnCard = false;
     for (let i = 0; i < 20; i++) {
       await page.keyboard.press('Tab');
@@ -68,7 +65,7 @@ test.describe('A11y — Keyboard navigation', () => {
     expect(focusedOnCard).toBe(true);
   });
 
-  test.skip('Enter on focused card opens LeadDetailDrawer', async ({
+  test('Enter on focused card opens LeadDetailDrawer', async ({
     page,
   }) => {
     for (let i = 0; i < 20; i++) {
@@ -86,7 +83,7 @@ test.describe('A11y — Keyboard navigation', () => {
     await expect(drawer).toBeVisible({ timeout: 3_000 });
   });
 
-  test.skip('Esc closes drawer and returns focus to triggering card', async ({
+  test('Esc closes drawer and returns focus to triggering card', async ({
     page,
   }) => {
     const leadCard = page.locator(
@@ -103,7 +100,7 @@ test.describe('A11y — Keyboard navigation', () => {
     await expect(leadCard).toBeFocused();
   });
 
-  test.skip('Tab loops within open drawer (focus trap)', async ({ page }) => {
+  test('Tab loops within open drawer (focus trap)', async ({ page }) => {
     const leadCard = page.locator(
       '[data-testid="lead-card"][data-lead-id="1"]'
     );
@@ -123,7 +120,7 @@ test.describe('A11y — Keyboard navigation', () => {
     }
   });
 
-  test.skip('keyboard-only "Mover para..." flow moves card to target stage (T-B19)', async ({
+  test('keyboard-only "Mover para..." flow moves card to target stage (T-B19)', async ({
     page,
   }) => {
     await page.route(

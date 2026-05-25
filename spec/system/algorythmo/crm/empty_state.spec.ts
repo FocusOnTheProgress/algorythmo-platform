@@ -5,8 +5,7 @@
  *   global  → [data-testid="kanban-empty-state"] + [data-testid="kanban-empty-cta"]
  *   coluna  → [data-testid="stage-empty-state"][data-stage-id] + [data-testid="stage-empty-text"]
  *
- * Status: SCAFFOLD — tests .skip() until backend endpoints in CONTRACT §9 are
- * live AND test account has `algorythmo_crm` enabled.
+ * Status: LIVE (un-skipped in M1-C/PR5).
  */
 
 import {
@@ -29,7 +28,7 @@ test.describe('Empty State', () => {
     await mockLeads(page, []);
   });
 
-  test.skip('global empty state is shown when all stages have zero Leads', async ({
+  test('global empty state is shown when all stages have zero Leads', async ({
     page,
   }) => {
     await goToCrm(page);
@@ -42,7 +41,7 @@ test.describe('Empty State', () => {
     ).toBeVisible();
   });
 
-  test.skip('global empty state CTA link is Tab-focusable and points to inbox setup', async ({
+  test('global empty state CTA link is Tab-focusable and points to inbox setup', async ({
     page,
   }) => {
     await goToCrm(page);
@@ -58,7 +57,7 @@ test.describe('Empty State', () => {
     expect(href).toContain(`/accounts/${TEST_ACCOUNT_ID}/settings/inboxes/new`);
   });
 
-  test.skip('per-column empty state shows subtle text when other stages have Leads', async ({
+  test('per-column empty state shows subtle text when other stages have Leads', async ({
     page,
   }) => {
     // Override beforeEach: "Novo" has a lead, "Qualificado" is empty.

@@ -17,10 +17,9 @@
  *   docs/plans/0001-mvp-algorythmo-os.md §3 criterio 9
  *   docs/algorythmo/crm/A11Y.md (WCAG gate criteria)
  *
- * Status: SCAFFOLD — test.skip() until:
- *   1. /crm route is live (Sessão C ships CrmKanbanView).
- *   2. @axe-core/playwright is installed (pnpm add -D @axe-core/playwright).
- * Fase 2: remove skip, let it run as a live CI gate.
+ * Status: LIVE (un-skipped in M1-C/PR5). The inner `test.skip(true, ...)` guards
+ * skip at runtime if @axe-core/playwright is missing, so CI machines without
+ * the dep still pass instead of fail.
  */
 
 import { test, expect } from '@playwright/test';
@@ -50,7 +49,7 @@ async function getAxeBuilder() {
 }
 
 test.describe('A11y smoke — axe-core WCAG AA gate', () => {
-  test.skip('/crm returns zero axe violations (critical + serious)', async ({
+  test('/crm returns zero axe violations (critical + serious)', async ({
     page,
   }) => {
     const AxeBuilder = await getAxeBuilder();
@@ -106,7 +105,7 @@ test.describe('A11y smoke — axe-core WCAG AA gate', () => {
     expect(gating).toHaveLength(0);
   });
 
-  test.skip('/crm/pipeline returns zero axe violations (critical + serious)', async ({
+  test('/crm/pipeline returns zero axe violations (critical + serious)', async ({
     page,
   }) => {
     const AxeBuilder = await getAxeBuilder();
