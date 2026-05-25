@@ -11,6 +11,23 @@
       "LOADING": "Carregando leads",
       "TOAST_REGION_LABEL": "Notificações do CRM"
     },
+    "METRICS": {
+      "SUMMARY_ARIA_LABEL": "Resumo do pipeline",
+      "OPEN_LEADS_LABEL": "Leads abertos",
+      "AVG_FUNNEL_LABEL": "Tempo médio do funil",
+      "CONVERSION_RATE_LABEL": "Conversão",
+      "STAGE_AVG_TIME_LABEL": "Tempo médio na etapa",
+      "STAGE_CONVERSION_NEXT_LABEL": "→ próxima etapa",
+      "STAGE_CHIP_ARIA": "Tempo médio {time}, conversão para próxima etapa {rate}",
+      "STAGE_CHIP_ARIA_NO_CONVERSION": "Tempo médio {time}",
+      "LOADING": "Carregando métricas…",
+      "ERROR_TOOLTIP": "Não foi possível carregar as métricas. Tente novamente em alguns segundos.",
+      "PLACEHOLDER": "—",
+      "HOURS_SHORT": "{value}h",
+      "MINUTES_SHORT": "{value}min",
+      "SECONDS_SHORT": "{value}s",
+      "DAYS_SHORT": "{value}d"
+    },
     "STAGE": {
       "EMPTY": "Nenhum lead aqui ainda",
       "DROP_HINT": "Solte para mover"
