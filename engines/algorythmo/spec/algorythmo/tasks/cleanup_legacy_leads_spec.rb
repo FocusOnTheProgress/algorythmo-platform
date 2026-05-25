@@ -3,6 +3,7 @@
 require 'rails_helper'
 require 'fileutils'
 require 'tmpdir'
+require 'rake'
 
 # §8.3 spec for cleanup_legacy_leads. Five scenarios:
 #  1. dev happy path — deletes only legacy rows, keeps the rest
@@ -14,6 +15,13 @@ require 'tmpdir'
 # Tests target the underlying service class directly (Algorythmo::Tasks::CleanupLegacyLeads)
 # because Rake::Task invocation reaches it the same way the CLI does. A separate
 # end-to-end test asserts the rake task itself wires force/env correctly.
+
+# Rake mixes its DSL (`namespace`, `task`, `desc`) into the top-level `main`
+# object via its CLI bootstrap. When `load`-ing a .rake file from RSpec we
+# don't get that bootstrap — mix it in manually so the file evaluates cleanly.
+main_obj = TOPLEVEL_BINDING.eval('self')
+main_obj.extend(Rake::DSL) unless main_obj.singleton_class.include?(Rake::DSL)
+Rake.application ||= Rake::Application.new
 
 # The rake file defines the service class as a side effect — load it once.
 load Rails.root.join('engines/algorythmo/lib/tasks/algorythmo/cleanup.rake')
@@ -146,29 +154,32 @@ RSpec.describe Algorythmo::Tasks::CleanupLegacyLeads do
       expect(Algorythmo::Lead.count).to eq(1)
     end
 
-    it 'executes when both gates pass and writes the audit log' do
-      legacy_ids = Array.new(2) { create_legacy_lead!.id }
+    context 'when both gates pass' do
+      let!(:legacy_ids) { Array.new(2) { create_legacy_lead!.id } }
+      let(:result) { execute!(force: true, confirm_env: described_class::CONFIRM_TOKEN, env: prod_env) }
 
-      result = execute!(force: true, confirm_env: described_class::CONFIRM_TOKEN, env: prod_env)
+      it 'deletes the legacy rows' do
+        expect(result[:deleted]).to eq(2)
+        expect(Algorythmo::Lead.where(id: legacy_ids)).to be_empty
+      end
 
-      expect(result[:deleted]).to eq(2)
-      expect(Algorythmo::Lead.where(id: legacy_ids)).to be_empty
-
-      audit_path = result[:audit_path]
-      expect(File.exist?(audit_path)).to be(true)
-      audit = File.read(audit_path)
-      expect(audit).to match(/env=production/)
-      expect(audit).to match(/force_flag=true/)
-      expect(audit).to match(/confirm_env_present=true/)
-      expect(audit).to match(/deleted_count=2/)
-      expect(audit).to match(/scanned_count=2/)
-      legacy_ids.each { |id| expect(audit).to include(id.to_s) }
+      it 'writes the audit log with gate state, env, counts and scanned ids' do
+        audit_path = result[:audit_path]
+        expect(File.exist?(audit_path)).to be(true)
+        audit = File.read(audit_path)
+        expect(audit).to match(/env=production/)
+        expect(audit).to match(/force_flag=true/)
+        expect(audit).to match(/confirm_env_present=true/)
+        expect(audit).to match(/deleted_count=2/)
+        expect(audit).to match(/scanned_count=2/)
+        legacy_ids.each { |id| expect(audit).to include(id.to_s) }
+      end
     end
   end
 
   describe 'audit log path naming' do
     it 'writes to tmp/cleanup_legacy_leads_<unix>.log inside the configured audit dir' do
-      travel_to(Time.at(1_700_000_000)) do
+      travel_to(Time.zone.at(1_700_000_000)) do
         result = execute!
         expected = audit_dir.join('cleanup_legacy_leads_1700000000.log').to_s
         expect(result[:audit_path]).to eq(expected)
@@ -193,7 +204,7 @@ RSpec.describe Algorythmo::Tasks::CleanupLegacyLeads do
       legacy_id = create_legacy_lead!.id
 
       original_argv = ARGV.dup
-      original_env  = ENV['ALGORYTHMO_CLEANUP_CONFIRM']
+      original_env  = ENV.fetch('ALGORYTHMO_CLEANUP_CONFIRM', nil)
       begin
         ARGV.replace(['algorythmo:crm:cleanup_legacy_leads', '--', '--force'])
         ENV['ALGORYTHMO_CLEANUP_CONFIRM'] = described_class::CONFIRM_TOKEN
@@ -202,8 +213,9 @@ RSpec.describe Algorythmo::Tasks::CleanupLegacyLeads do
         allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('production'))
 
         # Route audit log to our tmpdir so the assertion is isolated.
+        captured_dir = audit_dir
         allow_any_instance_of(described_class).to receive(:initialize).and_wrap_original do |orig, **kwargs|
-          orig.call(**kwargs.merge(audit_dir: audit_dir, output: StringIO.new))
+          orig.call(**kwargs, audit_dir: captured_dir, output: StringIO.new)
         end
 
         Rake::Task['algorythmo:crm:cleanup_legacy_leads'].invoke
@@ -220,7 +232,7 @@ RSpec.describe Algorythmo::Tasks::CleanupLegacyLeads do
       create_legacy_lead!
 
       original_argv = ARGV.dup
-      original_env  = ENV['ALGORYTHMO_CLEANUP_CONFIRM']
+      original_env  = ENV.fetch('ALGORYTHMO_CLEANUP_CONFIRM', nil)
       begin
         ARGV.replace(['algorythmo:crm:cleanup_legacy_leads'])
         ENV['ALGORYTHMO_CLEANUP_CONFIRM'] = described_class::CONFIRM_TOKEN

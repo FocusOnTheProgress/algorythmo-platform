@@ -25,6 +25,7 @@ module Algorythmo
 
       class AbortedByGate < StandardError; end
 
+      # rubocop:disable Metrics/ParameterLists
       def self.execute!(force:, confirm_env:, env: Rails.env, logger: Rails.logger, audit_dir: nil, output: $stdout)
         new(
           force: force,
@@ -37,6 +38,7 @@ module Algorythmo
       end
 
       def initialize(force:, confirm_env:, env:, logger:, audit_dir:, output:)
+        # rubocop:enable Metrics/ParameterLists
         @force       = force
         @confirm_env = confirm_env
         @env         = env
@@ -97,7 +99,7 @@ module Algorythmo
           f.puts("started_utc=#{Time.now.utc.iso8601}")
           f.puts("env=#{@env}")
           f.puts("force_flag=#{@force ? 'true' : 'false'}")
-          f.puts("confirm_env_present=#{(!@confirm_env.nil? && !@confirm_env.empty?) ? 'true' : 'false'}")
+          f.puts("confirm_env_present=#{@confirm_env.present? ? 'true' : 'false'}")
           f.puts("scanned_count=#{ids.size}")
           f.puts("scanned_ids=#{ids.inspect}")
         end
@@ -123,22 +125,20 @@ namespace :algorythmo do
   namespace :crm do
     desc 'Delete legacy leads (channel_origin blank + last_message_at nil). Idempotent. Double-gated in production.'
     task cleanup_legacy_leads: :environment do
-      begin
-        Algorythmo::Tasks::CleanupLegacyLeads.execute!(
-          force: ARGV.include?('--force'),
-          confirm_env: ENV['ALGORYTHMO_CLEANUP_CONFIRM']
-        )
-      rescue Algorythmo::Tasks::CleanupLegacyLeads::AbortedByGate => e
-        abort("[cleanup_legacy_leads] ABORT: #{e.message}")
-      end
+      Algorythmo::Tasks::CleanupLegacyLeads.execute!(
+        force: ARGV.include?('--force'),
+        confirm_env: ENV.fetch('ALGORYTHMO_CLEANUP_CONFIRM', nil)
+      )
+    rescue Algorythmo::Tasks::CleanupLegacyLeads::AbortedByGate => e
+      abort("[cleanup_legacy_leads] ABORT: #{e.message}")
+    end
 
     # Rake otherwise treats `--force` as an additional task name and crashes
     # with "Don't know how to build task '--force'". Define it once as a
     # deterministic no-op. Scope is limited to the single token we actually
     # accept (no ARGV iteration — that would extend arbitrary tasks).
-    task :'--force' do
+    task :'--force' => :environment do
       # no-op — see comment above
-    end
     end
   end
 end
