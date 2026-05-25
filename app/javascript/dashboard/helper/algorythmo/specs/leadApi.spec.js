@@ -17,6 +17,7 @@ import {
   updateLead,
   createLead,
   fetchLeadConversations,
+  fetchStageHistory,
   renameStage,
   updateStage,
   accountIdFromPath,
@@ -122,6 +123,19 @@ describe('leadApi', () => {
         `${BASE}/leads/10/conversations`,
         { params: { cursor: 'xyz', limit: 10 } }
       );
+    });
+  });
+
+  describe('fetchStageHistory', () => {
+    it('calls GET /leads/:id/stage_history', async () => {
+      await fetchStageHistory(ACCOUNT_ID, 77);
+      expect(mockAxios.get).toHaveBeenCalledWith(
+        `${BASE}/leads/77/stage_history`
+      );
+    });
+
+    it('rejects on invalid accountId', () => {
+      expect(() => fetchStageHistory('bad-id', 1)).toThrow(/invalid accountId/);
     });
   });
 
