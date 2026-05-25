@@ -48,10 +48,17 @@ module Algorythmo
       def execute!
         gate_in_production!
 
-        ids = legacy_scope.pluck(:id)
-        audit_path = write_audit_header(ids)
-
-        deleted = legacy_scope.delete_all
+        ids = nil
+        deleted = nil
+        audit_path = nil
+        Algorythmo::Lead.transaction do
+          ids = legacy_scope.pluck(:id)
+          audit_path = write_audit_header(ids)
+          # Delete by id-set (not scope re-evaluation) so the audit's
+          # scanned_ids and deleted_count cannot drift if a concurrent
+          # insert lands a fresh legacy-shaped row between the two queries.
+          deleted = Algorythmo::Lead.where(id: ids).delete_all
+        end
         write_audit_footer(audit_path, deleted)
 
         announce("[cleanup_legacy_leads] removed #{deleted} legacy lead(s). Audit log: #{audit_path}")
@@ -123,11 +130,15 @@ namespace :algorythmo do
         )
       rescue Algorythmo::Tasks::CleanupLegacyLeads::AbortedByGate => e
         abort("[cleanup_legacy_leads] ABORT: #{e.message}")
-      ensure
-        # Rake otherwise treats `--force` as an additional task name and crashes
-        # with "Don't know how to build task '--force'". Stub it as a no-op.
-        ARGV.each { |arg| task arg.to_sym do; end }
       end
+
+    # Rake otherwise treats `--force` as an additional task name and crashes
+    # with "Don't know how to build task '--force'". Define it once as a
+    # deterministic no-op. Scope is limited to the single token we actually
+    # accept (no ARGV iteration — that would extend arbitrary tasks).
+    task :'--force' do
+      # no-op — see comment above
+    end
     end
   end
 end

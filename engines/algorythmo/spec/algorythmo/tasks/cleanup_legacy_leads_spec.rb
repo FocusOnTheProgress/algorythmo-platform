@@ -175,4 +175,67 @@ RSpec.describe Algorythmo::Tasks::CleanupLegacyLeads do
       end
     end
   end
+
+  describe 'rake CLI wiring' do
+    # Guards the surface that the service-class specs above don't reach:
+    # how the rake task extracts `--force` from ARGV and CONFIRM_TOKEN
+    # from ENV. A typo in either name (e.g. `'--Force'`, `'ALGORYTMO_…'`)
+    # would silently bypass the gate without breaking any service spec.
+    before do
+      # Force re-load so the rake `task` block re-registers with our
+      # newly-instantiated Rake application below.
+      Rake.application = Rake::Application.new
+      load Rails.root.join('engines/algorythmo/lib/tasks/algorythmo/cleanup.rake')
+      Rake::Task.define_task(:environment) # stub :environment dependency
+    end
+
+    it 'reads --force from ARGV and CONFIRM_TOKEN from ENV in production' do
+      legacy_id = create_legacy_lead!.id
+
+      original_argv = ARGV.dup
+      original_env  = ENV['ALGORYTHMO_CLEANUP_CONFIRM']
+      begin
+        ARGV.replace(['algorythmo:crm:cleanup_legacy_leads', '--', '--force'])
+        ENV['ALGORYTHMO_CLEANUP_CONFIRM'] = described_class::CONFIRM_TOKEN
+
+        # Stub Rails.env to production for this invocation only.
+        allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('production'))
+
+        # Route audit log to our tmpdir so the assertion is isolated.
+        allow_any_instance_of(described_class).to receive(:initialize).and_wrap_original do |orig, **kwargs|
+          orig.call(**kwargs.merge(audit_dir: audit_dir, output: StringIO.new))
+        end
+
+        Rake::Task['algorythmo:crm:cleanup_legacy_leads'].invoke
+
+        expect(Algorythmo::Lead.where(id: legacy_id)).to be_empty
+      ensure
+        ARGV.replace(original_argv)
+        ENV['ALGORYTHMO_CLEANUP_CONFIRM'] = original_env
+        Rake::Task['algorythmo:crm:cleanup_legacy_leads'].reenable
+      end
+    end
+
+    it 'aborts the rake task when --force missing in production' do
+      create_legacy_lead!
+
+      original_argv = ARGV.dup
+      original_env  = ENV['ALGORYTHMO_CLEANUP_CONFIRM']
+      begin
+        ARGV.replace(['algorythmo:crm:cleanup_legacy_leads'])
+        ENV['ALGORYTHMO_CLEANUP_CONFIRM'] = described_class::CONFIRM_TOKEN
+        allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('production'))
+
+        expect do
+          Rake::Task['algorythmo:crm:cleanup_legacy_leads'].invoke
+        end.to raise_error(SystemExit)
+
+        expect(Algorythmo::Lead.count).to eq(1)
+      ensure
+        ARGV.replace(original_argv)
+        ENV['ALGORYTHMO_CLEANUP_CONFIRM'] = original_env
+        Rake::Task['algorythmo:crm:cleanup_legacy_leads'].reenable
+      end
+    end
+  end
 end
