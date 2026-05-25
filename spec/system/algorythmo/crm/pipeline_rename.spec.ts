@@ -11,9 +11,11 @@
  *   - Stage columns: [data-testid="stage-column"][data-stage-id].
  *   - Lead cards:    [data-testid="lead-card"][data-lead-id].
  *
- * Status: SCAFFOLD — tests .skip() until Sessão C ships:
- *   - PipelineConfigView.vue + PipelineConfigForm.vue (B-PR6 of Sessão C)
- *   - PATCH /stages/:id/rename endpoint (already in Trilha A, confirmed merged)
+ * Status: SKIPPED — blocked-on B-PR6 (PipelineConfigView). In main, the
+ *   /crm/pipeline route resolves to PipelineConfigPlaceholder.vue (a
+ *   static "em breve" message). The `[data-testid="stage-name-input"]`
+ *   element lives in the real PipelineConfigView shipped by B-PR6.
+ *   Un-skip after B-PR6 merges. NOT blocked on PR 4.
  */
 
 import {
@@ -37,7 +39,7 @@ const RENAMED_STAGES = DEFAULT_PIPELINE_STAGES.map(s =>
   s.id === 3 ? { ...s, name: RENAMED_STAGE_NAME } : s
 );
 
-test.describe('Pipeline rename', () => {
+test.describe.skip('Pipeline rename', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
     await mockDefaultPipeline(page);
@@ -60,7 +62,7 @@ test.describe('Pipeline rename', () => {
     );
   });
 
-  test.skip('renaming "Proposta" to "Orçamento" updates column header on Kanban', async ({
+  test('renaming "Proposta" to "Orçamento" updates column header on Kanban', async ({
     page,
   }) => {
     await mockLeads(page, []);
@@ -96,7 +98,7 @@ test.describe('Pipeline rename', () => {
     ).toHaveText('Orçamento', { timeout: 5_000 });
   });
 
-  test.skip('renaming a stage updates aria-label on Lead cards within that stage', async ({
+  test('renaming a stage updates aria-label on Lead cards within that stage', async ({
     page,
   }) => {
     const leadInStage3 = mockLead({

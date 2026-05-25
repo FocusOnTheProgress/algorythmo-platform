@@ -11,8 +11,7 @@
  *     open stages share kind="open" — identify by id, not kind.
  *   - Lead cards: [data-testid="lead-card"][data-lead-id][data-channel].
  *
- * Status: SCAFFOLD — all tests .skip() until Sessão C ships CrmKanbanView
- * and Sessão B ships the polling infrastructure (B.7).
+ * Status: LIVE (un-skipped in M1-C/PR5).
  */
 
 import {
@@ -31,7 +30,7 @@ test.describe('D6 — Auto-create Lead por canal', () => {
     await mockDefaultPipeline(page);
   });
 
-  test.skip('widget message creates Lead in "Novo" stage within 10s (polling)', async ({
+  test('widget message creates Lead in "Novo" stage within 10s (polling)', async ({
     page,
   }) => {
     const lead = mockLead({
@@ -57,7 +56,7 @@ test.describe('D6 — Auto-create Lead por canal', () => {
     ).toBeVisible();
   });
 
-  test.skip('WhatsApp message creates Lead in "Novo" stage with WhatsApp channel icon', async ({
+  test('WhatsApp message creates Lead in "Novo" stage with WhatsApp channel icon', async ({
     page,
   }) => {
     const lead = mockLead({
@@ -80,7 +79,7 @@ test.describe('D6 — Auto-create Lead por canal', () => {
     await expect(leadCard).toHaveAttribute('data-channel', 'whatsapp');
   });
 
-  test.skip('email message creates Lead in "Novo" stage', async ({ page }) => {
+  test('email message creates Lead in "Novo" stage', async ({ page }) => {
     const lead = mockLead({
       id: 3,
       stageId: 1,
@@ -99,7 +98,7 @@ test.describe('D6 — Auto-create Lead por canal', () => {
     await expect(leadCard).toBeVisible({ timeout: 12_000 });
   });
 
-  test.skip('Instagram DM creates Lead in "Novo" stage', async ({ page }) => {
+  test('Instagram DM creates Lead in "Novo" stage', async ({ page }) => {
     const lead = mockLead({
       id: 4,
       stageId: 1,

@@ -13,9 +13,11 @@
  * Expected aria-label format per B.12:
  *   "Lead {name}, etapa {stage}, há {timeHuman}, canal {channel}"
  *
- * Status: SCAFFOLD — tests .skip() until Sessão C ships:
- *   - LeadCard.vue with correct aria-label (B-PR4) [shipped via PR #48]
- *   - KanbanBoard.vue with aria-live region (B-PR5) [shipped via PR #49]
+ * Status: PARTIALLY LIVE — card aria-label, aria-live announce, and
+ *   aging chip tests are un-skipped in M1-C/PR5. The drawer dialog test
+ *   is individually skipped with `test.skip(true, 'blocked-on PR 4')`
+ *   because the drawer is wired in PR 4 (card click only fires a toast
+ *   in main). Un-skip after PR 4 merges.
  */
 
 import {
@@ -50,7 +52,7 @@ test.describe('A11y — Screen reader', () => {
     await goToCrm(page);
   });
 
-  test.skip('lead card has descriptive aria-label including name, stage, time, and channel', async ({
+  test('lead card has descriptive aria-label including name, stage, time, and channel', async ({
     page,
   }) => {
     const leadCard = page.locator(
@@ -66,7 +68,7 @@ test.describe('A11y — Screen reader', () => {
     expect(ariaLabel).toMatch(/whatsapp/i);
   });
 
-  test.skip('aria-live region announces Lead move between stages', async ({
+  test('aria-live region announces Lead move between stages', async ({
     page,
   }) => {
     await page.route(
@@ -104,9 +106,10 @@ test.describe('A11y — Screen reader', () => {
     });
   });
 
-  test.skip('drawer has role="dialog" with aria-modal and aria-labelledby', async ({
+  test('drawer has role="dialog" with aria-modal and aria-labelledby', async ({
     page,
   }) => {
+    test.skip(true, 'blocked-on PR 4 — LeadDetailDrawer not in main yet (card click fires toast).');
     const leadCard = page.locator(
       '[data-testid="lead-card"][data-lead-id="1"]'
     );
@@ -123,7 +126,7 @@ test.describe('A11y — Screen reader', () => {
     await expect(heading).toContainText(/João Silva/i);
   });
 
-  test.skip('aging chip has accessible label describing state and time', async ({
+  test('aging chip has accessible label describing state and time', async ({
     page,
   }) => {
     const leadCard = page.locator(

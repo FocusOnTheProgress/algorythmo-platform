@@ -10,8 +10,11 @@
  *     Open "Novo": data-stage-id="1" (kind="open").
  *   - Lead cards:    [data-testid="lead-card"][data-lead-id].
  *
- * Status: SCAFFOLD — all tests .skip() until Sessão C ships LeadDetailDrawer
- * (B-PR6) and B-PR1 ships the reopen endpoint.
+ * Status: SKIPPED — blocked-on PR 4 (LeadDetailDrawer wire). The
+ *   "Reabrir como novo Lead" button lives inside the drawer footer, and
+ *   the drawer is not in main yet (card click fires a toast). Un-skip
+ *   in the follow-up commit on this branch after PR 4 merges, alongside
+ *   owner_assignment and stage_history_drawer specs.
  */
 
 import {
@@ -47,13 +50,13 @@ const REOPENED_LEAD = mockLead({
   contactName: 'Won Lead User',
 });
 
-test.describe('Reopen Lead', () => {
+test.describe.skip('Reopen Lead', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
     await mockDefaultPipeline(page);
   });
 
-  test.skip('"Reabrir como novo Lead" button is visible on Lead in "Fechado ganho" stage', async ({
+  test('"Reabrir como novo Lead" button is visible on Lead in "Fechado ganho" stage', async ({
     page,
   }) => {
     await mockLeads(page, [WON_LEAD]);
@@ -71,7 +74,7 @@ test.describe('Reopen Lead', () => {
     await expect(reopenBtn).toBeVisible({ timeout: 5_000 });
   });
 
-  test.skip('"Reabrir" creates new Lead in "Novo" with previous_lead_id', async ({
+  test('"Reabrir" creates new Lead in "Novo" with previous_lead_id', async ({
     page,
   }) => {
     await mockLeads(page, [WON_LEAD]);
@@ -113,7 +116,7 @@ test.describe('Reopen Lead', () => {
     ).toBeVisible({ timeout: 5_000 });
   });
 
-  test.skip('"Reabrir" button is NOT visible on Lead in open stages (Novo, Qualificado, Proposta)', async ({
+  test('"Reabrir" button is NOT visible on Lead in open stages (Novo, Qualificado, Proposta)', async ({
     page,
   }) => {
     const openLead = mockLead({

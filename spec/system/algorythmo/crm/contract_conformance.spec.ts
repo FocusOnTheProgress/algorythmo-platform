@@ -7,15 +7,13 @@
  * that — but to catch contract drift before D, C, or B ship a divergence
  * that breaks the other tracks.
  *
- * The meta-spec is split into one `test.skip()` per CONTRACT section so an
- * un-skip pass surfaces ALL drifts at once instead of stopping at the first
- * failed assertion. Each section is self-contained and chooses its own mock
- * setup, since §5 (empty board) and §2-§4 (populated board) require
- * mutually exclusive board states.
+ * The meta-spec is split into one `test()` per CONTRACT section so a single
+ * run surfaces ALL drifts at once instead of stopping at the first failed
+ * assertion. Each section is self-contained and chooses its own mock setup,
+ * since §5 (empty board) and §2-§4 (populated board) require mutually
+ * exclusive board states.
  *
- * Status: SCAFFOLD — every test is wrapped in test.skip() until backend
- * endpoints in CONTRACT §9 are live AND the test account has `algorythmo_crm`
- * enabled.
+ * Status: LIVE (un-skipped in M1-C/PR5).
  */
 
 import {
@@ -44,7 +42,7 @@ const VALID_AGING_GLYPHS = ['—', '●', '◐', '○'];
 // doesn't mask §3-§8 drift. Running parallel surfaces every contract delta
 // in one CI pass instead of stopping at the first broken section.
 test.describe('CONTRACT_M1B v1.0.0 — surface conformance', () => {
-  test.skip('§2 — root, header, board region, and stage columns render', async ({
+  test('§2 — root, header, board region, and stage columns render', async ({
     page,
   }) => {
     await loginAsAdmin(page);
@@ -91,7 +89,7 @@ test.describe('CONTRACT_M1B v1.0.0 — surface conformance', () => {
     }
   });
 
-  test.skip('§3 — lead card carries data-channel, data-lead-id, data-stage-id, role, tabindex, aria-label, menu trigger', async ({
+  test('§3 — lead card carries data-channel, data-lead-id, data-stage-id, role, tabindex, aria-label, menu trigger', async ({
     page,
   }) => {
     await loginAsAdmin(page);
@@ -120,7 +118,7 @@ test.describe('CONTRACT_M1B v1.0.0 — surface conformance', () => {
     await expect(menuTrigger).toHaveAttribute('aria-haspopup', 'menu');
   });
 
-  test.skip('§4 — aging chip + glyph render with valid state and aria-hidden glyph', async ({
+  test('§4 — aging chip + glyph render with valid state and aria-hidden glyph', async ({
     page,
   }) => {
     await loginAsAdmin(page);
@@ -151,7 +149,7 @@ test.describe('CONTRACT_M1B v1.0.0 — surface conformance', () => {
     expect(chipAriaLabel ?? '').not.toBe('');
   });
 
-  test.skip('§5 (global) — kanban-empty-state + title + CTA render when board is globally empty', async ({
+  test('§5 (global) — kanban-empty-state + title + CTA render when board is globally empty', async ({
     page,
   }) => {
     await loginAsAdmin(page);
@@ -176,7 +174,7 @@ test.describe('CONTRACT_M1B v1.0.0 — surface conformance', () => {
     await expect(page.locator('[data-testid="kanban-board"]')).toBeHidden();
   });
 
-  test.skip('§5 (per-column) — stage-empty-state + stage-empty-text render in empty stages while board has data', async ({
+  test('§5 (per-column) — stage-empty-state + stage-empty-text render in empty stages while board has data', async ({
     page,
   }) => {
     const leadInOnlyOneStage = mockLead({
@@ -211,7 +209,7 @@ test.describe('CONTRACT_M1B v1.0.0 — surface conformance', () => {
     }
   });
 
-  test.skip('§8 — aria-live region is attached, polite, atomic', async ({
+  test('§8 — aria-live region is attached, polite, atomic', async ({
     page,
   }) => {
     await loginAsAdmin(page);

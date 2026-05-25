@@ -4,10 +4,8 @@
  * CONTRACT REFERENCE: docs/coordination/CONTRACT_M1B.md v1.0.0
  *   — single source of truth for data-testid + aria attributes consumed here.
  *
- * SCAFFOLD STATE: every spec is wrapped in test.skip() until the backend
- * endpoints in CONTRACT §9 are live AND the test account has `algorythmo_crm`
- * enabled. The suite is shipped now so reviews of C.2 can read what D will
- * assert once the gates open.
+ * Suite is LIVE since M1-C/PR5 (CONTRACT §9 endpoints and `algorythmo_crm`
+ * flag are gated by the test account setup — see PRECONDITIONS below).
  *
  * Provides:
  * - `mockLead()`    — builds a full Lead JSON matching the actual API shape
@@ -27,9 +25,14 @@
  *
  * PRECONDITIONS for the full suite to run:
  *   1. Docker stack running at PLAYWRIGHT_BASE_URL (default: http://localhost:3000).
- *   2. `algorythmo_crm` feature flag enabled for the test account.
- *      Enable via: bundle exec rails algorythmo:seed:enable_crm ACCOUNT_ID=1
- *      (or via Chatwoot admin > Account > Feature Flags once Sessão B ships B-PR1).
+ *   2. `algorythmo_cut_crm` feature flag enabled for the test account.
+ *      Enable via super-admin UI:
+ *        /super_admin/accounts/1/algorythmo_flags → marcar "crm" → salvar.
+ *      Or via console (dev only):
+ *        bundle exec rails runner "a = Account.find(1); a.algorythmo_cut_crm = true; a.save!"
+ *      The flag lives in the dedicated accounts.algorythmo_feature_flags
+ *      bigint column (NOT accounts.feature_flags). FeatureGate caches the
+ *      result for 30s; the first request after toggle invalidates the cache.
  *   3. Seed applied: `bundle exec rails db:seed` populates the test account.
  *      Actual seed file: engines/algorythmo/lib/tasks/algorythmo/seed.rake
  *      (NOT engines/algorythmo/db/seeds.rb — that file does not exist).

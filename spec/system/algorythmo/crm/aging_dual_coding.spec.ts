@@ -12,8 +12,7 @@
  *   yellow  → ◐   (1 ≤ ratio < 2)
  *   red     → ○   (ratio ≥ 2)
  *
- * Status: SCAFFOLD — tests .skip() until backend endpoints in CONTRACT §9 are
- * live AND test account has `algorythmo_crm` enabled.
+ * Status: LIVE (un-skipped in M1-C/PR5).
  */
 
 import {
@@ -82,7 +81,7 @@ test.describe('Aging chip — dual-coding (D10 + D11)', () => {
   });
 
   for (const lead of LEADS_BY_AGING) {
-    test.skip(lead.description, async ({ page }) => {
+    test(lead.description, async ({ page }) => {
       // Mock pipeline with stage aging_coefficient matching lead
       await page.route(
         `**/algorythmo/api/v1/accounts/${TEST_ACCOUNT_ID}/pipelines/default`,
