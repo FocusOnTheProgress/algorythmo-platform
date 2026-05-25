@@ -13,13 +13,18 @@ import {
 } from 'dashboard/constants/permissions.js';
 // algorythmo: feature-gate algorythmo_cut_*
 import { isKnownAlgorythmoCutFlag } from 'dashboard/constants/algorythmoCutFlags';
+// algorythmo: feature-gate enable flags (Captain, CRM)
+import { isKnownAlgorythmoFeatureFlag } from 'dashboard/constants/algorythmoFeatureFlags';
 
 // Modules that have already logged an "unknown cut flag" warning, so we don't
 // spam the dev console on every navigation. Cleared by tests via the
-// `resetAlgorythmoCutFlagWarningsForTests` helper exported below.
+// `resetAlgorythmoFlagWarningsForTests` helper exported below.
 const warnedAlgorythmoCutFlags = new Set();
-export const resetAlgorythmoCutFlagWarningsForTests = () =>
+const warnedAlgorythmoFeatureFlags = new Set();
+export const resetAlgorythmoFlagWarningsForTests = () => {
   warnedAlgorythmoCutFlags.clear();
+  warnedAlgorythmoFeatureFlags.clear();
+};
 
 export const routeIsAccessibleFor = (route, userPermissions = []) => {
   const { meta: { permissions: routePermissions = [] } = {} } = route;
@@ -193,6 +198,26 @@ export const isRouteBlockedByAlgorythmoGate = (
   const cutFlag = meta.algorythmoCutFlag;
 
   if (enableFlag) {
+    // Unknown enable flag (typo, removed key, drift): always block. Mirrors the
+    // cut-flag guard below so route authors get the same loud-dev / silent-prod
+    // signal for typos in `meta.algorythmoFeatureFlag` (Captain, CRM) as they
+    // already do for `meta.algorythmoCutFlag`.
+    if (!isKnownAlgorythmoFeatureFlag(enableFlag)) {
+      if (
+        process.env.NODE_ENV !== 'production' &&
+        !warnedAlgorythmoFeatureFlags.has(enableFlag)
+      ) {
+        warnedAlgorythmoFeatureFlags.add(enableFlag);
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[algorythmo] Unknown feature flag on route meta: ${enableFlag}. ` +
+            `Expected one of dashboard/constants/algorythmoFeatureFlags ` +
+            `ALGORYTHMO_FEATURE_FLAG_KEYS. The route will be BLOCKED (fail-closed).`
+        );
+      }
+      return true;
+    }
+
     try {
       const enabled = isFeatureEnabledonAccount(accountId, enableFlag);
       return !enabled;

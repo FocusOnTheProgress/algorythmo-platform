@@ -100,7 +100,15 @@ export const validateAuthenticateRoutePermission = async (to, next) => {
     hasAlgorythmoGate(to) &&
     !isAlgorythmoGateStateKnown(to, routeAccountId)
   ) {
-    await store.dispatch('accounts/get', { silent: true });
+    // Pass `accountId` explicitly: AccountAPI.get() defaults to deriving the id
+    // from `window.location.pathname`, which is STALE inside beforeEach (the URL
+    // commits after the guard resolves). On cross-account navigation we'd
+    // otherwise refetch the CURRENT account and the target's flags would stay
+    // unknown forever — fail-closed-redirecting the user on every first click.
+    await store.dispatch('accounts/get', {
+      silent: true,
+      accountId: routeAccountId,
+    });
 
     if (!isAlgorythmoGateStateKnown(to, routeAccountId)) {
       // Fetch finished but state still unknown (missing column, network

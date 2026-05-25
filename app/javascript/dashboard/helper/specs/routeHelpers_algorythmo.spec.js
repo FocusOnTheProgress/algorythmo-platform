@@ -1,6 +1,6 @@
 import {
   isRouteBlockedByAlgorythmoGate,
-  resetAlgorythmoCutFlagWarningsForTests,
+  resetAlgorythmoFlagWarningsForTests,
 } from '../routeHelpers';
 
 // M0.5 — Camada 3': Vue router guard for algorythmo_show_captain
@@ -191,7 +191,7 @@ describe('isRouteBlockedByAlgorythmoGate', () => {
     let warnSpy;
 
     beforeEach(() => {
-      resetAlgorythmoCutFlagWarningsForTests();
+      resetAlgorythmoFlagWarningsForTests();
       warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
 
@@ -219,6 +219,64 @@ describe('isRouteBlockedByAlgorythmoGate', () => {
       const to = { meta: { algorythmoCutFlag: 'algorythmo_cut_campaigns' } };
       isRouteBlockedByAlgorythmoGate(to, () => false, ACCOUNT_ID);
       expect(warnSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  // M2-B1.5: symmetric typo guard for the opt-in (enable) flag path.
+  // A typo in meta.algorythmoFeatureFlag would otherwise produce a silent
+  // permanent block in prod with no signal (getter returns undefined →
+  // !undefined = true → blocked forever). The cut-flag guard had this and the
+  // enable-flag guard did not; this test pins the symmetry.
+  describe('dev-time warning for unknown algorythmoFeatureFlag values', () => {
+    let warnSpy;
+
+    beforeEach(() => {
+      resetAlgorythmoFlagWarningsForTests();
+      warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      warnSpy.mockRestore();
+    });
+
+    it('warns once and blocks every call when a route declares an unknown enable flag (typo guard)', () => {
+      const to = {
+        meta: { algorythmoFeatureFlag: 'algorythmo_show_capitain' /* typo */ },
+      };
+      expect(isRouteBlockedByAlgorythmoGate(to, () => true, ACCOUNT_ID)).toBe(
+        true
+      );
+      expect(isRouteBlockedByAlgorythmoGate(to, () => true, ACCOUNT_ID)).toBe(
+        true
+      );
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('algorythmo_show_capitain');
+    });
+
+    it('does not warn for known enable flag keys (algorythmo_show_captain)', () => {
+      const to = {
+        meta: { algorythmoFeatureFlag: 'algorythmo_show_captain' },
+      };
+      isRouteBlockedByAlgorythmoGate(to, () => true, ACCOUNT_ID);
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    it('does not warn for known enable flag keys (algorythmo_crm)', () => {
+      const to = { meta: { algorythmoFeatureFlag: 'algorythmo_crm' } };
+      isRouteBlockedByAlgorythmoGate(to, () => true, ACCOUNT_ID);
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    it('blocks unknown enable flag even when the getter would have returned true', () => {
+      // Critical: the getter could be a fresh dev account that legitimately
+      // has the typoed flag enabled in some old config. The typo guard must
+      // still win — block first, ignore the getter.
+      const to = {
+        meta: { algorythmoFeatureFlag: 'algorythmo_show_capitain' },
+      };
+      expect(isRouteBlockedByAlgorythmoGate(to, () => true, ACCOUNT_ID)).toBe(
+        true
+      );
     });
   });
 

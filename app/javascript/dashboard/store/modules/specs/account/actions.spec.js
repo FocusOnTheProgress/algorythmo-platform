@@ -1,4 +1,5 @@
 import axios from 'axios';
+import * as Sentry from '@sentry/vue';
 import { actions, getters } from '../../accounts';
 import * as types from '../../../mutation-types';
 
@@ -15,6 +16,12 @@ const newAccountInfo = {
 const commit = vi.fn();
 global.axios = axios;
 vi.mock('axios');
+vi.mock('@sentry/vue', () => ({ captureException: vi.fn() }));
+
+beforeEach(() => {
+  commit.mockClear();
+  Sentry.captureException.mockClear();
+});
 
 describe('#actions', () => {
   describe('#get', () => {
@@ -33,6 +40,43 @@ describe('#actions', () => {
       expect(commit.mock.calls).toEqual([
         [types.default.SET_ACCOUNT_UI_FLAG, { isFetchingItem: true }],
         [types.default.SET_ACCOUNT_UI_FLAG, { isFetchingItem: false }],
+      ]);
+    });
+
+    // algorythmo: M2-B1.5 — cross-account fetch + Sentry observability
+    it('hits /accounts/:id when an explicit accountId is passed', async () => {
+      axios.get.mockResolvedValue({ data: accountData });
+      await actions.get({ commit }, { accountId: 42 });
+      expect(axios.get).toHaveBeenCalledWith('/api/v1/accounts/42');
+    });
+
+    it('falls back to scoped URL when no accountId is provided', async () => {
+      axios.get.mockResolvedValue({ data: accountData });
+      await actions.get({ commit });
+      // ApiClient prefixes with /api/v1 + accountScoped path derived from
+      // window.location. In the test env the path is `/`, so no /accounts/:id
+      // prefix gets added — verify the URL does NOT contain an explicit
+      // /accounts/42 segment (the cross-account regression we are guarding).
+      const calledUrl = axios.get.mock.calls[0][0];
+      expect(calledUrl).not.toContain('/accounts/42');
+    });
+
+    it('reports to Sentry when the fetch fails (so on-call gets a signal)', async () => {
+      axios.get.mockRejectedValue(new Error('network down'));
+      await actions.get({ commit }, { silent: true, accountId: 7 });
+      expect(Sentry.captureException).toHaveBeenCalledTimes(1);
+      const [err, ctx] = Sentry.captureException.mock.calls[0];
+      expect(err.message).toBe('network down');
+      expect(ctx.tags.source).toBe('accounts/get');
+      expect(ctx.tags.silent).toBe(true);
+      expect(ctx.extra.accountId).toBe(7);
+    });
+
+    it('does NOT toggle UI flags when called with silent: true', async () => {
+      axios.get.mockResolvedValue({ data: accountData });
+      await actions.get({ commit }, { silent: true, accountId: 1 });
+      expect(commit.mock.calls).toEqual([
+        [types.default.ADD_ACCOUNT, accountData],
       ]);
     });
   });
