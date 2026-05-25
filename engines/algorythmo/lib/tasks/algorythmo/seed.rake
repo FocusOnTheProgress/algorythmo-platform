@@ -53,6 +53,7 @@ namespace :algorythmo do
         puts "[algorythmo:seed] Super-admin #{super_email} already exists — skipping."
       else
         super_admin = SuperAdmin.new(
+          name: 'Algorythmo Super Admin',
           email: super_email,
           password: super_password,
           password_confirmation: super_password
