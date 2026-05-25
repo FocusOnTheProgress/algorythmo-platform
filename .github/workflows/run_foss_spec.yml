@@ -150,14 +150,14 @@ jobs:
           NODE_OPTIONS: --openssl-legacy-provider
 
       - name: Upload rspec results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: algorythmo-rspec-results
           path: tmp/rspec_results.json
 
       - name: Upload rails log on failure
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: algorythmo-rails-log
@@ -311,7 +311,7 @@ jobs:
           PLAYWRIGHT_ACCOUNT_ID: '1'
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-report
@@ -319,7 +319,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload Rails log on failure
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-rails-log
