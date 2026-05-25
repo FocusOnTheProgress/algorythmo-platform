@@ -58,5 +58,21 @@ export default defineConfig({
         viewport: { width: 1440, height: 900 },
       },
     },
+
+    // algorythmo: feature-gate — M2-B1 cut-flag e2e gate (PR 7).
+    // 13 specs, one per cut flag, asserting both directions of the gate
+    // (flag-off → surface restored; flag-on → hard block on direct nav).
+    // Each spec toggles its flag via the super-admin UI in a `withFlag`
+    // try/finally block, so the suite is idempotent across orderings.
+    // _fixture.ts is excluded by the .ts suffix (Playwright only collects
+    // files matching the default testMatch, which includes *.spec.ts).
+    {
+      name: 'algorythmo-cuts',
+      testDir: './spec/system/algorythmo/cuts',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1440, height: 900 },
+      },
+    },
   ],
 });
