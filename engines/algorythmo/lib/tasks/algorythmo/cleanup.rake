@@ -49,7 +49,9 @@ module Algorythmo
         @confirm_env = confirm_env
         @env         = env
         @logger      = logger
-        @audit_dir   = audit_dir || Rails.root.join('tmp')
+        # Pathname coercion: caller may pass a String (e.g. ENV['…']),
+        # but the audit-path build uses `.join` which only works on Pathname.
+        @audit_dir   = Pathname.new(audit_dir || Rails.root.join('tmp'))
         @output      = output
       end
 
@@ -154,10 +156,13 @@ namespace :algorythmo do
       abort("[cleanup_legacy_leads] ABORT: #{e.message}")
     end
 
-    # Rake otherwise treats `--force` as an additional task name and crashes
-    # with "Don't know how to build task '--force'". Define it once as a
-    # deterministic no-op. Scope is limited to the single token we actually
-    # accept (no ARGV iteration — that would extend arbitrary tasks).
+    # Safety net for operators who forget the `--` separator (i.e. type
+    # `rake algorythmo:crm:cleanup_legacy_leads --force` instead of the
+    # documented `… -- --force`). Without this no-op, rake would try to
+    # build a task called `--force` and crash with "Don't know how to
+    # build task '--force'" — confusing in a destructive-op context.
+    # Scoped to the single token we actually accept (no ARGV iteration
+    # — that would register arbitrary tokens as tasks).
     task :'--force' => :environment do
       # no-op — see comment above
     end
