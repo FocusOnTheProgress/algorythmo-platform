@@ -249,6 +249,14 @@ jobs:
             ok = user.valid_password?(ENV.fetch("ALGORYTHMO_SEED_PASSWORD"))
             raise "[verify] valid_password? returned FALSE — seed/login pwd diverge" unless ok
             puts "[verify] OK — user #{email} can authenticate in #{Rails.env}"
+
+            super_email = "super@algorythmo.com"
+            super_pass  = "Test@12345"
+            super_user  = SuperAdmin.find_by(email: super_email)
+            raise "[verify] super-admin not found via STI in #{Rails.env} DB" if super_user.nil?
+            super_ok = super_user.valid_password?(super_pass)
+            raise "[verify] super-admin valid_password? returned FALSE" unless super_ok
+            puts "[verify] OK — super-admin #{super_email} can authenticate in #{Rails.env}"
           '
         env:
           RAILS_ENV: test
