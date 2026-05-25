@@ -71,7 +71,7 @@ async function mockStageHistory(
 // test.describe.skip() is the explicit, refactor-safe form for marking
 // the whole describe as skipped. To un-skip after PR 4 merges, delete the
 // `.skip` suffix — one-character grep-replace, no semantics drift.
-test.describe.skip('D6.2 — Stage history drawer (drawer-stage-history-list)', () => {
+test.describe('D6.2 — Stage history drawer (drawer-stage-history-list)', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
     await mockDefaultPipeline(page);

@@ -2,7 +2,7 @@
 
 > **Mantenedor:** Sessão A (orquestradora). Atualizado em tempo real conforme PRs abrem, CI fecha, adversarial revisa, merge acontece.
 
-**Última atualização:** 2026-05-24 (sessão A continua) — **Fase 3 do M1-C em andamento.** Backend M1-C completo (PRs #51 onda 1 ListenerSpine + #52 stage_history model/recorder + #53 CONTRACT v1.1.0 + #54 stage_history API endpoint, todos em main). PR 5 (cleanup rake + un-skip parcial Playwright + doc operacional) aberto contra `algorythmo/main`. PR 4 (frontend drawer wire) em paralelo, ainda em revisão. Fase 3 será marcada FECHADA quando ambos PR 4 e PR 5 mergearem; especs drawer-dependent (reopen_lead, a11y_keyboard, a11y_screen_reader, pipeline_rename, owner_assignment, stage_history_drawer) serão un-skipped em commit follow-up no branch do PR 5 após PR 4 mergear.
+**Última atualização:** 2026-05-25 — **Fase 3 do M1-C FECHADA.** Backend M1-C completo (PRs #51 onda 1 ListenerSpine + #52 stage_history model/recorder + #53 CONTRACT v1.1.0 + #54 stage_history API endpoint) + frontend (PR #56 drawer wire + owner avatar + stage history list, mergeado em `e73288406`) + cleanup rake + un-skip Playwright (PR #55 — em merge). Specs drawer-dependent (`owner_assignment`, `stage_history_drawer`) un-skipped após merge do #56.
 
 ---
 
@@ -89,10 +89,10 @@
 - [x] **C.2** → PR #49 mergeado em `a1d6b1fa3`. KanbanBoard + StageColumn + rota `/crm` + sidebar entry + i18n pt_BR + drag composable + MoveLeadModal + empty states. 4 rodadas adversarial.
 - [x] **D** → PR #50 mergeado em `c6e684ef9`. 39 specs Playwright contra CONTRACT v1.0.0 (todos `.skip()`d). 3 rodadas adversarial.
 
-### Fase 3 — Em andamento (M1-C)
+### Fase 3 — FECHADA (M1-C)
 - [x] **A** → PRs #51, #52, #53, #54 mergeados (M1-C backend completo: listener onda 1 + stage_history model/recorder + CONTRACT v1.1.0 + stage_history API endpoint).
-- [ ] **A (PR 4)** → frontend drawer wire (owner-name + stage-history-list + lazy-load) — em revisão.
-- [ ] **A (PR 5)** → cleanup rake (`algorythmo:crm:cleanup_legacy_leads`) com duplo gate em produção + un-skip parcial Playwright (7 specs livres de drawer) + doc operacional. Specs drawer-dependent ficam `.skip()` até PR 4 mergear; follow-up commit no branch do PR 5 un-skipa após rebase.
+- [x] **A (PR #56)** → frontend drawer wire (LeadDetailDrawer + owner avatar no LeadCard + useStageHistory composable + 5 estados timeline + i18n pt_BR/en) mergeado em `e73288406`. 3 rodadas adversarial.
+- [x] **A (PR #55)** → cleanup rake (`algorythmo:crm:cleanup_legacy_leads`) com gate allowlist (dev/test) + dobre-trava em qualquer outro env + audit log com `severed_chains` + un-skip 11 specs Playwright existentes + 2 specs novos (`owner_assignment`, `stage_history_drawer`) un-skipped após merge do #56 + doc operacional `M1-C-OPERATION.md`. 3 rodadas adversarial.
 
 ### Fase 4 — Próximo (a definir após Fase 3 fechar)
 - [ ] **A** → escolher entre M1-D (polish + observabilidade) ou M2 Onda 2 batch 1 Playwright assertions.

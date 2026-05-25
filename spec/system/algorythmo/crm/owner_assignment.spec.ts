@@ -29,7 +29,7 @@ import {
 // test.describe.skip() is the explicit, refactor-safe form for marking
 // the whole describe as skipped. To un-skip after PR 4 merges, delete the
 // `.skip` suffix — one-character grep-replace, no semantics drift.
-test.describe.skip('D6.1 — Owner assignment (drawer-owner-name)', () => {
+test.describe('D6.1 — Owner assignment (drawer-owner-name)', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
     await mockDefaultPipeline(page);
