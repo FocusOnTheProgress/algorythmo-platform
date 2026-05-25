@@ -58,9 +58,10 @@ RSpec.describe Algorythmo::Api::V1::PipelineMetricsController, type: :controller
     it 'returns null conversion_rate_to_next on terminal stages' do
       get :show, params: { account_id: account.id, id: pipeline.id }
       body = JSON.parse(response.body)
-      terminal_payloads = body['stages'].select { |s| %w[won lost].include?(s['stage_kind']) }
+      terminal_kinds = %w[won lost]
+      terminal_payloads = body['stages'].select { |s| terminal_kinds.include?(s['stage_kind']) }
       expect(terminal_payloads.size).to eq(2)
-      terminal_payloads.each { |s| expect(s['conversion_rate_to_next']).to be_nil }
+      expect(terminal_payloads).to all(include('conversion_rate_to_next' => nil))
     end
   end
 

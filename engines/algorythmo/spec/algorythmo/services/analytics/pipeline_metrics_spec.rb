@@ -10,6 +10,8 @@ require 'rails_helper'
 #   examples swap in a MemoryStore for the duration of the example so that
 #   the second call exercises the cached path.
 RSpec.describe Algorythmo::Analytics::PipelineMetrics do
+  subject(:service) { described_class.new(account: account, pipeline: pipeline) }
+
   let(:account)  { create(:account) }
   let(:contact)  { create(:contact, account: account) }
 
@@ -57,11 +59,9 @@ RSpec.describe Algorythmo::Analytics::PipelineMetrics do
       stage_id: to.id,
       stage_kind: to.kind_before_type_cast,
       stage_entered_at: at,
-      closed_at: (to.kind == 'won' || to.kind == 'lost') ? at : nil
+      closed_at: %w[won lost].include?(to.kind) ? at : nil
     )
   end
-
-  subject(:service) { described_class.new(account: account, pipeline: pipeline) }
 
   describe '#call payload shape' do
     it 'returns the full envelope with all top-level keys' do
@@ -76,9 +76,7 @@ RSpec.describe Algorythmo::Analytics::PipelineMetrics do
       payload = service.call
       expect(payload[:stages].size).to eq(5)
       expect(payload[:stages].map { |s| s[:stage_id] }).to eq(pipeline.stages.order(:position).map(&:id))
-      payload[:stages].each do |s|
-        expect(s).to include(:stage_id, :stage_kind, :lead_count, :avg_time_in_stage_seconds, :conversion_rate_to_next)
-      end
+      expect(payload[:stages]).to all(include(:stage_id, :stage_kind, :lead_count, :avg_time_in_stage_seconds, :conversion_rate_to_next))
     end
   end
 
@@ -209,16 +207,13 @@ RSpec.describe Algorythmo::Analytics::PipelineMetrics do
       payload = service.call
       expect(payload[:summary][:open_leads]).to eq(2)
       expect(payload[:summary][:conversion_rate]).to eq(0.75)
-      expect(payload[:summary][:avg_funnel_hours]).to be > 0
+      expect(payload[:summary][:avg_funnel_hours]).to be_positive
     end
   end
 
   describe 'cache' do
-    around do |example|
-      original_cache = Rails.cache
+    before do
       allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
-      example.run
-      allow(Rails).to receive(:cache).and_return(original_cache)
     end
 
     it 'computes only once within the cache window' do
@@ -248,7 +243,7 @@ RSpec.describe Algorythmo::Analytics::PipelineMetrics do
     # (account, pipeline) tuple. Without this guarantee, a drag-and-drop in
     # the UI would not surface in the metrics chip until the 60s TTL elapsed.
     it 'busts the cache when a new stage_history row lands in this pipeline' do
-      lead = create_lead(stage: novo, entered_at: Time.current - 5.days)
+      lead = create_lead(stage: novo, entered_at: 5.days.ago)
       svc = described_class.new(account: account, pipeline: pipeline)
 
       first = svc.call

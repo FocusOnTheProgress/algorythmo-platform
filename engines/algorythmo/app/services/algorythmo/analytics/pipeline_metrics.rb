@@ -88,20 +88,9 @@ module Algorythmo
         now = Time.current
         window_start = now - WINDOW
 
-        # Stages are ordered by position — position drives the "next stage"
-        # lookup for conversion_rate_to_next.
         stages = pipeline.stages.order(:position, :id).to_a
         next_stage_id_by = build_next_stage_index(stages)
-
-        # Soft-deleted leads (deleted=true) are excluded from BOTH lead_count and
-        # the history-derived stays. The product affordance is "leads removed from
-        # the funnel" — counting their past time-in-stage would muddy the average
-        # with funnels the agent already abandoned.
-        leads = Algorythmo::Lead
-                .active
-                .where(account_id: account.id, stage_id: stages.map(&:id))
-                .to_a
-
+        leads = load_leads(stages)
         histories_by_lead = load_histories(leads.map(&:id), window_start)
         stays_by_stage = build_stays(histories_by_lead, now)
 
@@ -110,17 +99,29 @@ module Algorythmo
           computed_at: now.utc.iso8601,
           ttl_seconds: CACHE_TTL.to_i,
           summary: summary(leads, stages, histories_by_lead, window_start),
-          stages: stages.map do |stage|
-            stays = stays_by_stage[stage.id]
-            {
-              stage_id: stage.id,
-              stage_kind: stage.kind,
-              lead_count: open_lead_count(leads, stage),
-              avg_time_in_stage_seconds: avg_time_in_stage(stays, window_start),
-              conversion_rate_to_next: conversion_to_next(stage, stays, next_stage_id_by, window_start)
-            }
-          end
+          stages: stages.map { |stage| stage_payload(stage, leads, stays_by_stage[stage.id], next_stage_id_by, window_start) }
         }
+      end
+
+      def stage_payload(stage, leads, stays, next_stage_id_by, window_start)
+        {
+          stage_id: stage.id,
+          stage_kind: stage.kind,
+          lead_count: open_lead_count(leads, stage),
+          avg_time_in_stage_seconds: avg_time_in_stage(stays, window_start),
+          conversion_rate_to_next: conversion_to_next(stage, stays, next_stage_id_by, window_start)
+        }
+      end
+
+      # Soft-deleted leads (deleted=true) are excluded from BOTH lead_count and
+      # the history-derived stays. The product affordance is "leads removed from
+      # the funnel" — counting their past time-in-stage would muddy the average
+      # with funnels the agent already abandoned.
+      def load_leads(stages)
+        Algorythmo::Lead
+          .active
+          .where(account_id: account.id, stage_id: stages.map(&:id))
+          .to_a
       end
 
       # Bounds the memory footprint on aged accounts: an account that has run
@@ -191,8 +192,11 @@ module Algorythmo
       # nil when the stage is terminal (won/lost) or when there is no next
       # stage in the pipeline. nil also when no lead has exited this stage in
       # the window — distinguished from "0% conversion" because 0/0 is not 0.
+      TERMINAL_KINDS = %w[won lost].freeze
+      private_constant :TERMINAL_KINDS
+
       def conversion_to_next(stage, stays, next_stage_id_by, window_start)
-        return nil if stage.kind == 'won' || stage.kind == 'lost'
+        return nil if TERMINAL_KINDS.include?(stage.kind)
 
         next_id = next_stage_id_by[stage.id]
         return nil unless next_id
@@ -205,20 +209,25 @@ module Algorythmo
       end
 
       def summary(leads, stages, histories_by_lead, window_start)
-        won_stage_ids  = stages.select { |s| s.kind == 'won' }.map(&:id)
-        lost_stage_ids = stages.select { |s| s.kind == 'lost' }.map(&:id)
-        open_stage_ids = stages.select { |s| s.kind == 'open' }.map(&:id)
-
-        open_count = leads.count { |l| open_stage_ids.include?(l.stage_id) }
-
-        won_in_window  = leads.select { |l| won_stage_ids.include?(l.stage_id) && l.closed_at && l.closed_at >= window_start }
-        lost_in_window = leads.select { |l| lost_stage_ids.include?(l.stage_id) && l.closed_at && l.closed_at >= window_start }
+        ids_by_kind = stage_ids_by_kind(stages)
+        won_in_window  = leads_in_window(leads, ids_by_kind['won'],  window_start)
+        lost_in_window = leads_in_window(leads, ids_by_kind['lost'], window_start)
 
         {
-          open_leads: open_count,
+          open_leads: leads.count { |l| ids_by_kind['open'].include?(l.stage_id) },
           avg_funnel_hours: avg_funnel_hours(won_in_window, histories_by_lead),
           conversion_rate: conversion_rate(won_in_window, lost_in_window)
         }
+      end
+
+      def stage_ids_by_kind(stages)
+        Hash.new { |h, k| h[k] = [] }.tap do |idx|
+          stages.each { |s| idx[s.kind] << s.id }
+        end
+      end
+
+      def leads_in_window(leads, stage_ids, window_start)
+        leads.select { |l| stage_ids.include?(l.stage_id) && l.closed_at && l.closed_at >= window_start }
       end
 
       # First stage_history row per lead pinpoints when the lead entered the
