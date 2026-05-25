@@ -1,4 +1,5 @@
 import * as MutationHelpers from 'shared/helpers/vuex/mutationHelpers';
+import * as Sentry from '@sentry/vue';
 import * as types from '../mutation-types';
 import AccountAPI from '../../api/account';
 import { differenceInDays } from 'date-fns';
@@ -71,15 +72,22 @@ export const getters = {
 };
 
 export const actions = {
-  get: async ({ commit }, { silent } = {}) => {
+  // algorythmo: M2-B1.5 — `accountId` lets the router guard pre-fetch flags for
+  // a TARGET account when navigating across accounts (window.location is stale
+  // during beforeEach). Sentry breadcrumb on failure gives on-call a signal when
+  // a fail-closed redirect happens because the backend, not the flag, was down.
+  get: async ({ commit }, { silent, accountId } = {}) => {
     if (!silent) {
       commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingItem: true });
     }
     try {
-      const response = await AccountAPI.get();
+      const response = await AccountAPI.get(accountId);
       commit(types.default.ADD_ACCOUNT, response.data);
-    } catch {
-      // silent failure
+    } catch (error) {
+      Sentry.captureException(error, {
+        tags: { source: 'accounts/get', silent: !!silent },
+        extra: { accountId },
+      });
     } finally {
       if (!silent) {
         commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingItem: false });
