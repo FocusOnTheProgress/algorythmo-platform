@@ -1,6 +1,6 @@
 # Contrato M1-B — selectors + aria (Fase 2)
 
-> **Versão atual: 1.1.0** — bump M1-C, ver Changelog abaixo.
+> **Versão atual: 1.2.0** — bump M1-D, ver Changelog abaixo.
 >
 > **Por que esse doc existe.** Na Fase 2, o agente de componentes constrói LeadCard/Kanban e o agente de testes escreve Playwright contra esses componentes. Pra rodarem de verdade em paralelo, os dois acordam HOJE o contrato de superfície. Esta é a fonte única de verdade.
 >
@@ -10,6 +10,12 @@
 
 ## Changelog
 
+- **v1.2.0 (2026-05-25) — M1-D bump.** Reserva os testids da camada de observabilidade do Kanban consumida pela Sessão E (PR 6 do plano `0004-m1-d-pipeline-metrics`):
+  - `kanban-metrics-summary` (header do board) — resumo agregado do pipeline (total de leads abertos + tempo médio do funil).
+  - `kanban-metrics-stat` — item individual dentro do summary, com `data-metric-key="open_leads|avg_funnel_hours|conversion_rate"`.
+  - `stage-metrics-chip` (no header de cada `stage-column`) — chip com média de tempo no estágio + count + (se aplicável) taxa de conversão pra próxima etapa.
+  - Novo endpoint `GET /algorythmo/api/v1/accounts/:id/pipelines/:pid/metrics` formalizado no §9.
+  Adição pura: zero alteração nos testids 1.x. Suite Playwright dos cuts (Sessão F, PR 7) NÃO toca esses testids — domínio disjunto.
 - **v1.1.0 (2026-05-24) — M1-C bump.** Reserva no §7 LeadDetailDrawer dois `data-testid` consumidos pelo wire-up real do drawer (PR 4 do plano `0003-m1-c-backend-leads-reais`):
   - `drawer-owner-name` — exibição do dono do lead, vindo do campo `owner` no `lead_json` (introduzido pelo PR 1 do M1-C).
   - `drawer-stage-history-list` — lista renderizada a partir de `GET /leads/:id/stage_history` (endpoint do PR 3 do M1-C).
@@ -33,14 +39,17 @@
 ├── [data-testid="kanban-header"]
 │   ├── [data-testid="kanban-title"]                 → h1 i18n ALGORYTHMO_CRM.KANBAN.TITLE
 │   ├── [data-testid="kanban-search-input"]
-│   └── [data-testid="pipeline-config-link"]         → href="/app/accounts/:id/crm/pipeline"
+│   ├── [data-testid="pipeline-config-link"]         → href="/app/accounts/:id/crm/pipeline"
+│   └── [data-testid="kanban-metrics-summary"]       → v1.2.0 — resumo do pipeline (M1-D)
+│       └── [data-testid="kanban-metrics-stat"]      → data-metric-key="open_leads|avg_funnel_hours|conversion_rate"
 ├── [data-testid="kanban-board"]                     → role="region" aria-label="Kanban CRM"
 │   └── [data-testid="stage-column"]
 │       [data-stage-id="N"]
 │       [data-stage-kind="open|won|lost"] x5
 │       ├── [data-testid="stage-column-header"]
 │       │   ├── [data-testid="stage-name"]
-│       │   └── [data-testid="stage-count"]
+│       │   ├── [data-testid="stage-count"]
+│       │   └── [data-testid="stage-metrics-chip"]    → v1.2.0 — métricas por estágio (M1-D)
 │       ├── [data-testid="stage-column-list"]        → role="list"
 │       │   └── [data-testid="lead-card"] x N
 │       └── [data-testid="stage-empty-state"]        → quando coluna vazia mas board NÃO vazio
@@ -190,14 +199,42 @@
 
 ```
 GET    /algorythmo/api/v1/accounts/:id/pipelines/default
+GET    /algorythmo/api/v1/accounts/:id/pipelines/:pid/metrics     # v1.2.0 (M1-D)
 GET    /algorythmo/api/v1/accounts/:id/leads?stage_id=X&cursor=&limit=
 GET    /algorythmo/api/v1/accounts/:id/leads?contact_id=X
 GET    /algorythmo/api/v1/accounts/:id/leads/:lid/conversations?cursor=&limit=
+GET    /algorythmo/api/v1/accounts/:id/leads/:lid/stage_history
 PATCH  /algorythmo/api/v1/accounts/:id/leads/:lid/move      { stage_id }
 POST   /algorythmo/api/v1/accounts/:id/leads/:lid/reopen
 PATCH  /algorythmo/api/v1/accounts/:id/stages/:sid/rename   { name }
 PATCH  /algorythmo/api/v1/accounts/:id/stages/:sid          { aging_coefficient }
 ```
+
+**v1.2.0 — `pipelines/:pid/metrics` payload (M1-D):**
+
+```json
+{
+  "pipeline_id": 1,
+  "computed_at": "2026-05-25T12:00:00Z",
+  "ttl_seconds": 60,
+  "summary": {
+    "open_leads": 42,
+    "avg_funnel_hours": 73.5,
+    "conversion_rate": 0.31
+  },
+  "stages": [
+    {
+      "stage_id": 1,
+      "stage_kind": "open",
+      "lead_count": 12,
+      "avg_time_in_stage_seconds": 14400,
+      "conversion_rate_to_next": 0.55
+    }
+  ]
+}
+```
+
+Cache em memória 60s via `Rails.cache` (mesma decisão P2/T7 da FeatureGate). `conversion_rate_to_next` é `null` em estágios terminais (`won`, `lost`).
 
 **B.0 (backend extension)** é entregue pelo agente de componentes ANTES de tocar Vue: contact embed em `lead_json`, filter `contact_id` no `#index`, endpoint `#conversations`.
 
@@ -209,5 +246,6 @@ PATCH  /algorythmo/api/v1/accounts/:id/stages/:sid          { aging_coefficient 
 |---|---|---|
 | 1.0.0 | 2026-05-24 | Inicial — dispatch Fase 2 |
 | 1.1.0 | 2026-05-24 | M1-C: adiciona `drawer-owner-name` + `drawer-stage-history-list` no §7. Sem breaking changes. |
+| 1.2.0 | 2026-05-25 | M1-D: adiciona `kanban-metrics-summary` + `kanban-metrics-stat` + `stage-metrics-chip` no §2 + endpoint `pipelines/:pid/metrics` no §9. Sem breaking changes. |
 
 Mudanças = PR `[CONTRACT_BUMP]`, aprovação da orquestradora antes de C/D consumirem versão nova.

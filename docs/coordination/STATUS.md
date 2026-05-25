@@ -2,7 +2,11 @@
 
 > **Mantenedor:** Sessão A (orquestradora). Atualizado em tempo real conforme PRs abrem, CI fecha, adversarial revisa, merge acontece.
 
-**Última atualização:** 2026-05-25 — **Fase 3 do M1-C FECHADA.** Backend M1-C completo (PRs #51 onda 1 ListenerSpine + #52 stage_history model/recorder + #53 CONTRACT v1.1.0 + #54 stage_history API endpoint) + frontend (PR #56 drawer wire + owner avatar + stage history list, mergeado em `e73288406`) + cleanup rake + un-skip Playwright (PR #55 — em merge). Specs drawer-dependent (`owner_assignment`, `stage_history_drawer`) un-skipped após merge do #56.
+**Última atualização:** 2026-05-25 — **Fase 5 DISPATCHED.** M1-C fechado completo (Fase 3 + Fase 4). CONTRACT bumpada pra v1.2.0 (reserva testids de métricas pro M1-D). 2 worktrees novos criados:
+- `algorythmo-m1d-metrics` (branch `algorythmo/m1d-pipeline-metrics`) — Sessão E, PR 6 M1-D.
+- `algorythmo-m2b1-cuts` (branch `algorythmo/m2b1-cuts-playwright`) — Sessão F, PR 7 M2 Onda 2 batch 1.
+
+Dispatch + mapa de toque: `docs/coordination/M1D_FASE5_DISPATCH.md`. Prompts auto-contidos: `M1D_PR6_SESSION_PROMPT.md` + `M2B1_PR7_SESSION_PROMPT.md`.
 
 ---
 
@@ -10,9 +14,13 @@
 
 | Agente | Worktree | Branch | Tarefa atual | Status | PR |
 |---|---|---|---|---|---|
-| **A** (orquestradora) | `Fork Chatwoot/` (main) | `algorythmo/main` | Fase 2 fechada. Aguardando dispatch da Fase 3 (un-skip suite D quando backend §9 live) | 🟢 ociosa | — |
+| **A** (orquestradora) | `Fork Chatwoot/` (main) | `algorythmo/main` | Coordenando Fase 5. Aguardando PR 6 + PR 7 abrirem pra spawn adversarial. | 🟡 monitorando | — |
+| **E** | `algorythmo-m1d-metrics/` | `algorythmo/m1d-pipeline-metrics` | M1-D pipeline metrics + Kanban observability | ⚪ dispatched | a abrir → PR 6 |
+| **F** | `algorythmo-m2b1-cuts/` | `algorythmo/m2b1-cuts-playwright` | M2 Onda 2 batch 1 — Playwright positive assertions cuts | ⚪ dispatched | a abrir → PR 7 |
 
-**Contrato compartilhado C↔D:** [`docs/coordination/CONTRACT_M1B.md`](CONTRACT_M1B.md) v1.0.0. Single source of truth pros selectors/aria.
+**Contrato compartilhado:** [`docs/coordination/CONTRACT_M1B.md`](CONTRACT_M1B.md) **v1.2.0** (bumpada 2026-05-25 reservando testids de métricas). Single source of truth pros selectors/aria.
+
+**Regra de merge Fase 5:** PR 6 e PR 7 podem mergear em qualquer ordem. Mapa de toque garante zero overlap (`M1D_FASE5_DISPATCH.md §3`).
 
 ---
 
@@ -94,8 +102,13 @@
 - [x] **A (PR #56)** → frontend drawer wire (LeadDetailDrawer + owner avatar no LeadCard + useStageHistory composable + 5 estados timeline + i18n pt_BR/en) mergeado em `e73288406`. 3 rodadas adversarial.
 - [x] **A (PR #55)** → cleanup rake (`algorythmo:crm:cleanup_legacy_leads`) com gate allowlist (dev/test) + dobre-trava em qualquer outro env + audit log com `severed_chains` + un-skip 11 specs Playwright existentes + 2 specs novos (`owner_assignment`, `stage_history_drawer`) un-skipped após merge do #56 + doc operacional `M1-C-OPERATION.md`. 3 rodadas adversarial.
 
-### Fase 4 — Próximo (a definir após Fase 3 fechar)
-- [ ] **A** → escolher entre M1-D (polish + observabilidade) ou M2 Onda 2 batch 1 Playwright assertions.
+### Fase 4 — FECHADA (M1-C completo)
+- [x] **A** → PRs #54, #55, #56 mergeados. M1-C todo no ar. Detalhe nas Fase 3.
+
+### Fase 5 — EM CURSO (dispatched 2026-05-25)
+- [ ] **E** → PR 6 — `engines/algorythmo/app/services/algorythmo/analytics/pipeline_metrics.rb` + `pipeline_metrics_controller.rb` + `useStageMetrics.js` + `KanbanHeader.vue` + chip métrica em `StageColumn`. Endpoint `GET /algorythmo/api/v1/accounts/:id/pipelines/:pid/metrics`. Cache 60s. Specs RSpec + vitest.
+- [ ] **F** → PR 7 — `expectSurfaceVisible` + `expectSurfaceBlocked` em `cuts/_fixture.ts`. 13 spec files ganham 2 describes (flag-off restore + flag-on hard block). `cuts_smoke_spec.rb` no engine. `docs/algorythmo/cuts/README.md`.
+- [ ] **A** → spawnar `adversarial-reviewer` em cada PR conforme abrir. Endereçar HIGH. Mergear.
 - [ ] **A** → fechar tracking issue #46 (follow-ups M2-FLW-001..011) conforme cada um for endereçado.
 
 ---
@@ -176,3 +189,5 @@ Nenhuma no momento. Qualquer dúvida levantada em PR `[BLOCKED]` por B/C/D apare
 | #52 | M1-C/PR2 — StageHistory model + recorder + listener wire | 2026-05-24 | A |
 | #53 | M1-C — CONTRACT_M1B bump v1.1.0 (drawer owner + stage history testids) | 2026-05-24 | A |
 | #54 | M1-C — stage_history API endpoint + actor_summary preload | 2026-05-24 | A |
+| #55 | M1-C/PR5 — cleanup rake + un-skip Playwright + docs (fecha M1-C) | 2026-05-24 | A |
+| #56 | M1-C/PR4 — frontend wire real data (drawer + owner avatar + stage history) | 2026-05-24 | A |
