@@ -28,7 +28,6 @@ load Rails.root.join('engines/algorythmo/lib/tasks/algorythmo/cleanup.rake')
 
 RSpec.describe Algorythmo::Tasks::CleanupLegacyLeads do
   let(:account) { create(:account) }
-  let(:contact) { create(:contact, account: account) }
   let(:audit_dir) { Pathname.new(Dir.mktmpdir('cleanup_audit_')) }
 
   def seed_pipeline!
@@ -41,10 +40,13 @@ RSpec.describe Algorythmo::Tasks::CleanupLegacyLeads do
     @novo_stage ||= seed_pipeline!.stages.first
   end
 
+  # New contact per lead — the partial unique index
+  # idx_leads_open_unique_per_contact forbids two open leads on the same
+  # contact, so factory-style reuse would explode in any loop > 1.
   def create_legacy_lead!(extra = {})
     Algorythmo::Lead.create!(
       account: account,
-      contact: contact,
+      contact: create(:contact, account: account),
       stage: novo_stage,
       position: rand * 1000,
       stage_entered_at: Time.current,
@@ -57,7 +59,7 @@ RSpec.describe Algorythmo::Tasks::CleanupLegacyLeads do
   def create_normal_lead!
     Algorythmo::Lead.create!(
       account: account,
-      contact: contact,
+      contact: create(:contact, account: account),
       stage: novo_stage,
       position: rand * 1000,
       stage_entered_at: Time.current,
