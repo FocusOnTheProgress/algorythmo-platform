@@ -24,7 +24,21 @@
       "ARIA_LABEL": "Lead {name}, etapa {stage}, {time} nesta etapa, canal {channel}",
       "AGING_CHIP_ARIA_LABEL": "{time} nesta etapa",
       "MENU_BUTTON_LABEL": "Ações para lead {name}",
-      "MENU_ARIA_LABEL": "Ações para lead {name}"
+      "MENU_ARIA_LABEL": "Ações para lead {name}",
+      "OWNER_ASSIGNED_ARIA": "Dono do lead: {name}",
+      "OWNER_UNASSIGNED_ARIA": "Lead disponível, sem dono atribuído",
+      "OWNER_UNASSIGNED_TOOLTIP": "Disponível · clique para atribuir",
+      "OWNER_ASSIGNED_TOOLTIP": "{name}",
+      "CHANNEL_LABEL": {
+        "WHATSAPP": "WhatsApp",
+        "EMAIL": "E-mail",
+        "INSTAGRAM": "Instagram",
+        "FACEBOOK": "Facebook",
+        "WIDGET": "Chat no site",
+        "API": "API",
+        "SMS": "SMS",
+        "UNKNOWN": "Outro canal"
+      }
     },
     "MENU": {
       "MOVE_TO": "Mover para…"
@@ -42,6 +56,43 @@
     },
     "LEAD_DETAIL": {
       "COMING_SOON": "Detalhes do lead — em breve"
+    },
+    "DRAWER": {
+      "CLOSE": "Fechar",
+      "TITLE_FALLBACK": "Detalhes do lead",
+      "BLOCK_LABEL": {
+        "CONTACT": "Contato",
+        "CHANNEL": "Canal",
+        "OWNER": "Dono",
+        "CONVERSATIONS": "Conversas",
+        "ACTIVITY": "Atividade"
+      },
+      "CONTACT": {
+        "EMAIL_LABEL": "E-mail",
+        "PHONE_LABEL": "Telefone",
+        "NOT_PROVIDED": "não informado"
+      },
+      "CHANNEL": {
+        "RECEIVED_VIA": "Recebido via {channel}"
+      },
+      "OWNER": {
+        "PLACEHOLDER_NO_OWNER": "Sem dono",
+        "UNASSIGNED_LABEL": "Disponível — primeiro a responder vira o dono",
+        "ASSIGNED_NAME_ARIA": "Dono do lead: {name}"
+      },
+      "HISTORY": {
+        "TITLE": "Atividade",
+        "SYSTEM_ACTOR": "Algorythmo",
+        "SYSTEM_ACTOR_ARIA": "Lead criado automaticamente pelo Algorythmo OS",
+        "CREATED_IN": "{actor} criou em {stage}",
+        "MOVED_TO": "{actor} moveu para {stage}",
+        "FROM_TO": "de {from} para {to}",
+        "EMPTY": "Sem atividade registrada",
+        "ERROR_TITLE": "Não foi possível carregar a atividade",
+        "RETRY": "Tentar novamente",
+        "LOADING_ARIA": "Carregando atividade do lead",
+        "TRUNCATED_FOOTER": "Mostrando últimos 100 — histórico mais antigo omitido"
+      }
     },
     "PIPELINE_CONFIG": {
       "PLACEHOLDER_TITLE": "Configuração do pipeline",
