@@ -56,9 +56,13 @@ async function loginSuperAdmin(page: Page): Promise<void> {
   await page.waitForLoadState('domcontentloaded');
 
   if (page.url().includes('/super_admin/sign_in')) {
-    await page.getByLabel(/email/i).fill(SUPER_ADMIN_EMAIL);
-    await page.getByLabel(/password/i).fill(SUPER_ADMIN_PASS);
-    await page.getByRole('button', { name: /sign in|log in|login/i }).click();
+    // Active Admin renders the login form with Formtastic, which wraps the
+    // required-field marker in <abbr>*</abbr> inside <label>. That trips
+    // Playwright's getByLabel heuristic, so we target the deterministic IDs
+    // emitted by Formtastic instead.
+    await page.locator('#super_admin_email').fill(SUPER_ADMIN_EMAIL);
+    await page.locator('#super_admin_password').fill(SUPER_ADMIN_PASS);
+    await page.locator('form#new_super_admin input[type="submit"]').click();
 
     await page.waitForURL(url => !url.pathname.includes('/sign_in'), {
       timeout: 15_000,
