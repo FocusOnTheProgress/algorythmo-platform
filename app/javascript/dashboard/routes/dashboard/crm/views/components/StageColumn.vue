@@ -7,6 +7,13 @@
 // That distinction (vs the global [data-testid="kanban-empty-state"]) is the
 // product affordance — an empty column inside a populated pipeline asks the
 // agent to drag/move; an empty board asks the admin to connect a channel.
+//
+// v1.2.0 — funnel observability chip ([data-testid="stage-metrics-chip"]):
+//   Renders avg time in stage + (when conversion_rate_to_next is non-null)
+//   the % to the next stage. The chip is in the header so it survives an
+//   empty column — agents see the historical signal even when no card is
+//   sitting there right now. Placeholder em-dash when metrics are unavailable
+//   so the layout stays stable across the loading → hydrated transition.
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LeadCard from './LeadCard.vue';
@@ -16,6 +23,7 @@ const props = defineProps({
   leads: { type: Array, required: true },
   boardHasAnyLead: { type: Boolean, required: true },
   isDropTarget: { type: Boolean, default: false },
+  metrics: { type: Object, default: null },
 });
 
 const emit = defineEmits([
@@ -41,6 +49,66 @@ const stageCountLabel = computed(() => {
   if (count === 1) return t('ALGORYTHMO_CRM.KANBAN.STAGE_COUNT_ONE');
   return t('ALGORYTHMO_CRM.KANBAN.STAGE_COUNT', { count });
 });
+
+const PLACEHOLDER = computed(() => t('ALGORYTHMO_CRM.METRICS.PLACEHOLDER'));
+
+const conversionRateNext = computed(() => {
+  const v = props.metrics?.conversion_rate_to_next;
+  return Number.isFinite(v) ? v : null;
+});
+
+// Seconds → compact label. Tracks the same scale as timeFormat.js but reads
+// from numeric seconds rather than an ISO timestamp.
+function formatSeconds(value) {
+  // Service contract: 0 is a real zero (empty/sub-second stays), not "no data".
+  // Only nil/non-finite/negative collapses to the em-dash placeholder.
+  if (value == null || !Number.isFinite(value) || value < 0) {
+    return PLACEHOLDER.value;
+  }
+  const seconds = Math.round(value);
+  if (seconds < 60) {
+    return t('ALGORYTHMO_CRM.METRICS.SECONDS_SHORT', { value: seconds });
+  }
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) {
+    return t('ALGORYTHMO_CRM.METRICS.MINUTES_SHORT', { value: minutes });
+  }
+  const hours = Math.round(seconds / 3600);
+  if (hours < 48) {
+    return t('ALGORYTHMO_CRM.METRICS.HOURS_SHORT', { value: hours });
+  }
+  return t('ALGORYTHMO_CRM.METRICS.DAYS_SHORT', {
+    value: Math.round(hours / 24),
+  });
+}
+
+const avgTimeFormatted = computed(() =>
+  formatSeconds(props.metrics?.avg_time_in_stage_seconds)
+);
+
+const conversionFormatted = computed(() => {
+  const v = conversionRateNext.value;
+  return v == null ? PLACEHOLDER.value : `${Math.round(v * 100)}%`;
+});
+
+const metricsTooltip = computed(() => {
+  if (conversionRateNext.value == null) {
+    return t('ALGORYTHMO_CRM.METRICS.STAGE_AVG_TIME_LABEL');
+  }
+  return `${t('ALGORYTHMO_CRM.METRICS.STAGE_AVG_TIME_LABEL')} · ${t('ALGORYTHMO_CRM.METRICS.STAGE_CONVERSION_NEXT_LABEL')}`;
+});
+
+const metricsAriaLabel = computed(() => {
+  if (conversionRateNext.value == null) {
+    return t('ALGORYTHMO_CRM.METRICS.STAGE_CHIP_ARIA_NO_CONVERSION', {
+      time: avgTimeFormatted.value,
+    });
+  }
+  return t('ALGORYTHMO_CRM.METRICS.STAGE_CHIP_ARIA', {
+    time: avgTimeFormatted.value,
+    rate: conversionFormatted.value,
+  });
+});
 </script>
 
 <template>
@@ -56,15 +124,39 @@ const stageCountLabel = computed(() => {
     @drop="emit('drop', $event, { stageId: stage.id, stageName: stage.name })"
   >
     <header class="alg-stage-column__header" data-testid="stage-column-header">
-      <h3 class="alg-stage-column__name" data-testid="stage-name">
-        {{ stage.name }}
-      </h3>
+      <div class="alg-stage-column__header-top">
+        <h3 class="alg-stage-column__name" data-testid="stage-name">
+          {{ stage.name }}
+        </h3>
+        <span
+          class="alg-stage-column__count"
+          data-testid="stage-count"
+          :aria-label="stageCountLabel"
+        >
+          {{ leads.length }}
+        </span>
+      </div>
       <span
-        class="alg-stage-column__count"
-        data-testid="stage-count"
-        :aria-label="stageCountLabel"
+        class="alg-stage-column__metrics"
+        data-testid="stage-metrics-chip"
+        :data-stage-id="stage.id"
+        :title="metricsTooltip"
+        :aria-label="metricsAriaLabel"
       >
-        {{ leads.length }}
+        <span
+          class="alg-stage-column__metric-avg"
+          data-testid="stage-metrics-avg-time"
+        >
+          {{ avgTimeFormatted }}
+        </span>
+        <span
+          v-if="conversionRateNext != null"
+          class="alg-stage-column__metric-conversion"
+          data-testid="stage-metrics-conversion"
+        >
+          {{ conversionFormatted }}
+          {{ t('ALGORYTHMO_CRM.METRICS.STAGE_CONVERSION_NEXT_LABEL') }}
+        </span>
       </span>
     </header>
 
@@ -127,6 +219,12 @@ const stageCountLabel = computed(() => {
 
 .alg-stage-column__header {
   display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.alg-stage-column__header-top {
+  display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 0.5rem;
@@ -144,6 +242,25 @@ const stageCountLabel = computed(() => {
 .alg-stage-column__count {
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
+  color: var(--alg-column-muted-fg, #6b7280);
+}
+
+.alg-stage-column__metrics {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  align-items: center;
+  font-size: 0.6875rem;
+  color: var(--alg-column-muted-fg, #6b7280);
+  font-variant-numeric: tabular-nums;
+}
+
+.alg-stage-column__metric-avg {
+  font-weight: 600;
+  color: var(--alg-modal-fg, #111827);
+}
+
+.alg-stage-column__metric-conversion {
   color: var(--alg-column-muted-fg, #6b7280);
 }
 

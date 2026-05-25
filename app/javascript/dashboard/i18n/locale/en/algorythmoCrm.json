@@ -11,6 +11,23 @@
       "LOADING": "Loading leads",
       "TOAST_REGION_LABEL": "CRM notifications"
     },
+    "METRICS": {
+      "SUMMARY_ARIA_LABEL": "Pipeline summary",
+      "OPEN_LEADS_LABEL": "Open leads",
+      "AVG_FUNNEL_LABEL": "Avg funnel time",
+      "CONVERSION_RATE_LABEL": "Conversion",
+      "STAGE_AVG_TIME_LABEL": "Avg time in stage",
+      "STAGE_CONVERSION_NEXT_LABEL": "→ next stage",
+      "STAGE_CHIP_ARIA": "Avg time {time}, conversion to next stage {rate}",
+      "STAGE_CHIP_ARIA_NO_CONVERSION": "Avg time {time}",
+      "LOADING": "Loading metrics…",
+      "ERROR_TOOLTIP": "Couldn't load metrics. Retry in a few seconds.",
+      "PLACEHOLDER": "—",
+      "HOURS_SHORT": "{value}h",
+      "MINUTES_SHORT": "{value}min",
+      "SECONDS_SHORT": "{value}s",
+      "DAYS_SHORT": "{value}d"
+    },
     "STAGE": {
       "EMPTY": "No leads here yet",
       "DROP_HINT": "Drop to move"

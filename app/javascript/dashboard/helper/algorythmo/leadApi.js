@@ -53,6 +53,25 @@ export function fetchDefaultPipeline(accountId) {
   return axios.get(`${baseUrl(accountId)}/pipelines/default`);
 }
 
+/**
+ * Fetch the funnel observability payload for a single pipeline.
+ * Backend wraps the computation in a 60s Rails.cache.fetch — same TTL as
+ * FeatureGate (P2/T7). The Kanban surface fetches once on mount and re-fetches
+ * after each drop, so the cache absorbs parallel reads by multiple agents.
+ * Contract: CONTRACT_M1B §9 v1.2.0.
+ * @param {string|number} accountId
+ * @param {string|number} pipelineId
+ * @returns {Promise<{ data: {
+ *   pipeline_id: number, computed_at: string, ttl_seconds: number,
+ *   summary: { open_leads: number, avg_funnel_hours: number, conversion_rate: number },
+ *   stages: Array<{ stage_id: number, stage_kind: string, lead_count: number,
+ *     avg_time_in_stage_seconds: number, conversion_rate_to_next: number|null }>
+ * } }>}
+ */
+export function fetchPipelineMetrics(accountId, pipelineId) {
+  return axios.get(`${baseUrl(accountId)}/pipelines/${pipelineId}/metrics`);
+}
+
 // ---------------------------------------------------------------------------
 // Leads
 // ---------------------------------------------------------------------------

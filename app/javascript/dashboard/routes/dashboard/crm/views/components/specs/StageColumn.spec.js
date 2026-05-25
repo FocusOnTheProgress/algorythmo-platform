@@ -98,4 +98,108 @@ describe('StageColumn (CONTRACT_M1B §2)', () => {
     expect(dropEvents).toBeTruthy();
     expect(dropEvents[0][1]).toEqual({ stageId: 7, stageName: 'Qualificado' });
   });
+
+  // v1.2.0 — observability chip (M1-D)
+  describe('stage-metrics-chip (CONTRACT v1.2.0)', () => {
+    it('renders the chip with avg time and conversion when metrics are provided', () => {
+      const wrapper = mountColumn({
+        metrics: {
+          stage_id: 7,
+          stage_kind: 'open',
+          lead_count: 5,
+          avg_time_in_stage_seconds: 14400, // 4h
+          conversion_rate_to_next: 0.55,
+        },
+      });
+      const chip = wrapper.find('[data-testid="stage-metrics-chip"]');
+      expect(chip.exists()).toBe(true);
+      expect(chip.attributes('data-stage-id')).toBe('7');
+      expect(
+        wrapper.find('[data-testid="stage-metrics-avg-time"]').text()
+      ).toBe('4h');
+      const conv = wrapper.find('[data-testid="stage-metrics-conversion"]');
+      expect(conv.exists()).toBe(true);
+      expect(conv.text()).toContain('55%');
+    });
+
+    it('hides the conversion span when conversion_rate_to_next is null (terminal stage)', () => {
+      const wrapper = mountColumn({
+        stage: stage({ kind: 'won' }),
+        metrics: {
+          stage_id: 7,
+          stage_kind: 'won',
+          lead_count: 3,
+          avg_time_in_stage_seconds: 0,
+          conversion_rate_to_next: null,
+        },
+      });
+      expect(wrapper.find('[data-testid="stage-metrics-chip"]').exists()).toBe(
+        true
+      );
+      expect(
+        wrapper.find('[data-testid="stage-metrics-conversion"]').exists()
+      ).toBe(false);
+    });
+
+    it('renders placeholder em-dash when metrics is null', () => {
+      const wrapper = mountColumn({ metrics: null });
+      const chip = wrapper.find('[data-testid="stage-metrics-chip"]');
+      expect(chip.exists()).toBe(true);
+      expect(
+        wrapper.find('[data-testid="stage-metrics-avg-time"]').text()
+      ).toBe('—');
+      expect(
+        wrapper.find('[data-testid="stage-metrics-conversion"]').exists()
+      ).toBe(false);
+    });
+
+    it('renders 0s when avg_time_in_stage_seconds is exactly 0 (service contract: zero is real, not missing)', () => {
+      const wrapper = mountColumn({
+        metrics: {
+          stage_id: 7,
+          stage_kind: 'open',
+          lead_count: 2,
+          avg_time_in_stage_seconds: 0,
+          conversion_rate_to_next: 0.0,
+        },
+      });
+      expect(
+        wrapper.find('[data-testid="stage-metrics-avg-time"]').text()
+      ).not.toBe('—');
+      expect(
+        wrapper.find('[data-testid="stage-metrics-avg-time"]').text()
+      ).toContain('0');
+    });
+
+    it('formats seconds under 1 minute as Xs', () => {
+      const wrapper = mountColumn({
+        metrics: {
+          stage_id: 7,
+          stage_kind: 'open',
+          lead_count: 1,
+          avg_time_in_stage_seconds: 30,
+          conversion_rate_to_next: 0,
+        },
+      });
+      expect(
+        wrapper.find('[data-testid="stage-metrics-avg-time"]').text()
+      ).toBe('30s');
+    });
+
+    it('sets an aria-label describing avg time and conversion together', () => {
+      const wrapper = mountColumn({
+        metrics: {
+          stage_id: 7,
+          stage_kind: 'open',
+          lead_count: 5,
+          avg_time_in_stage_seconds: 14400,
+          conversion_rate_to_next: 0.55,
+        },
+      });
+      const chip = wrapper.find('[data-testid="stage-metrics-chip"]');
+      const label = chip.attributes('aria-label');
+      expect(label).toContain('4h');
+      expect(label).toContain('55%');
+    });
+  });
 });

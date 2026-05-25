@@ -25,6 +25,7 @@ import {
   clearLeadStoreForAccount,
 } from 'dashboard/composables/algorythmo/useLeadStore.js';
 import { useDragLead } from 'dashboard/composables/algorythmo/useDragLead.js';
+import { useStageMetrics } from 'dashboard/composables/algorythmo/useStageMetrics.js';
 import {
   elapsedSince,
   timeSinceLabel,
@@ -32,6 +33,7 @@ import {
 } from 'dashboard/helper/algorythmo/timeFormat.js';
 import AlgToastContainer from 'dashboard/components-next/algorythmo/AlgToastContainer.vue';
 import StageColumn from './components/StageColumn.vue';
+import KanbanHeader from './components/KanbanHeader.vue';
 import KanbanEmptyState from './components/KanbanEmptyState.vue';
 import MoveLeadModal from './components/MoveLeadModal.vue';
 import LeadCardMenu from './components/LeadCardMenu.vue';
@@ -110,6 +112,22 @@ const isPipelineLoading = computed(
   () => pipelineStoreRef.value.isLoading.value
 );
 const stageById = computed(() => pipelineStoreRef.value.stageById.value);
+const pipelineId = computed(() => pipelineStoreRef.value.pipeline.value?.id);
+
+// Funnel observability (CONTRACT v1.2.0). Composable is account+pipeline-scoped
+// via reactive args — a tenant switch (accountId watcher) calls reset() and
+// then re-fetches against the new pipeline once loadPipeline() resolves. The
+// `metrics` ref hydrates per stage and per summary; templates re-read the
+// shape on every drag confirmation so numbers stay in lockstep with the board.
+const stageMetrics = useStageMetrics(accountId, pipelineId);
+const {
+  summary: metricsSummary,
+  loading: metricsLoading,
+  error: metricsError,
+  fetchMetrics: fetchStageMetrics,
+  metricsForStage,
+  reset: resetStageMetrics,
+} = stageMetrics;
 
 function loadPipeline() {
   return pipelineStoreRef.value.loadPipeline();
@@ -151,6 +169,13 @@ const drag = useDragLead({
     moveLeadOptimistic({ leadId, fromStageId, toStageId });
     try {
       await commitMove({ leadId, toStageId });
+      // Funnel numbers depend on stage_histories transitions just emitted by
+      // the move. Re-fetch so the header counters and the per-column chip
+      // reflect the new reality on the next render. Fire-and-forget — the
+      // server response carries a 60s cache, so a stale value for a few
+      // hundred ms is acceptable; what matters is *eventual* consistency
+      // between the board and the metrics chips.
+      fetchStageMetrics();
     } catch (err) {
       rollbackMove({ leadId, fromStageId });
       throw err;
@@ -178,6 +203,9 @@ let agingTimer = null;
 onMounted(async () => {
   await loadPipeline();
   await Promise.all(stages.value.map(s => fetchStage(s.id)));
+  // Metrics fetch is fire-and-forget: it's secondary signal — the board is
+  // usable without it. The chip falls back to "—" until the response lands.
+  fetchStageMetrics();
   agingTimer = setInterval(() => {
     now.value = Date.now();
   }, AGING_TICK_MS);
@@ -212,8 +240,12 @@ watch(accountId, async (newId, oldId) => {
     clearLeadStoreForAccount(oldId);
     clearPipelineStoreForAccount(oldId);
   }
+  // Drop the previous tenant's metrics immediately so the header doesn't
+  // flash their numbers while the new pipeline loads.
+  resetStageMetrics();
   await loadPipeline();
   await Promise.all(stages.value.map(s => fetchStage(s.id)));
+  fetchStageMetrics();
 });
 
 const presenterByStage = computed(() => {
@@ -319,6 +351,7 @@ async function handleConfirmMove({ leadId, stage }) {
       leadName: leadName(raw),
       stageName: stage.name,
     });
+    fetchStageMetrics();
   } catch (err) {
     rollbackMove({ leadId, fromStageId: raw.stage_id });
     announceText.value = t('ALGORYTHMO_CRM.ANNOUNCE.MOVE_FAILED', {
@@ -332,28 +365,13 @@ async function handleConfirmMove({ leadId, stage }) {
 
 <template>
   <main class="alg-kanban" data-testid="crm-kanban-view">
-    <header class="alg-kanban__header" data-testid="kanban-header">
-      <h1 class="alg-kanban__title" data-testid="kanban-title">
-        {{ t('ALGORYTHMO_CRM.KANBAN.TITLE') }}
-      </h1>
-      <div class="alg-kanban__header-actions">
-        <input
-          v-model="searchQuery"
-          type="search"
-          class="alg-kanban__search"
-          data-testid="kanban-search-input"
-          :placeholder="t('ALGORYTHMO_CRM.KANBAN.SEARCH_PLACEHOLDER')"
-          :aria-label="t('ALGORYTHMO_CRM.KANBAN.SEARCH_PLACEHOLDER')"
-        />
-        <router-link
-          class="alg-kanban__pipeline-link"
-          data-testid="pipeline-config-link"
-          :to="pipelineConfigPath"
-        >
-          {{ t('ALGORYTHMO_CRM.KANBAN.PIPELINE_CONFIG_LINK') }}
-        </router-link>
-      </div>
-    </header>
+    <KanbanHeader
+      v-model:search-value="searchQuery"
+      :summary="metricsSummary"
+      :loading="metricsLoading"
+      :error="metricsError"
+      :pipeline-config-path="pipelineConfigPath"
+    />
 
     <KanbanEmptyState v-if="showGlobalEmpty" />
 
@@ -371,6 +389,7 @@ async function handleConfirmMove({ leadId, stage }) {
         :leads="presenterByStage.get(stage.id) ?? []"
         :board-has-any-lead="boardHasAnyLead"
         :is-drop-target="drag.hoveredStageId.value === stage.id"
+        :metrics="metricsForStage(stage.id)"
         @drag-start="drag.start"
         @drag-enter="drag.enter"
         @drag-over="drag.over"
@@ -432,58 +451,6 @@ async function handleConfirmMove({ leadId, stage }) {
   flex-direction: column;
   height: 100%;
   background-color: var(--alg-board-bg, #ffffff);
-}
-
-.alg-kanban__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--alg-board-divider, #e5e7eb);
-}
-
-.alg-kanban__header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.alg-kanban__search {
-  min-width: 16rem;
-  padding: 0.4rem 0.6rem;
-  border: 1px solid var(--alg-board-divider, #e5e7eb);
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  background-color: var(--alg-board-bg, #ffffff);
-  color: var(--alg-modal-fg, #111827);
-
-  &:focus-visible {
-    outline: 2px solid var(--alg-focus-ring, #2563eb);
-    outline-offset: 1px;
-  }
-}
-
-.alg-kanban__pipeline-link {
-  font-size: 0.875rem;
-  text-decoration: none;
-  color: var(--alg-cta-bg, #2563eb);
-
-  &:hover {
-    text-decoration: underline;
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--alg-focus-ring, #2563eb);
-    outline-offset: 2px;
-    border-radius: 0.125rem;
-  }
-}
-
-.alg-kanban__title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin: 0;
 }
 
 .alg-kanban__board {
