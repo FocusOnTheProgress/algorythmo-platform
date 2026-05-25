@@ -36,18 +36,18 @@ require 'rails_helper'
 RSpec.describe 'Algorythmo cut flags surface mapping' do
   # rubocop:enable RSpec/DescribeClass
   CUT_FLAGS_TO_ROUTE = {
-    'campaigns'             => '/app/accounts/:account_id/campaigns',
-    'help_center'           => '/app/accounts/:account_id/portals',
-    'sla'                   => '/app/accounts/:account_id/settings/sla',
-    'audit_logs'            => '/app/accounts/:account_id/settings/audit-logs',
-    'custom_roles'          => '/app/accounts/:account_id/settings/custom-roles',
-    'security_settings'     => '/app/accounts/:account_id/settings/security',
-    'billing_settings'      => '/app/accounts/:account_id/settings/billing',
-    'agent_bots'            => '/app/accounts/:account_id/settings/agent-bots',
-    'macros'                => '/app/accounts/:account_id/settings/macros',
-    'dashboard_apps'        => '/app/accounts/:account_id/settings/integrations/dashboard_apps',
-    'advanced_assignment'   => '/app/accounts/:account_id/settings/assignment-policy',
-    'reports_bot'           => '/app/accounts/:account_id/reports/bot',
+    'campaigns' => '/app/accounts/:account_id/campaigns',
+    'help_center' => '/app/accounts/:account_id/portals',
+    'sla' => '/app/accounts/:account_id/settings/sla',
+    'audit_logs' => '/app/accounts/:account_id/settings/audit-logs',
+    'custom_roles' => '/app/accounts/:account_id/settings/custom-roles',
+    'security_settings' => '/app/accounts/:account_id/settings/security',
+    'billing_settings' => '/app/accounts/:account_id/settings/billing',
+    'agent_bots' => '/app/accounts/:account_id/settings/agent-bots',
+    'macros' => '/app/accounts/:account_id/settings/macros',
+    'dashboard_apps' => '/app/accounts/:account_id/settings/integrations/dashboard_apps',
+    'advanced_assignment' => '/app/accounts/:account_id/settings/assignment-policy',
+    'reports_bot' => '/app/accounts/:account_id/reports/bot',
     'conversation_workflow' => '/app/accounts/:account_id/settings/conversation-workflow'
   }.freeze
 
@@ -56,19 +56,19 @@ RSpec.describe 'Algorythmo cut flags surface mapping' do
   # without a sidebar entry (in-page tab inside Settings > Integrations).
   # All other 12 flags label sidebar entries declared in settings.json.
   CUT_FLAGS_TO_I18N_KEY = {
-    'campaigns'             => ['settings.json',     'SIDEBAR.CAMPAIGNS'],
-    'help_center'           => ['settings.json',     'SIDEBAR.HELP_CENTER.TITLE'],
-    'sla'                   => ['settings.json',     'SIDEBAR.SLA'],
-    'audit_logs'            => ['settings.json',     'SIDEBAR.AUDIT_LOGS'],
-    'custom_roles'          => ['settings.json',     'SIDEBAR.CUSTOM_ROLES'],
-    'security_settings'     => ['settings.json',     'SIDEBAR.SECURITY'],
-    'billing_settings'      => ['settings.json',     'SIDEBAR.BILLING'],
-    'agent_bots'            => ['settings.json',     'SIDEBAR.AGENT_BOTS'],
-    'macros'                => ['settings.json',     'SIDEBAR.MACROS'],
-    'dashboard_apps'        => ['integrations.json', 'INTEGRATION_SETTINGS.DASHBOARD_APPS.TITLE'],
-    'advanced_assignment'   => ['settings.json',     'SIDEBAR.AGENT_ASSIGNMENT'],
-    'reports_bot'           => ['settings.json',     'SIDEBAR.REPORTS_BOT'],
-    'conversation_workflow' => ['settings.json',     'SIDEBAR.CONVERSATION_WORKFLOW']
+    'campaigns' => ['settings.json', 'SIDEBAR.CAMPAIGNS'],
+    'help_center' => ['settings.json', 'SIDEBAR.HELP_CENTER.TITLE'],
+    'sla' => ['settings.json', 'SIDEBAR.SLA'],
+    'audit_logs' => ['settings.json', 'SIDEBAR.AUDIT_LOGS'],
+    'custom_roles' => ['settings.json', 'SIDEBAR.CUSTOM_ROLES'],
+    'security_settings' => ['settings.json', 'SIDEBAR.SECURITY'],
+    'billing_settings' => ['settings.json', 'SIDEBAR.BILLING'],
+    'agent_bots' => ['settings.json', 'SIDEBAR.AGENT_BOTS'],
+    'macros' => ['settings.json', 'SIDEBAR.MACROS'],
+    'dashboard_apps' => ['integrations.json', 'INTEGRATION_SETTINGS.DASHBOARD_APPS.TITLE'],
+    'advanced_assignment' => ['settings.json', 'SIDEBAR.AGENT_ASSIGNMENT'],
+    'reports_bot' => ['settings.json', 'SIDEBAR.REPORTS_BOT'],
+    'conversation_workflow' => ['settings.json', 'SIDEBAR.CONVERSATION_WORKFLOW']
   }.freeze
 
   LOCALE_DIR = Rails.root.join('app/javascript/dashboard/i18n/locale/en').freeze
