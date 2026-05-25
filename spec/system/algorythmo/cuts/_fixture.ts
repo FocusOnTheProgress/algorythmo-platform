@@ -62,7 +62,14 @@ async function loginSuperAdmin(page: Page): Promise<void> {
     // emitted by Formtastic instead.
     await page.locator('#super_admin_email').fill(SUPER_ADMIN_EMAIL);
     await page.locator('#super_admin_password').fill(SUPER_ADMIN_PASS);
-    await page.locator('form#new_super_admin input[type="submit"]').click();
+    // The login page only renders a single form, so the unscoped submit
+    // selector is unambiguous. Active Admin's form id varies across versions
+    // (new_super_admin / new_user / scoped variants); selecting by submit
+    // type avoids coupling the test to that incidental naming.
+    await page
+      .locator('input[type="submit"], button[type="submit"]')
+      .first()
+      .click();
 
     await page.waitForURL(url => !url.pathname.includes('/sign_in'), {
       timeout: 15_000,
