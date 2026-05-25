@@ -30,12 +30,12 @@ import {
   timeSinceLabel,
   humanizeDurationLongPtBr,
 } from 'dashboard/helper/algorythmo/timeFormat.js';
-import { useToast } from 'dashboard/composables/algorythmo/useToast.js';
 import AlgToastContainer from 'dashboard/components-next/algorythmo/AlgToastContainer.vue';
 import StageColumn from './components/StageColumn.vue';
 import KanbanEmptyState from './components/KanbanEmptyState.vue';
 import MoveLeadModal from './components/MoveLeadModal.vue';
 import LeadCardMenu from './components/LeadCardMenu.vue';
+import LeadDetailDrawer from './components/LeadDetailDrawer.vue';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -87,13 +87,15 @@ function toPresenter(lead, stage, now) {
     time_human: timeSinceLabel(lead.stage_entered_at, now),
     time_aria_long: humanizeDurationLongPtBr(elapsed),
     aging_state: agingStateFor(stage, lead.stage_entered_at, now),
+    // M1-C/PR1: lead_json now carries `owner: { id, name, thumbnail } | null`.
+    // Passed through verbatim — LeadCard renders the avatar or placeholder.
+    owner: lead.owner ?? null,
   };
 }
 
 const route = useRoute();
 const accountId = computed(() => route.params.accountId);
 const { t } = useI18n();
-const toast = useToast();
 
 // Stores are bound via `computed` keyed on accountId so a tenant switch
 // (Vue Router reuses the route component across /app/accounts/:accountId/crm
@@ -138,6 +140,8 @@ const menuLead = ref(null);
 const menuAnchor = ref(null);
 const announceText = ref('');
 const searchQuery = ref('');
+const drawerOpen = ref(false);
+const drawerLead = ref(null);
 const pipelineConfigPath = computed(
   () => `/app/accounts/${accountId.value}/crm/pipeline`
 );
@@ -198,6 +202,12 @@ watch(accountId, async (newId, oldId) => {
   menuAnchor.value = null;
   moveModalOpen.value = false;
   moveModalLead.value = null;
+  // The drawer's :key=accountId remounts the component on tenant switch so
+  // useStageHistory rebinds to the new account; the explicit reset here is
+  // just belt-and-suspenders: we never carry a previous tenant's lead into
+  // the new account's drawer.
+  drawerOpen.value = false;
+  drawerLead.value = null;
   if (oldId && oldId !== newId) {
     clearLeadStoreForAccount(oldId);
     clearPipelineStoreForAccount(oldId);
@@ -279,11 +289,18 @@ function handleMenuMove() {
   closeMenu();
 }
 
-function handleOpenLead() {
-  // LeadDetailDrawer ships in B-PR6. Until then, give the click observable
-  // feedback so the card is not a silent no-op — a single toast that removes
-  // itself after 4s. Replace this line when the drawer lands.
-  toast.info(t('ALGORYTHMO_CRM.LEAD_DETAIL.COMING_SOON'));
+function handleOpenLead(presenter) {
+  // Presenter only carries display fields. The drawer needs the raw lead
+  // (contact, owner, channel_origin) — look it up from the store rather than
+  // duplicating it into the presenter shape.
+  const raw = findRawLead(presenter?.id);
+  if (!raw) return;
+  drawerLead.value = raw;
+  drawerOpen.value = true;
+}
+
+function handleDrawerClose() {
+  drawerOpen.value = false;
 }
 
 async function handleConfirmMove({ leadId, stage }) {
@@ -380,6 +397,15 @@ async function handleConfirmMove({ leadId, stage }) {
       :anchor="menuAnchor"
       @close="closeMenu"
       @move="handleMenuMove"
+    />
+
+    <LeadDetailDrawer
+      :key="accountId"
+      v-model:open="drawerOpen"
+      :lead="drawerLead"
+      :account-id="accountId"
+      :now="now"
+      @close="handleDrawerClose"
     />
 
     <MoveLeadModal

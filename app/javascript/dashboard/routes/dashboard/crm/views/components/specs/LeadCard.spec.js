@@ -17,10 +17,17 @@ const baseLead = () => ({
   stage_id: 7,
   stage_name: 'Qualificado',
   channel_origin: 'whatsapp',
-  channel_icon: '\u260E', // ☎
+  channel_icon: '\u{1F4AC}',
   time_human: '3h',
   time_aria_long: 'há 3 horas',
   aging_state: 'green',
+  owner: null,
+});
+
+const ownerSample = () => ({
+  id: 11,
+  name: 'Gustavo Bittencourt',
+  thumbnail: 'https://cdn.example/avatars/11.png',
 });
 
 const mountCard = (overrides = {}) =>
@@ -28,13 +35,10 @@ const mountCard = (overrides = {}) =>
     props: { lead: { ...baseLead(), ...overrides } },
     global: {
       plugins: [i18n],
-      stubs: {
-        // Keep LeadAgingChip real — we assert on its rendered output below.
-      },
     },
   });
 
-describe('LeadCard (CONTRACT_M1B §3)', () => {
+describe('LeadCard (CONTRACT_M1B §3 v1.1.0)', () => {
   describe('shell attributes', () => {
     it('renders an article with role="button" and tabindex="0"', () => {
       const wrapper = mountCard();
@@ -53,12 +57,12 @@ describe('LeadCard (CONTRACT_M1B §3)', () => {
       expect(card.attributes('data-channel')).toBe('whatsapp');
     });
 
-    it('builds the full pt_BR aria-label sentence', () => {
+    it('builds the full pt_BR aria-label sentence (channel label translated)', () => {
       const wrapper = mountCard();
       expect(
         wrapper.find('[data-testid="lead-card"]').attributes('aria-label')
       ).toBe(
-        'Lead Maria Santos, etapa Qualificado, há 3 horas nesta etapa, canal whatsapp'
+        'Lead Maria Santos, etapa Qualificado, há 3 horas nesta etapa, canal WhatsApp'
       );
     });
   });
@@ -67,8 +71,29 @@ describe('LeadCard (CONTRACT_M1B §3)', () => {
     it('renders channel icon hidden from screen readers', () => {
       const wrapper = mountCard();
       const icon = wrapper.find('[data-testid="lead-card-channel-icon"]');
-      expect(icon.text()).toBe('\u260E');
+      expect(icon.text()).toBe('\u{1F4AC}');
       expect(icon.attributes('aria-hidden')).toBe('true');
+    });
+
+    it('renders the translated channel label', () => {
+      const wrapper = mountCard();
+      expect(
+        wrapper.find('[data-testid="lead-card-channel-label"]').text()
+      ).toBe('WhatsApp');
+    });
+
+    it('falls back to "Outro canal" when channel_origin is unknown', () => {
+      const wrapper = mountCard({ channel_origin: 'mystery-bus' });
+      expect(
+        wrapper.find('[data-testid="lead-card-channel-label"]').text()
+      ).toBe('Outro canal');
+    });
+
+    it('normalizes Channel::WebWidget to "Chat no site"', () => {
+      const wrapper = mountCard({ channel_origin: 'Channel::WebWidget' });
+      expect(
+        wrapper.find('[data-testid="lead-card-channel-label"]').text()
+      ).toBe('Chat no site');
     });
 
     it('renders name and compact time', () => {
@@ -88,6 +113,53 @@ describe('LeadCard (CONTRACT_M1B §3)', () => {
       expect(wrapper.find('[data-testid="lead-aging-chip-label"]').text()).toBe(
         '3h'
       );
+    });
+  });
+
+  describe('owner slot (v1.1.0)', () => {
+    it('renders the unassigned placeholder when lead.owner is null', () => {
+      const wrapper = mountCard({ owner: null });
+      const avatar = wrapper.find('[data-testid="lead-card-owner-avatar"]');
+      expect(avatar.exists()).toBe(true);
+      expect(avatar.attributes('data-owner-state')).toBe('unassigned');
+      expect(avatar.attributes('data-owner-id')).toBeUndefined();
+      expect(avatar.attributes('aria-label')).toBe(
+        'Lead disponível, sem dono atribuído'
+      );
+      expect(avatar.attributes('aria-disabled')).toBe('true');
+      expect(avatar.attributes('role')).toBe('img');
+      expect(avatar.attributes('title')).toBe(
+        'Disponível · clique para atribuir'
+      );
+    });
+
+    it('renders the real avatar when lead.owner is set', () => {
+      const wrapper = mountCard({ owner: ownerSample() });
+      const avatar = wrapper.find('[data-testid="lead-card-owner-avatar"]');
+      expect(avatar.exists()).toBe(true);
+      expect(avatar.attributes('data-owner-state')).toBe('assigned');
+      expect(avatar.attributes('data-owner-id')).toBe('11');
+      expect(avatar.attributes('title')).toBe('Gustavo Bittencourt');
+      const img = avatar.find('img');
+      expect(img.exists()).toBe(true);
+      expect(img.attributes('src')).toBe('https://cdn.example/avatars/11.png');
+      expect(img.attributes('alt')).toBe('Gustavo Bittencourt');
+    });
+
+    it('owner avatar click does NOT bubble open (M2 reassign placeholder)', async () => {
+      const wrapper = mountCard({ owner: ownerSample() });
+      await wrapper
+        .find('[data-testid="lead-card-owner-avatar"]')
+        .trigger('click');
+      expect(wrapper.emitted('open')).toBeUndefined();
+    });
+
+    it('unassigned placeholder click does NOT bubble open either', async () => {
+      const wrapper = mountCard({ owner: null });
+      await wrapper
+        .find('[data-testid="lead-card-owner-avatar"]')
+        .trigger('click');
+      expect(wrapper.emitted('open')).toBeUndefined();
     });
   });
 

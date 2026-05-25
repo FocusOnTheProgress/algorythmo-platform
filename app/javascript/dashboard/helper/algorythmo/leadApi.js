@@ -135,6 +135,18 @@ export function fetchLeadConversations(accountId, leadId, params = {}) {
   });
 }
 
+/**
+ * Fetch the stage transition history for a lead.
+ * Backend caps the response at 100 entries — `truncated: true` signals an
+ * older history exists past the window.
+ * @param {string|number} accountId
+ * @param {string|number} leadId
+ * @returns {Promise<{ data: { stage_history: object[], truncated: boolean } }>}
+ */
+export function fetchStageHistory(accountId, leadId) {
+  return axios.get(`${baseUrl(accountId)}/leads/${leadId}/stage_history`);
+}
+
 // ---------------------------------------------------------------------------
 // Stages
 // ---------------------------------------------------------------------------
