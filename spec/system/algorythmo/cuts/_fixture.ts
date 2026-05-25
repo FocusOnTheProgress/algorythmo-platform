@@ -213,7 +213,9 @@ export interface SurfaceAssertOpts {
   routePath: string;
   /** Regex matching the heading rendered by the surface once it loads.
    *  We assert on the actual heading (role=heading) — not the document
-   *  <title>, since Chatwoot uses a single static title. */
+   *  <title>, since Chatwoot uses a single static title.
+   *  Required by `expectSurfaceVisible` — the URL prefix check alone cannot
+   *  prove content rendered. */
   pageHeadingRegex?: RegExp;
   /** URL where the sidebar entry SHOULD render when the cut flag is off,
    *  and SHOULD NOT render when on. Defaults to `routePath` — works for
@@ -222,6 +224,11 @@ export interface SurfaceAssertOpts {
    *  pass a Settings landing URL (e.g. `/app/accounts/1/settings/general`)
    *  so the Settings nav is mounted regardless of the cut state. */
   sidebarContext?: string;
+  /** When the surface intentionally redirects from `routePath` to a deeper
+   *  path (e.g. `/campaigns` → `/campaigns/ongoing/live_chat`), pass the
+   *  shortest common prefix here. `expectSurfaceVisible` asserts the final
+   *  URL starts with this prefix. Defaults to `routePath`. */
+  routePathPrefix?: string;
 }
 
 const escapeForRegex = (s: string): string => s.replace(/[\\^$.*+?()[\]{}|/]/g, '\\$&');
@@ -267,10 +274,16 @@ async function assertSidebarLinkAbsent(
  * Assert that with the flag OFF, the surface is fully restored:
  *   1. (Optional) Sidebar entry is visible at `sidebarContext` (defaults to
  *      `routePath`).
- *   2. Direct navigation to `routePath` does NOT redirect — the URL stays
- *      on the requested path (allowing legitimate inner redirects such as
- *      `/campaigns` → `/campaigns/ongoing/live_chat`).
- *   3. (Optional) The page renders a heading matching `pageHeadingRegex`.
+ *   2. Direct navigation to `routePath` lands within the surface namespace —
+ *      the final URL must start with `routePath` (or with `routePathPrefix`
+ *      when the surface legitimately redirects to a child path, e.g.
+ *      `/campaigns` → `/campaigns/ongoing/live_chat`). Just checking that the
+ *      page did NOT redirect to /dashboard is a no-op for top-level routes
+ *      that redirect to a sub-route inside the same section — a regression
+ *      pushing them to /settings/foo would still pass.
+ *   3. The page renders a heading matching `pageHeadingRegex`. Required, so
+ *      the spec cannot silently degrade to a URL-only check on a 500/blank
+ *      shell.
  *
  * Caller is responsible for wrapping the call in `withFlag(page, name, false, ...)`
  * so teardown stays exception-safe in one place. `loginAsAdmin` is invoked
@@ -284,29 +297,40 @@ export async function expectSurfaceVisible(
   await loginAsAdmin(page);
 
   const sidebarContext = opts.sidebarContext ?? opts.routePath;
-  const dashboardPath = dashboardURL();
-  const dashboardRegex = new RegExp(`^${escapeForRegex(dashboardPath)}/?$`);
+  const allowedPrefix = opts.routePathPrefix ?? opts.routePath;
+  const allowedPrefixRegex = new RegExp(
+    `^${escapeForRegex(allowedPrefix)}(/|$)`
+  );
 
   // 1. Sidebar entry visible (when the surface has one).
   if (opts.sidebarLabel) {
     await assertSidebarLinkVisible(page, opts.sidebarLabel, sidebarContext);
   }
 
-  // 2. Direct nav does not redirect to /dashboard.
+  // 2. Direct nav lands within the surface namespace (catches both dashboard
+  //    redirects AND any cross-section redirect that would have passed the
+  //    old "not /dashboard" check trivially).
   await page.goto(`${BASE_URL}${opts.routePath}`);
   await page.waitForLoadState('domcontentloaded');
   await expect
     .poll(() => new URL(page.url()).pathname, {
       timeout: 10_000,
-      message: `expected to remain on ${opts.routePath}, but the route guard redirected to dashboard`,
+      message: `expected final URL to stay within ${allowedPrefix}, but the route guard or app router moved away from the surface`,
     })
-    .not.toMatch(dashboardRegex);
+    .toMatch(allowedPrefixRegex);
 
-  // 3. Heading rendered (when provided).
-  if (opts.pageHeadingRegex) {
-    const heading = page.getByRole('heading', { name: opts.pageHeadingRegex });
-    await expect(heading.first()).toBeVisible({ timeout: 15_000 });
+  // 3. Heading rendered. Required — the URL prefix check above proves the
+  //    router did not bail out, but it does not prove the surface actually
+  //    rendered content. The heading is the cheapest stamp that content
+  //    arrived for a real user.
+  if (!opts.pageHeadingRegex) {
+    throw new Error(
+      `expectSurfaceVisible: pageHeadingRegex is required (surface=${opts.routePath}). ` +
+        'Without it the spec cannot prove the page actually rendered.'
+    );
   }
+  const heading = page.getByRole('heading', { name: opts.pageHeadingRegex });
+  await expect(heading.first()).toBeVisible({ timeout: 15_000 });
 }
 
 /**

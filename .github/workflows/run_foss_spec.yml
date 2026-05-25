@@ -286,6 +286,22 @@ jobs:
           PLAYWRIGHT_EMAIL: test@algorythmo.com
           PLAYWRIGHT_PASSWORD: ${{ secrets.ALGORYTHMO_SEED_PASSWORD }}
 
+      # algorythmo: feature-gate — M2-B1 cuts suite gate (PR 7).
+      # Runs the 13 cut-flag e2e specs against the same server. Uses the
+      # super-admin user seeded above to toggle flags. Defaults match the
+      # _fixture.ts defaults (super@algorythmo.com / Test@12345) so no extra
+      # secrets are needed for the super-admin session; the password is a
+      # test-only credential that never reaches a real environment.
+      - name: Run Playwright algorythmo-cuts suite
+        run: pnpm exec playwright test --project algorythmo-cuts --trace=on
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          PLAYWRIGHT_EMAIL: test@algorythmo.com
+          PLAYWRIGHT_PASSWORD: ${{ secrets.ALGORYTHMO_SEED_PASSWORD }}
+          PLAYWRIGHT_SUPER_ADMIN_EMAIL: super@algorythmo.com
+          PLAYWRIGHT_SUPER_ADMIN_PASS: Test@12345
+          PLAYWRIGHT_ACCOUNT_ID: '1'
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: always()
