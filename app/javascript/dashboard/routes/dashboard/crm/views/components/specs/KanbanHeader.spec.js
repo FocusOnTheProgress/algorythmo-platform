@@ -50,11 +50,13 @@ describe('KanbanHeader (CONTRACT_M1B §2 v1.2.0)', () => {
     ]);
   });
 
-  it('exposes the kanban-metrics-summary container with aria-live polite', () => {
+  it('exposes the kanban-metrics-summary as a labeled group (no aria-live to avoid SR spam on drag)', () => {
     const wrapper = mountHeader({ summary: summaryFixture() });
     const summary = wrapper.find('[data-testid="kanban-metrics-summary"]');
     expect(summary.exists()).toBe(true);
-    expect(summary.attributes('aria-live')).toBe('polite');
+    expect(summary.attributes('role')).toBe('group');
+    expect(summary.attributes('aria-live')).toBeUndefined();
+    expect(summary.attributes('aria-label')).toBeTruthy();
   });
 
   it('renders concrete values when summary is hydrated', () => {

@@ -60,7 +60,9 @@ const conversionRateNext = computed(() => {
 // Seconds → compact label. Tracks the same scale as timeFormat.js but reads
 // from numeric seconds rather than an ISO timestamp.
 function formatSeconds(value) {
-  if (value == null || !Number.isFinite(value) || value <= 0) {
+  // Service contract: 0 is a real zero (empty/sub-second stays), not "no data".
+  // Only nil/non-finite/negative collapses to the em-dash placeholder.
+  if (value == null || !Number.isFinite(value) || value < 0) {
     return PLACEHOLDER.value;
   }
   const seconds = Math.round(value);

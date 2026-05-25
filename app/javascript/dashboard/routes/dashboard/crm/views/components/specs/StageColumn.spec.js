@@ -153,6 +153,24 @@ describe('StageColumn (CONTRACT_M1B §2)', () => {
       ).toBe(false);
     });
 
+    it('renders 0s when avg_time_in_stage_seconds is exactly 0 (service contract: zero is real, not missing)', () => {
+      const wrapper = mountColumn({
+        metrics: {
+          stage_id: 7,
+          stage_kind: 'open',
+          lead_count: 2,
+          avg_time_in_stage_seconds: 0,
+          conversion_rate_to_next: 0.0,
+        },
+      });
+      expect(
+        wrapper.find('[data-testid="stage-metrics-avg-time"]').text()
+      ).not.toBe('—');
+      expect(
+        wrapper.find('[data-testid="stage-metrics-avg-time"]').text()
+      ).toContain('0');
+    });
+
     it('formats seconds under 1 minute as Xs', () => {
       const wrapper = mountColumn({
         metrics: {

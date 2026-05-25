@@ -110,7 +110,7 @@ const conversionRateValue = computed(() =>
       <div
         class="alg-kanban-header__summary"
         data-testid="kanban-metrics-summary"
-        aria-live="polite"
+        role="group"
         :aria-label="t('ALGORYTHMO_CRM.METRICS.SUMMARY_ARIA_LABEL')"
         :aria-busy="loading ? 'true' : 'false'"
       >
