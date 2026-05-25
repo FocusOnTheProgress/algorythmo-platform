@@ -126,4 +126,67 @@ describe('AlgDrawer', () => {
     expect(q('.alg-drawer__title').textContent).toBe('Detalhes do Lead');
     wrapper.unmount();
   });
+
+  describe('testid + dataset forwarding (CONTRACT_M1B §7)', () => {
+    it('forwards rootTestid to the dialog root', async () => {
+      const wrapper = mountDrawer({
+        open: true,
+        rootTestid: 'lead-detail-drawer',
+      });
+      await wrapper.vm.$nextTick();
+      expect(q('[data-testid="lead-detail-drawer"]').getAttribute('role')).toBe(
+        'dialog'
+      );
+      wrapper.unmount();
+    });
+
+    it('forwards titleTestid to the h2 title', async () => {
+      const wrapper = mountDrawer({
+        open: true,
+        titleTestid: 'drawer-title',
+      });
+      await wrapper.vm.$nextTick();
+      const title = q('[data-testid="drawer-title"]');
+      expect(title).not.toBeNull();
+      expect(title.tagName).toBe('H2');
+      wrapper.unmount();
+    });
+
+    it('forwards closeTestid to the close button', async () => {
+      const wrapper = mountDrawer({
+        open: true,
+        closeTestid: 'drawer-close',
+      });
+      await wrapper.vm.$nextTick();
+      const close = q('[data-testid="drawer-close"]');
+      expect(close).not.toBeNull();
+      expect(close.tagName).toBe('BUTTON');
+      wrapper.unmount();
+    });
+
+    it('spreads rootDataset onto the dialog root', async () => {
+      const wrapper = mountDrawer({
+        open: true,
+        rootTestid: 'lead-detail-drawer',
+        rootDataset: { 'data-lead-id': 91, 'data-foo': 'bar' },
+      });
+      await wrapper.vm.$nextTick();
+      const root = q('[data-testid="lead-detail-drawer"]');
+      expect(root.getAttribute('data-lead-id')).toBe('91');
+      expect(root.getAttribute('data-foo')).toBe('bar');
+      wrapper.unmount();
+    });
+
+    it('omits the testid attributes when props are not supplied', async () => {
+      const wrapper = mountDrawer({ open: true });
+      await wrapper.vm.$nextTick();
+      const dialog = q('[role="dialog"]');
+      expect(dialog.hasAttribute('data-testid')).toBe(false);
+      expect(q('.alg-drawer__title').hasAttribute('data-testid')).toBe(false);
+      expect(q('button[aria-label="Fechar"]').hasAttribute('data-testid')).toBe(
+        false
+      );
+      wrapper.unmount();
+    });
+  });
 });

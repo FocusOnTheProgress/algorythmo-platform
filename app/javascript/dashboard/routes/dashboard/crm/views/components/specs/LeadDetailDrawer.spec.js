@@ -12,10 +12,26 @@ import algorythmoCrm from 'dashboard/i18n/locale/pt_BR/algorythmoCrm.json';
 vi.mock('dashboard/components-next/algorythmo/AlgDrawer.vue', () => ({
   default: {
     name: 'AlgDrawer',
-    props: ['open', 'title', 'closeLabel'],
+    props: [
+      'open',
+      'title',
+      'closeLabel',
+      'rootTestid',
+      'titleTestid',
+      'closeTestid',
+      'rootDataset',
+    ],
     emits: ['update:open', 'close'],
     template: `
-      <div v-if="open" data-testid="alg-drawer-stub" :data-title="title">
+      <div
+        v-if="open"
+        data-testid="alg-drawer-stub"
+        :data-title="title"
+        :data-root-testid="rootTestid"
+        :data-title-testid="titleTestid"
+        :data-close-testid="closeTestid"
+        :data-root-lead-id="rootDataset && rootDataset['data-lead-id']"
+      >
         <button
           type="button"
           data-testid="alg-drawer-close"
@@ -188,6 +204,18 @@ describe('LeadDetailDrawer (CONTRACT_M1B §7 v1.1.0)', () => {
       await wrapper.find('[data-testid="alg-drawer-close"]').trigger('click');
       expect(wrapper.emitted('update:open')).toEqual([[false]]);
       expect(wrapper.emitted('close')).toHaveLength(1);
+    });
+
+    it('forwards root/title/close testids and data-lead-id to AlgDrawer', () => {
+      // Adversarial review PR #56 H1/H2 — CONTRACT_M1B §7 v1.1.0 requires
+      // [data-testid="lead-detail-drawer"][data-lead-id=...] on the dialog
+      // root, plus drawer-title and drawer-close on header bits.
+      const wrapper = mountDrawer({ lead: baseLead({ id: 91 }) });
+      const stub = wrapper.find('[data-testid="alg-drawer-stub"]');
+      expect(stub.attributes('data-root-testid')).toBe('lead-detail-drawer');
+      expect(stub.attributes('data-title-testid')).toBe('drawer-title');
+      expect(stub.attributes('data-close-testid')).toBe('drawer-close');
+      expect(stub.attributes('data-root-lead-id')).toBe('91');
     });
   });
 

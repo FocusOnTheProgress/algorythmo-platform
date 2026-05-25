@@ -84,6 +84,14 @@ const drawerTitle = computed(
   () => props.lead?.name || t('ALGORYTHMO_CRM.DRAWER.TITLE_FALLBACK')
 );
 
+// Forwarded to AlgDrawer's root element so QA can target the dialog itself
+// via [data-testid="lead-detail-drawer"][data-lead-id=...]. CONTRACT_M1B §7.
+const rootDataset = computed(() => {
+  const out = {};
+  if (props.lead?.id != null) out['data-lead-id'] = props.lead.id;
+  return out;
+});
+
 const contact = computed(() => props.lead?.contact ?? null);
 
 const contactEmail = computed(() => contact.value?.email ?? null);
@@ -222,7 +230,10 @@ function handleRetry() {
     :open="open"
     :title="drawerTitle"
     :close-label="t('ALGORYTHMO_CRM.DRAWER.CLOSE')"
-    data-testid-root="lead-detail-drawer"
+    root-testid="lead-detail-drawer"
+    title-testid="drawer-title"
+    close-testid="drawer-close"
+    :root-dataset="rootDataset"
     @update:open="handleUpdateOpen"
     @close="handleClose"
   >

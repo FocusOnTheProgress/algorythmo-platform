@@ -10,9 +10,13 @@ import { fetchStageHistory } from 'dashboard/helper/algorythmo/leadApi.js';
 // (none today, but planned in M2 multi-tab) or accumulate stale leads. The
 // per-instance pattern keeps memory bounded and the API trivially testable.
 //
-// Why an inFlightLeadId guard: the drawer can switch lead without unmounting
-// (next/prev arrows in M2). A second load() can resolve before the first.
-// Without the guard, the first response would clobber the second's data.
+// Why a monotonic call-token guard: the drawer can switch lead without
+// unmounting (next/prev arrows in M2) AND the same lead can be re-loaded
+// while a previous request is still in flight (close + reopen, retry while
+// loading). A leadId-only compare would let the stale response slip through
+// when both calls target the same lead. The token is bumped on every load()
+// AND on reset() so any in-flight response is invalidated before its
+// continuation runs.
 // ---------------------------------------------------------------------------
 
 /**
@@ -24,32 +28,33 @@ export function useStageHistory(accountId) {
   const error = ref(null);
   const truncated = ref(false);
 
-  let inFlightLeadId = null;
+  let callSeq = 0;
 
   async function load(leadId) {
-    inFlightLeadId = leadId;
+    callSeq += 1;
+    const myCall = callSeq;
     loading.value = true;
     error.value = null;
     try {
       const res = await fetchStageHistory(accountId, leadId);
-      if (inFlightLeadId !== leadId) return;
+      if (myCall !== callSeq) return;
       entries.value = Array.isArray(res?.data?.stage_history)
         ? res.data.stage_history
         : [];
       truncated.value = !!res?.data?.truncated;
     } catch (err) {
-      if (inFlightLeadId !== leadId) return;
+      if (myCall !== callSeq) return;
       entries.value = [];
       truncated.value = false;
       error.value =
         err?.response?.data?.message || err?.message || 'fetch_failed';
     } finally {
-      if (inFlightLeadId === leadId) loading.value = false;
+      if (myCall === callSeq) loading.value = false;
     }
   }
 
   function reset() {
-    inFlightLeadId = null;
+    callSeq += 1;
     entries.value = [];
     loading.value = false;
     error.value = null;

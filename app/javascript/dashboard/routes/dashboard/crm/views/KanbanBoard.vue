@@ -202,6 +202,12 @@ watch(accountId, async (newId, oldId) => {
   menuAnchor.value = null;
   moveModalOpen.value = false;
   moveModalLead.value = null;
+  // The drawer's :key=accountId remounts the component on tenant switch so
+  // useStageHistory rebinds to the new account; the explicit reset here is
+  // just belt-and-suspenders: we never carry a previous tenant's lead into
+  // the new account's drawer.
+  drawerOpen.value = false;
+  drawerLead.value = null;
   if (oldId && oldId !== newId) {
     clearLeadStoreForAccount(oldId);
     clearPipelineStoreForAccount(oldId);
@@ -394,6 +400,7 @@ async function handleConfirmMove({ leadId, stage }) {
     />
 
     <LeadDetailDrawer
+      :key="accountId"
       v-model:open="drawerOpen"
       :lead="drawerLead"
       :account-id="accountId"

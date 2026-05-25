@@ -159,6 +159,56 @@ describe('useStageHistory', () => {
       expect(s.truncated.value).toBe(false);
       expect(s.loading.value).toBe(false);
     });
+
+    it('drops the older response when the SAME lead is reloaded mid-flight', async () => {
+      // Adversarial review PR #56 H3 — a leadId-only compare let the stale
+      // response slip through when both calls target the same lead. The
+      // monotonic token must invalidate the first call even though the lead
+      // id matches.
+      let resolveFirst;
+      fetchStageHistory.mockReturnValueOnce(
+        new Promise(resolve => {
+          resolveFirst = resolve;
+        })
+      );
+      fetchStageHistory.mockResolvedValueOnce({
+        data: { stage_history: [entry(99)], truncated: false },
+      });
+
+      const s = useStageHistory(ACCOUNT_ID);
+      const first = s.load(7);
+      const second = s.load(7);
+      await second;
+      resolveFirst({
+        data: { stage_history: [entry(1), entry(2)], truncated: true },
+      });
+      await first;
+
+      expect(s.entries.value).toEqual([entry(99)]);
+      expect(s.truncated.value).toBe(false);
+      expect(s.loading.value).toBe(false);
+    });
+
+    it('reset() invalidates an in-flight response (close + reopen safety)', async () => {
+      let resolveFirst;
+      fetchStageHistory.mockReturnValueOnce(
+        new Promise(resolve => {
+          resolveFirst = resolve;
+        })
+      );
+
+      const s = useStageHistory(ACCOUNT_ID);
+      const first = s.load(7);
+      s.reset();
+      resolveFirst({
+        data: { stage_history: [entry(1)], truncated: true },
+      });
+      await first;
+
+      expect(s.entries.value).toEqual([]);
+      expect(s.truncated.value).toBe(false);
+      expect(s.loading.value).toBe(false);
+    });
   });
 
   describe('reset', () => {

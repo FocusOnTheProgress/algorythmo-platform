@@ -19,6 +19,26 @@ const props = defineProps({
     type: String,
     default: 'Fechar',
   },
+  // Optional testid/data forwarding so consumers (e.g. LeadDetailDrawer) can
+  // satisfy QA contracts that require specific identifiers on the dialog
+  // root, title, and close button. Defaults to undefined so existing
+  // consumers are unaffected.
+  rootTestid: {
+    type: String,
+    default: undefined,
+  },
+  titleTestid: {
+    type: String,
+    default: undefined,
+  },
+  closeTestid: {
+    type: String,
+    default: undefined,
+  },
+  rootDataset: {
+    type: Object,
+    default: () => ({}),
+  },
 });
 
 const emit = defineEmits(['update:open', 'close']);
@@ -140,12 +160,17 @@ function onAfterLeave() {
         role="dialog"
         :aria-modal="true"
         :aria-label="title"
+        :data-testid="rootTestid"
+        v-bind="rootDataset"
       >
         <div class="alg-drawer__header">
-          <h2 class="alg-drawer__title">{{ title }}</h2>
+          <h2 class="alg-drawer__title" :data-testid="titleTestid">
+            {{ title }}
+          </h2>
           <button
             class="alg-btn alg-btn--ghost alg-btn--icon alg-btn--sm"
             :aria-label="closeLabel"
+            :data-testid="closeTestid"
             @click="close"
           >
             <svg
