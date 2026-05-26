@@ -4,13 +4,13 @@
 // D-D3: Empty state with 3-step onboarding when no content exists yet.
 // Backend stub: brainService falls back to fixtures when API returns 501
 // (PR M3-4 not yet merged). See brain.service.js for fallback logic.
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMapGetter } from 'dashboard/composables/store';
 import { brainService } from './brain.service';
 import BrainEmptyState from './BrainEmptyState.vue';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const accountId = useMapGetter('getCurrentAccountId');
 
 // Tab definitions. Only Viewer is active Day-1.
@@ -29,23 +29,29 @@ const activeTab = ref('viewer');
 
 const compiledTruth = ref(null);
 const timeline = ref([]);
+const timelineUnavailable = ref(false);
 const isLoading = ref(true);
 const loadError = ref(null);
 
-const isEmpty = computed(
-  () => !isLoading.value && !loadError.value && !compiledTruth.value?.content
-);
-
-// Strip YAML frontmatter before rendering (lines between leading --- pairs).
+// Strip YAML frontmatter before rendering. CRLF-safe (Windows-saved markdown).
+// Requires the closing `---` on its own line so a body that opens with a
+// horizontal rule isn't accidentally eaten.
 const bodyContent = computed(() => {
   const raw = compiledTruth.value?.content ?? '';
-  return raw.replace(/^---[\s\S]*?---\n?/, '').trim();
+  return raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').trim();
 });
 
-// Format ISO timestamp to localized short date+time.
+// Empty when there's nothing meaningful to render — covers whitespace-only
+// payloads (frontmatter-only files, blank padding) so the empty state still
+// shows.
+const isEmpty = computed(
+  () => !isLoading.value && !loadError.value && !bodyContent.value
+);
+
+// Format ISO timestamp using the active i18n locale (browser default if unset).
 function formatTimestamp(iso) {
   if (!iso) return '';
-  return new Intl.DateTimeFormat('pt-BR', {
+  return new Intl.DateTimeFormat(locale.value || undefined, {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
@@ -62,19 +68,39 @@ function eventTypeLabel(type) {
   return map[type] ?? type;
 }
 
-onMounted(async () => {
-  try {
-    const [truthData, timelineData] = await Promise.all([
-      brainService.fetchCompiledTruth(accountId.value),
-      brainService.fetchTimeline(accountId.value),
-    ]);
-    compiledTruth.value = truthData;
-    timeline.value = timelineData?.events ?? [];
-  } catch (err) {
+// Fetch when accountId is ready. On hard reload the Vuex getter can resolve
+// after mount — watch + immediate covers both ordering cases without racing a
+// request against `undefined`.
+async function loadBrain(id) {
+  if (!id) return;
+  isLoading.value = true;
+  loadError.value = null;
+  timelineUnavailable.value = false;
+  // allSettled: timeline failure should not blank out compiled truth, and
+  // vice-versa. Each column degrades independently.
+  const [truthResult, timelineResult] = await Promise.allSettled([
+    brainService.fetchCompiledTruth(id),
+    brainService.fetchTimeline(id),
+  ]);
+  if (truthResult.status === 'fulfilled') {
+    compiledTruth.value = truthResult.value;
+  } else {
     loadError.value = t('ALGORYTHMO_BRAIN.VIEWER.ERROR');
-  } finally {
-    isLoading.value = false;
   }
+  if (timelineResult.status === 'fulfilled') {
+    timeline.value = timelineResult.value?.events ?? [];
+  } else {
+    timelineUnavailable.value = true;
+  }
+  isLoading.value = false;
+}
+
+onMounted(() => {
+  if (accountId.value) loadBrain(accountId.value);
+});
+
+watch(accountId, id => {
+  if (id) loadBrain(id);
 });
 </script>
 
@@ -157,7 +183,15 @@ onMounted(async () => {
         <h3 class="alg-brain-timeline__heading">
           {{ t('ALGORYTHMO_BRAIN.VIEWER.TIMELINE_HEADING') }}
         </h3>
+        <p
+          v-if="timelineUnavailable"
+          class="alg-brain-timeline__unavailable"
+          role="status"
+        >
+          {{ t('ALGORYTHMO_BRAIN.VIEWER.TIMELINE_UNAVAILABLE') }}
+        </p>
         <ol
+          v-else
           class="alg-brain-timeline__list"
           :aria-label="t('ALGORYTHMO_BRAIN.VIEWER.TIMELINE_LIST_ARIA_LABEL')"
         >
@@ -365,6 +399,14 @@ onMounted(async () => {
   letter-spacing: 0.08em;
   color: var(--color-body, rgba(255, 255, 255, 0.4));
   margin: 0 0 var(--space-normal, 1rem);
+}
+
+.alg-brain-timeline__unavailable {
+  font-size: var(--font-size-small, 0.75rem);
+  color: var(--color-body, rgba(255, 255, 255, 0.35));
+  font-style: italic;
+  margin: 0;
+  line-height: 1.5;
 }
 
 .alg-brain-timeline__list {

@@ -19,8 +19,11 @@ const warnFixture = name => {
   }
 };
 
-const isStubStatus = err =>
-  err?.response?.status === 501 || err?.response?.status === 404;
+// Only 501 (Not Implemented) means "backend stub — M3-4 ingestion not yet merged".
+// 404 means the route is gone or accountId is invalid — that must NOT silently
+// degrade to fixtures, otherwise a founder sees Day-1 placeholder data thinking
+// it's live. Auth errors (401/403) also bubble up untouched.
+const isStubStatus = err => err?.response?.status === 501;
 
 function brainBase(accountId) {
   return `/algorythmo/api/v1/accounts/${accountId}/brain`;

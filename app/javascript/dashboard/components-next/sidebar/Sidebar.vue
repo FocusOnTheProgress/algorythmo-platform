@@ -457,6 +457,8 @@ const menuItems = computed(() => {
     // algorythmo: feature-gate algorythmo_brain
     // Brain entry sits right after CRM — cross-cutting, not a CRM sub-section.
     // D-D1: Brain is a root-level nav item between CRM and the upstream surfaces.
+    // "Brain" is the product name (Algorythmo Brain) — intentionally untranslated
+    // across locales, same convention as "Linear", "Captain", "Stripe".
     ...(hasAlgorythmoBrain.value
       ? [
           {

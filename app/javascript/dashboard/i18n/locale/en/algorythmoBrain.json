@@ -18,7 +18,8 @@
       "ERROR": "Could not load Brain. Please try again.",
       "TRUTH_ARIA_LABEL": "Compiled Truth — company knowledge",
       "TIMELINE_ARIA_LABEL": "Events timeline",
-      "TIMELINE_LIST_ARIA_LABEL": "Brain events"
+      "TIMELINE_LIST_ARIA_LABEL": "Brain events",
+      "TIMELINE_UNAVAILABLE": "History unavailable right now."
     },
     "EMPTY_STATE": {
       "ARIA_LABEL": "First steps with Brain",

@@ -18,7 +18,8 @@
       "ERROR": "Não foi possível carregar o Brain. Tente novamente.",
       "TRUTH_ARIA_LABEL": "Compiled Truth — conhecimento da empresa",
       "TIMELINE_ARIA_LABEL": "Timeline de eventos",
-      "TIMELINE_LIST_ARIA_LABEL": "Eventos do Brain"
+      "TIMELINE_LIST_ARIA_LABEL": "Eventos do Brain",
+      "TIMELINE_UNAVAILABLE": "Histórico indisponível no momento."
     },
     "EMPTY_STATE": {
       "ARIA_LABEL": "Primeiros passos com o Brain",
