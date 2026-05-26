@@ -1,0 +1,28 @@
+{
+  "events": [
+    {
+      "id": "evt-001",
+      "type": "adjustment",
+      "timestamp": "2026-05-26T06:00:00Z",
+      "title": "Ajuste inicial criado",
+      "preview": "Contexto base da empresa colado pelo founder. Brain processando em background.",
+      "actor": "founder"
+    },
+    {
+      "id": "evt-002",
+      "type": "dream_cycle",
+      "timestamp": "2026-05-26T02:00:00Z",
+      "title": "Dream Cycle executado",
+      "preview": "auto_link + dedup_entities concluídos. 3 entidades linkadas. 0 duplicatas removidas.",
+      "actor": "system"
+    },
+    {
+      "id": "evt-003",
+      "type": "snapshot",
+      "timestamp": "2026-05-19T06:00:00Z",
+      "title": "Snapshot semanal gerado",
+      "preview": "Diff semana 20: +2 entidades, sem remoções. Brain estável.",
+      "actor": "system"
+    }
+  ]
+}

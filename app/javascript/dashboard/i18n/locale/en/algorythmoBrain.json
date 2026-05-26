@@ -1,0 +1,40 @@
+{
+  "ALGORYTHMO_BRAIN": {
+    "SIDEBAR": {
+      "BRAIN": "Brain"
+    },
+    "TABS": {
+      "VIEWER": "Viewer",
+      "AJUSTES": "Settings",
+      "HISTORICO": "History",
+      "CONFIG": "Config",
+      "COMING_SOON": "Coming soon"
+    },
+    "VIEWER": {
+      "HEADING": "Brain Algorythmo",
+      "SUBHEADING": "What the Brain knows about your company",
+      "TIMELINE_HEADING": "History",
+      "LOADING": "Loading Brain…",
+      "ERROR": "Could not load Brain. Please try again.",
+      "TRUTH_ARIA_LABEL": "Compiled Truth — company knowledge",
+      "TIMELINE_ARIA_LABEL": "Events timeline",
+      "TIMELINE_LIST_ARIA_LABEL": "Brain events",
+      "TIMELINE_UNAVAILABLE": "History unavailable right now."
+    },
+    "EMPTY_STATE": {
+      "ARIA_LABEL": "First steps with Brain",
+      "STEP_1_TITLE": "Paste your first instruction",
+      "STEP_1_DESC": "Describe your company, product, voice and what the Brain needs to know.",
+      "STEP_2_TITLE": "Brain processes in background",
+      "STEP_2_DESC": "Ingestion + dream cycle run automatically every night.",
+      "STEP_3_TITLE": "Ask in Cursor or Claude Code",
+      "STEP_3_DESC": "Connect via MCP stdio. Brain replies with real company context.",
+      "FOOTER": "Day-1: founder dogfooding. M3.5 opens to external clients."
+    },
+    "TIMELINE": {
+      "TYPE_ADJUSTMENT": "adjustment",
+      "TYPE_DREAM_CYCLE": "dream cycle",
+      "TYPE_SNAPSHOT": "snapshot"
+    }
+  }
+}
