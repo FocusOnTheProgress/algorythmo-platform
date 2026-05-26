@@ -37,6 +37,31 @@ Algorythmo::Engine.routes.draw do
             patch :rename
           end
         end
+
+        # M3 — Brain API routes (PR M3-1 gate)
+        # All routes inherit Algorythmo::Api::V1::Brain::BaseController which enforces:
+        #   (1) Chatwoot auth chain, (2) algorythmo_crm feature gate, (3) TenantResolution concern.
+        # Stub controllers return 501 — implementations land in T1–T4.
+        namespace :brain do
+          # GET  /brain/compiled_truth → Brain::CompiledTruthController#show  (T1, PR M3-4)
+          resource :compiled_truth, only: %i[show], controller: 'compiled_truth'
+
+          # GET  /brain/timeline      → Brain::TimelineController#index        (T1, PR M3-4)
+          resources :timeline, only: %i[index], controller: 'timeline'
+
+          # POST /brain/adjustments   → Brain::AdjustmentsController#create    (T1, PR M3-5)
+          # Enqueues IngestionWorker — does NOT call gbrain synchronously.
+          resources :adjustments, only: %i[create], controller: 'adjustments'
+
+          # GET  /brain/snapshots     → Brain::SnapshotsController#index       (T4, PR M3-7)
+          resources :snapshots, only: %i[index], controller: 'snapshots'
+
+          # POST   /brain/mcp_token   → Brain::McpTokensController#create      (T3, PR M3-6)
+          resource :mcp_token, only: %i[create], controller: 'mcp_tokens'
+
+          # DELETE /brain/mcp_sessions → Brain::McpSessionsController#destroy  (T3, PR M3-6)
+          resource :mcp_sessions, only: %i[destroy], controller: 'mcp_sessions'
+        end
       end
     end
   end
