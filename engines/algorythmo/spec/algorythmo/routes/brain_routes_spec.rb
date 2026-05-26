@@ -106,15 +106,29 @@ RSpec.describe 'Brain routes', type: :request do
                     path_template: '/api/v1/accounts/:account_id/brain/snapshots'
   end
 
+  # POST /brain/mcp_token — implemented in PR M3-5 (T3).
+  # Tenant gate still tested; happy-path response is 201 (not 501 stub).
   describe 'POST /brain/mcp_token' do
-    it_behaves_like 'a brain route that enforces tenant gate',
-                    method: :post,
-                    path_template: '/api/v1/accounts/:account_id/brain/mcp_token'
+    context 'when non-founder' do
+      it 'returns 403' do
+        without_primary_account_match do
+          post "/algorythmo/api/v1/accounts/#{account.id}/brain/mcp_token", headers: headers
+          expect(response).to have_http_status(:forbidden)
+        end
+      end
+    end
   end
 
+  # DELETE /brain/mcp_sessions — implemented in PR M3-5 (T3).
+  # Tenant gate still tested; happy-path response is 200 (not 501 stub).
   describe 'DELETE /brain/mcp_sessions' do
-    it_behaves_like 'a brain route that enforces tenant gate',
-                    method: :delete,
-                    path_template: '/api/v1/accounts/:account_id/brain/mcp_sessions'
+    context 'when non-founder' do
+      it 'returns 403' do
+        without_primary_account_match do
+          delete "/algorythmo/api/v1/accounts/#{account.id}/brain/mcp_sessions", headers: headers
+          expect(response).to have_http_status(:forbidden)
+        end
+      end
+    end
   end
 end

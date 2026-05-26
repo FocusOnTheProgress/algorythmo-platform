@@ -3,6 +3,12 @@ Algorythmo::Engine.routes.draw do
   # Engine-scoped routes live here. All paths are prefixed /algorythmo by the host.
   root to: proc { [200, {}, ['Algorythmo OS engine']] }
 
+  # M3-late HTTP scaffold — gated by feature flag `algorythmo_brain_mcp_http` (OFF default).
+  # Flag OFF → 404. Flag ON (M3.5+) → OAuth Dynamic Client Registration (RFC 7591).
+  namespace :oauth do
+    post 'clients', to: 'dcr#create'
+  end
+
   # M1 — CRM API routes
   # All routes sit behind the algorythmo_crm feature gate (checked in BaseController).
   namespace :api do
