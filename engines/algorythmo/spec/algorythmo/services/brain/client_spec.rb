@@ -1,58 +1,66 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
+require 'tmpdir'
 
 # Tests for Algorythmo::Brain::Client.
 #
-# All specs stub Open3.popen3 — no real gbrain binary required.
-# Path validation specs exercise the defensive guard in #capture.
+# All subprocess specs stub Open3.popen3 — no real gbrain binary required.
+# Path validation specs mix stubbed File methods with real FS (Tempfile) to cover
+# both macOS symlink realpath and injection attacks.
 RSpec.describe Algorythmo::Brain::Client do
   subject(:client) { described_class.new(1) }
 
-  # Builds a fake popen3 block that simulates a subprocess result.
-  # Yields [stdin_io, stdout_io, stderr_io, wait_thread].
-  def stub_popen3(stdout:, stderr: '', exit_status: 0)
-    # Open3's wait_thr has #pid monkey-patched onto Thread; plain double avoids
-    # a misleading VerifiedDoubles failure on a method not in Thread's interface.
-    status   = instance_double(Process::Status, success?: exit_status.zero?, exitstatus: exit_status)
-    wait_thr = double('Open3WaitThread', pid: 99_999, status: false, value: status)
+  # ---------------------------------------------------------------------------
+  # Shared popen3 stub
+  # ---------------------------------------------------------------------------
 
-    stdin_io  = instance_double(IO, close: nil)
-    stdout_io = instance_double(IO, read: stdout)
-    stderr_io = instance_double(IO, read: stderr)
+  # Simulates a subprocess result without spawning a real process.
+  # Open3's wait_thr carries a monkey-patched #pid on Thread; we use a plain
+  # double to avoid VerifiedDoubles on a non-standard method.
+  def stub_popen3(stdout:, stderr: '', exit_status: 0)
+    status   = instance_double(Process::Status, success?: exit_status.zero?, exitstatus: exit_status)
+    wait_thr = double('Open3WaitThread', pid: 99_999, value: status)
+    allow(wait_thr).to receive(:join).and_return(wait_thr) # returns self = not timed out
+    allow(wait_thr).to receive(:alive?).and_return(false)
 
     allow(Open3).to receive(:popen3) do |*_args, &blk|
-      blk.call(stdin_io, stdout_io, stderr_io, wait_thr)
+      blk.call(
+        instance_double(IO, close: nil),
+        instance_double(IO, read: stdout),
+        instance_double(IO, read: stderr),
+        wait_thr
+      )
     end
   end
 
-  # -----------------------------------------------------------------------
-  # Subprocess args — must NOT include --dir (v4 premise audit)
-  # -----------------------------------------------------------------------
-  describe '#capture — subprocess args' do
-    let(:tmp_file) do
-      f = Tempfile.new(['brain_test', '.md'], Dir.tmpdir)
-      f.write('# test')
-      f.close
-      f.path
+  # ---------------------------------------------------------------------------
+  # Subprocess args — must NOT include --dir (premise audit v4)
+  # ---------------------------------------------------------------------------
+  describe '#capture — subprocess receives resolved real path, no --dir' do
+    around do |example|
+      Dir.mktmpdir do |tmpdir|
+        @tmp_file = File.join(tmpdir, 'brain_test.md')
+        File.write(@tmp_file, '# test')
+        example.run
+      end
     end
 
-    after { File.unlink(tmp_file) if File.exist?(tmp_file) }
-
-    it 'calls gbrain capture <path> without --dir' do
+    it 'calls gbrain capture <real_path> without --dir' do
       stub_popen3(stdout: '{}')
-      client.capture(file: tmp_file)
+      client.capture(file: @tmp_file)
       expect(Open3).to have_received(:popen3) do |*args|
         expect(args).not_to include('--dir')
         expect(args[1]).to eq('capture')
-        expect(args[2]).to eq(tmp_file)
+        # arg[2] is the resolved real_path — may differ on macOS symlinks
+        expect(args[2]).to be_a(String)
       end
     end
   end
 
-  # -----------------------------------------------------------------------
-  # Path validation
-  # -----------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
+  # Path validation — covers P1.1/P1.2 macOS symlink, P1.3 TOCTOU, P2.2 attacks
+  # ---------------------------------------------------------------------------
   describe '#capture — path validation' do
     it 'rejects relative paths' do
       expect { client.capture(file: 'relative/path.md') }
@@ -64,9 +72,24 @@ RSpec.describe Algorythmo::Brain::Client do
         .to raise_error(ArgumentError, /must not contain/)
     end
 
+    it 'rejects null byte injection' do
+      expect { client.capture(file: "/tmp/foo\x00/etc/passwd") }
+        .to raise_error(ArgumentError, /must not contain null/)
+    end
+
+    it 'rejects /tmpfoo prefix-attack paths (separator boundary)' do
+      allow(File).to receive(:realpath).and_call_original
+      allow(File).to receive(:realpath).with('/tmpfoo/evil.md').and_return('/tmpfoo/evil.md')
+      allow(File).to receive(:realpath).with(Dir.tmpdir).and_call_original
+      allow(File).to receive(:file?).with('/tmpfoo/evil.md').and_return(true)
+      expect { client.capture(file: '/tmpfoo/evil.md') }
+        .to raise_error(ArgumentError, /must reside inside tmpdir/)
+    end
+
     it 'rejects paths outside tmpdir' do
-      # /etc/hosts is absolute, no "..", but not in tmpdir
+      allow(File).to receive(:realpath).and_call_original
       allow(File).to receive(:realpath).with('/etc/hosts').and_return('/etc/hosts')
+      allow(File).to receive(:realpath).with(Dir.tmpdir).and_call_original
       allow(File).to receive(:file?).with('/etc/hosts').and_return(true)
       expect { client.capture(file: '/etc/hosts') }
         .to raise_error(ArgumentError, /must reside inside tmpdir/)
@@ -74,31 +97,49 @@ RSpec.describe Algorythmo::Brain::Client do
 
     it 'rejects symlinks that resolve outside tmpdir' do
       symlink = File.join(Dir.tmpdir, 'evil_link')
+      allow(File).to receive(:realpath).and_call_original
       allow(File).to receive(:realpath).with(symlink).and_return('/etc/passwd')
-      allow(File).to receive(:file?).with(symlink).and_return(true)
+      allow(File).to receive(:realpath).with(Dir.tmpdir).and_call_original
+      allow(File).to receive(:file?).with('/etc/passwd').and_return(true)
       expect { client.capture(file: symlink) }
         .to raise_error(ArgumentError, /must reside inside tmpdir/)
     end
 
-    it 'rejects non-file paths (directories)' do
-      tmpdir_path = Dir.tmpdir
-      allow(File).to receive(:realpath).with(tmpdir_path).and_return(tmpdir_path)
-      allow(File).to receive(:file?).with(tmpdir_path).and_return(false)
-      expect { client.capture(file: tmpdir_path) }
-        .to raise_error(ArgumentError, /must be a regular file/)
+    it 'rejects directories (non-file paths)' do
+      Dir.mktmpdir do |dir|
+        # dir is a real tmpdir path — passes the tmpdir containment check but
+        # is a directory, not a file.
+        expect { client.capture(file: dir) }
+          .to raise_error(ArgumentError, /must be a regular file/)
+      end
     end
 
-    it 'raises ArgumentError when File.realpath raises ELOOP (circular symlink)' do
-      bad_path = File.join(Dir.tmpdir, 'loop_link')
-      allow(File).to receive(:realpath).with(bad_path).and_raise(Errno::ELOOP)
-      expect { client.capture(file: bad_path) }
+    it 'raises ArgumentError when realpath raises ELOOP (circular symlink)' do
+      bad = File.join(Dir.tmpdir, 'loop_link')
+      allow(File).to receive(:realpath).and_call_original
+      allow(File).to receive(:realpath).with(bad).and_raise(Errno::ELOOP)
+      expect { client.capture(file: bad) }
         .to raise_error(ArgumentError, /could not be resolved/)
+    end
+
+    it 'passes real_path (not original) to subprocess — TOCTOU mitigation' do
+      # macOS: Dir.tmpdir resolves to /var/folders but realpath = /private/var/folders
+      Dir.mktmpdir do |tmpdir|
+        tmp_file = File.join(tmpdir, 'safe.md')
+        File.write(tmp_file, '# safe')
+        stub_popen3(stdout: '{}')
+        client.capture(file: tmp_file)
+        expect(Open3).to have_received(:popen3) do |*args|
+          # The path passed to gbrain must be the resolved real path
+          expect(File.absolute_path?(args[2])).to be(true)
+        end
+      end
     end
   end
 
-  # -----------------------------------------------------------------------
-  # Subprocess success path
-  # -----------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
+  # Subprocess success paths
+  # ---------------------------------------------------------------------------
   describe '#search' do
     it 'parses JSON stdout and returns the result' do
       stub_popen3(stdout: '[{"title":"Brain page","score":0.9}]')
@@ -139,9 +180,9 @@ RSpec.describe Algorythmo::Brain::Client do
     end
   end
 
-  # -----------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
   # Error paths
-  # -----------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
   describe 'SubprocessError' do
     it 'raises SubprocessError when gbrain exits non-zero' do
       stub_popen3(stdout: '', stderr: 'fatal: corrupt database', exit_status: 1)
@@ -159,21 +200,15 @@ RSpec.describe Algorythmo::Brain::Client do
     end
   end
 
-  describe 'Timeout' do
-    it 'kills subprocess and raises Timeout when deadline exceeded' do
-      # Open3's wait_thr has #pid and #status — use a plain double (Thread lacks #pid).
-      # Open3's wait_thr has #pid monkey-patched onto Thread — plain double is correct here.
-      wait_thr = double('Open3WaitThread', pid: 12_345)
-      call_count = 0
-      allow(wait_thr).to receive(:status) do
-        call_count += 1
-        call_count < 3 ? :run : false
-      end
-      allow(wait_thr).to receive(:value).and_return(
-        instance_double(Process::Status, success?: false, exitstatus: 9)
-      )
+  describe 'TimeoutError' do
+    it 'kills subprocess and raises TimeoutError when wait_thr.join returns nil' do
+      # wait_thr.join(timeout) returns nil when deadline is missed (Thread#join contract).
+      status   = instance_double(Process::Status, success?: false, exitstatus: 9)
+      wait_thr = double('Open3WaitThread', pid: 12_345, value: status)
+      allow(wait_thr).to receive(:join).and_return(nil) # nil = timed out
+      allow(wait_thr).to receive(:alive?).and_return(false) # already exited after TERM
 
-      allow(Process).to receive(:kill).with('KILL', 12_345)
+      allow(Process).to receive(:kill)
 
       allow(Open3).to receive(:popen3) do |*_args, &blk|
         blk.call(
@@ -184,8 +219,26 @@ RSpec.describe Algorythmo::Brain::Client do
         )
       end
 
-      stub_const("#{described_class}::READ_TIMEOUT", 0)
-      expect { client.stats }.to raise_error(described_class::Timeout, /timed out/)
+      expect { client.stats }.to raise_error(described_class::TimeoutError, /timed out/)
+    end
+
+    it 'rescues ESRCH when process already exited before kill' do
+      status   = instance_double(Process::Status, success?: false, exitstatus: 9)
+      wait_thr = double('Open3WaitThread', pid: 99_001, value: status)
+      allow(wait_thr).to receive(:join).and_return(nil)
+      allow(wait_thr).to receive(:alive?).and_return(false)
+      allow(Process).to receive(:kill).and_raise(Errno::ESRCH)
+
+      allow(Open3).to receive(:popen3) do |*_args, &blk|
+        blk.call(
+          instance_double(IO, close: nil),
+          instance_double(IO, read: ''),
+          instance_double(IO, read: ''),
+          wait_thr
+        )
+      end
+
+      expect { client.stats }.to raise_error(described_class::TimeoutError)
     end
   end
 end

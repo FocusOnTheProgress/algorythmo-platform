@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+require 'open3'
+require 'json'
+require 'tmpdir'
+
 # Thin wrapper over the GBrain CLI subprocess.
 #
 # Day-1: account_id is accepted but ignored — there is a single brain at ~/.gbrain/
@@ -18,8 +22,9 @@ module Algorythmo
       # Raised when the gbrain subprocess exits with a non-zero status.
       class SubprocessError < StandardError; end
 
-      # Raised when the gbrain subprocess exceeds its timeout and is killed.
-      class Timeout < StandardError; end
+      # Raised when the gbrain subprocess exceeds its allowed timeout and is killed.
+      # Named TimeoutError (not Timeout) to avoid shadowing ::Timeout from stdlib.
+      class TimeoutError < StandardError; end
 
       READ_TIMEOUT  = Integer(ENV.fetch('GBRAIN_READ_TIMEOUT',  30)) # seconds
       WRITE_TIMEOUT = Integer(ENV.fetch('GBRAIN_WRITE_TIMEOUT', 60)) # seconds
@@ -37,10 +42,10 @@ module Algorythmo
       # @param file [String] absolute path to the markdown file to capture.
       # @raise [ArgumentError] if path fails defensive validation.
       # @raise [SubprocessError] if gbrain exits non-zero.
-      # @raise [Timeout] if gbrain exceeds WRITE_TIMEOUT.
+      # @raise [TimeoutError] if gbrain exceeds WRITE_TIMEOUT.
       def capture(file:)
-        validate_capture_path!(file)
-        run_subprocess([GBRAIN_BIN, 'capture', file], timeout: WRITE_TIMEOUT)
+        real_path = validate_capture_path!(file)
+        run_subprocess([GBRAIN_BIN, 'capture', real_path], timeout: WRITE_TIMEOUT)
       end
 
       # Search the brain for pages matching query.
@@ -76,34 +81,43 @@ module Algorythmo
 
       private
 
-      # Defensive path validation for capture:
-      #   - must be an absolute path
-      #   - must reside inside the server-owned tmpdir
-      #   - must not contain ".." components
-      #   - must not be a symlink pointing outside the tmpdir
-      #   - must be a regular file
+      # Defensive path validation for capture. Returns the resolved real path so
+      # the subprocess receives it — prevents TOCTOU via symlink swap after check.
+      #
+      # Guards:
+      #   - must be absolute (no relative traversal)
+      #   - must not contain ".." segments (belt-and-suspenders before realpath)
+      #   - must not contain null bytes (null byte injection)
+      #   - resolved real path must be inside server-owned tmpdir (with separator boundary
+      #     so /tmpfoo never matches /tmp)
+      #   - must be a regular file (not a directory or device)
+      #
+      # @return [String] resolved real path — pass this to subprocess, not original
       def validate_capture_path!(path)
-        raise ArgumentError, 'path must be absolute' unless path.start_with?('/')
-        raise ArgumentError, 'path must not contain ..' if path.include?('..')
+        raise ArgumentError, 'path must be absolute'       unless path.start_with?('/')
+        raise ArgumentError, 'path must not contain ..'    if path.include?('..')
+        raise ArgumentError, 'path must not contain null'  if path.include?("\0")
 
-        tmpdir    = Dir.tmpdir
-        real_path = resolve_real_path(path)
+        real_path   = resolve_real_path(path)
+        tmpdir_real = File.realpath(Dir.tmpdir)
+        inside_tmp  = real_path == tmpdir_real || real_path.start_with?(tmpdir_real + File::SEPARATOR)
 
-        raise ArgumentError, "path must reside inside tmpdir (#{tmpdir})" unless real_path.start_with?(tmpdir)
-        raise ArgumentError, 'path must be a regular file' unless File.file?(path)
+        raise ArgumentError, "path must reside inside tmpdir (#{tmpdir_real})" unless inside_tmp
+        raise ArgumentError, 'path must be a regular file' unless File.file?(real_path)
+
+        real_path
       end
 
       def resolve_real_path(path)
         File.realpath(path)
       rescue Errno::ENOENT, Errno::ELOOP
-        # ENOENT: file doesn't exist yet — treat parent check as sufficient
-        # ELOOP:  too many symlink levels — reject
+        # ENOENT: file does not exist (yet). ELOOP: circular symlink. Both rejected.
         raise ArgumentError, 'path could not be resolved (missing or circular symlink)'
       end
 
       def run_subprocess(args, timeout:)
         stdout, stderr, status, timed_out = execute_with_timeout(args, timeout)
-        raise Timeout, "gbrain timed out after #{timeout}s — killed" if timed_out
+        raise TimeoutError, "gbrain timed out after #{timeout}s — killed" if timed_out
         raise SubprocessError, build_error(args, status, stderr) unless status.success?
 
         parse_output(stdout, args)
@@ -111,25 +125,34 @@ module Algorythmo
 
       def execute_with_timeout(args, timeout)
         timed_out = false
-        stdout = ''
-        stderr = ''
-        status = nil
-        Open3.popen3(*args) do |_stdin, out, err, wait_thr|
-          timed_out = wait_with_timeout(wait_thr, timeout)
-          Process.kill('KILL', wait_thr.pid) if timed_out
-          stdout = out.read
-          stderr = err.read
+        stdout = stderr = status = nil
+        Open3.popen3(*args) do |stdin, out, err, wait_thr|
+          stdin.close
+          out_thr = Thread.new { out.read }
+          err_thr = Thread.new { err.read }
+          timed_out = !wait_thr_join(wait_thr, timeout)
+          kill_subprocess(wait_thr) if timed_out
+          stdout = out_thr.value
+          stderr = err_thr.value
           status = wait_thr.value
         end
-        [stdout, stderr, status, timed_out]
+        [stdout.to_s, stderr.to_s, status, timed_out]
       rescue Errno::ENOENT => e
         raise SubprocessError, "gbrain binary not found (#{GBRAIN_BIN}): #{e.message}"
       end
 
-      def wait_with_timeout(wait_thr, timeout)
-        deadline = Time.now + timeout
-        sleep(0.05) until wait_thr.status == false || Time.now >= deadline
-        wait_thr.status != false
+      def wait_thr_join(wait_thr, timeout)
+        wait_thr.join(timeout)
+      end
+
+      def kill_subprocess(wait_thr)
+        pid = wait_thr.pid
+        Process.kill('TERM', pid)
+        wait_thr.join(2)
+        Process.kill('KILL', pid) if wait_thr.alive?
+      rescue Errno::ESRCH, Errno::EPERM
+        # Process already exited or permission denied — nothing to kill.
+        nil
       end
 
       def parse_output(stdout, args)

@@ -1,5 +1,8 @@
 # GBrain Dream Cycle configuration — Algorythmo OS Brain MVP
 #
+# IMPORTANT: Load with YAML.safe_load — NEVER YAML.load_file (RCE risk when
+# M3.5 admin-editable config path is introduced). See gbrain_dream_cycle_spec.rb.
+#
 # Decision: D-DREAM (plan v5 §2). Gate enforced by spec gbrain_dream_cycle_spec.rb.
 #
 # Enabled (safe, no external calls):
