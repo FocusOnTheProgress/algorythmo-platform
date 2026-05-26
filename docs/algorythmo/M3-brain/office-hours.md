@@ -270,3 +270,171 @@ Esse `algorythmo-brain-seed.md` vira o primeiro commit do brain repo da Algoryth
 4. **Após plan-eng aprovado:** ADR-0012 escrita ("GBrain como motor M3 — versão pinada, cadência de bump"). Memória `project_brain_m3.md` atualizada.
 5. **M2-B1 (PR #58) mergeado** antes de iniciar trabalho de código M3 — fail-closed cuts é pré-requisito de qualquer nova superfície adicionada ao painel.
 6. **Opcional:** rodar `/codex review` sobre este doc + sobre o plan-eng output como sanity check independente (founder pattern por memória — usa codex em decisões duras).
+
+---
+
+## GSTACK REVIEW REPORT — `/plan-eng-review` (2026-05-25)
+
+**Reviewer:** Claude Opus 4.7 (plan-eng-review skill)
+**Sessão:** sequência direta da Office Hours acima
+**Scope:** 5 complementos completos (founder reafirmou no Step 0 — sem reduzir escopo)
+**Status:** APPROVED com decisões trancadas
+
+### Decisões trancadas nesta sessão
+
+| # | Tópico | Decisão | Motivo |
+|---|--------|---------|--------|
+| **D-A8** | Resolução de tenant_id | **Account-scoped (Chatwoot `account_id`) + middleware Rails obrigatório, fail-closed (sem default)** | Mesma classe do bug M2-B1.5 cross-account. Reuse do padrão `algorythmo_cut_flags` já amaciado em Playwright. |
+| **D-A5** | MCP token storage | **Sessão browser-only. Sem persistência cross-restart. Re-login exigido quando sessão painel expira.** | Founder priorizou segurança sobre conveniência. D5 critério "≥1 consulta/dia" tolera re-login. |
+| **D-A4** | MCP transport | **stdio Day-1; HTTP+OAuth ativado no M3-late (antes do spike M4 Manu).** | Day-1 founder consome via Cursor stdio nativo. HTTP+OAuth entra como story dedicada na sprint final do M3, destrava Manu sem retrabalho de auth dentro do M4. |
+| **D-A1** | Pin de versão GBrain | **Pin via tag + bump mensal alinhado ao D1 Chatwoot.** | Ritual cognitivo único (mesma cadência do upstream Chatwoot já mantido). ADR-0012 materializa. |
+| **D-OQ5** | Embedding provider | **Ollama local (nomic-embed-text).** | Zero custo, zero envio de dados Algorythmo pra terceiro, casa com padrão "sem upgrades pagos". Aceita latency maior (~200ms) em troca de privacidade e custo zero durante dogfooding. |
+| **D-ING** | Backfill de conversas | **Forward-only (a partir do Day-1 do M3).** | Brain nasce limpo, sem poluição de conversas dev/teste M1-M2. `algorythmo-brain-seed.md` + ajustes carregam o conteúdo inicial; conversas entram organicamente. |
+| **D-ARCH** | Stack/arquitetura interna | **Seguir GBrain upstream sem inventar abstração própria.** | Founder explicit: "siga a stack e arquitetura do documento original do Gary Tan, eu não sou programador quero ver funcionando apenas". Brain repo storage, schema Postgres, ingestion granularity, dream cycle internals — todos defer pro padrão GBrain. Refactor quando virar produto (M4+), não Day-1. |
+
+### Open Questions do doc original — status
+
+| # | Pergunta original | Resolução |
+|---|-------------------|-----------|
+| OQ1 | Brain repo storage backend | D-ARCH: usar default GBrain (Git local Day-1 conforme upstream company-brain mode). Decisão de hosting (Gitea/Gogs/bare repo+SSH) adiada pra M4+ junto com deploy. |
+| OQ2 | Postgres dedicado vs schema separado | D-ARCH: seguir `docs/INSTALL.md` do GBrain. Validar no Day-0 do M3 — se GBrain aceita schema separado, usar schema isolado no Postgres do Chatwoot (mesma instância, menor overhead local). Caso contrário, sidecar dedicado. |
+| OQ3 | MCP transport | **D-A4 (acima).** |
+| OQ4 | Pin GBrain + cadência bump | **D-A1 (acima).** ADR-0012 escrita no plan-eng com a política completa. |
+| OQ5 | Embedding provider | **D-OQ5 (acima).** |
+| OQ6 | UI placement do "Brain" | Defer pra `/plan-design-review` (sessão paralela). Doc cria pasta `docs/algorythmo/M3-brain/design/` pra receber output. |
+| OQ7 | Granularidade ingestion (conversa-página vs mensagem-evento) | D-ARCH: seguir contract `IngestionSource` do GBrain. Premissa Day-1: conversa-como-página + lead como entidade canônica (alinhado ao Compiled Truth + Timeline). Engineer agent confirma na implementação. |
+
+### Premissas de implementação (engineer agent resolve sem voltar pro founder)
+
+1. **Resolução de tenant via middleware Rails fail-closed** — qualquer request ao engine `algorythmo` sem `current_tenant` resolvido = 401. Sem fallback hardcoded. Sentry tag `tenant_id` em todo log/erro. Spec: integration test que provoca request sem tenant e valida 401.
+2. **Ingestion idempotência** — flag `brain_indexed_at` (timestamp) na tabela engine Algorythmo OS (não no schema Chatwoot, preserva D1). Worker filtra `WHERE brain_indexed_at IS NULL AND status='resolved' AND created_at > m3_start_date`. Retry envia mesmo arquivo → GBrain captura idempotente pela path do markdown.
+3. **Dream cycle config** — arquivo `engines/algorythmo/config/gbrain_dream_cycle.yml` com `auto_link: on`, `dedup_entities: on`, todos `*_external: off`. Spec testa que YAML carregado bate com hard line. ADR-0013 documenta gate "enriquecimento externo = M5".
+4. **Snapshot diff cron** — Sidekiq cron toda segunda 06:00 (timezone tenant). Output em `docs/algorythmo/M3-brain/weekly-snapshots/YYYY-WW.md`. Email pro founder via Action Mailer existente.
+5. **MCP scope-gating** — founder=`admin`, Manu(M4)=`write`, vendedor humano(futuro)=`read+write`, cliente PME(M3.5)=`read` da tenant própria. Defs em `engines/algorythmo/config/mcp_scopes.rb`.
+6. **Pin GBrain** — `engines/algorythmo/Gemfile` (se gem) OU `package.json` (se bun-side) com tag exata. ADR-0012 documenta cadência mensal de bump.
+
+### Trade-offs aceitos
+
+- **Re-login MCP diário** (D-A5): D5 critério "founder usa MCP ≥1 consulta/dia em 4 semanas" pode parecer menos quando founder precisar re-logar pelo painel toda manhã. Mitigação: instrumentar **uso por consulta**, não por sessão.
+- **HTTP+OAuth como story final do M3** (D-A4): se o M3 estourar prazo, HTTP+OAuth fica de fora e Manu (M4) começa bloqueado. Mitigação: priorizar essa story sobre instrumentação D5 se o cronograma apertar.
+- **Ollama local Day-1** (D-OQ5): se nomic-embed-text gerar retrieval ruim em PT-BR, founder descobre só na semana 2-3 do dogfooding. Mitigação: engineer agent roda smoke test com 10 queries reais no Day-0 do M3; se retrieval visivelmente quebrado, escala pro founder decidir trocar.
+
+### Coverage diagram (entrega vs escopo)
+
+```
+M3 Brain MVP (5 complementos)
+├─ 1. UI Ajustes painel ............... ✅ in scope (Vue + Rails endpoint)
+├─ 2. Ingestion worker Chatwoot ....... ✅ in scope (Sidekiq + forward-only)
+├─ 3. Auth bridge MCP ................. ⚠️ partial (stdio Day-1, HTTP no M3-late)
+├─ 4. Dream Cycle config (dedup) ...... ✅ in scope (YAML + ADR-0013)
+└─ 5. Instrumentação D5 ............... ✅ in scope (cron + snapshot diff)
+
+Cobertura: 5/5 complementos. 4 completos Day-1, 1 dividido em duas stories (stdio → HTTP).
+```
+
+### Critérios de readiness pro engineer agent
+
+- ✅ Escopo travado nos 5 complementos completos.
+- ✅ Decisões trancadas (tabela acima).
+- ✅ Premissas de implementação enumeradas (não pedirão input do founder).
+- ✅ ADRs necessárias listadas (0012 GBrain pin, 0013 dream cycle gate).
+- ⏳ `/plan-design-review` pendente (UI placement do menu "Brain").
+- ⏳ ADR-0012 + ADR-0013 redigidas (engineer agent escreve junto com a primeira PR).
+- ⏳ Memória `project_brain_m3.md` atualizada com decisões trancadas (atualizar nesta sessão).
+- ⏳ `docs/plans/0004-m3-brain-mvp.md` redigido (próxima sessão de plan, materializa em tasks paralelizáveis pra 4 trilhas).
+
+### Outside Voice (opcional)
+
+Rodar `/codex review` sobre este footer + sobre o `docs/plans/0004-m3-brain-mvp.md` quando ele existir. Founder pattern por memória — usa Codex em decisões duras. Mínimo: provocar Codex sobre **D-A8** (tenant resolution) e **D-A5** (MCP session-only) — são as decisões com maior blast radius se erradas.
+
+---
+
+**Plan-eng review status:** ✅ APPROVED
+**Próxima ação:** disparar `/plan-design-review` em sessão paralela + engineer agent começa a redigir `docs/plans/0004-m3-brain-mvp.md` com base nas decisões trancadas acima.
+
+---
+
+## GSTACK REVIEW REPORT — `/plan-design-review` (2026-05-25)
+
+### Step 0 — Plan design completeness
+**Score:** 4/10 → 8/10 após este review.
+
+Gaps identificados antes:
+- Brain placement na nav indefinido (Open Question 6 do doc original).
+- Empty state Day-1 zero spec.
+- Anatomia do Compiled Truth/Timeline sem definição visual.
+- Snapshot diff (D5 instrumento) sem surface plano.
+
+Pós-review: 3 decisões IA travadas + 4 surfaces viraram engineer assumption explícita (design system maduro absorve).
+
+### Mockups
+**Pulados** — founder optou por review por texto (sem OpenAI key configurada pro `$D variants`). Engineer agent gera mockups iterando direto em Vue + design system existente.
+
+### Decisões travadas (D-D1 a D-D3)
+
+| ID | Decisão | Escolha | Por quê |
+|---|---|---|---|
+| D-D1 | Brain placement na sidebar | **Menu raiz "Brain"** (Pass 1 IA) | D2 + D4: Brain externaliza cabeça do founder e M4 Manu consumirá Brain em todas as surfaces — root menu reflete cross-cutting nature, não subseção CRM. |
+| D-D2 | Brain landing screen | **Viewer (Compiled Truth + Timeline)** (Pass 1 IA) | D5 success = "Brain crescendo". Landing no Viewer reforça mental model toda sessão. Ajustes fica a 1 clique. |
+| D-D3 | Empty state Day-1 | **Onboarding 3 passos** (Pass 2 States) | Founder dogfooding solo Day-1 — guidance reduz fricção da primeira ação ("cole seu primeiro ajuste"). Não auto-popula (preserva D2 "ato de colar é metade do valor"). |
+
+### Submenus Brain (engineer assumption, segue GBrain doctrine)
+
+```
+Brain/
+  Viewer       ← default landing (Compiled Truth no topo + Timeline scroll)
+  Ajustes      ← lista + editor (alg-drawer)
+  Histórico    ← snapshot diffs semanais (D5 instrumento)
+  Config       ← MCP token, embedding provider, ingestion controls
+```
+
+### Surfaces secundárias (engineer assumption)
+
+| Surface | Tratamento | Componente |
+|---|---|---|
+| Conversation header (Inbox) | Badge read-only "ingerido no Brain" quando worker já absorveu | `.alg-chip` neutral, sem CTA |
+| MCP token gen (Config) | Mostra token 1 vez após gerar, copy-to-clipboard, warning "won't show again" | Modal padrão `.alg-modal` + warning state |
+| Snapshot diff (Histórico) | Timeline de eventos semanais, expansíveis pra side-by-side diff | `.alg-timeline-event` (NOVO componente, adicionar a `_components.scss`) |
+| Compiled Truth (Viewer top) | Editorial typography (AlgorythmoDisplay para section heads, Inter body), NÃO markdown wall genérico | `.alg-compiled-truth` (NOVO, editorial layout) |
+| Telemetria MCP (Viewer header) | Pequeno stat "Brain respondeu N perguntas via MCP esta semana" — reforça compound interest | `.alg-stat-pill` (existente) |
+
+### 7-pass review
+
+| Pass | Score | Findings |
+|---|---|---|
+| 1. Information Architecture | 8/10 | D-D1 + D-D2 resolvem Open Question 6. Subnav segue GBrain doctrine. |
+| 2. Interaction States | 7/10 | Day-1 empty resolvido (D-D3). Outros estados (ingestion fail silently, MCP expiry mid-query Cursor, snapshot sem diff, Dream Cycle running) viram engineer checklist — design system tem `.alg-toast`/`.alg-banner` suficientes. |
+| 3. User Journey & Emotional Arc | 9/10 | Arc Day0→Day1→Day7→Day30 já está sólido no doc. "Wow MCP moment" (D4) acontece fora do painel — telemetria no Viewer header (engineer assumption) traz o eco visual. |
+| 4. AI Slop Risk | 9/10 | Design system OKLCH dark-first editorial já evita armadilhas (sem ✨, sem purple-pink, sem markdown wall). Risco residual: Compiled Truth render — engineer assumption força editorial typography. |
+| 5. Design System Alignment | 8/10 | Reusa `.alg-card`, `.alg-drawer`, `.alg-menu`, `.alg-toast`, `.alg-avatar`, `.alg-chip` (todos PR #37 + Sessão C). 2 componentes NOVOS (`.alg-compiled-truth`, `.alg-timeline-event`) — engineer adiciona a `_components.scss` com tag `// algorythmo: design-system-import`. |
+| 6. Responsive & A11y | 7/10 | Day-1 = desktop-only (founder dogfooding laptop). Mobile = M3.5+. WCAG AA por convenção do design system (focus rings, contraste, touch targets 44px já tokenizados). |
+| 7. Unresolved Decisions | — | Polish details (typography Compiled Truth, anatomia Timeline event, diff side-by-side vs unified, telemetria MCP placement exato) ficam na implementação. Não bloqueiam engineer. |
+
+### Premissas de implementação (engineer agent)
+
+1. Brain = novo root nav item. Reusa padrão `SidebarNavItem.vue` (do CRM).
+2. Viewer landing = `routes/dashboard/brain/views/Viewer.vue` (nova rota `/brain`).
+3. Ajustes = `routes/dashboard/brain/views/Adjustments.vue` (lista + `AlgDrawer` para editor).
+4. Onboarding 3 passos = condicional no Viewer.vue quando `compiledTruth === null && ingestionCount === 0`.
+5. Componentes novos (`.alg-compiled-truth`, `.alg-timeline-event`) entram em `engines/algorythmo/app/assets/stylesheets/_components.scss` com tag `// algorythmo: design-system-import` e doc em `engines/algorythmo/DESIGN.md` §3.x.
+6. Sem mudança em surfaces upstream Chatwoot (badge "ingerido" em Conversation header é overlay via slot, não schema).
+
+### Critérios de readiness pro engineer agent (design)
+
+- ✅ Brain placement travado (D-D1).
+- ✅ Landing screen travada (D-D2).
+- ✅ Empty state Day-1 travado (D-D3).
+- ✅ Submenus + secondary surfaces como engineer assumption (não bloqueia).
+- ✅ Componentes novos identificados (`.alg-compiled-truth`, `.alg-timeline-event`).
+- ✅ Reuso máximo do design system existente (M1-B + Sessão C).
+- ⏳ Engineer adiciona componentes novos a `_components.scss` + DESIGN.md na primeira PR M3.
+
+### Outside Voice (opcional)
+
+Rodar `/design-review` sobre o primeiro PR M3 (provavelmente Brain Viewer ou Onboarding) com browser real — captura slop visual que escapa de review por texto. Pular se schedule M3 apertar — design system maduro mitiga a maior parte do risco.
+
+---
+
+**Plan-design review status:** ✅ APPROVED
+**Próxima ação:** engineer agent redige `docs/plans/0004-m3-brain-mvp.md` com 4 trilhas (UI ajustes+viewer, ingestion worker, MCP auth bridge, instrumentação D5) + ADR-0012/0013 + 2 componentes novos no design system.
+
