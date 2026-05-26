@@ -19,7 +19,9 @@ main_obj = TOPLEVEL_BINDING.eval('self')
 main_obj.extend(Rake::DSL) unless main_obj.singleton_class.include?(Rake::DSL)
 Rake.application ||= Rake::Application.new
 
-load Rails.root.join('engines/algorythmo/lib/tasks/algorythmo/brain/smoke_ollama.rake') unless Rake::Task.task_defined?('algorythmo:brain:smoke_ollama')
+unless Rake::Task.task_defined?('algorythmo:brain:smoke_ollama')
+  load Rails.root.join('engines/algorythmo/lib/tasks/algorythmo/brain/smoke_ollama.rake')
+end
 
 RSpec.describe Algorythmo::Tasks::SmokeOllama do
   subject(:smoke) { described_class.new(host: host, model: model, output: output) }

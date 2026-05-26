@@ -132,13 +132,13 @@ module Algorythmo
         @output.puts "#{BOLD}  algorythmo:brain:smoke_ollama#{RESET}"
         @output.puts "#{DIM}  host=#{@host}  model=#{@model}  queries=#{QUERIES.size}#{RESET}"
         @output.puts
-        @output.puts format("  %-2s  %-55s  %8s  %s", '#', 'Query', 'Latency', 'Status')
+        @output.puts '  #   Query                                                    Latency   Status'
         @output.puts "  #{'-' * 80}"
       end
 
-      def print_row(idx, query, ms, status)
+      def print_row(index, query, elapsed_ms, status)
         truncated = query.length > 54 ? "#{query[0, 51]}..." : query.ljust(55)
-        latency   = ms ? format('%6dms', ms.round) : '       -'
+        latency   = elapsed_ms ? format('%<ms>6dms', ms: elapsed_ms.round) : '       -'
 
         status_str = case status
                      when :ok      then "#{GREEN}✓#{RESET}"
@@ -148,7 +148,8 @@ module Algorythmo
                      else               "#{RED}✗ #{status}#{RESET}"
                      end
 
-        @output.puts format("  %2d  %-55s  %s  %s", idx, truncated, latency, status_str)
+        @output.puts format('  %<idx>2d  %<q>-55s  %<lat>s  %<st>s',
+                            idx: index, q: truncated, lat: latency, st: status_str)
       end
 
       def print_summary(results)
@@ -182,7 +183,7 @@ namespace :algorythmo do
 
       Algorythmo::Tasks::SmokeOllama.run!(host: host, model: model)
     rescue RuntimeError => e
-      abort("#{e.message}")
+      abort(e.message)
     end
   end
 end
