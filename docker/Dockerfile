@@ -57,6 +57,10 @@ ENV PATH="$PNPM_HOME:$PATH"
 WORKDIR /app
 
 COPY Gemfile Gemfile.lock ./
+# algorythmo: engine gemspec must be present so `gem 'algorythmo', path: 'engines/algorythmo'`
+# resolves during `bundle install`. The gemspec require_relatives lib/algorythmo/version.
+COPY engines/algorythmo/algorythmo.gemspec engines/algorythmo/algorythmo.gemspec
+COPY engines/algorythmo/lib/algorythmo/version.rb engines/algorythmo/lib/algorythmo/version.rb
 
 # natively compile grpc and protobuf to support alpine musl (dialogflow-docker workflow)
 # https://github.com/googleapis/google-cloud-ruby/issues/13306
