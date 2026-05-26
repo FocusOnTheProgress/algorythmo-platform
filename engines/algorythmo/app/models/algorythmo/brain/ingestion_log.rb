@@ -13,6 +13,8 @@ module Algorythmo
     #   1 = skipped  — forward-only gate or duplicate guard, no action taken
     #   2 = failed   — capture raised; last_error populated; Sidekiq will retry
     class IngestionLog < Algorythmo::ApplicationRecord
+      self.table_name = 'algorythmo_brain_ingestion_logs'
+
       belongs_to :account
       belongs_to :conversation
 

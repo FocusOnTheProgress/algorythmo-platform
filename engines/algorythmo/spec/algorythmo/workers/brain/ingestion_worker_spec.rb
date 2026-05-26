@@ -205,6 +205,17 @@ RSpec.describe Algorythmo::Brain::IngestionWorker do
       stub_write_lock_passthrough
       stub_capture_failure
 
+      breadcrumb_klass = Class.new do
+        attr_reader :category
+
+        def initialize(category:, **)
+          @category = category
+        end
+      end
+      sentry_module = Module.new
+      sentry_module.const_set(:Breadcrumb, breadcrumb_klass)
+      stub_const('Sentry', sentry_module)
+
       breadcrumbs = []
       allow(Sentry).to receive(:add_breadcrumb) { |bc| breadcrumbs << bc }
 

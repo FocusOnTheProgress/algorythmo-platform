@@ -52,8 +52,12 @@ module Algorythmo
       # assignee — a conversation re-assigned across operators should record
       # the full set so the brain captures who actually talked to the contact.
       def agent_names
+        # .reorder('') strips the Message default_scope ORDER BY created_at —
+        # Postgres rejects SELECT DISTINCT col when ORDER BY references a column
+        # not in the select list.
         agent_ids = conversation.messages
                                 .where(message_type: :outgoing, sender_type: 'User')
+                                .reorder('')
                                 .distinct
                                 .pluck(:sender_id)
         return [] if agent_ids.empty?
