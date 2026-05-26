@@ -36,14 +36,29 @@ module Algorythmo
           'agent_names'     => agent_names,
           'created_at'      => conversation.created_at&.iso8601,
           'resolved_at'     => resolved_at,
-          'tags'            => Array(conversation.cached_label_list)
+          'tags'            => tag_list
         }
         "---\n#{data.to_yaml.sub(/\A---\n/, '')}---"
       end
 
+      # cached_label_list is a comma-separated text column on conversations —
+      # `Array(...)` would treat it as a single-element list. Split and trim
+      # so each tag is preserved individually.
+      def tag_list
+        conversation.cached_label_list.to_s.split(',').map(&:strip).reject(&:empty?)
+      end
+
+      # All agents who participated in the conversation, not just the current
+      # assignee — a conversation re-assigned across operators should record
+      # the full set so the brain captures who actually talked to the contact.
       def agent_names
-        assignee = conversation.assignee
-        assignee ? [assignee.name].compact : []
+        agent_ids = conversation.messages
+                                .where(message_type: :outgoing, sender_type: 'User')
+                                .distinct
+                                .pluck(:sender_id)
+        return [] if agent_ids.empty?
+
+        User.where(id: agent_ids).pluck(:name).compact
       end
 
       def resolved_at

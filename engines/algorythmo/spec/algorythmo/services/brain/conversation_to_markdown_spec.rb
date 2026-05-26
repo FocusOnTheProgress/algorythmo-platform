@@ -78,6 +78,31 @@ RSpec.describe Algorythmo::Brain::ConversationToMarkdown do
     it 'tags is an array (empty when no labels)' do
       expect(frontmatter_yaml['tags']).to be_an(Array)
     end
+
+    it 'splits cached_label_list CSV into individual tags' do
+      # cached_label_list is a text column holding a CSV — must split, not Array().
+      allow(conversation).to receive(:cached_label_list).and_return('sales, priority,vip')
+      output = service.call(conversation)
+      tags = YAML.safe_load(output.match(/\A---\n(.*?)---\n/m)[1])['tags']
+      expect(tags).to eq(%w[sales priority vip])
+    end
+
+    it 'agent_names includes every user who sent an outgoing message, not just the assignee' do
+      agent_a = create(:user, account_ids: [account.id])
+      agent_b = create(:user, account_ids: [account.id])
+
+      create(:message,
+             conversation: conversation, account: account, inbox: inbox,
+             message_type: 'outgoing', sender: agent_a, content: 'hi from A')
+      create(:message,
+             conversation: conversation, account: account, inbox: inbox,
+             message_type: 'outgoing', sender: agent_b, content: 'hi from B')
+
+      output = service.call(conversation)
+      agents = YAML.safe_load(output.match(/\A---\n(.*?)---\n/m)[1])['agent_names']
+
+      expect(agents).to contain_exactly(agent_a.name, agent_b.name)
+    end
   end
 
   # ---------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'tmpdir'
 
 module Algorythmo
@@ -52,13 +53,13 @@ module Algorythmo
       def ingest_one(account_id, conversation)
         return if conversation.nil?
 
-        Algorythmo::Brain::WriteLock.with_lock(account_id: account_id) do
-          page_path = Algorythmo::Brain::Client.new(account_id).capture(
-            file: write_tmp_file(conversation)
-          )
-          upsert_log(account_id, conversation, outcome: :success,
-                                               brain_indexed_at: Time.current,
-                                               brain_page_path: page_path.to_s)
+        with_tmp_markdown(conversation) do |path|
+          Algorythmo::Brain::WriteLock.with_lock(account_id: account_id) do
+            result = Algorythmo::Brain::Client.new(account_id).capture(file: path)
+            upsert_log(account_id, conversation, outcome: :success,
+                                                 brain_indexed_at: Time.current,
+                                                 brain_page_path: extract_page_path(result))
+          end
         end
       rescue Algorythmo::Brain::WriteLock::LockContended => e
         Rails.logger.warn("[Algorythmo::Brain::IngestionWorker] Lock contended conversation=#{conversation.id}: #{e.message}")
@@ -68,14 +69,26 @@ module Algorythmo
         raise
       end
 
-      # Writes markdown to a tempfile and returns path. Caller (capture) reads synchronously.
-      # Temp dir is not cleaned up — OS reclaims on reboot; files are < 100 KB per conversation.
-      def write_tmp_file(conversation)
+      # Writes markdown to a tmpfile, yields the path, and removes the dir on
+      # return — prevents /tmp leak across thousands of ingestions.
+      def with_tmp_markdown(conversation)
         markdown = Algorythmo::Brain::ConversationToMarkdown.call(conversation)
-        dir  = Dir.mktmpdir('algorythmo_brain_')
+        dir = Dir.mktmpdir('algorythmo_brain_')
         path = File.join(dir, "conversation_#{conversation.id}.md")
         File.write(path, markdown)
-        path
+        yield path
+      ensure
+        FileUtils.rm_rf(dir) if dir
+      end
+
+      # GBrain CLI returns JSON; the page_path key is the canonical write
+      # destination. Defensive: tolerate empty/legacy shapes (return nil so the
+      # column reflects "unknown" rather than a literal "{}" string).
+      def extract_page_path(result)
+        return nil unless result.is_a?(Hash)
+
+        path = result['page_path'] || result[:page_path]
+        path.is_a?(String) && !path.empty? ? path : nil
       end
 
       def upsert_log(account_id, conversation, attrs)

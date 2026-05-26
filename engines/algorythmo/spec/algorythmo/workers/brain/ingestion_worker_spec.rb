@@ -26,8 +26,10 @@ RSpec.describe Algorythmo::Brain::IngestionWorker do
   end
 
   # Stub Brain::Client to avoid spawning real gbrain subprocess.
+  # GBrain CLI returns parsed JSON (a Hash) — the worker extracts the
+  # `page_path` key, NOT the raw return value.
   def stub_capture_success(page_path: '/brain/conversations/test.md')
-    client_double = instance_double(Algorythmo::Brain::Client, capture: page_path)
+    client_double = instance_double(Algorythmo::Brain::Client, capture: { 'page_path' => page_path })
     allow(Algorythmo::Brain::Client).to receive(:new).and_return(client_double)
     client_double
   end
@@ -154,6 +156,28 @@ RSpec.describe Algorythmo::Brain::IngestionWorker do
         expect(log.brain_indexed_at).to be_within(5.seconds).of(Time.current)
         expect(log.last_error).to be_nil
       end
+    end
+
+    it 'stores nil in brain_page_path when GBrain returns an empty hash (legacy/no contract)' do
+      stub_write_lock_passthrough
+      client_double = instance_double(Algorythmo::Brain::Client, capture: {})
+      allow(Algorythmo::Brain::Client).to receive(:new).and_return(client_double)
+
+      worker.perform(account.id, conversation.id)
+
+      log = Algorythmo::Brain::IngestionLog.find_by!(account_id: account.id, conversation_id: conversation.id)
+      expect(log.brain_page_path).to be_nil
+    end
+
+    it 'stores nil in brain_page_path when the hash key is blank or missing' do
+      stub_write_lock_passthrough
+      client_double = instance_double(Algorythmo::Brain::Client, capture: { 'page_path' => '' })
+      allow(Algorythmo::Brain::Client).to receive(:new).and_return(client_double)
+
+      worker.perform(account.id, conversation.id)
+
+      log = Algorythmo::Brain::IngestionLog.find_by!(account_id: account.id, conversation_id: conversation.id)
+      expect(log.brain_page_path).to be_nil
     end
   end
 
