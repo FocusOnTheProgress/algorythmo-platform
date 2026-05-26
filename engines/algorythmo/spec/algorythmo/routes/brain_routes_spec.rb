@@ -28,7 +28,7 @@ RSpec.describe 'Brain routes', type: :request do
       end
 
       expect(brain_routes).not_to be_empty,
-        'Expected at least one brain route to exist in the router'
+                                  'Expected at least one brain route to exist in the router'
 
       brain_routes.each do |route|
         controller_name = route.defaults[:controller].to_s
