@@ -29,7 +29,7 @@ O repositório upstream (`garrytan/gbrain`) **não publica release tags semânti
 
 5. **Política breaking change.** Hold de 1 janela bi-semanal (≈2 semanas) para breaking changes não-urgentes, dando tempo para adaptar `Brain::Client`. Hotfix always available.
 
-6. **Defer permanente pro upstream.** Brain storage, Postgres layout, ingestion granularity, dream cycle internals, mecanismo multi-tenant (brain-per-account via `GBRAIN_DATABASE_URL` — ADR-0014). `feedback_architecture_defer_upstream.md` governa.
+6. **Defer permanente pro upstream.** Brain storage, Postgres layout, ingestion granularity, dream cycle internals, mecanismo multi-tenant (brain-per-account via `GBRAIN_DATABASE_URL` — ADR-0015). `feedback_architecture_defer_upstream.md` governa.
 
 ## Manifesto (Day-0 — engineer preenche SHA antes do merge)
 

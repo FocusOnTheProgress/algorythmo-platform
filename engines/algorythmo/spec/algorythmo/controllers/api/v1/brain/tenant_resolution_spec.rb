@@ -4,13 +4,14 @@ require 'rails_helper'
 
 # Covers plan §6 + §4 T0 spec requirements for Algorythmo::Brain::TenantResolution concern.
 #
-# Test matrix (5 required cases from plan §4 T0 + §6):
+# Test matrix (plan §4 T0 + §6):
 #   1. No auth token                         → 401 (Chatwoot chain rejects before concern runs)
 #   2. User without account membership       → 401 or 403 (Chatwoot chain)
 #   3. User with membership + ENV match      → 200 + Current.account set
 #   4. current_account.id != ENV value       → 403 fail-closed
 #   5. ENV var UNSET                         → 403 + Rails.logger.error (NEVER 500)
-#   6. before_action order                   → resolve_tenant! runs AFTER current_account
+#   6a. current_account nil (chain misconfig) → 403 + logger.error, never 500 (P1-4)
+#   7. before_action order                   → resolve_tenant! runs AFTER authenticate + current_account + feature gate
 RSpec.describe Algorythmo::Brain::TenantResolution, type: :controller do
   # Use CompiledTruthController as the concrete carrier; it inherits BaseController
   # which includes TenantResolution. The stub returns 501 once the concern passes.
@@ -121,12 +122,37 @@ RSpec.describe Algorythmo::Brain::TenantResolution, type: :controller do
   end
 
   # -------------------------------------------------------------------------
-  # Case 6 — before_action order: resolve_tenant! runs AFTER current_account
+  # Case 6a — current_account nil (chain misconfigured in subclass) → 403 + logger.error, never 500
+  # -------------------------------------------------------------------------
+  context 'when current_account is nil (chain misconfigured)' do
+    before do
+      stub_env('ALGORYTHMO_PRIMARY_ACCOUNT_ID', account.id.to_s)
+      request.headers['api_access_token'] = admin.access_token.token
+      # Simulate a subclass that skipped current_account before_action
+      allow(controller).to receive(:current_account).and_return(nil)
+    end
+
+    it 'returns 403, not 500 (never NoMethodError)' do
+      expect { get :show, params: { account_id: account.id } }.not_to raise_error
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it 'logs an error identifying chain misconfiguration' do
+      expect(Rails.logger).to receive(:error).with(
+        a_string_including('current_account nil at resolve_tenant!')
+      )
+      get :show, params: { account_id: account.id }
+    end
+  end
+
+  # -------------------------------------------------------------------------
+  # Case 7 — before_action order: resolve_tenant! runs AFTER current_account
+  # Plan §4 T0 line 224: "roda DEPOIS de current_account + ensure_algorythmo_crm_enabled!".
+  # If resolve_tenant! ever fires before current_account, current_account returns nil
+  # and the nil guard (P1-4) returns 403; but we fail loudly here to surface regressions.
   # -------------------------------------------------------------------------
   context 'before_action order' do
-    it 'resolve_tenant! is declared in TenantResolution (runs after Chatwoot chain)' do
-      # The concern is included in Brain::BaseController. Verify the before_action
-      # callback is registered on that controller and not before auth callbacks.
+    it 'resolve_tenant! runs after authenticate_access_token!, current_account, and ensure_algorythmo_crm_enabled!' do
       callbacks = Algorythmo::Api::V1::Brain::BaseController
                     ._process_action_callbacks
                     .select { |cb| cb.kind == :before }
@@ -134,11 +160,18 @@ RSpec.describe Algorythmo::Brain::TenantResolution, type: :controller do
 
       resolve_idx = callbacks.index(:resolve_tenant!)
       auth_idx    = callbacks.index(:authenticate_access_token!)
+      current_idx = callbacks.index(:current_account)
+      feature_idx = callbacks.index(:ensure_algorythmo_crm_enabled!)
 
       expect(resolve_idx).to be_present
       expect(auth_idx).to be_present
-      # resolve_tenant! must come AFTER authentication
+      expect(current_idx).to be_present
+      expect(feature_idx).to be_present
+
+      # resolve_tenant! must run after the full Chatwoot auth + account + feature chain
       expect(resolve_idx).to be > auth_idx
+      expect(resolve_idx).to be > current_idx
+      expect(resolve_idx).to be > feature_idx
     end
   end
 

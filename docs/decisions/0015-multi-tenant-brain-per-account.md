@@ -3,7 +3,7 @@
 **Status:** Aceita (implementação diferida para M3.5)  
 **Data:** 2026-05-26  
 **Decisor:** Gustavo (founder/CEO Algorythmo)  
-**Depende de:** [ADR-0013](0013-gbrain-sha-pin-and-bump-cadence.md), [ADR-0014](0014-dream-cycle-gate.md)  
+**Depende de:** [ADR-0013](0013-gbrain-sha-pin-and-bump-cadence.md)  
 **PR:** M3-1 (gate — ADR commitada, scaffolds no código)
 
 ## Contexto

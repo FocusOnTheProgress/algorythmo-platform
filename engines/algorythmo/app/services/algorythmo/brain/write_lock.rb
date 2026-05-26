@@ -18,8 +18,8 @@
 #   re-enqueueing. Sidekiq workers catch LockContended and re-enqueue with backoff
 #   (2s / 4s / 8s, max 3 retries).
 #
-# M3.5 upgrade: lock key becomes per-account ("gbrain:write:lock:<account_id>")
-#   so accounts do not contend with each other.
+# M3.5 upgrade (ADR-0015): lock key becomes per-account ("gbrain:write:lock:<account_id>")
+#   so accounts do not contend with each other. account_id arg already accepted (ignored Day-1).
 module Algorythmo
   module Brain
     class WriteLock
@@ -29,9 +29,10 @@ module Algorythmo
 
       # Acquires the advisory lock, yields the block, then releases.
       #
+      # @param account_id [Integer, nil] reserved for M3.5 per-account lock key; ignored Day-1
       # @param timeout [Integer] unused in skeleton; reserved for future blocking-acquire mode
       # @raise [LockContended] if the lock is already held by another process
-      def self.with_lock(timeout: 5, &block)
+      def self.with_lock(account_id: nil, timeout: 5, &block)
         raise NotImplementedError, 'Brain::WriteLock.with_lock — full Redis body in PR M3-2'
       end
 

@@ -23,7 +23,7 @@ RSpec.describe 'Brain routes', type: :request do
   # ---------------------------------------------------------------------------
   describe 'controller inheritance audit' do
     it 'every /brain route controller inherits Algorythmo::Api::V1::Brain::BaseController' do
-      brain_routes = Rails.application.routes.routes.select do |route|
+      brain_routes = Algorythmo::Engine.routes.routes.select do |route|
         route.defaults[:controller].to_s.include?('algorythmo/api/v1/brain')
       end
 

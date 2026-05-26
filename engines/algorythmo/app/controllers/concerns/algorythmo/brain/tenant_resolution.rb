@@ -20,7 +20,7 @@
 #   ENV unset  → 403 + Rails.logger.error (NEVER 500 via ENV.fetch).
 #   ID mismatch → 403 fail-closed.
 #
-# M3.5: generalize to AccountBrainRegistry.lookup(current_account.id) per ADR-0014.
+# M3.5: generalize to AccountBrainRegistry.lookup(current_account.id) per ADR-0015.
 module Algorythmo::Brain::TenantResolution
   extend ActiveSupport::Concern
 
@@ -33,6 +33,15 @@ module Algorythmo::Brain::TenantResolution
   private
 
   def resolve_tenant!
+    # Defensive nil guard: current_account is set by the Chatwoot before_action chain.
+    # If a subclass misconfigures the chain and skips current_account, we get nil here.
+    # Fail 403 (not 500) — never NoMethodError, per concern contract.
+    if current_account.nil?
+      Rails.logger.error('[Algorythmo::Brain] current_account nil at resolve_tenant! — chain misconfigured')
+      head :forbidden
+      return
+    end
+
     primary_id = ENV['ALGORYTHMO_PRIMARY_ACCOUNT_ID'].presence
 
     if primary_id.nil?
