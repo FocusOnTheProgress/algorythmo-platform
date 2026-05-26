@@ -83,38 +83,38 @@ RSpec.describe 'Brain routes', type: :request do
   end
 
   describe 'GET /brain/compiled_truth' do
-    include_examples 'a brain route that enforces tenant gate',
-      method: :get,
-      path_template: '/api/v1/accounts/:account_id/brain/compiled_truth'
+    it_behaves_like 'a brain route that enforces tenant gate',
+                    method: :get,
+                    path_template: '/api/v1/accounts/:account_id/brain/compiled_truth'
   end
 
   describe 'GET /brain/timeline' do
-    include_examples 'a brain route that enforces tenant gate',
-      method: :get,
-      path_template: '/api/v1/accounts/:account_id/brain/timeline'
+    it_behaves_like 'a brain route that enforces tenant gate',
+                    method: :get,
+                    path_template: '/api/v1/accounts/:account_id/brain/timeline'
   end
 
   describe 'POST /brain/adjustments' do
-    include_examples 'a brain route that enforces tenant gate',
-      method: :post,
-      path_template: '/api/v1/accounts/:account_id/brain/adjustments'
+    it_behaves_like 'a brain route that enforces tenant gate',
+                    method: :post,
+                    path_template: '/api/v1/accounts/:account_id/brain/adjustments'
   end
 
   describe 'GET /brain/snapshots' do
-    include_examples 'a brain route that enforces tenant gate',
-      method: :get,
-      path_template: '/api/v1/accounts/:account_id/brain/snapshots'
+    it_behaves_like 'a brain route that enforces tenant gate',
+                    method: :get,
+                    path_template: '/api/v1/accounts/:account_id/brain/snapshots'
   end
 
   describe 'POST /brain/mcp_token' do
-    include_examples 'a brain route that enforces tenant gate',
-      method: :post,
-      path_template: '/api/v1/accounts/:account_id/brain/mcp_token'
+    it_behaves_like 'a brain route that enforces tenant gate',
+                    method: :post,
+                    path_template: '/api/v1/accounts/:account_id/brain/mcp_token'
   end
 
   describe 'DELETE /brain/mcp_sessions' do
-    include_examples 'a brain route that enforces tenant gate',
-      method: :delete,
-      path_template: '/api/v1/accounts/:account_id/brain/mcp_sessions'
+    it_behaves_like 'a brain route that enforces tenant gate',
+                    method: :delete,
+                    path_template: '/api/v1/accounts/:account_id/brain/mcp_sessions'
   end
 end

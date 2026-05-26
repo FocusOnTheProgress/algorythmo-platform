@@ -27,9 +27,9 @@ RSpec.describe Algorythmo::Brain::WriteLock do
       end
 
       it 'can be raised and rescued' do
-        expect {
+        expect do
           raise described_class::LockContended, 'lock held by another process'
-        }.to raise_error(described_class::LockContended, 'lock held by another process')
+        end.to raise_error(described_class::LockContended, 'lock held by another process')
       end
     end
 
@@ -40,7 +40,7 @@ RSpec.describe Algorythmo::Brain::WriteLock do
 
       it 'exposes LOCK_TTL as a positive integer' do
         expect(described_class::LOCK_TTL).to be_a(Integer)
-        expect(described_class::LOCK_TTL).to be > 0
+        expect(described_class::LOCK_TTL).to be_positive
       end
     end
   end

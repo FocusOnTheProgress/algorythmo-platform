@@ -33,48 +33,40 @@ module Algorythmo::Brain::TenantResolution
   private
 
   def resolve_tenant!
-    # Defensive nil guard: current_account is set by the Chatwoot before_action chain.
-    # If a subclass misconfigures the chain and skips current_account, we get nil here.
-    # Fail 403 (not 500) — never NoMethodError, per concern contract.
-    if current_account.nil?
-      Rails.logger.error('[Algorythmo::Brain] current_account nil at resolve_tenant! — chain misconfigured')
-      head :forbidden
-      return
-    end
+    return forbidden_chain_error('[Algorythmo::Brain] current_account nil at resolve_tenant! — chain misconfigured') if current_account.nil?
 
     primary_id = ENV['ALGORYTHMO_PRIMARY_ACCOUNT_ID'].presence
-
-    if primary_id.nil?
-      # ENV unset is a misconfiguration, not a user error. Log loudly, return 403 fail-closed.
-      # Using .presence (not ENV.fetch) so missing key never raises KeyError → 500.
-      Rails.logger.error(
-        '[Algorythmo::Brain] ALGORYTHMO_PRIMARY_ACCOUNT_ID not set — ' \
-        'all Brain requests are blocked until env is configured'
-      )
-      head :forbidden
-      return
-    end
-
-    unless current_account.id.to_s == primary_id.to_s
-      Rails.logger.error(
-        "[Algorythmo::Brain] Account ID mismatch: " \
-        "request account=#{current_account.id} primary=#{primary_id}"
-      )
-      head :forbidden
-      return
-    end
+    return forbidden_env_unset if primary_id.nil?
+    return forbidden_account_mismatch(primary_id) unless current_account.id.to_s == primary_id.to_s
 
     tag_sentry_context
+  end
+
+  def forbidden_chain_error(message)
+    Rails.logger.error(message)
+    head :forbidden
+  end
+
+  def forbidden_env_unset
+    # ENV unset is a misconfiguration, not a user error.
+    # Using .presence (not ENV.fetch) so missing key never raises KeyError → 500.
+    Rails.logger.error(
+      '[Algorythmo::Brain] ALGORYTHMO_PRIMARY_ACCOUNT_ID not set — ' \
+      'all Brain requests are blocked until env is configured'
+    )
+    head :forbidden
+  end
+
+  def forbidden_account_mismatch(primary_id)
+    Rails.logger.error("[Algorythmo::Brain] Account ID mismatch: request account=#{current_account.id} primary=#{primary_id}")
+    head :forbidden
   end
 
   def tag_sentry_context
     return unless defined?(Sentry)
 
     Sentry.configure_scope do |scope|
-      scope.set_tags(
-        account_id: current_account.id,
-        user_id: current_user&.id
-      )
+      scope.set_tags(account_id: current_account.id, user_id: current_user&.id)
     end
   end
 end

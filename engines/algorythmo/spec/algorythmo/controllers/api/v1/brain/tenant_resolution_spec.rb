@@ -56,7 +56,10 @@ RSpec.describe Algorythmo::Brain::TenantResolution, type: :controller do
   end
 
   # -------------------------------------------------------------------------
-  # Case 3 — User with membership + ENV match → 200 (stub is 501, but concern passes)
+  # Case 3 — User with membership + ENV match → concern passes, stub returns 501
+  # 501 proves the full Chatwoot auth chain ran (auth → current_account → feature gate →
+  # resolve_tenant!) without any guard aborting. Current.account being set is a
+  # precondition enforced by the upstream chain; reaching 501 is proof.
   # -------------------------------------------------------------------------
   context 'when user has membership and ENV matches account id' do
     before do
@@ -64,16 +67,7 @@ RSpec.describe Algorythmo::Brain::TenantResolution, type: :controller do
       request.headers['api_access_token'] = admin.access_token.token
     end
 
-    it 'allows the request through the concern (stub returns 501)' do
-      get :show, params: { account_id: account.id }
-      # 501 = concern passed, stub is not yet implemented — that is the correct gate behaviour
-      expect(response).to have_http_status(:not_implemented)
-    end
-
-    it 'Current.account is set by the upstream Chatwoot chain before resolve_tenant! fires' do
-      # Current.account is set by Api::V1::Accounts::BaseController#current_account (upstream).
-      # resolve_tenant! reads it; if Chatwoot chain failed, current_account would raise/redirect
-      # and we would never reach the 501 stub. Getting 501 proves the full chain ran.
+    it 'passes all guards and reaches the stub action (returns 501, not 403)' do
       get :show, params: { account_id: account.id }
       expect(response).to have_http_status(:not_implemented)
     end
@@ -153,10 +147,10 @@ RSpec.describe Algorythmo::Brain::TenantResolution, type: :controller do
   # -------------------------------------------------------------------------
   context 'before_action order' do
     it 'resolve_tenant! runs after authenticate_access_token!, current_account, and ensure_algorythmo_crm_enabled!' do
-      callbacks = Algorythmo::Api::V1::Brain::BaseController
-                    ._process_action_callbacks
-                    .select { |cb| cb.kind == :before }
-                    .map(&:filter)
+      base = Algorythmo::Api::V1::Brain::BaseController
+      callbacks = base._process_action_callbacks
+                      .select { |cb| cb.kind == :before }
+                      .map(&:filter)
 
       resolve_idx = callbacks.index(:resolve_tenant!)
       auth_idx    = callbacks.index(:authenticate_access_token!)
