@@ -649,7 +649,8 @@ Observação: se PGLite SQLite WAL aguenta (zero `database is locked` errors, 60
 
 1. **PR M3-1 (gate)** — Concern + BaseController + spec (5 cases incl. env unset) + `Brain::Client` skeleton + **`WriteLock` skeleton (NOVO v5)** + routes consolidados (controllers stub 501) + **route audit spec (NOVO v5)** + ADR-0012 + ADR-0013 + **ADR-0014 (NOVO v5)** + SHA pinado. **≤380 linhas + 3 ADRs.**
 2. **PR M3-1.5** — `spec/support/gbrain_real.rb` + workflow nightly + manual trigger + **stress concurrency spec (NOVO v5)**. ≤220 linhas.
-3. **PR M3-2** — `Brain::Client` body + **`WriteLock` body (Lua release script)** + `gbrain_dream_cycle.yml` + smoke Ollama. ≤200 linhas.
+3. **PR M3-2** — `Brain::Client` body + **`WriteLock` body (Lua release script)** + `gbrain_dream_cycle.yml`. ≤200 linhas. **Smoke Ollama split off to PR M3-2b (≤140 lines) to respect line cap — adversarial-reviewer + line-cap audit confirmed smoke task has zero dep on Client/WriteLock bodies.**
+   - **PR M3-2b** (new, unblocked, can dispatch after M3-2 merges) — `smoke_ollama.rake` full implementation + `SmokeOllamaRunner` class. ≤140 linhas.
 4. **PR M3-3** — Ingestion worker (com lock wrap) + `algorythmo_brain_ingestion_logs` (FK + trigger/composite FK invariant — wording fixed v5) + `conversation_to_markdown` + `sidekiq_ingestion_cron.rb`. ≤360 linhas.
 5. **PR M3-4** — UI Viewer + Onboarding + 2 componentes design system + DESIGN.md + endpoints reais + `brain_api_contract_spec.rb` BLOCKING. ≤400 linhas.
 6. **PR M3-5** — UI Ajustes + AlgDrawer + POST /adjustments **enfileira via worker (não foreground)** → write serializado via queue + lock. ≤400 linhas.

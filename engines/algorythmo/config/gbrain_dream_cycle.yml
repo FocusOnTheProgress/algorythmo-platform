@@ -1,0 +1,24 @@
+# GBrain Dream Cycle configuration — Algorythmo OS Brain MVP
+#
+# IMPORTANT: Load with YAML.safe_load — NEVER YAML.load_file (RCE risk when
+# M3.5 admin-editable config path is introduced). See gbrain_dream_cycle_spec.rb.
+#
+# Decision: D-DREAM (plan v5 §2). Gate enforced by spec gbrain_dream_cycle_spec.rb.
+#
+# Enabled (safe, no external calls):
+#   auto_link:       link pages that reference each other within the brain.
+#   dedup_entities:  merge duplicate entity nodes in the knowledge graph.
+#
+# Disabled hard until M5 (ADR-0013 — all *_external keys MUST remain false):
+#   fix_citations_external:    would call external sources to verify citations.
+#   score_salience_external:   would call external ranking services.
+#   enrich_personas_external:  would call Linkedin/CNPJ/AI enrichment APIs.
+#
+# To enable any *_external feature, a new ADR must be written and ADR-0013 amended.
+# The spec gate will fail CI if any *_external key is set to true.
+
+auto_link: true
+dedup_entities: true
+fix_citations_external: false
+score_salience_external: false
+enrich_personas_external: false
