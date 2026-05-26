@@ -28,17 +28,17 @@ module Algorythmo
       def frontmatter
         data = {
           'conversation_id' => conversation.id,
-          'account_id'      => conversation.account_id,
-          'status'          => conversation.status.to_s,
-          'channel'         => conversation.inbox&.channel_type.to_s,
-          'inbox_name'      => conversation.inbox&.name,
-          'contact_name'    => conversation.contact&.name,
-          'agent_names'     => agent_names,
-          'created_at'      => conversation.created_at&.iso8601,
-          'resolved_at'     => resolved_at,
-          'tags'            => tag_list
+          'account_id' => conversation.account_id,
+          'status' => conversation.status.to_s,
+          'channel' => conversation.inbox&.channel_type.to_s,
+          'inbox_name' => conversation.inbox&.name,
+          'contact_name' => conversation.contact&.name,
+          'agent_names' => agent_names,
+          'created_at' => conversation.created_at&.iso8601,
+          'resolved_at' => resolved_at,
+          'tags' => tag_list
         }
-        "---\n#{data.to_yaml.sub(/\A---\n/, '')}---"
+        "---\n#{data.to_yaml.delete_prefix("---\n")}---"
       end
 
       # cached_label_list is a comma-separated text column on conversations —

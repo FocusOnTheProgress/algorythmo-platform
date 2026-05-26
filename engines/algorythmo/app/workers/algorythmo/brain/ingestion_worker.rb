@@ -15,7 +15,7 @@ module Algorythmo
     # - Other exceptions: write outcome: :failed + last_error, then re-raise.
     # - account_id scaffold for M3.5 multi-tenant. Day-1: always the founder account.
     class IngestionWorker
-      include Sidekiq::Worker
+      include ::Sidekiq::Worker
 
       sidekiq_options queue: :default, retry: 3
 
@@ -110,13 +110,13 @@ module Algorythmo
         Sentry.add_breadcrumb(
           Sentry::Breadcrumb.new(
             category: 'brain.ingestion',
-            message:  "Ingestion failed conversation=#{conversation.id}: #{exception.class}",
-            level:    'error',
-            data:     {
+            message: "Ingestion failed conversation=#{conversation.id}: #{exception.class}",
+            level: 'error',
+            data: {
               conversation_id: conversation.id,
-              account_id:      conversation.account_id,
-              error_class:     exception.class.name,
-              error_message:   exception.message.to_s.truncate(200)
+              account_id: conversation.account_id,
+              error_class: exception.class.name,
+              error_message: exception.message.to_s.truncate(200)
             }
           )
         )

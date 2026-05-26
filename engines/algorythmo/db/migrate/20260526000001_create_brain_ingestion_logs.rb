@@ -39,7 +39,7 @@ class CreateBrainIngestionLogs < ActiveRecord::Migration[7.1]
 
     # Trigger: rejects rows where account_id diverges from conversations.account_id.
     # Postgres cannot enforce this via CHECK constraint (subquery in CHECK is forbidden).
-    execute <<~SQL
+    execute <<~SQL.squish
       CREATE OR REPLACE FUNCTION algorythmo_brain_ingestion_logs_account_check()
       RETURNS TRIGGER AS $$
       DECLARE
@@ -66,7 +66,7 @@ class CreateBrainIngestionLogs < ActiveRecord::Migration[7.1]
   end
 
   def down
-    execute <<~SQL
+    execute <<~SQL.squish
       DROP TRIGGER IF EXISTS algorythmo_brain_ingestion_logs_account_check_trigger
         ON algorythmo_brain_ingestion_logs;
       DROP FUNCTION IF EXISTS algorythmo_brain_ingestion_logs_account_check();

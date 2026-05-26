@@ -25,10 +25,10 @@ Rails.application.reloader.to_prepare do
   end
 
   Sidekiq::Cron::Job.find_or_create!(
-    name:  'algorythmo_brain_ingestion_daily',
-    cron:  '0 2 * * *',
+    name: 'algorythmo_brain_ingestion_daily',
+    cron: '0 2 * * *',
     class: 'Algorythmo::Brain::IngestionWorker',
-    args:  [Integer(primary_account_id)],
+    args: [Integer(primary_account_id)],
     queue: 'default'
   )
 end

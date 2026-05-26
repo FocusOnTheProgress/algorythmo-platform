@@ -16,22 +16,22 @@ RSpec.describe Algorythmo::Brain::ConversationToMarkdown do
 
   let(:conversation) do
     create(:conversation,
-           account:  account,
-           inbox:    inbox,
-           contact:  contact,
-           status:   'resolved')
+           account: account,
+           inbox: inbox,
+           contact: contact,
+           status: 'resolved')
   end
 
   # Build a message directly so we can control private flag and ordering.
   def build_message(conversation:, content:, message_type: 'incoming', private: false, created_at: Time.current)
     create(:message,
-           conversation:  conversation,
-           account:       account,
-           inbox:         inbox,
-           content:       content,
-           message_type:  message_type,
-           private:       private,
-           created_at:    created_at)
+           conversation: conversation,
+           account: account,
+           inbox: inbox,
+           content: content,
+           message_type: message_type,
+           private: private,
+           created_at: created_at)
   end
 
   # ---------------------------------------------------------------------------

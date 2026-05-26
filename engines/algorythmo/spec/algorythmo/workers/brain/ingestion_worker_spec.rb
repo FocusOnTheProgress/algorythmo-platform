@@ -20,8 +20,8 @@ RSpec.describe Algorythmo::Brain::IngestionWorker do
   let(:conversation) do
     create(:conversation,
            account: account,
-           inbox:   inbox,
-           status:  'resolved',
+           inbox: inbox,
+           status: 'resolved',
            created_at: 1.day.ago)
   end
 
@@ -87,9 +87,9 @@ RSpec.describe Algorythmo::Brain::IngestionWorker do
   describe 'forward-only gate' do
     it 'does not ingest conversations created before algorythmo_m3_start_date' do
       old_conversation = create(:conversation,
-                                account:    account,
-                                inbox:      inbox,
-                                status:     'resolved',
+                                account: account,
+                                inbox: inbox,
+                                status: 'resolved',
                                 created_at: 60.days.ago)
 
       stub_write_lock_passthrough
@@ -122,11 +122,11 @@ RSpec.describe Algorythmo::Brain::IngestionWorker do
     it 'skips already-indexed conversations in batch mode' do
       # Pre-create a success log so this conversation looks already indexed.
       Algorythmo::Brain::IngestionLog.create!(
-        account_id:       account.id,
-        conversation_id:  conversation.id,
-        outcome:          :success,
+        account_id: account.id,
+        conversation_id: conversation.id,
+        outcome: :success,
         brain_indexed_at: 1.hour.ago,
-        brain_page_path:  '/brain/old.md'
+        brain_page_path: '/brain/old.md'
       )
 
       stub_write_lock_passthrough
@@ -254,10 +254,10 @@ RSpec.describe Algorythmo::Brain::IngestionWorker do
 
       expect do
         Algorythmo::Brain::IngestionLog.create!(
-          account_id:      other_account.id,
+          account_id: other_account.id,
           conversation_id: conversation.id,
-          outcome:         :failed,
-          last_error:      'forced mismatch'
+          outcome: :failed,
+          last_error: 'forced mismatch'
         )
       end.to raise_error(ActiveRecord::StatementInvalid, /does not match/)
     end
