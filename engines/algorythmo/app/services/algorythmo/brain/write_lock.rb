@@ -42,7 +42,7 @@ module Algorythmo
       # @param account_id [Integer, nil] reserved for M3.5 per-account lock key; ignored Day-1
       # @param timeout [Integer] seconds to poll before raising LockContended (default 5)
       # @raise [LockContended] if the lock cannot be acquired within timeout
-      def self.with_lock(account_id: nil, timeout: 5)
+      def self.with_lock(account_id: nil, timeout: 5) # rubocop:disable Lint/UnusedMethodArgument
         token    = SecureRandom.uuid
         acquired = acquire(token, timeout)
         raise LockContended, "gbrain write lock held by another process — token=#{token[0, 8]}… timeout=#{timeout}s" unless acquired

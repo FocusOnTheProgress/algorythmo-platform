@@ -19,7 +19,7 @@ RSpec.describe Algorythmo::Brain::WriteLock do
   # Returns a fake Redis connection double that supports the operations we need.
   # `held:` controls whether SET NX succeeds (true = lock free, false = contended).
   def build_fake_conn(held: false)
-    conn = instance_double('Redis::Namespace')
+    conn = instance_double(Redis::Namespace)
     allow(conn).to receive(:set).and_return(held ? 'OK' : nil)
     allow(conn).to receive(:eval).and_return(1) # Lua DEL success
     allow(conn).to receive(:del)
@@ -28,7 +28,7 @@ RSpec.describe Algorythmo::Brain::WriteLock do
 
   # Stubs WriteLock.redis_pool to yield the given connection object.
   def stub_redis_pool(conn)
-    pool = instance_double('ConnectionPool')
+    pool = instance_double(ConnectionPool)
     allow(described_class).to receive(:redis_pool).and_return(pool)
     allow(pool).to receive(:with).and_yield(conn)
     pool
@@ -120,7 +120,7 @@ RSpec.describe Algorythmo::Brain::WriteLock do
       eval_keys   = nil
       eval_argv   = nil
 
-      conn = instance_double('Redis::Namespace')
+      conn = instance_double(Redis::Namespace)
       allow(conn).to receive(:set).and_return('OK')
       allow(conn).to receive(:eval) do |script, keys:, argv:|
         eval_script = script
@@ -138,7 +138,7 @@ RSpec.describe Algorythmo::Brain::WriteLock do
 
     it 'each with_lock call uses a unique token' do
       tokens = []
-      conn   = instance_double('Redis::Namespace')
+      conn   = instance_double(Redis::Namespace)
       allow(conn).to receive(:set).and_return('OK')
       allow(conn).to receive(:eval) { |_script, argv:, **_| tokens << argv.first }
       stub_redis_pool(conn)
@@ -178,8 +178,8 @@ RSpec.describe Algorythmo::Brain::WriteLock do
       # around the fake "lock is held" state.
       lock_held = false
       lock_mutex = Mutex.new
-      conn = instance_double('Redis::Namespace')
-      allow(conn).to receive(:set) do |_key, _val, nx:, ex:|
+      conn = instance_double(Redis::Namespace)
+      allow(conn).to receive(:set) do |_key, _val, **_kwargs|
         lock_mutex.synchronize do
           next nil if lock_held
 

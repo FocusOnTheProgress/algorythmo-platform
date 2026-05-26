@@ -38,17 +38,19 @@ RSpec.describe Algorythmo::Brain::Client do
   # Subprocess args — must NOT include --dir (premise audit v4)
   # ---------------------------------------------------------------------------
   describe '#capture — subprocess receives resolved real path, no --dir' do
+    let(:tmp_state) { {} }
+
     around do |example|
       Dir.mktmpdir do |tmpdir|
-        @tmp_file = File.join(tmpdir, 'brain_test.md')
-        File.write(@tmp_file, '# test')
+        tmp_state[:file] = File.join(tmpdir, 'brain_test.md')
+        File.write(tmp_state[:file], '# test')
         example.run
       end
     end
 
     it 'calls gbrain capture <real_path> without --dir' do
       stub_popen3(stdout: '{}')
-      client.capture(file: @tmp_file)
+      client.capture(file: tmp_state[:file])
       expect(Open3).to have_received(:popen3) do |*args|
         expect(args).not_to include('--dir')
         expect(args[1]).to eq('capture')
