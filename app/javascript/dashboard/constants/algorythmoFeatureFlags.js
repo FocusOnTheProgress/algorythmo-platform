@@ -11,6 +11,7 @@
 export const ALGORYTHMO_FEATURE_FLAG_KEYS = Object.freeze([
   'algorythmo_show_captain',
   'algorythmo_crm',
+  'algorythmo_brain',
 ]);
 
 export const isKnownAlgorythmoFeatureFlag = key =>
