@@ -23,18 +23,18 @@ class Algorythmo::Api::V1::Brain::McpTokensController < Algorythmo::Api::V1::Bra
     end
 
     result = Algorythmo::Brain::McpTokenIssuer.call(
-      user:    current_user,
+      user: current_user,
       account: current_account,
-      scope:   scope
+      scope: scope
     )
 
     write_token_file!(result[:token_file_path], result[:token])
 
     render json: {
       token_file_path: result[:token_file_path],
-      command:         result[:command],
-      expires_at:      result[:expires_at].iso8601,
-      mode:            'stdio'
+      command: result[:command],
+      expires_at: result[:expires_at].iso8601,
+      mode: 'stdio'
     }, status: :created
   end
 
@@ -44,12 +44,20 @@ class Algorythmo::Api::V1::Brain::McpTokensController < Algorythmo::Api::V1::Bra
     dir = File.dirname(path)
     FileUtils.mkdir_p(dir, mode: 0o700)
 
-    # Create the file with restrictive permissions BEFORE writing the secret.
-    # If chmod raises (e.g., unsupported filesystem), the file is removed and
-    # the request fails — fail-closed to prevent world-readable token files.
-    File.open(path, 'w') do |f|
-      f.chmod(0o600)
-      f.write(token)
+    # Atomically create with 0600 so no window exists during which the file
+    # is world-readable (a separate File.open + f.chmod would create at umask
+    # default and only narrow permissions after the inode existed). The mode
+    # arg to open(2) is honored at creation time — the file never appears
+    # with looser permissions even for a microsecond. Fail-closed: any error
+    # removes the file before propagating.
+    File.umask(0o077).tap do |prev_umask|
+      begin
+        File.open(path, File::WRONLY | File::CREAT | File::TRUNC, 0o600) do |f|
+          f.write(token)
+        end
+      ensure
+        File.umask(prev_umask)
+      end
     end
   rescue StandardError => e
     FileUtils.rm_f(path)

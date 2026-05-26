@@ -18,7 +18,7 @@ RSpec.describe Algorythmo::Brain::McpTokenIssuer do
     end
     pool = instance_double(ConnectionPool)
     # redis_pool is a private instance method — stub via allow_any_instance_of
-    allow_any_instance_of(described_class).to receive(:redis_pool).and_return(pool) # rubocop:disable RSpec/AnyInstance
+    allow_any_instance_of(described_class).to receive(:redis_pool).and_return(pool)
     allow(pool).to receive(:with).and_yield(conn)
     conn
   end
@@ -104,7 +104,7 @@ RSpec.describe Algorythmo::Brain::McpTokenIssuer do
 
     it 'issues the token even when Redis is down' do
       pool = instance_double(ConnectionPool)
-      allow_any_instance_of(described_class).to receive(:redis_pool).and_return(pool) # rubocop:disable RSpec/AnyInstance
+      allow_any_instance_of(described_class).to receive(:redis_pool).and_return(pool)
       allow(pool).to receive(:with).and_raise(Redis::CannotConnectError, 'redis down')
 
       expect do

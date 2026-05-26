@@ -10,10 +10,10 @@ RSpec.describe Algorythmo::Brain::McpTokenValidator do
 
   let(:session) do
     Algorythmo::McpSession.create!(
-      user:       user,
-      account:    account,
+      user: user,
+      account: account,
       token_hash: token_hash,
-      scope:      Algorythmo::McpScopes::READ_TRUTH,
+      scope: Algorythmo::McpScopes::READ_TRUTH,
       expires_at: 8.hours.from_now
     )
   end
@@ -29,22 +29,22 @@ RSpec.describe Algorythmo::Brain::McpTokenValidator do
     allow(conn).to receive(:setex)
     pool = instance_double(ConnectionPool)
     # redis_pool is a private instance method — stub via allow_any_instance_of
-    allow_any_instance_of(described_class).to receive(:redis_pool).and_return(pool) # rubocop:disable RSpec/AnyInstance
+    allow_any_instance_of(described_class).to receive(:redis_pool).and_return(pool)
     allow(pool).to receive(:with).and_yield(conn)
     conn
   end
 
   def stub_redis_down
     pool = instance_double(ConnectionPool)
-    allow_any_instance_of(described_class).to receive(:redis_pool).and_return(pool) # rubocop:disable RSpec/AnyInstance
+    allow_any_instance_of(described_class).to receive(:redis_pool).and_return(pool)
     allow(pool).to receive(:with).and_raise(Redis::CannotConnectError, 'redis down')
   end
 
   def cached_payload
     JSON.generate(
-      user_id:    user.id,
+      user_id: user.id,
       account_id: account.id,
-      scope:      Algorythmo::McpScopes::READ_TRUTH,
+      scope: Algorythmo::McpScopes::READ_TRUTH,
       expires_at: 8.hours.from_now.iso8601
     )
   end
@@ -94,7 +94,7 @@ RSpec.describe Algorythmo::Brain::McpTokenValidator do
       session
       stub_redis_get(nil)
 
-      expect_any_instance_of(Algorythmo::McpSession).to receive(:touch_usage!) # rubocop:disable RSpec/AnyInstance
+      expect_any_instance_of(Algorythmo::McpSession).to receive(:touch_usage!)
       described_class.call(token: raw_token)
     end
   end
@@ -183,6 +183,46 @@ RSpec.describe Algorythmo::Brain::McpTokenValidator do
         described_class.call(token: raw_token)
         expect(session.reload.expires_at).to be_within(1.second).of(8.hours.from_now)
       end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Primary-account guard (Day-1 single-account invariant)
+  # ---------------------------------------------------------------------------
+  describe 'primary account guard' do
+    let(:other_account) { create(:account) }
+
+    it 'raises McpAuthExpired when session.account_id does not match ENV primary' do
+      session
+      stub_redis_get(nil)
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with('ALGORYTHMO_PRIMARY_ACCOUNT_ID').and_return(other_account.id.to_s)
+
+      expect do
+        described_class.call(token: raw_token)
+      end.to raise_error(described_class::McpAuthExpired, /account_id/)
+    end
+
+    it 'passes when session.account_id matches ENV primary' do
+      session
+      stub_redis_get(nil)
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with('ALGORYTHMO_PRIMARY_ACCOUNT_ID').and_return(account.id.to_s)
+
+      expect do
+        described_class.call(token: raw_token)
+      end.not_to raise_error
+    end
+
+    it 'is a no-op when ENV primary is unset (M3.5 multi-tenant path)' do
+      session
+      stub_redis_get(nil)
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with('ALGORYTHMO_PRIMARY_ACCOUNT_ID').and_return(nil)
+
+      expect do
+        described_class.call(token: raw_token)
+      end.not_to raise_error
     end
   end
 

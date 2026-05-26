@@ -12,7 +12,7 @@ class Algorythmo::McpSession < ApplicationRecord
   belongs_to :account
 
   validates :token_hash, presence: true, uniqueness: true
-  validates :scope,      presence: true
+  validates :scope, presence: true
   validates :expires_at, presence: true
 
   # Active sessions: not revoked AND not expired.
@@ -34,7 +34,7 @@ class Algorythmo::McpSession < ApplicationRecord
     return unless active?
 
     update!(
-      expires_at:   8.hours.from_now,
+      expires_at: 8.hours.from_now,
       last_used_at: Time.current
     )
   end

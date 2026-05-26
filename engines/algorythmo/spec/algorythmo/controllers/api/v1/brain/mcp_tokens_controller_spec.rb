@@ -15,25 +15,23 @@ RSpec.describe Algorythmo::Api::V1::Brain::McpTokensController, type: :request d
     allow(Algorythmo::FeatureGate).to receive(:cut_enabled?).and_return(true)
     allow(ENV).to receive(:[]).and_call_original
     allow(ENV).to receive(:[]).with('ALGORYTHMO_PRIMARY_ACCOUNT_ID').and_return(account.id.to_s)
-  end
 
-  # Stub filesystem writes so specs don't create actual files
-  before do
+    # Stub filesystem writes so specs don't create actual files. Controller
+    # uses `File.open(path, File::WRONLY | File::CREAT | File::TRUNC, 0o600)`
+    # so we intercept that call shape and yield a stub.
     allow(FileUtils).to receive(:mkdir_p)
-    allow_any_instance_of(File).to receive(:chmod) # rubocop:disable RSpec/AnyInstance
-    allow_any_instance_of(File).to receive(:write) # rubocop:disable RSpec/AnyInstance
+    allow(File).to receive(:umask).and_return(0o077)
     allow(File).to receive(:open).and_call_original
-    allow(File).to receive(:open).with(a_string_including('.algorythmo/mcp/'), 'w').and_yield(
-      instance_double(File, chmod: nil, write: nil)
-    )
-  end
+    allow(File).to receive(:open).with(
+      a_string_including('.algorythmo/mcp/'),
+      File::WRONLY | File::CREAT | File::TRUNC,
+      0o600
+    ).and_yield(instance_double(File, write: nil))
 
-  # Stub Redis
-  before do
+    # Stub Redis pool used by the issuer
     conn = instance_double(Redis::Namespace, setex: nil)
     pool = instance_double(ConnectionPool)
-    # redis_pool is a private instance method on McpTokenIssuer
-    allow_any_instance_of(Algorythmo::Brain::McpTokenIssuer).to receive(:redis_pool).and_return(pool) # rubocop:disable RSpec/AnyInstance
+    allow_any_instance_of(Algorythmo::Brain::McpTokenIssuer).to receive(:redis_pool).and_return(pool)
     allow(pool).to receive(:with).and_yield(conn)
   end
 
@@ -66,13 +64,16 @@ RSpec.describe Algorythmo::Api::V1::Brain::McpTokensController, type: :request d
         expect(body['token_file_path']).to include('.algorythmo/mcp/token-')
       end
 
-      it 'creates token file with chmod 0600 semantics' do
-        file_double = instance_double(File, chmod: nil, write: nil)
-        allow(File).to receive(:open).with(a_string_including('.algorythmo/mcp/'), 'w').and_yield(file_double)
+      it 'creates token file atomically with 0o600 mode (no umask window)' do
+        # The atomic contract: File.open is invoked with the mode arg 0o600 so
+        # the inode never exists with umask-default permissions.
+        expect(File).to receive(:open).with(
+          a_string_including('.algorythmo/mcp/'),
+          File::WRONLY | File::CREAT | File::TRUNC,
+          0o600
+        ).and_yield(instance_double(File, write: nil))
 
         post base_path, headers: headers, params: { scope: 'read:truth' }
-
-        expect(file_double).to have_received(:chmod).with(0o600)
       end
     end
 

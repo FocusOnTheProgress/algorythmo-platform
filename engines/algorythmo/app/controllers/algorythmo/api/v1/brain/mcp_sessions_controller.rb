@@ -13,7 +13,7 @@
 class Algorythmo::Api::V1::Brain::McpSessionsController < Algorythmo::Api::V1::Brain::BaseController
   def destroy
     sessions = Algorythmo::McpSession.active.where(
-      user_id:    current_user.id,
+      user_id: current_user.id,
       account_id: current_account.id
     )
 

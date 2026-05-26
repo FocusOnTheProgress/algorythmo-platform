@@ -13,27 +13,25 @@ RSpec.describe Algorythmo::Api::V1::Brain::McpSessionsController, type: :request
     "/algorythmo/api/v1/accounts/#{account.id}/brain/mcp_sessions"
   end
 
+  let(:redis_conn) do
+    conn = instance_double(Redis::Namespace)
+    allow(conn).to receive(:del)
+    conn
+  end
+
   before do
     allow(Algorythmo::FeatureGate).to receive(:cut_enabled?).and_return(true)
     allow(ENV).to receive(:[]).and_call_original
     allow(ENV).to receive(:[]).with('ALGORYTHMO_PRIMARY_ACCOUNT_ID').and_return(account.id.to_s)
-  end
-
-  # Stub Redis del calls
-  before do
-    conn = instance_double(Redis::Namespace)
-    allow(conn).to receive(:del)
-    pool = instance_double(ConnectionPool)
-    allow($alfred).to receive(:with).and_yield(conn) # rubocop:disable Style/GlobalVars
-    @redis_conn = conn
+    allow($alfred).to receive(:with).and_yield(redis_conn) # rubocop:disable Style/GlobalVars
   end
 
   def create_active_session(for_user:, for_account:)
     Algorythmo::McpSession.create!(
-      user:       for_user,
-      account:    for_account,
+      user: for_user,
+      account: for_account,
       token_hash: Digest::SHA256.hexdigest(SecureRandom.hex(32)),
-      scope:      Algorythmo::McpScopes::READ_TRUTH,
+      scope: Algorythmo::McpScopes::READ_TRUTH,
       expires_at: 8.hours.from_now
     )
   end
@@ -63,7 +61,7 @@ RSpec.describe Algorythmo::Api::V1::Brain::McpSessionsController, type: :request
 
         delete base_path, headers: headers
 
-        expect(@redis_conn).to have_received(:del).with(expected_key)
+        expect(redis_conn).to have_received(:del).with(expected_key)
       end
     end
 

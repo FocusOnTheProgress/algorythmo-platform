@@ -23,7 +23,9 @@ RSpec.describe 'MCP stdio handshake', type: :integration do
   # Skip entire spec group if gbrain is not available.
   before(:all) do # rubocop:disable RSpec/BeforeAfterAll
     gbrain_bin = ENV.fetch('GBRAIN_BIN', 'gbrain')
-    unless system("which #{gbrain_bin} > /dev/null 2>&1")
+    # argv form (not shell interpolation) — GBRAIN_BIN may be operator-set on CI
+    # and must not be eval'd by a shell.
+    unless system('which', gbrain_bin, out: File::NULL, err: File::NULL)
       skip "gbrain binary not found at #{gbrain_bin} — skipping stdio handshake spec. " \
            'Set GBRAIN_BIN or ensure gbrain is in PATH to run this spec.'
     end
@@ -35,12 +37,12 @@ RSpec.describe 'MCP stdio handshake', type: :integration do
   let(:initialize_request) do
     JSON.generate(
       jsonrpc: '2.0',
-      id:      1,
-      method:  'initialize',
-      params:  {
+      id: 1,
+      method: 'initialize',
+      params: {
         protocolVersion: '2024-11-05',
-        capabilities:    {},
-        clientInfo:      { name: 'algorythmo-test', version: '0.0.1' }
+        capabilities: {},
+        clientInfo: { name: 'algorythmo-test', version: '0.0.1' }
       }
     )
   end
@@ -54,26 +56,20 @@ RSpec.describe 'MCP stdio handshake', type: :integration do
       stdin.puts(initialize_request)
       stdin.flush
 
-      # Read the first line of response with a generous timeout
-      io_ready = IO.select([stdout], nil, nil, 10) # 10s
-      if io_ready
-        response_line = stdout.gets
-      end
+      # Wait up to 10s for the response. wait_readable is Fiber-scheduler safe,
+      # unlike IO.select. nil return = timeout.
+      response_line = stdout.gets if stdout.wait_readable(10)
 
       # Signal graceful exit by closing stdin — gbrain should exit when its
       # input stream closes (MCP stdio convention)
       stdin.close
 
-      # Wait up to 5s for clean exit
-      joined = wait_thr.join(5)
-      if joined
-        exit_status = wait_thr.value
-      else
-        # Force-kill if it doesn't exit in time
+      # Wait up to 5s for clean exit; if it hangs, TERM and re-wait briefly.
+      unless wait_thr.join(5)
         Process.kill('TERM', wait_thr.pid)
         wait_thr.join(2)
-        exit_status = wait_thr.value
       end
+      exit_status = wait_thr.value
     end
 
     # The response must be valid JSON

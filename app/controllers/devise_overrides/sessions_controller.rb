@@ -10,7 +10,9 @@ class DeviseOverrides::SessionsController < DeviseTokenAuth::SessionsController
   # This is defense-in-depth — the primary TTL mechanism is the 8h sliding
   # window in McpSession#touch_usage!. If the Algorythmo engine is not loaded
   # (e.g., host Chatwoot without the engine), the before_action is a no-op.
-  before_action :revoke_mcp_sessions_on_logout!, only: [:destroy]
+  # destroy is inherited from DeviseTokenAuth::SessionsController; rubocop's
+  # LexicallyScopedActionFilter cannot see the parent's action.
+  before_action :revoke_mcp_sessions_on_logout!, only: [:destroy] # rubocop:disable Rails/LexicallyScopedActionFilter
 
   def new
     redirect_to login_page_url(error: 'access-denied')
@@ -135,6 +137,10 @@ class DeviseOverrides::SessionsController < DeviseTokenAuth::SessionsController
   rescue StandardError => e
     # Non-fatal: user logout must succeed even if MCP revocation fails.
     Rails.logger.warn("[DeviseOverrides::SessionsController] MCP session revocation failed on logout. #{e.class}: #{e.message}")
+    # Surface to Sentry so an outage of MCP-revoke-on-logout is visible to
+    # on-call. Without this, a quietly-broken revoke path could leave live
+    # tokens around for every logout in production.
+    Sentry.capture_exception(e) if defined?(Sentry)
   end
 end
 

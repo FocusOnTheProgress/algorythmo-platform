@@ -10,17 +10,17 @@ RSpec.describe DeviseOverrides::SessionsController, type: :request do
 
   def create_mcp_session(for_user:, for_account:)
     Algorythmo::McpSession.create!(
-      user:       for_user,
-      account:    for_account,
+      user: for_user,
+      account: for_account,
       token_hash: Digest::SHA256.hexdigest(SecureRandom.hex(32)),
-      scope:      Algorythmo::McpScopes::READ_TRUTH,
+      scope: Algorythmo::McpScopes::READ_TRUTH,
       expires_at: 8.hours.from_now
     )
   end
 
-  def sign_in_user(u)
+  def sign_in_user(user_record)
     post '/auth/sign_in',
-         params:  { email: u.email, password: u.password },
+         params: { email: user_record.email, password: user_record.password },
          headers: { 'Content-Type' => 'application/json' }
     JSON.parse(response.body).dig('data', 'access-token')
   end
@@ -41,9 +41,9 @@ RSpec.describe DeviseOverrides::SessionsController, type: :request do
         delete '/auth/sign_out',
                headers: {
                  'access-token' => token.token,
-                 'token-type'   => 'Bearer',
-                 'client'       => token.client,
-                 'uid'          => user.uid
+                 'token-type' => 'Bearer',
+                 'client' => token.client,
+                 'uid' => user.uid
                }
 
         expect(session.reload.revoked_at).not_to be_nil
@@ -59,9 +59,9 @@ RSpec.describe DeviseOverrides::SessionsController, type: :request do
           delete '/auth/sign_out',
                  headers: {
                    'access-token' => token.token,
-                   'token-type'   => 'Bearer',
-                   'client'       => token.client,
-                   'uid'          => user.uid
+                   'token-type' => 'Bearer',
+                   'client' => token.client,
+                   'uid' => user.uid
                  }
         end.not_to raise_error
 

@@ -52,10 +52,9 @@ module Algorythmo
       end
 
       def call
-        cached = lookup_redis
-        return cached if cached
-
-        lookup_db
+        info = lookup_redis || lookup_db
+        enforce_primary_account!(info)
+        info
       end
 
       private
@@ -121,11 +120,26 @@ module Algorythmo
 
       def session_to_info(session)
         {
-          user_id:    session.user_id,
+          user_id: session.user_id,
           account_id: session.account_id,
-          scope:      session.scope,
+          scope: session.scope,
           expires_at: session.expires_at.iso8601
         }
+      end
+
+      # Day-1 invariant: the only legitimate account is the founder's
+      # (ENV['ALGORYTHMO_PRIMARY_ACCOUNT_ID']). gbrain consumes the validator
+      # response directly over MCP and does NOT pass through Chatwoot's
+      # TenantResolution concern, so we must enforce the assumption here
+      # rather than leaning on the web side. M3.5: this gate is replaced by
+      # token-claim ↔ session account_id matching.
+      def enforce_primary_account!(info)
+        expected = ENV['ALGORYTHMO_PRIMARY_ACCOUNT_ID'].presence
+        return unless expected
+        return if info[:account_id].to_s == expected.to_s
+
+        add_sentry_breadcrumb('McpTokenValidator account_id mismatch', nil)
+        raise McpAuthExpired, 'MCP token account_id does not match primary account'
       end
 
       def redis_key
@@ -141,10 +155,10 @@ module Algorythmo
 
         Sentry.add_breadcrumb(
           Sentry::Breadcrumb.new(
-            message:  message,
+            message: message,
             category: 'mcp.auth',
-            level:    'warning',
-            data:     err ? { error_class: err.class.to_s, error_message: err.message } : {}
+            level: 'warning',
+            data: err ? { error_class: err.class.to_s, error_message: err.message } : {}
           )
         )
       end

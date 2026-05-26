@@ -9,10 +9,10 @@ RSpec.describe Algorythmo::McpSession, type: :model do
   def build_session(overrides = {})
     described_class.new(
       {
-        user:       user,
-        account:    account,
+        user: user,
+        account: account,
         token_hash: Digest::SHA256.hexdigest("token-#{SecureRandom.hex(8)}"),
-        scope:      Algorythmo::McpScopes::READ_TRUTH,
+        scope: Algorythmo::McpScopes::READ_TRUTH,
         expires_at: 8.hours.from_now
       }.merge(overrides)
     )
@@ -55,7 +55,7 @@ RSpec.describe Algorythmo::McpSession, type: :model do
 
     it 'excludes revoked sessions' do
       s = create_session
-      s.update_columns(revoked_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
+      s.update_columns(revoked_at: Time.current)
       expect(described_class.active).not_to include(s)
     end
 
@@ -101,7 +101,7 @@ RSpec.describe Algorythmo::McpSession, type: :model do
     it 'is a no-op on a revoked session' do
       session = create_session
       original_expires_at = session.expires_at
-      session.update_columns(revoked_at: 1.minute.ago) # rubocop:disable Rails/SkipsModelValidations
+      session.update_columns(revoked_at: 1.minute.ago)
       session.touch_usage!
       expect(session.reload.expires_at).to be_within(1.second).of(original_expires_at)
     end
@@ -120,7 +120,7 @@ RSpec.describe Algorythmo::McpSession, type: :model do
   describe 'no default_scope' do
     it 'unscoped includes revoked records' do
       session = create_session
-      session.update_columns(revoked_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
+      session.update_columns(revoked_at: Time.current)
       expect(described_class.unscoped.where(id: session.id)).to exist
     end
   end

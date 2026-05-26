@@ -45,31 +45,35 @@ module Algorythmo
 
         raw_token  = generate_token
         token_hash = Digest::SHA256.hexdigest(raw_token)
-        expires_at = 8.hours.from_now
-
-        session = McpSession.create!(
-          user:       @user,
-          account:    @account,
-          token_hash: token_hash,
-          scope:      @scope,
-          expires_at: expires_at
-        )
+        session    = create_session!(token_hash)
 
         populate_redis_cache(token_hash, session)
 
-        token_file_path = token_file_path_for(session.id)
-        command         = "gbrain serve --stdio --auth-file=#{token_file_path}"
-
-        {
-          token:           raw_token,
-          session:         session,
-          token_file_path: token_file_path,
-          command:         command,
-          expires_at:      expires_at
-        }
+        build_result(raw_token, session)
       end
 
       private
+
+      def create_session!(token_hash)
+        McpSession.create!(
+          user: @user,
+          account: @account,
+          token_hash: token_hash,
+          scope: @scope,
+          expires_at: 8.hours.from_now
+        )
+      end
+
+      def build_result(raw_token, session)
+        token_file_path = token_file_path_for(session.id)
+        {
+          token: raw_token,
+          session: session,
+          token_file_path: token_file_path,
+          command: "gbrain serve --stdio --auth-file=#{token_file_path}",
+          expires_at: session.expires_at
+        }
+      end
 
       def validate_scope!
         return if Algorythmo::McpScopes::ALL.include?(@scope)
@@ -84,9 +88,9 @@ module Algorythmo
 
       def populate_redis_cache(token_hash, session)
         payload = JSON.generate(
-          user_id:    session.user_id,
+          user_id: session.user_id,
           account_id: session.account_id,
-          scope:      session.scope,
+          scope: session.scope,
           expires_at: session.expires_at.iso8601
         )
         redis_pool.with { |conn| conn.setex(redis_key(token_hash), REDIS_CACHE_TTL, payload) }
