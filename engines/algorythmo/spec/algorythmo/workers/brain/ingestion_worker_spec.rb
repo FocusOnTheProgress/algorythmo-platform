@@ -212,11 +212,12 @@ RSpec.describe Algorythmo::Brain::IngestionWorker do
           @category = category
         end
       end
-      sentry_module = Module.new
+      breadcrumbs = []
+      sentry_module = Module.new do
+        define_singleton_method(:add_breadcrumb) { |_bc| nil }
+      end
       sentry_module.const_set(:Breadcrumb, breadcrumb_klass)
       stub_const('Sentry', sentry_module)
-
-      breadcrumbs = []
       allow(Sentry).to receive(:add_breadcrumb) { |bc| breadcrumbs << bc }
 
       expect { worker.perform(account.id, conversation.id) }.to raise_error(RuntimeError)

@@ -124,6 +124,9 @@ RSpec.describe Algorythmo::Brain::ConversationToMarkdown do
     end
 
     it 'produces an empty body when all messages are private' do
+      # Chatwoot's inbox factory inserts welcome messages on conversation create —
+      # strip them so the assertion isolates the private-only invariant.
+      conversation.messages.delete_all
       build_message(conversation: conversation, content: 'Secret note', private: true)
       output = service.call(conversation)
 
