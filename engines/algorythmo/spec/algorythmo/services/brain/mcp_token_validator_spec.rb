@@ -147,7 +147,7 @@ RSpec.describe Algorythmo::Brain::McpTokenValidator do
   describe 'revoked session' do
     it 'raises McpAuthExpired even if Redis has a stale cache hit' do
       # Revoke the session in DB
-      session.update_columns(revoked_at: 1.minute.ago) # rubocop:disable Rails/SkipsModelValidations
+      session.update_columns(revoked_at: 1.minute.ago)
       # Redis miss (revocation cleared cache)
       stub_redis_get(nil)
 
@@ -162,7 +162,7 @@ RSpec.describe Algorythmo::Brain::McpTokenValidator do
   # ---------------------------------------------------------------------------
   describe 'expired session' do
     it 'raises McpAuthExpired' do
-      session.update_columns(expires_at: 1.second.ago) # rubocop:disable Rails/SkipsModelValidations
+      session.update_columns(expires_at: 1.second.ago)
       stub_redis_get(nil)
 
       expect do

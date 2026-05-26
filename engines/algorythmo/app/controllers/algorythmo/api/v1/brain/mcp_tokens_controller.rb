@@ -50,14 +50,13 @@ class Algorythmo::Api::V1::Brain::McpTokensController < Algorythmo::Api::V1::Bra
     # arg to open(2) is honored at creation time — the file never appears
     # with looser permissions even for a microsecond. Fail-closed: any error
     # removes the file before propagating.
-    File.umask(0o077).tap do |prev_umask|
-      begin
-        File.open(path, File::WRONLY | File::CREAT | File::TRUNC, 0o600) do |f|
-          f.write(token)
-        end
-      ensure
-        File.umask(prev_umask)
+    prev_umask = File.umask(0o077)
+    begin
+      File.open(path, File::WRONLY | File::CREAT | File::TRUNC, 0o600) do |f|
+        f.write(token)
       end
+    ensure
+      File.umask(prev_umask)
     end
   rescue StandardError => e
     FileUtils.rm_f(path)
