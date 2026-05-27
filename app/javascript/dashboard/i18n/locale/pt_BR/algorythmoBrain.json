@@ -5,10 +5,27 @@
     },
     "TABS": {
       "VIEWER": "Aquário",
+      "UPLOAD": "Documentos",
       "AJUSTES": "Ajustes",
       "HISTORICO": "Histórico",
       "CONFIG": "Config",
       "COMING_SOON": "Em breve"
+    },
+    "UPLOAD": {
+      "ARIA_LABEL": "Upload de documentos para o Brain",
+      "DROPZONE_ARIA": "Arraste arquivos aqui ou clique para selecionar",
+      "LIST_ARIA": "Documentos enviados",
+      "MICROCOPY": "Arraste documentos da sua empresa aqui — políticas, manuais, regras, design system.",
+      "EMPTY": "Nenhum documento enviado ainda nesta categoria.",
+      "REMOVE_ARIA": "Remover {name}",
+      "CATEGORIES": {
+        "ALL": "Todos",
+        "POLITICAS": "Políticas",
+        "MANUAIS": "Manuais",
+        "REGRAS": "Regras",
+        "DESIGN_SYSTEM": "Design system",
+        "OUTROS": "Outros"
+      }
     },
     "VIEWER": {
       "HEADING": "Brain Algorythmo",
