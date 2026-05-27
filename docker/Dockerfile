@@ -19,8 +19,13 @@ ENV RAILS_SERVE_STATIC_FILES ${RAILS_SERVE_STATIC_FILES}
 ARG RAILS_ENV=production
 ENV RAILS_ENV ${RAILS_ENV}
 
-ARG NODE_OPTIONS="--max-old-space-size=4096 --openssl-legacy-provider"
+ARG NODE_OPTIONS="--max-old-space-size=2048 --openssl-legacy-provider"
 ENV NODE_OPTIONS ${NODE_OPTIONS}
+
+# algorythmo: build parallelism — lowered to survive 4GB-RAM VPS builds.
+# Native gem compile (grpc, nokogiri) with -j 4 peaks at >4GB and OOM-kills the build.
+ARG BUNDLE_JOBS=1
+ARG BUNDLE_RETRIES=3
 
 ENV BUNDLE_PATH="/gems"
 
@@ -71,8 +76,8 @@ RUN bundle config set --local force_ruby_platform true
 
 # Do not install development or test gems in production
 RUN if [ "$RAILS_ENV" = "production" ]; then \
-  bundle config set without 'development test'; bundle install -j 4 -r 3; \
-  else bundle install -j 4 -r 3; \
+  bundle config set without 'development test'; bundle install -j ${BUNDLE_JOBS} -r ${BUNDLE_RETRIES}; \
+  else bundle install -j ${BUNDLE_JOBS} -r ${BUNDLE_RETRIES}; \
   fi
 
 COPY package.json pnpm-lock.yaml ./
