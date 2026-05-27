@@ -20,6 +20,10 @@ export const ALGORYTHMO_CUT_FLAG_NAMES = Object.freeze([
   'advanced_assignment',
   'reports_bot',
   'conversation_workflow',
+  // algorythmo: M6.1-a — Relatórios Comerciais overlay. Default NOT cut (visible).
+  // Route wired in M6.1-b; flag added here first so the registry is the
+  // single source of truth for known cut-flag names.
+  'reports_commercial',
 ]);
 
 // Full flag keys (with the `algorythmo_cut_` prefix) for direct equality checks

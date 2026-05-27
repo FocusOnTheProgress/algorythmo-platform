@@ -1,3 +1,4 @@
+import { defineAsyncComponent } from 'vue';
 import { frontendURL } from '../../../../helper/URLHelper';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
@@ -23,6 +24,14 @@ import CsatResponses from './CsatResponses.vue';
 import BotReports from './BotReports.vue';
 import LiveReports from './LiveReports.vue';
 import SLAReports from './SLAReports.vue';
+
+// algorythmo: M6.1-a — placeholder; replaced by the real overlay in M6.1-b.
+// Exists solely so the cut-flag coverage spec (algorythmoCutFlagCoverage.spec.js)
+// can assert `algorythmo_cut_reports_commercial` is wired into a route between
+// the flag-registration PR (M6.1-a) and the full-component PR (M6.1-b).
+const ReportsCommercialPlaceholder = defineAsyncComponent(() =>
+  Promise.resolve({ template: '<div />' })
+);
 
 const meta = {
   featureFlag: FEATURE_FLAGS.REPORTS,
@@ -130,11 +139,25 @@ export default {
       path: frontendURL('accounts/:accountId/reports'),
       component: ReportsWrapper,
       children: [
+        // algorythmo: M6.1-a/b — default redirect falls through to commercial overlay
+        // when flag is visible; degrades gracefully to upstream overview when cut.
+        // Full redirect logic (store gate) lands in M6.1-b alongside the real component.
         {
           path: '',
           redirect: to => {
             return { name: 'account_overview_reports', params: to.params };
           },
+        },
+        // algorythmo: M6.1-a — placeholder route; component replaced in M6.1-b.
+        {
+          path: 'commercial',
+          name: 'commercial_reports',
+          meta: {
+            ...meta,
+            // algorythmo: feature-gate algorythmo_cut_reports_commercial
+            algorythmoCutFlag: 'algorythmo_cut_reports_commercial',
+          },
+          component: ReportsCommercialPlaceholder,
         },
         {
           path: 'overview',

@@ -1,6 +1,7 @@
 {
   "SIDEBAR": {
     "RELATORIOS_COMERCIAIS": "Relatórios Comerciais",
+    "RELATORIOS_COMERCIAIS_VISAO": "Visão Comercial",
     "ALGORYTHMO_SECTION_GESTAO": "Gestão",
     "ALGORYTHMO_SECTION_ESTRATEGIA": "Estratégia",
     "ALGORYTHMO_SECTION_INTELIGENCIA": "Inteligência"
@@ -112,6 +113,21 @@
           "MQLS_LABEL": "MQLs no mês",
           "CTR_LABEL": "CTR médio",
           "CPL_LABEL": "Custo por lead"
+        }
+      },
+      "COMMERCIAL": {
+        "HEADING": "Visão Comercial",
+        "CONTEXT": "Pipeline, conversão e receita — meio e fundo de funil nos últimos 30 dias.",
+        "CHART_TITLE": "Receita fechada (R$ mil) — últimas 12 semanas",
+        "ANCHOR": {
+          "RECEITA_LABEL": "Receita fechada (30d)",
+          "CONVERSAO_LABEL": "Conversão lead → fechado"
+        },
+        "SECONDARY": {
+          "LEADS_LABEL": "Leads novos (30d)",
+          "CICLO_LABEL": "Ciclo médio",
+          "TICKET_LABEL": "Ticket médio",
+          "CANAL_LABEL": "Canal top 1 (% share)"
         }
       }
     },

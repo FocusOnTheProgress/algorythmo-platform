@@ -75,12 +75,13 @@ describe('algorythmo cut flag route coverage', () => {
   });
 
   it('found cut flag declarations across the route tree', () => {
-    // Sanity: the regex should have matched at least the 13 surfaces we know
-    // about. If the count drops it means a route file lost its gate.
+    // Sanity: the regex should have matched at least the 14 surfaces we know
+    // about (13 original + reports_commercial added in M6.1-a). If the count
+    // drops it means a route file lost its gate.
     const totalDeclarations = [...declarationsByFile.values()].reduce(
       (sum, arr) => sum + arr.length,
       0
     );
-    expect(totalDeclarations).toBeGreaterThanOrEqual(13);
+    expect(totalDeclarations).toBeGreaterThanOrEqual(14);
   });
 });
