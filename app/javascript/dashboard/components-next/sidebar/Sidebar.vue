@@ -546,8 +546,8 @@ const menuItems = computed(() => {
     {
       type: 'section',
       name: 'section-gestao',
-      label: 'Gestão',
-      isFirst: false,
+      label: t('SIDEBAR.ALGORYTHMO_SECTION_GESTAO'),
+      isFirst: true,
     },
     // algorythmo: M5 sidebar restructure — Relatórios Comerciais (renamed from Reports)
     {
@@ -592,7 +592,7 @@ const menuItems = computed(() => {
     {
       name: 'AdminOperacao',
       icon: 'i-lucide-factory',
-      label: 'Operação',
+      label: t('ALGORYTHMO_ADMIN.OPERACAO.TITLE'),
       activeOn: ['algorythmo_admin_operacao'],
       to: accountScopedRoute('algorythmo_admin_operacao'),
     },
@@ -600,7 +600,7 @@ const menuItems = computed(() => {
     {
       name: 'AdminCompras',
       icon: 'i-lucide-shopping-cart',
-      label: 'Compras',
+      label: t('ALGORYTHMO_ADMIN.COMPRAS.TITLE'),
       activeOn: ['algorythmo_admin_compras'],
       to: accountScopedRoute('algorythmo_admin_compras'),
     },
@@ -608,7 +608,7 @@ const menuItems = computed(() => {
     {
       name: 'AdminAdministracao',
       icon: 'i-lucide-briefcase',
-      label: 'Administração',
+      label: t('ALGORYTHMO_ADMIN.ADMINISTRACAO.TITLE'),
       activeOn: ['algorythmo_admin_administracao'],
       to: accountScopedRoute('algorythmo_admin_administracao'),
     },
@@ -616,7 +616,7 @@ const menuItems = computed(() => {
     {
       name: 'AdminFinanceiro',
       icon: 'i-lucide-landmark',
-      label: 'Financeiro',
+      label: t('ALGORYTHMO_ADMIN.FINANCEIRO.TITLE'),
       activeOn: ['algorythmo_admin_financeiro'],
       to: accountScopedRoute('algorythmo_admin_financeiro'),
     },
@@ -624,7 +624,7 @@ const menuItems = computed(() => {
     {
       name: 'AdminRh',
       icon: 'i-lucide-users-round',
-      label: 'RH',
+      label: t('ALGORYTHMO_ADMIN.RH.TITLE'),
       activeOn: ['algorythmo_admin_rh'],
       to: accountScopedRoute('algorythmo_admin_rh'),
     },
@@ -632,12 +632,12 @@ const menuItems = computed(() => {
     {
       name: 'AdminMarketing',
       icon: 'i-lucide-megaphone',
-      label: 'Marketing',
+      label: t('ALGORYTHMO_ADMIN.MARKETING.TITLE'),
       activeOn: ['algorythmo_admin_marketing'],
       children: [
         {
           name: 'Marketing Overview',
-          label: 'Visão Geral',
+          label: t('ALGORYTHMO_ADMIN.MARKETING.OVERVIEW'),
           to: accountScopedRoute('algorythmo_admin_marketing'),
           activeOn: ['algorythmo_admin_marketing'],
         },
@@ -677,14 +677,14 @@ const menuItems = computed(() => {
     {
       type: 'section',
       name: 'section-estrategia',
-      label: 'Estratégia',
+      label: t('SIDEBAR.ALGORYTHMO_SECTION_ESTRATEGIA'),
       isFirst: false,
     },
     // algorythmo: M5 sidebar restructure — C-Levels placeholder (M7 ships atmospheric UI)
     {
       name: 'AdminCLevels',
       icon: 'i-lucide-crown',
-      label: 'C-Levels',
+      label: t('ALGORYTHMO_ADMIN.C_LEVELS.SIDEBAR_LABEL'),
       activeOn: ['algorythmo_admin_c_levels'],
       to: accountScopedRoute('algorythmo_admin_c_levels'),
     },
@@ -694,7 +694,7 @@ const menuItems = computed(() => {
     {
       type: 'section',
       name: 'section-inteligencia',
-      label: 'Inteligência',
+      label: t('SIDEBAR.ALGORYTHMO_SECTION_INTELIGENCIA'),
       isFirst: false,
     },
     // algorythmo: M5 sidebar restructure — Brain MOVED from original position (D1: one entry point)
@@ -715,7 +715,7 @@ const menuItems = computed(() => {
     {
       name: 'AdminMarketplace',
       icon: 'i-lucide-store',
-      label: 'Marketplace',
+      label: t('ALGORYTHMO_ADMIN.MARKETPLACE.TITLE'),
       activeOn: ['algorythmo_admin_marketplace'],
       to: accountScopedRoute('algorythmo_admin_marketplace'),
     },

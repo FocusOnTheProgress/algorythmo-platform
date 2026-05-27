@@ -1,6 +1,9 @@
 {
   "SIDEBAR": {
-    "RELATORIOS_COMERCIAIS": "Relatórios Comerciais"
+    "RELATORIOS_COMERCIAIS": "Relatórios Comerciais",
+    "ALGORYTHMO_SECTION_GESTAO": "Gestão",
+    "ALGORYTHMO_SECTION_ESTRATEGIA": "Estratégia",
+    "ALGORYTHMO_SECTION_INTELIGENCIA": "Inteligência"
   },
   "ALGORYTHMO_ADMIN": {
     "OPERACAO": {
@@ -25,10 +28,12 @@
     },
     "MARKETING": {
       "TITLE": "Marketing",
+      "OVERVIEW": "Visão Geral",
       "BODY": "Em construção — os dashboards de marketing com métricas reais chegam em breve."
     },
     "C_LEVELS": {
       "TITLE": "Mesa Executiva",
+      "SIDEBAR_LABEL": "C-Levels",
       "BODY": "Em construção — sessão de design dedicada virá em breve."
     },
     "MARKETPLACE": {
