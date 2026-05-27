@@ -38,7 +38,43 @@
     },
     "MARKETPLACE": {
       "TITLE": "Marketplace",
-      "BODY": "Em construção — catálogo de agentes disponíveis em breve."
+      "SUBHEAD": "Catálogo de agentes — disponíveis em breve para sua operação.",
+      "BODY": "Em construção — catálogo de agentes disponíveis em breve.",
+      "STATUS_SOON": "Em breve",
+      "CARDS": {
+        "VENDAS": {
+          "NAME": "Agente de Vendas",
+          "DESCRIPTION": "Qualifica leads, envia propostas e acompanha oportunidades no funil de vendas de forma autônoma."
+        },
+        "FINANCEIRO": {
+          "NAME": "Agente Financeiro",
+          "DESCRIPTION": "Monitora fluxo de caixa, alertas de inadimplência e gera relatórios financeiros sob demanda."
+        },
+        "RH": {
+          "NAME": "Agente de RH",
+          "DESCRIPTION": "Conduz triagem de candidatos, responde dúvidas trabalhistas e acompanha indicadores de cultura."
+        },
+        "MARKETING": {
+          "NAME": "Agente de Marketing",
+          "DESCRIPTION": "Planeja campanhas, analisa performance de canais e sugere conteúdo para cada etapa da jornada."
+        },
+        "COMPRAS": {
+          "NAME": "Agente de Compras",
+          "DESCRIPTION": "Negocia com fornecedores, acompanha pedidos e emite alertas de ruptura de estoque."
+        },
+        "SUPORTE": {
+          "NAME": "Agente de Suporte",
+          "DESCRIPTION": "Resolve chamados de nível 1 com base nos documentos da empresa e escala os demais para humanos."
+        },
+        "OPERACAO": {
+          "NAME": "Agente de Operação",
+          "DESCRIPTION": "Monitora indicadores operacionais em tempo real e sinaliza desvios de processo imediatamente."
+        },
+        "JURIDICO": {
+          "NAME": "Agente Jurídico",
+          "DESCRIPTION": "Analisa contratos, identifica cláusulas de risco e mantém o compliance da empresa atualizado."
+        }
+      }
     }
   },
   "AUDIT_LOGS": {
