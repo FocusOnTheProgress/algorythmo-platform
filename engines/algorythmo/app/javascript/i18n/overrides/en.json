@@ -6,6 +6,34 @@
     "ALGORYTHMO_SECTION_INTELIGENCIA": "Intelligence"
   },
   "ALGORYTHMO_ADMIN": {
+    "SECTORS": {
+      "WATERMARK": "Demonstration data",
+      "AGENT": {
+        "ARIA_LABEL": "Sector agent panel",
+        "FORM_ARIA": "Send message to agent",
+        "INPUT_ARIA": "Message for the agent",
+        "NAME_SUFFIX": "· agent",
+        "STATUS_OFFLINE": "offline",
+        "EMPTY": "Soon this agent will operate with real data from your company.",
+        "PLACEHOLDER": "Type your question…",
+        "HINT": "⌘⏎"
+      },
+      "OPERACAO": {
+        "HEADING": "Operations",
+        "CONTEXT": "Inventory, replenishment, shipping and logistics — the operation that backs the sale.",
+        "CHART_TITLE": "Inventory (R$ K) — last 12 weeks",
+        "ANCHOR": {
+          "ESTOQUE_LABEL": "Current inventory",
+          "GIRO_LABEL": "Average turnover"
+        },
+        "SECONDARY": {
+          "SKUS_LABEL": "Active SKUs",
+          "RUPTURA_LABEL": "Stockout",
+          "EXPEDICAO_LABEL": "Avg shipping time",
+          "CMV_LABEL": "Cost of goods"
+        }
+      }
+    },
     "OPERACAO": {
       "TITLE": "Operations",
       "BODY": "Under construction — operations dashboards with real metrics coming soon."

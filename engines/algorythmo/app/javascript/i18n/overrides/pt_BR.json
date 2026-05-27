@@ -6,6 +6,34 @@
     "ALGORYTHMO_SECTION_INTELIGENCIA": "Inteligência"
   },
   "ALGORYTHMO_ADMIN": {
+    "SECTORS": {
+      "WATERMARK": "Dados de demonstração",
+      "AGENT": {
+        "ARIA_LABEL": "Painel do agente do setor",
+        "FORM_ARIA": "Enviar mensagem ao agente",
+        "INPUT_ARIA": "Mensagem para o agente",
+        "NAME_SUFFIX": "· agente",
+        "STATUS_OFFLINE": "offline",
+        "EMPTY": "Em breve este agente vai operar com dados reais da sua empresa.",
+        "PLACEHOLDER": "Escreva sua pergunta…",
+        "HINT": "⌘⏎"
+      },
+      "OPERACAO": {
+        "HEADING": "Operação",
+        "CONTEXT": "Estoque, reposição, expedição e logística — operação que sustenta a venda.",
+        "CHART_TITLE": "Estoque (R$ mil) — últimas 12 semanas",
+        "ANCHOR": {
+          "ESTOQUE_LABEL": "Estoque atual",
+          "GIRO_LABEL": "Giro médio"
+        },
+        "SECONDARY": {
+          "SKUS_LABEL": "SKUs ativos",
+          "RUPTURA_LABEL": "Ruptura",
+          "EXPEDICAO_LABEL": "Tempo médio de expedição",
+          "CMV_LABEL": "Custo de mercadoria"
+        }
+      }
+    },
     "OPERACAO": {
       "TITLE": "Operação",
       "BODY": "Em construção — os dashboards de operação com métricas reais chegam em breve."
