@@ -47,10 +47,10 @@ async function mountViewer() {
 }
 
 describe('BrainViewer — tab bar', () => {
-  it('renders 4 tabs', async () => {
+  it('renders 5 tabs', async () => {
     const wrapper = await mountViewer();
     const tabs = wrapper.findAll('[role="tab"]');
-    expect(tabs).toHaveLength(4);
+    expect(tabs).toHaveLength(5);
   });
 
   it('first tab is active by default', async () => {
@@ -62,7 +62,7 @@ describe('BrainViewer — tab bar', () => {
     expect(active.text().trim().length).toBeGreaterThan(0);
   });
 
-  it('non-active tabs have aria-disabled="true"', async () => {
+  it('Aquário + Documentos are clickable; the rest are disabled', async () => {
     const wrapper = await mountViewer();
     const disabledTabs = wrapper
       .findAll('[role="tab"]')
@@ -82,6 +82,15 @@ describe('BrainViewer — tab bar', () => {
       .findAll('[role="tab"]')
       .filter(t => t.attributes('tabindex') === '-1');
     expect(disabled).toHaveLength(3);
+  });
+
+  it('clicking Documentos switches the active view to BrainDocumentUpload', async () => {
+    const wrapper = await mountViewer();
+    const tabs = wrapper.findAll('[role="tab"]');
+    // second tab is Documentos (active)
+    await tabs[1].trigger('click');
+    expect(wrapper.find('.alg-upload').exists()).toBe(true);
+    expect(wrapper.find('.alg-aquario').exists()).toBe(false);
   });
 });
 

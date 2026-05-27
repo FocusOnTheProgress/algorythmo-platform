@@ -8,13 +8,15 @@ import { useMapGetter } from 'dashboard/composables/store';
 import { brainService } from './brain.service';
 import BrainEmptyState from './BrainEmptyState.vue';
 import BrainAquario from './BrainAquario.vue';
+import BrainDocumentUpload from './BrainDocumentUpload.vue';
 
 const { t } = useI18n();
 const accountId = useMapGetter('getCurrentAccountId');
 
-// Only the first tab is active Day-1. Future tabs ship gated.
+// Aquário + Documentos active Day-1. Remaining tabs ship gated.
 const TABS = [
   { id: 'viewer', labelKey: 'ALGORYTHMO_BRAIN.TABS.VIEWER', active: true },
+  { id: 'upload', labelKey: 'ALGORYTHMO_BRAIN.TABS.UPLOAD', active: true },
   { id: 'ajustes', labelKey: 'ALGORYTHMO_BRAIN.TABS.AJUSTES', active: false },
   {
     id: 'historico',
@@ -113,9 +115,10 @@ watch(accountId, id => {
       {{ loadError }}
     </div>
 
-    <!-- Aquário layout — M8a per plan 0005 §M8a -->
+    <!-- Active tab content — M8a (aquário) / M8b (upload) per plan 0005 §M8 -->
     <template v-else>
-      <BrainEmptyState v-if="isEmpty" />
+      <BrainDocumentUpload v-if="activeTab === 'upload'" />
+      <BrainEmptyState v-else-if="isEmpty" />
       <BrainAquario v-else />
     </template>
   </div>
