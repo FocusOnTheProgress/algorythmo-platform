@@ -514,6 +514,13 @@ export default {
     // working even if the editor is focussed.
     document.addEventListener('paste', this.onPaste);
     document.addEventListener('keydown', this.handleKeyEvents);
+    // algorythmo: M9 — admin read-only override listener. Attached here (not
+    // via keyboardEventListenerMixins) because the mixin binds via the
+    // replyEditor ref, which is v-if'd out exactly when the override matters.
+    // Plan 0005 §M9 — dev-flag gated.
+    if (import.meta.env.DEV) {
+      document.addEventListener('keydown', this.handleAdminReadOnlyOverride);
+    }
     this.setCCAndToEmailsFromLastChat();
     this.doAutoSaveDraft = debounce(
       () => {
@@ -539,6 +546,9 @@ export default {
   unmounted() {
     document.removeEventListener('paste', this.onPaste);
     document.removeEventListener('keydown', this.handleKeyEvents);
+    if (import.meta.env.DEV) {
+      document.removeEventListener('keydown', this.handleAdminReadOnlyOverride);
+    }
     emitter.off(BUS_EVENTS.TOGGLE_REPLY_TO_MESSAGE, this.onReplyToMessage);
     emitter.off(BUS_EVENTS.INSERT_INTO_NORMAL_EDITOR, this.addIntoEditor);
     emitter.off(
@@ -706,16 +716,19 @@ export default {
           },
           allowOnFocusedInput: true,
         },
-        // algorythmo: M9 — emergency override for admin read-only mode.
-        '$mod+Shift+KeyR': {
-          action: e => {
-            if (!this.isAdmin) return;
-            e.preventDefault();
-            this.adminReplyOverride = !this.adminReplyOverride;
-          },
-          allowOnFocusedInput: true,
-        },
       };
+    },
+    // algorythmo: M9 — emergency override for admin read-only mode.
+    // Bound at document level (see mounted) because the mixin's ref-based
+    // binding becomes a no-op when the reply editor is v-if'd out.
+    // Dev-flag gated per plan 0005 §M9.
+    handleAdminReadOnlyOverride(e) {
+      if (!this.isAdmin) return;
+      const isMod = e.ctrlKey || e.metaKey;
+      if (!isMod || !e.shiftKey) return;
+      if (e.code !== 'KeyR' && e.key !== 'R' && e.key !== 'r') return;
+      e.preventDefault();
+      this.adminReplyOverride = !this.adminReplyOverride;
     },
     isAValidEvent(selectedKey) {
       return (
@@ -1257,7 +1270,12 @@ export default {
   <!-- algorythmo: M9 — admins see a quiet 56px read-only notice instead of the
        reply UI. Ctrl+Shift+R toggles the override for the rare case an admin
        needs to respond directly. Plan 0005 §M9. -->
-  <div v-if="isReplyBoxHidden" class="alg-admin-readonly" role="note">
+  <div
+    v-if="isReplyBoxHidden"
+    class="alg-admin-readonly"
+    role="status"
+    aria-live="polite"
+  >
     {{ $t('ALGORYTHMO_ADMIN.READ_ONLY_NOTICE') }}
   </div>
   <ReplyBoxBanner
@@ -1491,7 +1509,7 @@ export default {
   padding: 0 1.25rem;
   background: var(--n-slate-2, rgba(15, 23, 42, 0.55));
   border-top: 1px solid var(--n-slate-4, rgba(148, 163, 184, 0.18));
-  color: var(--n-slate-11, rgba(226, 232, 240, 0.7));
+  color: var(--n-slate-12, rgba(248, 250, 252, 0.92));
   font-size: 0.8125rem;
   line-height: 1.4;
 }
