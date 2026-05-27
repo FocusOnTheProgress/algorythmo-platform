@@ -1,6 +1,6 @@
-// algorythmo: M5 placeholder route — Operação sector
+// algorythmo: M6.0 — Operação canonical sector dashboard route.
 import { frontendURL } from 'dashboard/helper/URLHelper';
-import OperacaoPlaceholder from './OperacaoPlaceholder.vue';
+import OperacaoDashboard from './OperacaoDashboard.vue';
 
 export default {
   routes: [
@@ -10,7 +10,7 @@ export default {
       meta: {
         permissions: ['administrator'],
       },
-      component: OperacaoPlaceholder,
+      component: OperacaoDashboard,
     },
   ],
 };
