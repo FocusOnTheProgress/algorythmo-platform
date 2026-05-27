@@ -30,7 +30,15 @@ async function getAllVisibleText(page: Page): Promise<string> {
 
 /**
  * Logs in and waits for the dashboard to be ready.
- * Returns after networkidle to ensure i18n strings are rendered.
+ *
+ * Waiting on networkidle alone is insufficient: it can fire before the SPA
+ * has finished hydrating currentUser, which causes any subsequent
+ * `page.goto('/settings/...')` to race the route guard (no user yet -> guard
+ * redirects to /dashboard, aborting the original navigation with ERR_ABORTED).
+ *
+ * We instead wait for the post-login URL match, then for the sidebar to be
+ * visible — that's the deterministic signal that Vuex has hydrated and
+ * permissions are evaluable.
  */
 async function loginAndWait(page: Page): Promise<void> {
   await page.goto(`${BASE_URL}/app/login`);
@@ -40,6 +48,7 @@ async function loginAndWait(page: Page): Promise<void> {
   await page.getByTestId('email_input').fill(EMAIL);
   await page.getByTestId('password_input').fill(PASSWORD);
   await page.getByRole('button', { name: /sign in|log in|login/i }).click();
+  await page.waitForURL(/\/app\/accounts\/\d+/, { timeout: 30_000 });
   await page.waitForLoadState('networkidle', { timeout: 20_000 });
 }
 
