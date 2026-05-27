@@ -125,8 +125,8 @@
         },
         "SECONDARY": {
           "LEADS_LABEL": "New leads (30d)",
-          "CICLO_LABEL": "Avg sales cycle",
-          "TICKET_LABEL": "Avg ticket",
+          "CICLO_LABEL": "Avg cycle (days)",
+          "TICKET_LABEL": "Avg ticket (BRL)",
           "CANAL_LABEL": "Top channel (% share)"
         }
       }

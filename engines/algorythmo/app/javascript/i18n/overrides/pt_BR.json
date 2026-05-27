@@ -125,9 +125,9 @@
         },
         "SECONDARY": {
           "LEADS_LABEL": "Leads novos (30d)",
-          "CICLO_LABEL": "Ciclo médio",
-          "TICKET_LABEL": "Ticket médio",
-          "CANAL_LABEL": "Canal top 1 (% share)"
+          "CICLO_LABEL": "Ciclo médio (dias)",
+          "TICKET_LABEL": "Ticket médio (R$)",
+          "CANAL_LABEL": "Canal principal (% participação)"
         }
       }
     },

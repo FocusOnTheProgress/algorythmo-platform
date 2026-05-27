@@ -107,6 +107,16 @@ describe('M6.1-a — en i18n keys', () => {
     expect(commercial.HEADING.length).toBeGreaterThan(0);
   });
 
+  it('COMMERCIAL.CONTEXT is a non-empty string', () => {
+    expect(typeof commercial.CONTEXT).toBe('string');
+    expect(commercial.CONTEXT.length).toBeGreaterThan(0);
+  });
+
+  it('COMMERCIAL.CHART_TITLE is a non-empty string', () => {
+    expect(typeof commercial.CHART_TITLE).toBe('string');
+    expect(commercial.CHART_TITLE.length).toBeGreaterThan(0);
+  });
+
   it.each([
     ['ANCHOR.RECEITA_LABEL', commercial.ANCHOR?.RECEITA_LABEL],
     ['ANCHOR.CONVERSAO_LABEL', commercial.ANCHOR?.CONVERSAO_LABEL],
@@ -117,5 +127,39 @@ describe('M6.1-a — en i18n keys', () => {
   ])('%s is a non-empty string (en)', (_key, value) => {
     expect(typeof value).toBe('string');
     expect(value.length).toBeGreaterThan(0);
+  });
+});
+
+describe('M6.1-a — PT ≠ EN copy-paste guard', () => {
+  const ptC = (ptBR.ALGORYTHMO_ADMIN?.SECTORS ?? {}).COMMERCIAL ?? {};
+  const enC = (en.ALGORYTHMO_ADMIN?.SECTORS ?? {}).COMMERCIAL ?? {};
+
+  // These keys MUST differ between locales — identical values signal a copy-paste bug.
+  it.each([
+    ['COMMERCIAL.HEADING', ptC.HEADING, enC.HEADING],
+    ['COMMERCIAL.CONTEXT', ptC.CONTEXT, enC.CONTEXT],
+    ['COMMERCIAL.CHART_TITLE', ptC.CHART_TITLE, enC.CHART_TITLE],
+    [
+      'ANCHOR.RECEITA_LABEL',
+      ptC.ANCHOR?.RECEITA_LABEL,
+      enC.ANCHOR?.RECEITA_LABEL,
+    ],
+    [
+      'ANCHOR.CONVERSAO_LABEL',
+      ptC.ANCHOR?.CONVERSAO_LABEL,
+      enC.ANCHOR?.CONVERSAO_LABEL,
+    ],
+    [
+      'SECONDARY.CICLO_LABEL',
+      ptC.SECONDARY?.CICLO_LABEL,
+      enC.SECONDARY?.CICLO_LABEL,
+    ],
+    [
+      'SECONDARY.TICKET_LABEL',
+      ptC.SECONDARY?.TICKET_LABEL,
+      enC.SECONDARY?.TICKET_LABEL,
+    ],
+  ])('%s: PT value differs from EN value', (_key, ptVal, enVal) => {
+    expect(ptVal).not.toBe(enVal);
   });
 });
