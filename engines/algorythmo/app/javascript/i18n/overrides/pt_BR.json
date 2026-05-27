@@ -156,6 +156,10 @@
       "OVERVIEW": "Visão Geral",
       "BODY": "Em construção — os dashboards de marketing com métricas reais chegam em breve."
     },
+    "COMMERCIAL": {
+      "TITLE": "Visão Comercial",
+      "BODY": "Em construção — KPIs comerciais (pipeline, conversão, receita) chegam no próximo milestone."
+    },
     "C_LEVELS": {
       "TITLE": "Mesa Executiva",
       "SIDEBAR_LABEL": "C-Levels",

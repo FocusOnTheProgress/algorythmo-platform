@@ -1,5 +1,6 @@
 import { frontendURL } from '../../../../helper/URLHelper';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
+import store from 'dashboard/store';
 
 import ReportsWrapper from './components/ReportsWrapper.vue';
 import Index from './Index.vue';
@@ -24,11 +25,11 @@ import BotReports from './BotReports.vue';
 import LiveReports from './LiveReports.vue';
 import SLAReports from './SLAReports.vue';
 
-// algorythmo: M6.1-a — placeholder; replaced by the real overlay component in M6.1-b.
-// Plain object (no defineAsyncComponent) — there is no chunk to defer and no real
-// component to lazy-load yet. Exists solely so algorythmoCutFlagCoverage.spec.js
-// can assert the cut-flag is wired into a route between M6.1-a and M6.1-b.
-const ReportsCommercialPlaceholder = { template: '<div />' };
+// algorythmo: M6.1-b — real overlay component; replaces the M6.1-a stub.
+const ReportsCommercialOverlay = () =>
+  import(
+    'dashboard/modules/algorythmo/admin/reports-commercial/ReportsCommercialOverlay.vue'
+  );
 
 const meta = {
   featureFlag: FEATURE_FLAGS.REPORTS,
@@ -136,16 +137,31 @@ export default {
       path: frontendURL('accounts/:accountId/reports'),
       component: ReportsWrapper,
       children: [
-        // algorythmo: M6.1-a — redirect unchanged from upstream; still targets account_overview_reports.
-        // M6.1-b replaces this with a store-gated redirect: commercial_reports when NOT cut,
-        // account_overview_reports as upstream fallback when cut.
+        // algorythmo: M6.1-b — dynamic redirect: admins land on Visão Comercial by
+        // default (D13, plan 0006). Upstream behaviour (account_overview_reports) is
+        // preserved as the fallback when a super-admin enables the cut-flag for a tenant.
+        // Store is imported at module level (same pattern as routes/index.js) — safe
+        // because redirect runs at navigation time, never at parse time.
         {
           path: '',
           redirect: to => {
-            return { name: 'account_overview_reports', params: to.params };
+            const isFeatureEnabledonAccount =
+              store.getters['accounts/isFeatureEnabledonAccount'];
+            const accountId = Number(to.params.accountId);
+            // isCut === true means the feature is hidden; default false = visible.
+            const isCut =
+              isFeatureEnabledonAccount(
+                accountId,
+                'algorythmo_cut_reports_commercial'
+              ) === true;
+            return {
+              name: isCut ? 'account_overview_reports' : 'commercial_reports',
+              params: to.params,
+            };
           },
         },
-        // algorythmo: M6.1-a — placeholder route; component replaced in M6.1-b.
+        // algorythmo: M6.1-b — Relatórios Comerciais overlay (first child = default target).
+        // Placeholder shell; real composition (SectorDashboard + mock) arrives in M6.1-c.
         {
           path: 'commercial',
           name: 'commercial_reports',
@@ -154,7 +170,7 @@ export default {
             // algorythmo: feature-gate algorythmo_cut_reports_commercial
             algorythmoCutFlag: 'algorythmo_cut_reports_commercial',
           },
-          component: ReportsCommercialPlaceholder,
+          component: ReportsCommercialOverlay,
         },
         {
           path: 'overview',
