@@ -1,7 +1,9 @@
-// algorythmo: M6 PR-6b — Operação mock contract. Founder-locked numbers
-// (plan 0005 §9.1) used as canonical reference for the other 6 sectors.
-// All numerics are plain JS (no i18n) — only labels go through translation.
+// algorythmo: M6 PR-6b — Operação mock. Founder-locked numbers (plan 0005
+// §9.1) used as canonical reference for the other 6 sectors.
+// Shape: see `./contract.js` (SectorMock typedef). Hard rules:
+//   - 2 anchors, 4 secondaries, no HTML in delta.text.
 
+/** @type {import('./contract').SectorMock} */
 export default {
   id: 'operacao',
   headingKey: 'ALGORYTHMO_ADMIN.SECTORS.OPERACAO.HEADING',

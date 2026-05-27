@@ -2,7 +2,7 @@
 // algorythmo: M6 PR-6b — sector dashboard skeleton. Magazine layout (NOT uniform
 // grid): editorial header, 2 anchor KPIs (50/50), 4 secondary KPIs (4-col),
 // 1 full-width async-imported chart, demonstration watermark. Plan 0005 §M6.
-import { defineAsyncComponent, computed } from 'vue';
+import { defineAsyncComponent, h, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
@@ -14,14 +14,41 @@ const props = defineProps({
 
 const { t } = useI18n();
 
+// Tiny chart loading + error states. Inline functional components keep them
+// out of any global registry while giving Vue an explicit fallback to render
+// when the async chunk is pending or fails (network blip, deploy-mid-session,
+// CSP block on chart.js). Without these the user sees a silent blank rect.
+const ChartLoading = () =>
+  h('div', {
+    class: 'alg-sector__chart-fallback alg-sector__chart-fallback--loading',
+    'aria-hidden': 'true',
+  });
+const ChartError = () =>
+  h(
+    'div',
+    {
+      class: 'alg-sector__chart-fallback alg-sector__chart-fallback--error',
+      role: 'note',
+    },
+    t('ALGORYTHMO_ADMIN.SECTORS.CHART_ERROR')
+  );
+
 // Async-load chart components per route — keeps bundle weight off the main
 // dashboard chunk until a sector is actually opened.
-const LineChart = defineAsyncComponent(
-  () => import('shared/components/charts/LineChart.vue')
-);
-const PieChart = defineAsyncComponent(
-  () => import('shared/components/charts/PieChart.vue')
-);
+const LineChart = defineAsyncComponent({
+  loader: () => import('shared/components/charts/LineChart.vue'),
+  loadingComponent: ChartLoading,
+  errorComponent: ChartError,
+  delay: 120,
+  timeout: 8000,
+});
+const PieChart = defineAsyncComponent({
+  loader: () => import('shared/components/charts/PieChart.vue'),
+  loadingComponent: ChartLoading,
+  errorComponent: ChartError,
+  delay: 120,
+  timeout: 8000,
+});
 
 const ChartComponent = computed(() =>
   props.mock.chart?.type === 'pie' ? PieChart : LineChart
@@ -78,8 +105,8 @@ const chartCollection = computed(() =>
 
     <div class="alg-sector__anchors">
       <article
-        v-for="kpi in mock.anchorKpis"
-        :key="kpi.labelKey"
+        v-for="(kpi, idx) in mock.anchorKpis"
+        :key="`anchor-${idx}`"
         class="alg-sector__anchor"
       >
         <p class="alg-sector__anchor-value">{{ kpi.value }}</p>
@@ -95,8 +122,8 @@ const chartCollection = computed(() =>
 
     <div class="alg-sector__secondaries">
       <article
-        v-for="kpi in mock.secondaryKpis"
-        :key="kpi.labelKey"
+        v-for="(kpi, idx) in mock.secondaryKpis"
+        :key="`secondary-${idx}`"
         class="alg-sector__secondary"
       >
         <p class="alg-sector__secondary-value">{{ kpi.value }}</p>
@@ -285,5 +312,30 @@ const chartCollection = computed(() =>
 .alg-sector__chart-canvas {
   height: 220px;
   position: relative;
+}
+
+.alg-sector__chart-fallback {
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.45);
+}
+
+.alg-sector__chart-fallback--loading {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.04) 0,
+    rgba(148, 163, 184, 0.04) 24px,
+    transparent 24px,
+    transparent 48px
+  );
+}
+
+.alg-sector__chart-fallback--error {
+  color: rgba(248, 113, 113, 0.6);
 }
 </style>

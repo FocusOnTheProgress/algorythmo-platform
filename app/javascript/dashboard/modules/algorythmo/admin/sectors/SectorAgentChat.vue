@@ -3,7 +3,7 @@
 // ReplyBox (do NOT reuse). 360px sticky right panel: geometric monogram avatar,
 // bordered machine-voice bubbles, cmd+enter submit hint. Empty state for Day-1.
 // Plan 0005 §M6.
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 defineProps({
@@ -21,10 +21,12 @@ const messages = ref([]);
 function submit() {
   const trimmed = draft.value.trim();
   if (!trimmed) return;
-  // Frontend-only Day-1: clear local input, no POST until ingestion ships.
-  messages.value = [];
+  // Frontend-only Day-1: clear the draft. Real transport (POST + optimistic
+  // append into `messages`) ships with M8c+ ingestion.
   draft.value = '';
 }
+
+const canSubmit = computed(() => draft.value.trim().length > 0);
 
 function onKeydown(event) {
   const isCmdEnter = event.key === 'Enter' && (event.metaKey || event.ctrlKey);
@@ -122,9 +124,33 @@ function onKeydown(event) {
         rows="1"
         :placeholder="t('ALGORYTHMO_ADMIN.SECTORS.AGENT.PLACEHOLDER')"
         :aria-label="t('ALGORYTHMO_ADMIN.SECTORS.AGENT.INPUT_ARIA')"
+        aria-keyshortcuts="Meta+Enter Control+Enter"
+        aria-describedby="alg-agent-hint"
         @keydown="onKeydown"
       />
-      <span class="alg-agent__hint" aria-hidden="true">
+      <button
+        type="submit"
+        class="alg-agent__send"
+        :disabled="!canSubmit"
+        :aria-label="t('ALGORYTHMO_ADMIN.SECTORS.AGENT.SEND_ARIA')"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          aria-hidden="true"
+          class="alg-agent__send-icon"
+        >
+          <path
+            d="M1.5 7 L12.5 1.5 L7 12.5 L6 8 L1.5 7 Z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.25"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+      <span id="alg-agent-hint" class="alg-agent__hint">
         {{ t('ALGORYTHMO_ADMIN.SECTORS.AGENT.HINT') }}
       </span>
     </form>
@@ -134,13 +160,13 @@ function onKeydown(event) {
 <style scoped lang="scss">
 .alg-agent {
   position: sticky;
-  top: 0;
+  top: var(--alg-admin-topbar-height, 0);
   width: 360px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-height: 100vh;
+  max-height: calc(100vh - var(--alg-admin-topbar-height, 0px));
   border-left: 1px solid rgba(148, 163, 184, 0.08);
   background: transparent;
 }
@@ -290,20 +316,57 @@ function onKeydown(event) {
   }
 
   &::placeholder {
-    color: rgba(148, 163, 184, 0.4);
+    color: rgba(148, 163, 184, 0.58);
   }
 }
 
-.alg-agent__hint {
+.alg-agent__send {
   position: absolute;
-  right: 1.25rem;
+  right: 1.5rem;
   bottom: 1.625rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 24px;
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 4px;
+  color: rgba(226, 232, 240, 0.85);
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    color 120ms ease,
+    background-color 120ms ease;
+
+  &:hover:not(:disabled) {
+    border-color: rgba(148, 163, 184, 0.45);
+    background: rgba(148, 163, 184, 0.06);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-woot, #6c4de5);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    color: rgba(148, 163, 184, 0.32);
+    border-color: rgba(148, 163, 184, 0.1);
+    cursor: not-allowed;
+  }
+}
+
+.alg-agent__send-icon {
+  display: block;
+  transform: translateX(-1px);
+}
+
+.alg-agent__hint {
+  margin-top: 0.5rem;
+  display: block;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 10px;
-  color: rgba(148, 163, 184, 0.45);
-  padding: 2px 6px;
-  border-radius: 3px;
-  background: rgba(148, 163, 184, 0.08);
+  color: rgba(148, 163, 184, 0.62);
   letter-spacing: 0.02em;
   pointer-events: none;
 }

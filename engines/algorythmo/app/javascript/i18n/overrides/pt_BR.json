@@ -8,6 +8,7 @@
   "ALGORYTHMO_ADMIN": {
     "SECTORS": {
       "WATERMARK": "Dados de demonstração",
+      "CHART_ERROR": "Gráfico indisponível",
       "AGENT": {
         "ARIA_LABEL": "Painel do agente do setor",
         "FORM_ARIA": "Enviar mensagem ao agente",
@@ -16,7 +17,8 @@
         "STATUS_OFFLINE": "offline",
         "EMPTY": "Em breve este agente vai operar com dados reais da sua empresa.",
         "PLACEHOLDER": "Escreva sua pergunta…",
-        "HINT": "⌘⏎"
+        "HINT": "⌘⏎ para enviar",
+        "SEND_ARIA": "Enviar mensagem"
       },
       "OPERACAO": {
         "HEADING": "Operação",

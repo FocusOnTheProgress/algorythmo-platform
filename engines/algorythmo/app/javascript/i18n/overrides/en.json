@@ -8,6 +8,7 @@
   "ALGORYTHMO_ADMIN": {
     "SECTORS": {
       "WATERMARK": "Demonstration data",
+      "CHART_ERROR": "Chart unavailable",
       "AGENT": {
         "ARIA_LABEL": "Sector agent panel",
         "FORM_ARIA": "Send message to agent",
@@ -16,7 +17,8 @@
         "STATUS_OFFLINE": "offline",
         "EMPTY": "Soon this agent will operate with real data from your company.",
         "PLACEHOLDER": "Type your question…",
-        "HINT": "⌘⏎"
+        "HINT": "⌘⏎ to send",
+        "SEND_ARIA": "Send message"
       },
       "OPERACAO": {
         "HEADING": "Operations",

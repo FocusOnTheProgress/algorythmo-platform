@@ -58,11 +58,47 @@ describe('SectorAgentChat', () => {
     expect(wrapper.find('.alg-agent__hint').exists()).toBe(true);
   });
 
+  it('exposes a visible send button (not keyboard-only)', () => {
+    const wrapper = mountChat();
+    const send = wrapper.find('.alg-agent__send');
+    expect(send.exists()).toBe(true);
+    expect(send.attributes('type')).toBe('submit');
+    expect(send.attributes('aria-label')).toBe(
+      'ALGORYTHMO_ADMIN.SECTORS.AGENT.SEND_ARIA'
+    );
+  });
+
+  it('disables the send button when the draft is empty/whitespace', async () => {
+    const wrapper = mountChat();
+    const send = wrapper.find('.alg-agent__send');
+    expect(send.attributes('disabled')).toBeDefined();
+    await wrapper.find('.alg-agent__input').setValue('   ');
+    expect(send.attributes('disabled')).toBeDefined();
+    await wrapper.find('.alg-agent__input').setValue('hi');
+    expect(send.attributes('disabled')).toBeUndefined();
+  });
+
+  it('declares keyboard shortcut + describedby on the textarea', () => {
+    const wrapper = mountChat();
+    const textarea = wrapper.find('.alg-agent__input');
+    expect(textarea.attributes('aria-keyshortcuts')).toBe(
+      'Meta+Enter Control+Enter'
+    );
+    expect(textarea.attributes('aria-describedby')).toBe('alg-agent-hint');
+  });
+
   it('clears draft on cmd+enter submission', async () => {
     const wrapper = mountChat();
     const textarea = wrapper.find('.alg-agent__input');
     await textarea.setValue('hello');
     await textarea.trigger('keydown', { key: 'Enter', metaKey: true });
     expect(textarea.element.value).toBe('');
+  });
+
+  it('also clears draft when the visible send button is clicked', async () => {
+    const wrapper = mountChat();
+    await wrapper.find('.alg-agent__input').setValue('hello');
+    await wrapper.find('.alg-agent__form').trigger('submit');
+    expect(wrapper.find('.alg-agent__input').element.value).toBe('');
   });
 });

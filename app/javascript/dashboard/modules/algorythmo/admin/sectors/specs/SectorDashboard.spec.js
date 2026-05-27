@@ -67,4 +67,19 @@ describe('SectorDashboard', () => {
     expect(wrapper.find('.alg-sector__chart').exists()).toBe(true);
     expect(wrapper.find('.alg-sector__chart-canvas').exists()).toBe(true);
   });
+
+  it('mock has matching labels and data lengths (chart contract)', () => {
+    // The dashboard renders whatever it's given; this assertion locks the
+    // mock contract — labels.length === data.length is a hard rule for all
+    // 6 derived sectors.
+    expect(operacaoMock.chart.labels.length).toBe(
+      operacaoMock.chart.data.length
+    );
+    expect(operacaoMock.chart.labels.length).toBe(12);
+  });
+
+  it('mock has exactly 2 anchors and 4 secondaries (layout contract)', () => {
+    expect(operacaoMock.anchorKpis).toHaveLength(2);
+    expect(operacaoMock.secondaryKpis).toHaveLength(4);
+  });
 });
