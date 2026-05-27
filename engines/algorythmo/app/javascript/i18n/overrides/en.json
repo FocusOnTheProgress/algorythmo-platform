@@ -38,7 +38,43 @@
     },
     "MARKETPLACE": {
       "TITLE": "Marketplace",
-      "BODY": "Under construction — agent catalog coming soon."
+      "SUBHEAD": "Agent catalog — coming soon to your operation.",
+      "BODY": "Under construction — agent catalog coming soon.",
+      "STATUS_SOON": "Coming soon",
+      "CARDS": {
+        "VENDAS": {
+          "NAME": "Sales Agent",
+          "DESCRIPTION": "Qualifies leads, sends proposals and tracks opportunities across the sales pipeline autonomously."
+        },
+        "FINANCEIRO": {
+          "NAME": "Finance Agent",
+          "DESCRIPTION": "Monitors cash flow, flags overdue accounts and generates financial reports on demand."
+        },
+        "RH": {
+          "NAME": "HR Agent",
+          "DESCRIPTION": "Screens candidates, answers employment questions and tracks culture indicators."
+        },
+        "MARKETING": {
+          "NAME": "Marketing Agent",
+          "DESCRIPTION": "Plans campaigns, analyzes channel performance and suggests content for each stage of the journey."
+        },
+        "COMPRAS": {
+          "NAME": "Procurement Agent",
+          "DESCRIPTION": "Negotiates with suppliers, tracks orders and issues stock-out alerts."
+        },
+        "SUPORTE": {
+          "NAME": "Support Agent",
+          "DESCRIPTION": "Resolves tier-1 tickets using company documents and escalates the rest to humans."
+        },
+        "OPERACAO": {
+          "NAME": "Operations Agent",
+          "DESCRIPTION": "Monitors operational KPIs in real time and immediately flags process deviations."
+        },
+        "JURIDICO": {
+          "NAME": "Legal Agent",
+          "DESCRIPTION": "Reviews contracts, identifies risk clauses and keeps the company's compliance up to date."
+        }
+      }
     }
   },
   "AUDIT_LOGS": {
