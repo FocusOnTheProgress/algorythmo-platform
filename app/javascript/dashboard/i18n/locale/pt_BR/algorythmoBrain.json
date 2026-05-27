@@ -4,7 +4,7 @@
       "BRAIN": "Brain"
     },
     "TABS": {
-      "VIEWER": "Viewer",
+      "VIEWER": "Aquário",
       "AJUSTES": "Ajustes",
       "HISTORICO": "Histórico",
       "CONFIG": "Config",
@@ -20,6 +20,33 @@
       "TIMELINE_ARIA_LABEL": "Timeline de eventos",
       "TIMELINE_LIST_ARIA_LABEL": "Eventos do Brain",
       "TIMELINE_UNAVAILABLE": "Histórico indisponível no momento."
+    },
+    "AQUARIO": {
+      "ARIA_LABEL": "Aquário do Brain — visão organizada da inteligência da empresa",
+      "COLUMNS": {
+        "CONVERSAS": "Conversas processadas",
+        "FATOS": "Fatos da empresa",
+        "LEADS": "Leads recentes",
+        "AJUSTES": "Ajustes registrados",
+        "DOCUMENTOS": "Documentos absorvidos",
+        "DECISOES": "Decisões consolidadas"
+      },
+      "SPECIMENS": {
+        "CONVERSAS_1": "1.247 conversas analisadas nos últimos 30 dias.",
+        "CONVERSAS_2": "Brain identificou 89 leads qualificados sem intervenção humana.",
+        "CONVERSAS_3": "Tempo médio de resposta caiu de 3h para 27 min depois do Brain ativo.",
+        "FATOS_1": "Linguagem da marca: técnica mas acessível, evita jargão.",
+        "FATOS_2": "Política de devolução: 30 dias, sem custo de frete pro cliente.",
+        "FATOS_3": "Horário de atendimento: seg-sex 9h-18h, sáb 9h-13h (BR).",
+        "LEADS_1": "Maria Silva movida para Qualificado por João às 14:32.",
+        "LEADS_2": "Carlos Pereira atribuído ao time comercial às 13:18.",
+        "AJUSTES_1": "Tom de voz refinado: respostas técnicas ficam mais concisas.",
+        "AJUSTES_2": "Nova regra: não prometer prazos antes de confirmar estoque.",
+        "DOCUMENTOS_1": "Política de garantia v2.3 absorvida há 2 dias.",
+        "DOCUMENTOS_2": "Catálogo de produtos atualizado — 1.247 SKUs ativos.",
+        "DECISOES_1": "Dream cycle de 27/mai consolidou 14 ajustes em 3 regras coerentes.",
+        "DECISOES_2": "Snapshot semanal: tom da marca permanece estável."
+      }
     },
     "EMPTY_STATE": {
       "ARIA_LABEL": "Primeiros passos com o Brain",

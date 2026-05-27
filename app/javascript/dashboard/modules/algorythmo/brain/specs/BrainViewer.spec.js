@@ -1,4 +1,4 @@
-// algorythmo: M3-PR3 — BrainViewer unit spec
+// algorythmo: M8a — BrainViewer + Aquário unit spec
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import BrainViewer from '../BrainViewer.vue';
@@ -53,16 +53,16 @@ describe('BrainViewer — tab bar', () => {
     expect(tabs).toHaveLength(4);
   });
 
-  it('Viewer tab is active by default', async () => {
+  it('first tab is active by default', async () => {
     const wrapper = await mountViewer();
-    const viewerTab = wrapper
+    const active = wrapper
       .findAll('[role="tab"]')
       .find(t => t.attributes('aria-selected') === 'true');
-    expect(viewerTab).toBeDefined();
-    expect(viewerTab.text()).toContain('Viewer');
+    expect(active).toBeDefined();
+    expect(active.text().trim().length).toBeGreaterThan(0);
   });
 
-  it('non-Viewer tabs have aria-disabled="true"', async () => {
+  it('non-active tabs have aria-disabled="true"', async () => {
     const wrapper = await mountViewer();
     const disabledTabs = wrapper
       .findAll('[role="tab"]')
@@ -85,39 +85,42 @@ describe('BrainViewer — tab bar', () => {
   });
 });
 
-describe('BrainViewer — viewer content', () => {
-  it('renders the compiled truth heading', async () => {
+describe('BrainViewer — aquário content', () => {
+  it('renders the aquário container', async () => {
     const wrapper = await mountViewer();
-    const heading = wrapper.find('.alg-brain-truth__heading');
-    expect(heading.exists()).toBe(true);
-    expect(heading.text().trim().length).toBeGreaterThan(0);
+    expect(wrapper.find('.alg-aquario').exists()).toBe(true);
   });
 
-  it('strips YAML frontmatter from body', async () => {
+  it('renders 2 anchor columns', async () => {
     const wrapper = await mountViewer();
-    const body = wrapper.find('.alg-compiled-truth');
-    expect(body.exists()).toBe(true);
-    expect(body.text()).not.toContain('---');
-    expect(body.text()).toContain('Body content here');
+    const anchors = wrapper.findAll('.alg-aquario__column--anchor');
+    expect(anchors).toHaveLength(2);
   });
 
-  it('renders timeline events', async () => {
+  it('renders 4 secondary columns', async () => {
     const wrapper = await mountViewer();
-    const events = wrapper.findAll('.alg-timeline-event');
-    expect(events).toHaveLength(1);
+    const secondary = wrapper.findAll('.alg-aquario__column--secondary');
+    expect(secondary).toHaveLength(4);
   });
 
-  it('each timeline event renders time + type chip + preview', async () => {
+  it('every column has a non-empty label', async () => {
     const wrapper = await mountViewer();
-    const event = wrapper.find('.alg-timeline-event');
-    expect(event.find('.alg-timeline-event__time').exists()).toBe(true);
-    expect(event.find('.alg-timeline-event__type-chip').exists()).toBe(true);
-    expect(event.find('.alg-timeline-event__preview').exists()).toBe(true);
+    const labels = wrapper.findAll('.alg-aquario__column-label');
+    expect(labels.length).toBe(6);
+    labels.forEach(l => expect(l.text().trim().length).toBeGreaterThan(0));
+  });
+
+  it('every column has at least one specimen sentence', async () => {
+    const wrapper = await mountViewer();
+    const columns = wrapper.findAll('.alg-aquario__column');
+    columns.forEach(col => {
+      expect(col.findAll('.alg-aquario__specimen').length).toBeGreaterThan(0);
+    });
   });
 });
 
 describe('BrainViewer — empty state', () => {
-  it('renders BrainEmptyState when content is absent', async () => {
+  it('renders BrainEmptyState when compiled truth is absent', async () => {
     brainService.fetchCompiledTruth.mockResolvedValue({
       meta: {},
       content: '',
@@ -125,7 +128,7 @@ describe('BrainViewer — empty state', () => {
     const wrapper = mount(BrainViewer);
     await flushPromises();
     expect(wrapper.find('.alg-brain-empty').exists()).toBe(true);
-    expect(wrapper.find('.alg-brain-truth__heading').exists()).toBe(false);
+    expect(wrapper.find('.alg-aquario').exists()).toBe(false);
   });
 });
 

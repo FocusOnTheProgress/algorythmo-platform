@@ -4,7 +4,7 @@
       "BRAIN": "Brain"
     },
     "TABS": {
-      "VIEWER": "Viewer",
+      "VIEWER": "Aquarium",
       "AJUSTES": "Settings",
       "HISTORICO": "History",
       "CONFIG": "Config",
@@ -20,6 +20,33 @@
       "TIMELINE_ARIA_LABEL": "Events timeline",
       "TIMELINE_LIST_ARIA_LABEL": "Brain events",
       "TIMELINE_UNAVAILABLE": "History unavailable right now."
+    },
+    "AQUARIO": {
+      "ARIA_LABEL": "Brain aquarium — organized view of company intelligence",
+      "COLUMNS": {
+        "CONVERSAS": "Conversations processed",
+        "FATOS": "Company facts",
+        "LEADS": "Recent leads",
+        "AJUSTES": "Adjustments logged",
+        "DOCUMENTOS": "Documents absorbed",
+        "DECISOES": "Consolidated decisions"
+      },
+      "SPECIMENS": {
+        "CONVERSAS_1": "1,247 conversations analysed in the past 30 days.",
+        "CONVERSAS_2": "Brain identified 89 qualified leads without human intervention.",
+        "CONVERSAS_3": "Average response time dropped from 3h to 27 min after Brain went live.",
+        "FATOS_1": "Brand voice: technical yet accessible, avoids jargon.",
+        "FATOS_2": "Return policy: 30 days, no shipping cost for the customer.",
+        "FATOS_3": "Support hours: Mon-Fri 9-18h, Sat 9-13h (BR).",
+        "LEADS_1": "Maria Silva moved to Qualified by João at 14:32.",
+        "LEADS_2": "Carlos Pereira assigned to the sales team at 13:18.",
+        "AJUSTES_1": "Voice refined: technical replies are now more concise.",
+        "AJUSTES_2": "New rule: don't promise lead times before confirming stock.",
+        "DOCUMENTOS_1": "Warranty policy v2.3 absorbed 2 days ago.",
+        "DOCUMENTOS_2": "Product catalog refreshed — 1,247 active SKUs.",
+        "DECISOES_1": "Dream cycle on May 27 consolidated 14 adjustments into 3 coherent rules.",
+        "DECISOES_2": "Weekly snapshot: brand voice remains stable."
+      }
     },
     "EMPTY_STATE": {
       "ARIA_LABEL": "First steps with Brain",
