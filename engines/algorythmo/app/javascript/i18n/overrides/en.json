@@ -1,4 +1,46 @@
 {
+  "SIDEBAR": {
+    "RELATORIOS_COMERCIAIS": "Commercial Reports",
+    "ALGORYTHMO_SECTION_GESTAO": "Management",
+    "ALGORYTHMO_SECTION_ESTRATEGIA": "Strategy",
+    "ALGORYTHMO_SECTION_INTELIGENCIA": "Intelligence"
+  },
+  "ALGORYTHMO_ADMIN": {
+    "OPERACAO": {
+      "TITLE": "Operations",
+      "BODY": "Under construction — operations dashboards with real metrics coming soon."
+    },
+    "COMPRAS": {
+      "TITLE": "Procurement",
+      "BODY": "Under construction — procurement dashboards with real metrics coming soon."
+    },
+    "ADMINISTRACAO": {
+      "TITLE": "Administration",
+      "BODY": "Under construction — administration dashboards with real metrics coming soon."
+    },
+    "FINANCEIRO": {
+      "TITLE": "Finance",
+      "BODY": "Under construction — finance dashboards with real metrics coming soon."
+    },
+    "RH": {
+      "TITLE": "HR",
+      "BODY": "Under construction — HR dashboards with real metrics coming soon."
+    },
+    "MARKETING": {
+      "TITLE": "Marketing",
+      "OVERVIEW": "Overview",
+      "BODY": "Under construction — marketing dashboards with real metrics coming soon."
+    },
+    "C_LEVELS": {
+      "TITLE": "Executive Board",
+      "SIDEBAR_LABEL": "C-Levels",
+      "BODY": "Under construction — a dedicated design session is on the way."
+    },
+    "MARKETPLACE": {
+      "TITLE": "Marketplace",
+      "BODY": "Under construction — agent catalog coming soon."
+    }
+  },
   "AUDIT_LOGS": {
     "SIDEBAR_TXT": "<p><b>Audit Logs</b> </p><p> Audit Logs are trails for events and actions in an Algorythmo OS account. </p>",
     "LIST": {

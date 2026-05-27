@@ -11,6 +11,15 @@ import campaignsRoutes from './campaigns/campaigns.routes';
 import { routes as captainRoutes } from './captain/captain.routes';
 import algorythmoCrmRoutes from './crm/crm.routes';
 import algorythmoBrainRoutes from './algorythmo/brain.routes';
+// algorythmo: M5 admin OS placeholder routes
+import algorythmoAdminOperacaoRoutes from '../../modules/algorythmo/admin/operacao/routes';
+import algorythmoAdminComprasRoutes from '../../modules/algorythmo/admin/compras/routes';
+import algorythmoAdminAdministracaoRoutes from '../../modules/algorythmo/admin/administracao/routes';
+import algorythmoAdminFinanceiroRoutes from '../../modules/algorythmo/admin/financeiro/routes';
+import algorythmoAdminRhRoutes from '../../modules/algorythmo/admin/rh/routes';
+import algorythmoAdminMarketingRoutes from '../../modules/algorythmo/admin/marketing/routes';
+import algorythmoAdminCLevelsRoutes from '../../modules/algorythmo/admin/c-levels/routes';
+import algorythmoAdminMarketplaceRoutes from '../../modules/algorythmo/admin/marketplace/routes';
 import AppContainer from './Dashboard.vue';
 import Suspended from './suspended/Index.vue';
 import NoAccounts from './noAccounts/Index.vue';
@@ -34,6 +43,15 @@ export default {
         ...campaignsRoutes.routes,
         ...algorythmoCrmRoutes.routes,
         ...algorythmoBrainRoutes.routes,
+        // algorythmo: M5 admin OS placeholder routes
+        ...algorythmoAdminOperacaoRoutes.routes,
+        ...algorythmoAdminComprasRoutes.routes,
+        ...algorythmoAdminAdministracaoRoutes.routes,
+        ...algorythmoAdminFinanceiroRoutes.routes,
+        ...algorythmoAdminRhRoutes.routes,
+        ...algorythmoAdminMarketingRoutes.routes,
+        ...algorythmoAdminCLevelsRoutes.routes,
+        ...algorythmoAdminMarketplaceRoutes.routes,
       ],
     },
     {
