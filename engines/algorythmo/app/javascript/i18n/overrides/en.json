@@ -156,6 +156,10 @@
       "OVERVIEW": "Overview",
       "BODY": "Under construction — marketing dashboards with real metrics coming soon."
     },
+    "COMMERCIAL": {
+      "TITLE": "Commercial Overview",
+      "BODY": "Under construction — commercial KPIs (pipeline, conversion, revenue) arrive in the next milestone."
+    },
     "C_LEVELS": {
       "TITLE": "Executive Board",
       "SIDEBAR_LABEL": "C-Levels",

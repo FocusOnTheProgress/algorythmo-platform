@@ -562,6 +562,18 @@ const menuItems = computed(() => {
       label: t('SIDEBAR.RELATORIOS_COMERCIAIS'),
       icon: 'i-lucide-chart-spline',
       children: [
+        // algorythmo: M6.1-b — "Visão Comercial" first child (D13, plan 0006).
+        // Default ON for admin: flag NOT cut → entry visible → redirect lands here.
+        // Super-admin can cut algorythmo_cut_reports_commercial to restore upstream default.
+        ...(algorythmoCutHidden.value.reports_commercial
+          ? []
+          : [
+              {
+                name: 'Commercial Reports',
+                label: t('SIDEBAR.RELATORIOS_COMERCIAIS_VISAO'),
+                to: accountScopedRoute('commercial_reports'),
+              },
+            ]),
         {
           name: 'Report Overview',
           label: t('SIDEBAR.REPORTS_OVERVIEW'),
