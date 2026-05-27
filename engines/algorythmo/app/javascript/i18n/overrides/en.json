@@ -6,6 +6,10 @@
     "ALGORYTHMO_SECTION_INTELIGENCIA": "Intelligence"
   },
   "ALGORYTHMO_ADMIN": {
+    "READ_ONLY_NOTICE": "You're viewing as an administrator. To message the team, use the internal Inbox.",
+    "CONTACTS": {
+      "IMPORT_CRM_NOTE": "Imported contacts land in the Contacts tab. They don't become CRM leads automatically — they enter the CRM when they start a conversation through a connected channel."
+    },
     "SECTORS": {
       "WATERMARK": "Demonstration data",
       "CHART_ERROR": "Chart unavailable",

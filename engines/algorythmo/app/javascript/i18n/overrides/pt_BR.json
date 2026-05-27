@@ -6,6 +6,10 @@
     "ALGORYTHMO_SECTION_INTELIGENCIA": "Inteligência"
   },
   "ALGORYTHMO_ADMIN": {
+    "READ_ONLY_NOTICE": "Você está visualizando como administrador. Para falar com o time, use a Inbox interna.",
+    "CONTACTS": {
+      "IMPORT_CRM_NOTE": "Contatos importados ficam disponíveis na aba Contatos. Eles não viram leads do CRM automaticamente — entram no CRM quando começam uma conversa por um canal conectado."
+    },
     "SECTORS": {
       "WATERMARK": "Dados de demonstração",
       "CHART_ERROR": "Gráfico indisponível",

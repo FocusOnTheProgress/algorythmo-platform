@@ -134,6 +134,8 @@ export default {
       showArticleSearchPopover: false,
       hasRecordedAudio: false,
       copilotAcceptedMessages: {},
+      // algorythmo: M9 — emergency override for admin read-only mode.
+      adminReplyOverride: false,
     };
   },
   computed: {
@@ -143,7 +145,18 @@ export default {
       currentUser: 'getCurrentUser',
       lastEmail: 'getLastEmailInSelectedChat',
       globalConfig: 'globalConfig/get',
+      // algorythmo: M9 — admin read-only mode (plan 0005 §M9).
+      currentRole: 'getCurrentRole',
     }),
+    // algorythmo: M9 — admins see a quiet notice instead of the reply UI.
+    // Override toggled by Ctrl+Shift+R (mitigation for the rare case an admin
+    // needs to respond directly).
+    isAdmin() {
+      return this.currentRole === 'administrator';
+    },
+    isReplyBoxHidden() {
+      return this.isAdmin && !this.adminReplyOverride;
+    },
     currentContact() {
       const senderId = this.currentChat?.meta?.sender?.id;
       if (!senderId) return {};
@@ -501,6 +514,13 @@ export default {
     // working even if the editor is focussed.
     document.addEventListener('paste', this.onPaste);
     document.addEventListener('keydown', this.handleKeyEvents);
+    // algorythmo: M9 — admin read-only override listener. Attached here (not
+    // via keyboardEventListenerMixins) because the mixin binds via the
+    // replyEditor ref, which is v-if'd out exactly when the override matters.
+    // Plan 0005 §M9 — dev-flag gated.
+    if (import.meta.env.DEV) {
+      document.addEventListener('keydown', this.handleAdminReadOnlyOverride);
+    }
     this.setCCAndToEmailsFromLastChat();
     this.doAutoSaveDraft = debounce(
       () => {
@@ -526,6 +546,9 @@ export default {
   unmounted() {
     document.removeEventListener('paste', this.onPaste);
     document.removeEventListener('keydown', this.handleKeyEvents);
+    if (import.meta.env.DEV) {
+      document.removeEventListener('keydown', this.handleAdminReadOnlyOverride);
+    }
     emitter.off(BUS_EVENTS.TOGGLE_REPLY_TO_MESSAGE, this.onReplyToMessage);
     emitter.off(BUS_EVENTS.INSERT_INTO_NORMAL_EDITOR, this.addIntoEditor);
     emitter.off(
@@ -694,6 +717,18 @@ export default {
           allowOnFocusedInput: true,
         },
       };
+    },
+    // algorythmo: M9 — emergency override for admin read-only mode.
+    // Bound at document level (see mounted) because the mixin's ref-based
+    // binding becomes a no-op when the reply editor is v-if'd out.
+    // Dev-flag gated per plan 0005 §M9.
+    handleAdminReadOnlyOverride(e) {
+      if (!this.isAdmin) return;
+      const isMod = e.ctrlKey || e.metaKey;
+      if (!isMod || !e.shiftKey) return;
+      if (e.code !== 'KeyR' && e.key !== 'R' && e.key !== 'r') return;
+      e.preventDefault();
+      this.adminReplyOverride = !this.adminReplyOverride;
     },
     isAValidEvent(selectedKey) {
       return (
@@ -1232,8 +1267,28 @@ export default {
 </script>
 
 <template>
-  <ReplyBoxBanner :message="message" :is-on-private-note="isOnPrivateNote" />
-  <div ref="replyEditor" class="reply-box" :class="replyBoxClass">
+  <!-- algorythmo: M9 — admins see a quiet 56px read-only notice instead of the
+       reply UI. Ctrl+Shift+R toggles the override for the rare case an admin
+       needs to respond directly. Plan 0005 §M9. -->
+  <div
+    v-if="isReplyBoxHidden"
+    class="alg-admin-readonly"
+    role="status"
+    aria-live="polite"
+  >
+    {{ $t('ALGORYTHMO_ADMIN.READ_ONLY_NOTICE') }}
+  </div>
+  <ReplyBoxBanner
+    v-else
+    :message="message"
+    :is-on-private-note="isOnPrivateNote"
+  />
+  <div
+    v-if="!isReplyBoxHidden"
+    ref="replyEditor"
+    class="reply-box"
+    :class="replyBoxClass"
+  >
     <ReplyTopPanel
       :mode="replyType"
       :conversation-id="conversationId"
@@ -1446,6 +1501,19 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+// algorythmo: M9 — admin read-only notice. Plan 0005 §M9.
+.alg-admin-readonly {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  background: var(--n-slate-2, rgba(15, 23, 42, 0.55));
+  border-top: 1px solid var(--n-slate-4, rgba(148, 163, 184, 0.18));
+  color: var(--n-slate-12, rgba(248, 250, 252, 0.92));
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
 .send-button {
   @apply mb-0;
 }

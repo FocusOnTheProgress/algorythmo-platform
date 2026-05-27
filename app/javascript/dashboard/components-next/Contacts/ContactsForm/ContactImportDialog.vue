@@ -80,6 +80,10 @@ defineExpose({ dialogRef });
           }}
         </a>
       </p>
+      <!-- algorythmo: M9 microcopy — clarify CRM lead boundary -->
+      <p class="mt-2 mb-0 text-xs text-n-slate-10">
+        {{ t('ALGORYTHMO_ADMIN.CONTACTS.IMPORT_CRM_NOTE') }}
+      </p>
     </template>
 
     <div class="flex flex-col gap-2">
