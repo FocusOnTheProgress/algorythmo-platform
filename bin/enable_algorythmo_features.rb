@@ -1,5 +1,4 @@
 account = Account.find(1)
-features = %w[algorythmo_crm algorythmo_brain]
-features.each { |f| account.enable_features(f) }
+account.algorythmo_cut_crm = true
 account.save!
-puts "OK account=#{account.name} features=#{features.select { |f| account.feature_enabled?(f) }.inspect}"
+puts "OK account=#{account.name} crm=#{account.algorythmo_cut_crm?} cut_flags=#{account.all_algorythmo_cut_flags.select { |_, v| v }.keys.inspect}"
