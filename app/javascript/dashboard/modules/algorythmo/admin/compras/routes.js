@@ -1,6 +1,6 @@
-// algorythmo: M5 placeholder route — Compras sector
+// algorythmo: M6.2 Compras — derived sector dashboard route.
 import { frontendURL } from 'dashboard/helper/URLHelper';
-import ComprasPlaceholder from './ComprasPlaceholder.vue';
+import ComprasDashboard from './ComprasDashboard.vue';
 
 export default {
   routes: [
@@ -10,7 +10,7 @@ export default {
       meta: {
         permissions: ['administrator'],
       },
-      component: ComprasPlaceholder,
+      component: ComprasDashboard,
     },
   ],
 };

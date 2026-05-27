@@ -1,6 +1,6 @@
-// algorythmo: M5 placeholder route — Financeiro sector
+// algorythmo: M6.4 Financeiro — derived sector dashboard route.
 import { frontendURL } from 'dashboard/helper/URLHelper';
-import FinanceiroPlaceholder from './FinanceiroPlaceholder.vue';
+import FinanceiroDashboard from './FinanceiroDashboard.vue';
 
 export default {
   routes: [
@@ -10,7 +10,7 @@ export default {
       meta: {
         permissions: ['administrator'],
       },
-      component: FinanceiroPlaceholder,
+      component: FinanceiroDashboard,
     },
   ],
 };

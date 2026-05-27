@@ -1,6 +1,6 @@
-// algorythmo: M5 placeholder route — RH sector
+// algorythmo: M6.5 RH — derived sector dashboard route.
 import { frontendURL } from 'dashboard/helper/URLHelper';
-import RhPlaceholder from './RhPlaceholder.vue';
+import RhDashboard from './RhDashboard.vue';
 
 export default {
   routes: [
@@ -10,7 +10,7 @@ export default {
       meta: {
         permissions: ['administrator'],
       },
-      component: RhPlaceholder,
+      component: RhDashboard,
     },
   ],
 };

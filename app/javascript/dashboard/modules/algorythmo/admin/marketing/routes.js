@@ -1,6 +1,6 @@
-// algorythmo: M5 placeholder route — Marketing sector
+// algorythmo: M6.6 Marketing — derived sector dashboard route.
 import { frontendURL } from 'dashboard/helper/URLHelper';
-import MarketingPlaceholder from './MarketingPlaceholder.vue';
+import MarketingDashboard from './MarketingDashboard.vue';
 
 export default {
   routes: [
@@ -10,7 +10,7 @@ export default {
       meta: {
         permissions: ['administrator'],
       },
-      component: MarketingPlaceholder,
+      component: MarketingDashboard,
     },
   ],
 };
