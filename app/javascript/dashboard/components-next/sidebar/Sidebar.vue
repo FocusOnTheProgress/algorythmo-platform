@@ -2,6 +2,7 @@
 import { h, ref, computed, onMounted, watch } from 'vue';
 import { provideSidebarContext, useSidebarResize } from './provider';
 import { useAccount } from 'dashboard/composables/useAccount';
+import { useAdmin } from 'dashboard/composables/useAdmin';
 import { useKbd } from 'dashboard/composables/utils/useKbd';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useStore } from 'vuex';
@@ -40,6 +41,8 @@ const emit = defineEmits([
 ]);
 
 const { accountScopedRoute, isOnChatwootCloud } = useAccount();
+// algorythmo: M5 — gate Admin OS section headers so agents don't see orphans
+const { isAdmin } = useAdmin();
 const store = useStore();
 const searchShortcut = useKbd([`$mod`, 'k']);
 const { t } = useI18n();
@@ -542,13 +545,17 @@ const menuItems = computed(() => {
     },
 
     // ── GESTÃO block ──────────────────────────────────────────────────────────
-    // algorythmo: M5 sidebar restructure — GESTÃO header
-    {
-      type: 'section',
-      name: 'section-gestao',
-      label: t('SIDEBAR.ALGORYTHMO_SECTION_GESTAO'),
-      isFirst: true,
-    },
+    // algorythmo: M5 sidebar restructure — GESTÃO header (admin-only to avoid orphan for agents)
+    ...(isAdmin.value
+      ? [
+          {
+            type: 'section',
+            name: 'section-gestao',
+            label: t('SIDEBAR.ALGORYTHMO_SECTION_GESTAO'),
+            isFirst: true,
+          },
+        ]
+      : []),
     // algorythmo: M5 sidebar restructure — Relatórios Comerciais (renamed from Reports)
     {
       name: 'Reports',
@@ -673,13 +680,17 @@ const menuItems = computed(() => {
     },
 
     // ── ESTRATÉGIA block ──────────────────────────────────────────────────────
-    // algorythmo: M5 sidebar restructure — ESTRATÉGIA header
-    {
-      type: 'section',
-      name: 'section-estrategia',
-      label: t('SIDEBAR.ALGORYTHMO_SECTION_ESTRATEGIA'),
-      isFirst: false,
-    },
+    // algorythmo: M5 sidebar restructure — ESTRATÉGIA header (admin-only)
+    ...(isAdmin.value
+      ? [
+          {
+            type: 'section',
+            name: 'section-estrategia',
+            label: t('SIDEBAR.ALGORYTHMO_SECTION_ESTRATEGIA'),
+            isFirst: false,
+          },
+        ]
+      : []),
     // algorythmo: M5 sidebar restructure — C-Levels placeholder (M7 ships atmospheric UI)
     {
       name: 'AdminCLevels',
@@ -690,13 +701,17 @@ const menuItems = computed(() => {
     },
 
     // ── INTELIGÊNCIA block ────────────────────────────────────────────────────
-    // algorythmo: M5 sidebar restructure — INTELIGÊNCIA header
-    {
-      type: 'section',
-      name: 'section-inteligencia',
-      label: t('SIDEBAR.ALGORYTHMO_SECTION_INTELIGENCIA'),
-      isFirst: false,
-    },
+    // algorythmo: M5 sidebar restructure — INTELIGÊNCIA header (admin-only)
+    ...(isAdmin.value
+      ? [
+          {
+            type: 'section',
+            name: 'section-inteligencia',
+            label: t('SIDEBAR.ALGORYTHMO_SECTION_INTELIGENCIA'),
+            isFirst: false,
+          },
+        ]
+      : []),
     // algorythmo: M5 sidebar restructure — Brain MOVED from original position (D1: one entry point)
     // algorythmo: feature-gate algorythmo_brain
     // "Brain" is the product name (Algorythmo Brain) — intentionally untranslated.
