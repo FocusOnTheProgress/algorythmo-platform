@@ -1,7 +1,7 @@
 // algorythmo: feature-gate algorythmo_cut_*
 // Authoritative list of cut flag NAMES (without the `algorythmo_cut_` prefix)
 // recognised by the dashboard. Must stay aligned with the Ruby source of truth
-// at `engines/algorythmo/lib/algorythmo/feature_flag_bits.rb::CUT_FLAG_NAMES`.
+// at `app/models/concerns/algorythmo/feature_flag_bits.rb::CUT_FLAG_NAMES`.
 //
 // Adding a flag here without adding it to the Ruby bit-map (or vice versa)
 // would cause silent UX drift, so the route-tree validation spec in

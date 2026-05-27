@@ -9,13 +9,13 @@
 
 <div class="main-content__body">
   <p class="u-margin-bottom-16">
-    Flags stored in <code>accounts.algorythmo_feature_flags</code> (dedicated bigint, positions 1–15).
+    Flags stored in <code>accounts.algorythmo_feature_flags</code> (dedicated bigint, positions 1–16).
     Isolated from Chatwoot&rsquo;s <code>feature_flags</code> column — no bit conflicts.
   </p>
 
   <%= form_with url: super_admin_account_algorythmo_flags_path(@account), method: :patch, local: true do %>
 
-    <h3 class="u-margin-bottom-8">Cut flags (positions 1–13) — <strong>marcar = esconder</strong> a superfície</h3>
+    <h3 class="u-margin-bottom-8">Cut flags (positions 1–13, 16) — <strong>marcar = esconder</strong> a superfície</h3>
     <table class="resource-table u-margin-bottom-24">
       <thead>
         <tr>
