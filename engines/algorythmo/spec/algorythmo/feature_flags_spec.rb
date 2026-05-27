@@ -47,6 +47,26 @@ RSpec.describe 'Algorythmo feature flags', type: :model do
     end
   end
 
+  describe 'brain (M3 Brain MVP enable flag)' do
+    it 'is in CUT_FLAG_NAMES at position 16' do
+      expect(Algorythmo::FeatureFlagBits::CUT_FLAG_NAMES.index('brain') + 1).to eq(16)
+    end
+
+    it 'is listed in ENABLE_FLAG_NAMES (opt-in semantic)' do
+      expect(Algorythmo::FeatureFlagBits::ENABLE_FLAG_NAMES).to include('brain')
+    end
+
+    it 'defaults to false on a new account (fail-closed)' do
+      expect(account.algorythmo_cut_enabled?('brain')).to be false
+    end
+
+    it 'can be enabled via algorythmo_feature_flags column' do
+      account.algorythmo_cut_brain = true
+      account.save!
+      expect(account.reload.algorythmo_cut_enabled?('brain')).to be true
+    end
+  end
+
   describe 'no Algorythmo flags remain in config/features.yml' do
     let(:features) { YAML.load_file(Rails.root.join('config/features.yml')) }
 

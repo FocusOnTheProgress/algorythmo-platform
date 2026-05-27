@@ -6,8 +6,8 @@ RSpec.describe Algorythmo::FeatureFlagBits do
   let(:account) { create(:account) }
 
   describe 'CUT_FLAG_NAMES' do
-    it 'contains exactly 15 flags' do
-      expect(described_class::CUT_FLAG_NAMES.size).to eq(15)
+    it 'contains exactly 16 flags' do
+      expect(described_class::CUT_FLAG_NAMES.size).to eq(16)
     end
 
     it 'is frozen' do
@@ -16,7 +16,7 @@ RSpec.describe Algorythmo::FeatureFlagBits do
   end
 
   describe '#algorythmo_cut_enabled?' do
-    it 'returns false for all 15 flags on a fresh account' do
+    it 'returns false for all 16 flags on a fresh account' do
       described_class::CUT_FLAG_NAMES.each do |flag|
         expect(account.algorythmo_cut_enabled?(flag)).to(
           be(false),
@@ -70,7 +70,7 @@ RSpec.describe Algorythmo::FeatureFlagBits do
   end
 
   describe '#all_algorythmo_cut_flags' do
-    it 'returns a hash with all 15 flags' do
+    it 'returns a hash with all 16 flags' do
       result = account.all_algorythmo_cut_flags
       expect(result.keys).to match_array(described_class::CUT_FLAG_NAMES)
     end
