@@ -6,6 +6,7 @@
     "ALGORYTHMO_SECTION_INTELIGENCIA": "Inteligência"
   },
   "ALGORYTHMO_ADMIN": {
+    "READ_ONLY_NOTICE": "Você está visualizando como administrador. Para falar com o time, use a Inbox interna.",
     "SECTORS": {
       "WATERMARK": "Dados de demonstração",
       "CHART_ERROR": "Gráfico indisponível",

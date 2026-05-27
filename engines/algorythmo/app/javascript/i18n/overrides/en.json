@@ -6,6 +6,7 @@
     "ALGORYTHMO_SECTION_INTELIGENCIA": "Intelligence"
   },
   "ALGORYTHMO_ADMIN": {
+    "READ_ONLY_NOTICE": "You're viewing as an administrator. To message the team, use the internal Inbox.",
     "SECTORS": {
       "WATERMARK": "Demonstration data",
       "CHART_ERROR": "Chart unavailable",

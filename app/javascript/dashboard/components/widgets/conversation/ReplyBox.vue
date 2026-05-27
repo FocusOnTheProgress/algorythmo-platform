@@ -134,6 +134,8 @@ export default {
       showArticleSearchPopover: false,
       hasRecordedAudio: false,
       copilotAcceptedMessages: {},
+      // algorythmo: M9 — emergency override for admin read-only mode.
+      adminReplyOverride: false,
     };
   },
   computed: {
@@ -143,7 +145,18 @@ export default {
       currentUser: 'getCurrentUser',
       lastEmail: 'getLastEmailInSelectedChat',
       globalConfig: 'globalConfig/get',
+      // algorythmo: M9 — admin read-only mode (plan 0005 §M9).
+      currentRole: 'getCurrentRole',
     }),
+    // algorythmo: M9 — admins see a quiet notice instead of the reply UI.
+    // Override toggled by Ctrl+Shift+R (mitigation for the rare case an admin
+    // needs to respond directly).
+    isAdmin() {
+      return this.currentRole === 'administrator';
+    },
+    isReplyBoxHidden() {
+      return this.isAdmin && !this.adminReplyOverride;
+    },
     currentContact() {
       const senderId = this.currentChat?.meta?.sender?.id;
       if (!senderId) return {};
@@ -693,6 +706,15 @@ export default {
           },
           allowOnFocusedInput: true,
         },
+        // algorythmo: M9 — emergency override for admin read-only mode.
+        '$mod+Shift+KeyR': {
+          action: e => {
+            if (!this.isAdmin) return;
+            e.preventDefault();
+            this.adminReplyOverride = !this.adminReplyOverride;
+          },
+          allowOnFocusedInput: true,
+        },
       };
     },
     isAValidEvent(selectedKey) {
@@ -1232,8 +1254,23 @@ export default {
 </script>
 
 <template>
-  <ReplyBoxBanner :message="message" :is-on-private-note="isOnPrivateNote" />
-  <div ref="replyEditor" class="reply-box" :class="replyBoxClass">
+  <!-- algorythmo: M9 — admins see a quiet 56px read-only notice instead of the
+       reply UI. Ctrl+Shift+R toggles the override for the rare case an admin
+       needs to respond directly. Plan 0005 §M9. -->
+  <div v-if="isReplyBoxHidden" class="alg-admin-readonly" role="note">
+    {{ $t('ALGORYTHMO_ADMIN.READ_ONLY_NOTICE') }}
+  </div>
+  <ReplyBoxBanner
+    v-else
+    :message="message"
+    :is-on-private-note="isOnPrivateNote"
+  />
+  <div
+    v-if="!isReplyBoxHidden"
+    ref="replyEditor"
+    class="reply-box"
+    :class="replyBoxClass"
+  >
     <ReplyTopPanel
       :mode="replyType"
       :conversation-id="conversationId"
@@ -1446,6 +1483,19 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+// algorythmo: M9 — admin read-only notice. Plan 0005 §M9.
+.alg-admin-readonly {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  background: var(--n-slate-2, rgba(15, 23, 42, 0.55));
+  border-top: 1px solid var(--n-slate-4, rgba(148, 163, 184, 0.18));
+  color: var(--n-slate-11, rgba(226, 232, 240, 0.7));
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
 .send-button {
   @apply mb-0;
 }
