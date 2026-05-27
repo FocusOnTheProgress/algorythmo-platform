@@ -1,6 +1,6 @@
-// algorythmo: M5 placeholder route — Administração sector
+// algorythmo: M6.3 Administração — derived sector dashboard route.
 import { frontendURL } from 'dashboard/helper/URLHelper';
-import AdministracaoPlaceholder from './AdministracaoPlaceholder.vue';
+import AdministracaoDashboard from './AdministracaoDashboard.vue';
 
 export default {
   routes: [
@@ -10,7 +10,7 @@ export default {
       meta: {
         permissions: ['administrator'],
       },
-      component: AdministracaoPlaceholder,
+      component: AdministracaoDashboard,
     },
   ],
 };
