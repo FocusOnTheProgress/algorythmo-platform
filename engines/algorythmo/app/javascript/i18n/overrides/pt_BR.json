@@ -1,4 +1,41 @@
 {
+  "SIDEBAR": {
+    "RELATORIOS_COMERCIAIS": "Relatórios Comerciais"
+  },
+  "ALGORYTHMO_ADMIN": {
+    "OPERACAO": {
+      "TITLE": "Operação",
+      "BODY": "Em construção — os dashboards de operação com métricas reais chegam em breve."
+    },
+    "COMPRAS": {
+      "TITLE": "Compras",
+      "BODY": "Em construção — os dashboards de compras com métricas reais chegam em breve."
+    },
+    "ADMINISTRACAO": {
+      "TITLE": "Administração",
+      "BODY": "Em construção — os dashboards de administração com métricas reais chegam em breve."
+    },
+    "FINANCEIRO": {
+      "TITLE": "Financeiro",
+      "BODY": "Em construção — os dashboards financeiros com métricas reais chegam em breve."
+    },
+    "RH": {
+      "TITLE": "RH",
+      "BODY": "Em construção — os dashboards de recursos humanos com métricas reais chegam em breve."
+    },
+    "MARKETING": {
+      "TITLE": "Marketing",
+      "BODY": "Em construção — os dashboards de marketing com métricas reais chegam em breve."
+    },
+    "C_LEVELS": {
+      "TITLE": "Mesa Executiva",
+      "BODY": "Em construção — sessão de design dedicada virá em breve."
+    },
+    "MARKETPLACE": {
+      "TITLE": "Marketplace",
+      "BODY": "Em construção — catálogo de agentes disponíveis em breve."
+    }
+  },
   "AUDIT_LOGS": {
     "SIDEBAR_TXT": "<p><b>Registros de Auditoria</b> </p><p> Registros de Auditoria são rastros de eventos e ações em uma conta do Algorythmo OS. </p>",
     "LIST": {

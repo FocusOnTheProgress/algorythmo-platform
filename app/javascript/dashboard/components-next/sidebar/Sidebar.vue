@@ -14,6 +14,8 @@ import { useWindowSize, useEventListener } from '@vueuse/core';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import SidebarGroup from './SidebarGroup.vue';
+// algorythmo: M5 sidebar restructure — section header component
+import SidebarSectionHeader from './SidebarSectionHeader.vue';
 import SidebarProfileMenu from './SidebarProfileMenu.vue';
 import SidebarChangelogCard from './SidebarChangelogCard.vue';
 import SidebarChangelogButton from './SidebarChangelogButton.vue';
@@ -335,8 +337,107 @@ const newReportRoutes = () => [
 
 const reportRoutes = computed(() => newReportRoutes());
 
+// algorythmo: M5 sidebar restructure
+// menuItems arranged into 4 blocks: Operacional (no header) / GESTÃO / ESTRATÉGIA / INTELIGÊNCIA.
+// Brain entry MOVED from its original position into INTELIGÊNCIA (D1: one entry point only).
+// Section headers use type:'section' discriminator — rendered as SidebarSectionHeader,
+// skipped by SidebarGroup. All edits in this computed are marked algorythmo: M5.
 const menuItems = computed(() => {
   return [
+    // ── OPERACIONAL block (no section header) ────────────────────────────────
+    // algorythmo: M5 sidebar restructure — Operacional block: CRM, Contacts, Companies, Conversations
+    // algorythmo: feature-gate algorythmo_crm
+    ...(hasAlgorythmoCrm.value
+      ? [
+          {
+            name: 'AlgorythmoCrm',
+            icon: 'i-lucide-kanban',
+            label: t('ALGORYTHMO_CRM.SIDEBAR.CRM'),
+            activeOn: ['algorythmo_crm_kanban'],
+            to: accountScopedRoute('algorythmo_crm_kanban'),
+          },
+        ]
+      : []),
+    {
+      name: 'Contacts',
+      label: t('SIDEBAR.CONTACTS'),
+      icon: 'i-lucide-contact',
+      children: [
+        {
+          name: 'All Contacts',
+          label: t('SIDEBAR.ALL_CONTACTS'),
+          to: accountScopedRoute(
+            'contacts_dashboard_index',
+            {},
+            { page: 1, search: undefined }
+          ),
+          activeOn: ['contacts_dashboard_index', 'contacts_edit'],
+        },
+        {
+          name: 'Active',
+          label: t('SIDEBAR.ACTIVE'),
+          to: accountScopedRoute('contacts_dashboard_active'),
+          activeOn: ['contacts_dashboard_active'],
+        },
+        {
+          name: 'Segments',
+          icon: 'i-lucide-group',
+          label: t('SIDEBAR.CUSTOM_VIEWS_SEGMENTS'),
+          children: contactCustomViews.value.map(view => ({
+            name: `${view.name}-${view.id}`,
+            label: view.name,
+            to: accountScopedRoute(
+              'contacts_dashboard_segments_index',
+              { segmentId: view.id },
+              { page: 1 }
+            ),
+            activeOn: [
+              'contacts_dashboard_segments_index',
+              'contacts_edit_segment',
+            ],
+          })),
+        },
+        {
+          name: 'Tagged With',
+          icon: 'i-lucide-tag',
+          label: t('SIDEBAR.TAGGED_WITH'),
+          children: labels.value.map(label => ({
+            name: `${label.title}-${label.id}`,
+            label: label.title,
+            icon: h('span', {
+              class: `size-[8px] rounded-sm`,
+              style: { backgroundColor: label.color },
+            }),
+            to: accountScopedRoute(
+              'contacts_dashboard_labels_index',
+              { label: label.title },
+              { page: 1, search: undefined }
+            ),
+            activeOn: [
+              'contacts_dashboard_labels_index',
+              'contacts_edit_label',
+            ],
+          })),
+        },
+      ],
+    },
+    {
+      name: 'Companies',
+      label: t('SIDEBAR.COMPANIES'),
+      icon: 'i-lucide-building-2',
+      children: [
+        {
+          name: 'All Companies',
+          label: t('SIDEBAR.ALL_COMPANIES'),
+          to: accountScopedRoute(
+            'companies_dashboard_index',
+            {},
+            { page: 1, search: undefined }
+          ),
+          activeOn: ['companies_dashboard_index', 'companies_dashboard_show'],
+        },
+      ],
+    },
     {
       name: 'Inbox',
       label: t('SIDEBAR.INBOX'),
@@ -439,26 +540,166 @@ const menuItems = computed(() => {
         },
       ],
     },
-    // algorythmo: feature-gate algorythmo_crm
-    // CRM kanban entry only rendered when algorythmo_crm flag is true.
-    // Placed right after Conversations so PME tenants see their pipeline
-    // adjacent to the inbox flow that feeds it.
-    ...(hasAlgorythmoCrm.value
-      ? [
-          {
-            name: 'AlgorythmoCrm',
-            icon: 'i-lucide-kanban',
-            label: t('ALGORYTHMO_CRM.SIDEBAR.CRM'),
-            activeOn: ['algorythmo_crm_kanban'],
-            to: accountScopedRoute('algorythmo_crm_kanban'),
-          },
-        ]
-      : []),
+
+    // ── GESTÃO block ──────────────────────────────────────────────────────────
+    // algorythmo: M5 sidebar restructure — GESTÃO header
+    {
+      type: 'section',
+      name: 'section-gestao',
+      label: 'Gestão',
+      isFirst: false,
+    },
+    // algorythmo: M5 sidebar restructure — Relatórios Comerciais (renamed from Reports)
+    {
+      name: 'Reports',
+      label: t('SIDEBAR.RELATORIOS_COMERCIAIS'),
+      icon: 'i-lucide-chart-spline',
+      children: [
+        {
+          name: 'Report Overview',
+          label: t('SIDEBAR.REPORTS_OVERVIEW'),
+          to: accountScopedRoute('account_overview_reports'),
+        },
+        {
+          name: 'Report Conversation',
+          label: t('SIDEBAR.REPORTS_CONVERSATION'),
+          to: accountScopedRoute('conversation_reports'),
+        },
+        ...reportRoutes.value,
+        {
+          name: 'Reports CSAT',
+          label: t('SIDEBAR.CSAT'),
+          to: accountScopedRoute('csat_reports'),
+        },
+        {
+          name: 'Reports SLA',
+          label: t('SIDEBAR.REPORTS_SLA'),
+          to: accountScopedRoute('sla_reports'),
+        },
+        // algorythmo: feature-gate algorythmo_cut_reports_bot
+        ...(algorythmoCutHidden.value.reports_bot
+          ? []
+          : [
+              {
+                name: 'Reports Bot',
+                label: t('SIDEBAR.REPORTS_BOT'),
+                to: accountScopedRoute('bot_reports'),
+              },
+            ]),
+      ],
+    },
+    // algorythmo: M5 sidebar restructure — Operação placeholder (M6.0 ships content)
+    {
+      name: 'AdminOperacao',
+      icon: 'i-lucide-factory',
+      label: 'Operação',
+      activeOn: ['algorythmo_admin_operacao'],
+      to: accountScopedRoute('algorythmo_admin_operacao'),
+    },
+    // algorythmo: M5 sidebar restructure — Compras placeholder
+    {
+      name: 'AdminCompras',
+      icon: 'i-lucide-shopping-cart',
+      label: 'Compras',
+      activeOn: ['algorythmo_admin_compras'],
+      to: accountScopedRoute('algorythmo_admin_compras'),
+    },
+    // algorythmo: M5 sidebar restructure — Administração placeholder
+    {
+      name: 'AdminAdministracao',
+      icon: 'i-lucide-briefcase',
+      label: 'Administração',
+      activeOn: ['algorythmo_admin_administracao'],
+      to: accountScopedRoute('algorythmo_admin_administracao'),
+    },
+    // algorythmo: M5 sidebar restructure — Financeiro placeholder
+    {
+      name: 'AdminFinanceiro',
+      icon: 'i-lucide-landmark',
+      label: 'Financeiro',
+      activeOn: ['algorythmo_admin_financeiro'],
+      to: accountScopedRoute('algorythmo_admin_financeiro'),
+    },
+    // algorythmo: M5 sidebar restructure — RH placeholder
+    {
+      name: 'AdminRh',
+      icon: 'i-lucide-users-round',
+      label: 'RH',
+      activeOn: ['algorythmo_admin_rh'],
+      to: accountScopedRoute('algorythmo_admin_rh'),
+    },
+    // algorythmo: M5 sidebar restructure — Marketing placeholder (Campaigns lives as child)
+    {
+      name: 'AdminMarketing',
+      icon: 'i-lucide-megaphone',
+      label: 'Marketing',
+      activeOn: ['algorythmo_admin_marketing'],
+      children: [
+        {
+          name: 'Marketing Overview',
+          label: 'Visão Geral',
+          to: accountScopedRoute('algorythmo_admin_marketing'),
+          activeOn: ['algorythmo_admin_marketing'],
+        },
+        // algorythmo: M5 sidebar restructure — Campaigns moved under Marketing
+        // algorythmo: feature-gate algorythmo_cut_campaigns
+        ...(algorythmoCutHidden.value.campaigns
+          ? []
+          : [
+              {
+                name: 'Marketing Campaigns',
+                label: t('SIDEBAR.CAMPAIGNS'),
+                icon: 'i-lucide-send',
+                children: [
+                  {
+                    name: 'Live chat',
+                    label: t('SIDEBAR.LIVE_CHAT'),
+                    to: accountScopedRoute('campaigns_livechat_index'),
+                  },
+                  {
+                    name: 'SMS',
+                    label: t('SIDEBAR.SMS'),
+                    to: accountScopedRoute('campaigns_sms_index'),
+                  },
+                  {
+                    name: 'WhatsApp',
+                    label: t('SIDEBAR.WHATSAPP'),
+                    to: accountScopedRoute('campaigns_whatsapp_index'),
+                  },
+                ],
+              },
+            ]),
+      ],
+    },
+
+    // ── ESTRATÉGIA block ──────────────────────────────────────────────────────
+    // algorythmo: M5 sidebar restructure — ESTRATÉGIA header
+    {
+      type: 'section',
+      name: 'section-estrategia',
+      label: 'Estratégia',
+      isFirst: false,
+    },
+    // algorythmo: M5 sidebar restructure — C-Levels placeholder (M7 ships atmospheric UI)
+    {
+      name: 'AdminCLevels',
+      icon: 'i-lucide-crown',
+      label: 'C-Levels',
+      activeOn: ['algorythmo_admin_c_levels'],
+      to: accountScopedRoute('algorythmo_admin_c_levels'),
+    },
+
+    // ── INTELIGÊNCIA block ────────────────────────────────────────────────────
+    // algorythmo: M5 sidebar restructure — INTELIGÊNCIA header
+    {
+      type: 'section',
+      name: 'section-inteligencia',
+      label: 'Inteligência',
+      isFirst: false,
+    },
+    // algorythmo: M5 sidebar restructure — Brain MOVED from original position (D1: one entry point)
     // algorythmo: feature-gate algorythmo_brain
-    // Brain entry sits right after CRM — cross-cutting, not a CRM sub-section.
-    // D-D1: Brain is a root-level nav item between CRM and the upstream surfaces.
-    // "Brain" is the product name (Algorythmo Brain) — intentionally untranslated
-    // across locales, same convention as "Linear", "Captain", "Stripe".
+    // "Brain" is the product name (Algorythmo Brain) — intentionally untranslated.
     ...(hasAlgorythmoBrain.value
       ? [
           {
@@ -470,6 +711,68 @@ const menuItems = computed(() => {
           },
         ]
       : []),
+    // algorythmo: M5 sidebar restructure — Marketplace placeholder (M8c ships catalog UI)
+    {
+      name: 'AdminMarketplace',
+      icon: 'i-lucide-store',
+      label: 'Marketplace',
+      activeOn: ['algorythmo_admin_marketplace'],
+      to: accountScopedRoute('algorythmo_admin_marketplace'),
+    },
+
+    // ── Remaining upstream surfaces ───────────────────────────────────────────
+    // algorythmo: feature-gate algorythmo_cut_help_center
+    ...(algorythmoCutHidden.value.help_center
+      ? []
+      : [
+          {
+            name: 'Portals',
+            label: t('SIDEBAR.HELP_CENTER.TITLE'),
+            icon: 'i-lucide-library-big',
+            children: [
+              {
+                name: 'Articles',
+                label: t('SIDEBAR.HELP_CENTER.ARTICLES'),
+                activeOn: [
+                  'portals_articles_index',
+                  'portals_articles_new',
+                  'portals_articles_edit',
+                ],
+                to: accountScopedRoute('portals_index', {
+                  navigationPath: 'portals_articles_index',
+                }),
+              },
+              {
+                name: 'Categories',
+                label: t('SIDEBAR.HELP_CENTER.CATEGORIES'),
+                activeOn: [
+                  'portals_categories_index',
+                  'portals_categories_articles_index',
+                  'portals_categories_articles_edit',
+                ],
+                to: accountScopedRoute('portals_index', {
+                  navigationPath: 'portals_categories_index',
+                }),
+              },
+              {
+                name: 'Locales',
+                label: t('SIDEBAR.HELP_CENTER.LOCALES'),
+                activeOn: ['portals_locales_index'],
+                to: accountScopedRoute('portals_index', {
+                  navigationPath: 'portals_locales_index',
+                }),
+              },
+              {
+                name: 'Settings',
+                label: t('SIDEBAR.HELP_CENTER.SETTINGS'),
+                activeOn: ['portals_settings_index'],
+                to: accountScopedRoute('portals_index', {
+                  navigationPath: 'portals_settings_index',
+                }),
+              },
+            ],
+          },
+        ]),
     // algorythmo: feature-gate algorythmo_show_captain
     // Captain section only rendered when algorythmo_show_captain flag is true.
     // Default: false — PME clients never see Captain UI.
@@ -548,203 +851,6 @@ const menuItems = computed(() => {
           },
         ]
       : []),
-    {
-      name: 'Contacts',
-      label: t('SIDEBAR.CONTACTS'),
-      icon: 'i-lucide-contact',
-      children: [
-        {
-          name: 'All Contacts',
-          label: t('SIDEBAR.ALL_CONTACTS'),
-          to: accountScopedRoute(
-            'contacts_dashboard_index',
-            {},
-            { page: 1, search: undefined }
-          ),
-          activeOn: ['contacts_dashboard_index', 'contacts_edit'],
-        },
-        {
-          name: 'Active',
-          label: t('SIDEBAR.ACTIVE'),
-          to: accountScopedRoute('contacts_dashboard_active'),
-          activeOn: ['contacts_dashboard_active'],
-        },
-        {
-          name: 'Segments',
-          icon: 'i-lucide-group',
-          label: t('SIDEBAR.CUSTOM_VIEWS_SEGMENTS'),
-          children: contactCustomViews.value.map(view => ({
-            name: `${view.name}-${view.id}`,
-            label: view.name,
-            to: accountScopedRoute(
-              'contacts_dashboard_segments_index',
-              { segmentId: view.id },
-              { page: 1 }
-            ),
-            activeOn: [
-              'contacts_dashboard_segments_index',
-              'contacts_edit_segment',
-            ],
-          })),
-        },
-        {
-          name: 'Tagged With',
-          icon: 'i-lucide-tag',
-          label: t('SIDEBAR.TAGGED_WITH'),
-          children: labels.value.map(label => ({
-            name: `${label.title}-${label.id}`,
-            label: label.title,
-            icon: h('span', {
-              class: `size-[8px] rounded-sm`,
-              style: { backgroundColor: label.color },
-            }),
-            to: accountScopedRoute(
-              'contacts_dashboard_labels_index',
-              { label: label.title },
-              { page: 1, search: undefined }
-            ),
-            activeOn: [
-              'contacts_dashboard_labels_index',
-              'contacts_edit_label',
-            ],
-          })),
-        },
-      ],
-    },
-    {
-      name: 'Companies',
-      label: t('SIDEBAR.COMPANIES'),
-      icon: 'i-lucide-building-2',
-      children: [
-        {
-          name: 'All Companies',
-          label: t('SIDEBAR.ALL_COMPANIES'),
-          to: accountScopedRoute(
-            'companies_dashboard_index',
-            {},
-            { page: 1, search: undefined }
-          ),
-          activeOn: ['companies_dashboard_index', 'companies_dashboard_show'],
-        },
-      ],
-    },
-    {
-      name: 'Reports',
-      label: t('SIDEBAR.REPORTS'),
-      icon: 'i-lucide-chart-spline',
-      children: [
-        {
-          name: 'Report Overview',
-          label: t('SIDEBAR.REPORTS_OVERVIEW'),
-          to: accountScopedRoute('account_overview_reports'),
-        },
-        {
-          name: 'Report Conversation',
-          label: t('SIDEBAR.REPORTS_CONVERSATION'),
-          to: accountScopedRoute('conversation_reports'),
-        },
-        ...reportRoutes.value,
-        {
-          name: 'Reports CSAT',
-          label: t('SIDEBAR.CSAT'),
-          to: accountScopedRoute('csat_reports'),
-        },
-        {
-          name: 'Reports SLA',
-          label: t('SIDEBAR.REPORTS_SLA'),
-          to: accountScopedRoute('sla_reports'),
-        },
-        // algorythmo: feature-gate algorythmo_cut_reports_bot
-        ...(algorythmoCutHidden.value.reports_bot
-          ? []
-          : [
-              {
-                name: 'Reports Bot',
-                label: t('SIDEBAR.REPORTS_BOT'),
-                to: accountScopedRoute('bot_reports'),
-              },
-            ]),
-      ],
-    },
-    // algorythmo: feature-gate algorythmo_cut_campaigns
-    ...(algorythmoCutHidden.value.campaigns
-      ? []
-      : [
-          {
-            name: 'Campaigns',
-            label: t('SIDEBAR.CAMPAIGNS'),
-            icon: 'i-lucide-megaphone',
-            children: [
-              {
-                name: 'Live chat',
-                label: t('SIDEBAR.LIVE_CHAT'),
-                to: accountScopedRoute('campaigns_livechat_index'),
-              },
-              {
-                name: 'SMS',
-                label: t('SIDEBAR.SMS'),
-                to: accountScopedRoute('campaigns_sms_index'),
-              },
-              {
-                name: 'WhatsApp',
-                label: t('SIDEBAR.WHATSAPP'),
-                to: accountScopedRoute('campaigns_whatsapp_index'),
-              },
-            ],
-          },
-        ]),
-    // algorythmo: feature-gate algorythmo_cut_help_center
-    ...(algorythmoCutHidden.value.help_center
-      ? []
-      : [
-          {
-            name: 'Portals',
-            label: t('SIDEBAR.HELP_CENTER.TITLE'),
-            icon: 'i-lucide-library-big',
-            children: [
-              {
-                name: 'Articles',
-                label: t('SIDEBAR.HELP_CENTER.ARTICLES'),
-                activeOn: [
-                  'portals_articles_index',
-                  'portals_articles_new',
-                  'portals_articles_edit',
-                ],
-                to: accountScopedRoute('portals_index', {
-                  navigationPath: 'portals_articles_index',
-                }),
-              },
-              {
-                name: 'Categories',
-                label: t('SIDEBAR.HELP_CENTER.CATEGORIES'),
-                activeOn: [
-                  'portals_categories_index',
-                  'portals_categories_articles_index',
-                  'portals_categories_articles_edit',
-                ],
-                to: accountScopedRoute('portals_index', {
-                  navigationPath: 'portals_categories_index',
-                }),
-              },
-              {
-                name: 'Locales',
-                label: t('SIDEBAR.HELP_CENTER.LOCALES'),
-                activeOn: ['portals_locales_index'],
-                to: accountScopedRoute('portals_index', {
-                  navigationPath: 'portals_locales_index',
-                }),
-              },
-              {
-                name: 'Settings',
-                label: t('SIDEBAR.HELP_CENTER.SETTINGS'),
-                activeOn: ['portals_settings_index'],
-                to: accountScopedRoute('portals_index', {
-                  navigationPath: 'portals_settings_index',
-                }),
-              },
-            ],
-          },
-        ]),
     {
       name: 'Settings',
       label: t('SIDEBAR.SETTINGS'),
@@ -1047,11 +1153,15 @@ const menuItems = computed(() => {
         class="flex flex-col gap-1 m-0 list-none min-w-0"
         :class="{ 'items-center': isEffectivelyCollapsed }"
       >
-        <SidebarGroup
-          v-for="item in menuItems"
-          :key="item.name"
-          v-bind="item"
-        />
+        <!-- algorythmo: M5 sidebar restructure — type discriminator for section headers -->
+        <template v-for="item in menuItems" :key="item.name">
+          <SidebarSectionHeader
+            v-if="item.type === 'section'"
+            :label="item.label"
+            :is-first="item.isFirst"
+          />
+          <SidebarGroup v-else v-bind="item" />
+        </template>
       </ul>
     </nav>
     <section

@@ -81,8 +81,12 @@ export default {
     this.initializeColorTheme();
     this.listenToThemeChanges();
     // If user locale is set, use it; otherwise use account locale
+    // algorythmo: M5 default locale pt_BR (BACKEND_DEPS: canonical change in Ruby selectedLocale)
+    // Fallback to pt_BR when server does not inject selectedLocale (e.g. local dev
+    // without the Ruby config patch). The canonical fix lives in Ruby's
+    // chatwootConfig.selectedLocale — tracked as BACKEND_DEPS.
     this.setLocale(
-      this.uiSettings?.locale || window.chatwootConfig.selectedLocale
+      this.uiSettings?.locale || window.chatwootConfig.selectedLocale || 'pt_BR'
     );
   },
   unmounted() {

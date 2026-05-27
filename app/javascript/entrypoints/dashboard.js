@@ -35,7 +35,11 @@ import 'floating-vue/dist/style.css';
 
 const i18n = createI18n({
   legacy: false, // https://github.com/intlify/vue-i18n/issues/1902
-  locale: 'en',
+  // algorythmo: M5 default locale pt_BR (BACKEND_DEPS: canonical change in Ruby selectedLocale)
+  // JS-side bootstrap fallback — overridden at mount time by App.vue once the
+  // account payload arrives. Ruby's chatwootConfig.selectedLocale is the real
+  // canonical source; that change is tracked as BACKEND_DEPS.
+  locale: 'pt_BR',
   messages: i18nMessages,
 });
 

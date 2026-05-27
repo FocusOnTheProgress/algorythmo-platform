@@ -41,7 +41,7 @@ export default {
     return {
       id: '',
       name: '',
-      locale: 'en',
+      locale: 'pt_BR', // algorythmo: M5 default locale pt_BR
       domain: '',
       supportEmail: '',
       features: {},
