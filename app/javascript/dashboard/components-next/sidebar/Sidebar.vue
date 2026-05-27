@@ -635,49 +635,44 @@ const menuItems = computed(() => {
       activeOn: ['algorythmo_admin_rh'],
       to: accountScopedRoute('algorythmo_admin_rh'),
     },
-    // algorythmo: M5 sidebar restructure — Marketing placeholder (Campaigns lives as child)
+    // algorythmo: M5 sidebar restructure — Marketing placeholder
+    // M5 ships Marketing as a flat link. Nesting Campaigns under Marketing
+    // moves to M6.6 (Marketing dashboard) alongside the spec update for
+    // spec/system/algorythmo/cuts/campaigns.spec.ts.
     {
       name: 'AdminMarketing',
       icon: 'i-lucide-megaphone',
       label: t('ALGORYTHMO_ADMIN.MARKETING.TITLE'),
       activeOn: ['algorythmo_admin_marketing'],
-      children: [
-        {
-          name: 'Marketing Overview',
-          label: t('ALGORYTHMO_ADMIN.MARKETING.OVERVIEW'),
-          to: accountScopedRoute('algorythmo_admin_marketing'),
-          activeOn: ['algorythmo_admin_marketing'],
-        },
-        // algorythmo: M5 sidebar restructure — Campaigns moved under Marketing
-        // algorythmo: feature-gate algorythmo_cut_campaigns
-        ...(algorythmoCutHidden.value.campaigns
-          ? []
-          : [
-              {
-                name: 'Marketing Campaigns',
-                label: t('SIDEBAR.CAMPAIGNS'),
-                icon: 'i-lucide-send',
-                children: [
-                  {
-                    name: 'Live chat',
-                    label: t('SIDEBAR.LIVE_CHAT'),
-                    to: accountScopedRoute('campaigns_livechat_index'),
-                  },
-                  {
-                    name: 'SMS',
-                    label: t('SIDEBAR.SMS'),
-                    to: accountScopedRoute('campaigns_sms_index'),
-                  },
-                  {
-                    name: 'WhatsApp',
-                    label: t('SIDEBAR.WHATSAPP'),
-                    to: accountScopedRoute('campaigns_whatsapp_index'),
-                  },
-                ],
-              },
-            ]),
-      ],
+      to: accountScopedRoute('algorythmo_admin_marketing'),
     },
+    // algorythmo: feature-gate algorythmo_cut_campaigns (kept top-level for M5)
+    ...(algorythmoCutHidden.value.campaigns
+      ? []
+      : [
+          {
+            name: 'Campaigns',
+            label: t('SIDEBAR.CAMPAIGNS'),
+            icon: 'i-lucide-send',
+            children: [
+              {
+                name: 'Live chat',
+                label: t('SIDEBAR.LIVE_CHAT'),
+                to: accountScopedRoute('campaigns_livechat_index'),
+              },
+              {
+                name: 'SMS',
+                label: t('SIDEBAR.SMS'),
+                to: accountScopedRoute('campaigns_sms_index'),
+              },
+              {
+                name: 'WhatsApp',
+                label: t('SIDEBAR.WHATSAPP'),
+                to: accountScopedRoute('campaigns_whatsapp_index'),
+              },
+            ],
+          },
+        ]),
 
     // ── ESTRATÉGIA block ──────────────────────────────────────────────────────
     // algorythmo: M5 sidebar restructure — ESTRATÉGIA header (admin-only)
