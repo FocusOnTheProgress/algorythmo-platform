@@ -3,11 +3,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import SectorShellV2 from '../SectorShellV2.vue';
 
-// vue-i18n's `t` is stubbed so assertions target keys + interpolation params,
-// not translated strings.
+// vue-i18n stub: t(key) → key, t(key, params) → "key [param=val …]"
+// This mirrors what a *real* i18n fallback would produce if the key were
+// missing — so assertions that check for a rendered label catch regressions
+// where a key is absent from a locale file.
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({
-    t: (key, params) => (params ? `${key}::${JSON.stringify(params)}` : key),
+    t: (key, params) => {
+      if (!params) return key;
+      const interpolated = Object.entries(params)
+        .map(([k, v]) => `${k}=${v}`)
+        .join(' ');
+      return `${key} [${interpolated}]`;
+    },
   }),
 }));
 
@@ -126,20 +134,80 @@ describe('SectorShellV2', () => {
     expect(tabs[1].attributes('tabindex')).toBe('-1');
   });
 
-  it('triggers smooth scroll into view when jump-to-chat is clicked', async () => {
+  it('uses smooth scroll when prefers-reduced-motion is not set', async () => {
+    // jsdom does not implement scrollIntoView or matchMedia; stub both.
     const scrollSpy = vi.fn();
-    // jsdom does not implement scrollIntoView; attach a spy to the anchor.
     wrapper.find('.alg-shell__chat').element.scrollIntoView = scrollSpy;
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }));
     await wrapper.find('.alg-shell__jump').trigger('click');
     expect(scrollSpy).toHaveBeenCalledWith({
       behavior: 'smooth',
       block: 'start',
     });
+    vi.unstubAllGlobals();
   });
 
-  it('labels the jump-to-chat button with the sector name', () => {
+  it('uses instant scroll when prefers-reduced-motion: reduce is set', async () => {
+    const scrollSpy = vi.fn();
+    wrapper.find('.alg-shell__chat').element.scrollIntoView = scrollSpy;
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));
+    await wrapper.find('.alg-shell__jump').trigger('click');
+    expect(scrollSpy).toHaveBeenCalledWith({
+      behavior: 'auto',
+      block: 'start',
+    });
+    vi.unstubAllGlobals();
+  });
+
+  it('labels the jump-to-chat button with the resolved sector name', () => {
+    // Assert on the full resolved string, not a substring of the raw key.
+    // A missing locale key would produce the raw key as the label; this
+    // assertion catches that regression (S1 class of bug).
     const label = wrapper.find('.alg-shell__jump').attributes('aria-label');
-    expect(label).toContain('ALGORYTHMO_ADMIN.SECTORS.JUMP_TO_CHAT');
-    expect(label).toContain('SECTOR.OPERACOES.TITLE');
+    expect(label).toBe(
+      'ALGORYTHMO_ADMIN.SECTORS.JUMP_TO_CHAT [name=SECTOR.OPERACOES.TITLE]'
+    );
+  });
+
+  describe('tabs prop validator', () => {
+    // Vue 3 passes multiple args to console.warn; inspect the first one.
+    function expectPropValidationWarn(spy) {
+      const firstCallFirstArg = spy.mock.calls[0]?.[0] ?? '';
+      expect(firstCallFirstArg).toContain('Invalid prop');
+    }
+
+    it('rejects tabs where the first id is not "overview"', () => {
+      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      mount(SectorShellV2, {
+        props: {
+          titleKey: 'T',
+          chatHeadingKey: 'C',
+          tabs: [
+            { id: 'operacoes', labelKey: 'L.A' },
+            { id: 'overview', labelKey: 'L.B' },
+          ],
+        },
+        global: { stubs: { Icon: true } },
+      });
+      expectPropValidationWarn(spy);
+      spy.mockRestore();
+    });
+
+    it('rejects tabs with duplicate ids', () => {
+      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      mount(SectorShellV2, {
+        props: {
+          titleKey: 'T',
+          chatHeadingKey: 'C',
+          tabs: [
+            { id: 'overview', labelKey: 'L.A' },
+            { id: 'overview', labelKey: 'L.B' },
+          ],
+        },
+        global: { stubs: { Icon: true } },
+      });
+      expectPropValidationWarn(spy);
+      spy.mockRestore();
+    });
   });
 });
