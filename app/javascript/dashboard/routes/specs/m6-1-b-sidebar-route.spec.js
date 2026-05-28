@@ -9,6 +9,11 @@ import { describe, it, expect, beforeAll, vi } from 'vitest';
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..', '..');
 
 // ── 1. ReportsCommercialOverlay SFC ───────────────────────────────────────
+// M6.1-b shipped a Tailwind placeholder; M6.1-c replaced it with the full
+// SectorDashboard + commercialMock composition (own spec under
+// modules/algorythmo/admin/reports-commercial/specs/). This block now only
+// asserts the contract that survives both milestones: the SFC exists at the
+// route-loader path and resolves to the M6.1-c composition.
 describe('M6.1-b — ReportsCommercialOverlay component', () => {
   const overlayPath = path.join(
     REPO_ROOT,
@@ -31,16 +36,9 @@ describe('M6.1-b — ReportsCommercialOverlay component', () => {
     expect(fs.existsSync(overlayPath)).toBe(true);
   });
 
-  it('SFC references the i18n key for the title (no raw Portuguese)', () => {
-    expect(src).toContain('ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.HEADING');
-  });
-
-  it('SFC references the i18n key for the placeholder body', () => {
-    expect(src).toContain('ALGORYTHMO_ADMIN.COMMERCIAL.BODY');
-  });
-
-  it('SFC styles use Tailwind utilities (no <style> block per AGENTS.md)', () => {
-    expect(src).not.toMatch(/<style\b/);
+  it('SFC composes SectorDashboard with the commercial mock (M6.1-c contract)', () => {
+    expect(src).toContain('SectorDashboard');
+    expect(src).toContain("from '../mocks/sectors/commercial'");
   });
 });
 
