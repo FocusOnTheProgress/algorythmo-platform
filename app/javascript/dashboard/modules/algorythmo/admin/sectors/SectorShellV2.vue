@@ -29,17 +29,29 @@ const props = defineProps({
     required: true,
   },
   // Ordered tab descriptors. `id` keys both the panel slot (`subtab-<id>`)
-  // and the aria wiring; `labelKey` is an i18n key. The first tab is the
-  // Overview and renders the `#overview` slot rather than a `#subtab-*` slot.
+  // and the aria wiring; `labelKey` is an i18n key.
+  //
+  // CONTRACT (enforced by the validator below — fail-fast in dev):
+  //   1. tabs[0].id MUST be 'overview'. The first tab always renders the
+  //      #overview slot; any other id produces a silent blank panel for
+  //      every sector page that uses this shell.
+  //   2. All ids MUST be unique — duplicate ids produce ambiguous
+  //      aria-controls/aria-labelledby and an axe-core critical violation.
+  //
+  // DOM ids (`alg-sector-tab-*` / `alg-sector-panel-*`) are route-scoped:
+  // only one SectorShellV2 is mounted at a time, so they are unique in the
+  // live document even though they are not globally namespaced by sector.
   tabs: {
     type: Array,
     required: true,
-    validator: tabs =>
-      Array.isArray(tabs) &&
-      tabs.length > 0 &&
-      tabs.every(
+    validator: tabs => {
+      if (!Array.isArray(tabs) || tabs.length === 0) return false;
+      if (tabs[0].id !== 'overview') return false;
+      if (new Set(tabs.map(t => t.id)).size !== tabs.length) return false;
+      return tabs.every(
         tab => typeof tab.id === 'string' && typeof tab.labelKey === 'string'
-      ),
+      );
+    },
   },
 });
 
@@ -101,7 +113,15 @@ function onTabKeydown(event, index) {
 }
 
 function jumpToChat() {
-  chatAnchor.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Respect prefers-reduced-motion for the programmatic scroll — the CSS
+  // transitions are already gated, but scrollIntoView behavior is JS-only.
+  const reducedMotion = window.matchMedia(
+    '(prefers-reduced-motion: reduce)'
+  ).matches;
+  chatAnchor.value?.scrollIntoView({
+    behavior: reducedMotion ? 'auto' : 'smooth',
+    block: 'start',
+  });
 }
 </script>
 
