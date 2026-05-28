@@ -1,14 +1,20 @@
 // =============================================================================
-// Algorythmo OS — Component classes
+// Algorythmo OS — Component classes (Cinematic OS v1)
 // -----------------------------------------------------------------------------
-// Plain CSS classes — no framework dependency. Vue components in trilha B
-// consume these via class binding. Each component:
+// Plain CSS classes. Vue components consume them via class binding.
+// Each component:
 //   1. Has a single base class (`.alg-btn`, `.alg-input`, …).
 //   2. Variants via modifier classes (`.alg-btn--primary`).
 //   3. Sizes via size classes (`.alg-btn--sm`).
 //   4. States via attributes/data attrs (`[disabled]`, `[data-loading]`).
 //
-// Author: Algorythmo design system / 2026-05-23
+// Cinematic OS posture:
+//   - Default motion curve: var(--alg-ease-cinematic)
+//   - Surface elevation always carries an inset top highlight
+//   - Glass surfaces always carry a hairline border
+//   - Color is exception; the default register is monochrome
+//
+// Author: Algorythmo design system / Cinematic OS v1 / 2026-05-28
 // =============================================================================
 
 @import 'tokens';
@@ -37,20 +43,20 @@
   gap: var(--alg-space-2);
 
   // Size: default = md
-  height: 2.25rem;                 // 36px — touch-friendly without bloat
+  height: 2.25rem;                 // 36px
   padding: 0 var(--alg-space-button-padding-x);
   font-size: var(--alg-text-sm);
   font-weight: var(--alg-weight-medium);
   letter-spacing: var(--alg-tracking-snug);
   border-radius: var(--alg-radius-md);
 
-  // Motion
+  // Motion — cinematic curve, ≤16ms feedback on press
   transition:
-    background-color var(--alg-duration-fast) var(--alg-ease-out),
-    color var(--alg-duration-fast) var(--alg-ease-out),
-    border-color var(--alg-duration-fast) var(--alg-ease-out),
-    box-shadow var(--alg-duration-fast) var(--alg-ease-out),
-    transform var(--alg-duration-instant) var(--alg-ease-out);
+    background-color var(--alg-duration-fast) var(--alg-ease-cinematic),
+    color var(--alg-duration-fast) var(--alg-ease-cinematic),
+    border-color var(--alg-duration-fast) var(--alg-ease-cinematic),
+    box-shadow var(--alg-duration-fast) var(--alg-ease-cinematic),
+    transform var(--alg-duration-instant) var(--alg-ease-cinematic);
 
   &:focus-visible {
     outline: none;
@@ -58,7 +64,7 @@
   }
 
   &:active:not([disabled]):not([data-loading='true']) {
-    transform: translateY(0.5px);
+    transform: translateY(0.5px) scale(0.99);
   }
 
   &[disabled],
@@ -68,7 +74,6 @@
     pointer-events: none;
   }
 
-  // Icon slot
   > .alg-btn__icon {
     display: inline-flex;
     width: 1rem;
@@ -76,7 +81,6 @@
     flex-shrink: 0;
   }
 
-  // Loading: dim label, show spinner overlay
   &[data-loading='true'] {
     cursor: progress;
     color: transparent !important;
@@ -100,14 +104,14 @@
 
 // Sizes
 .alg-btn--sm {
-  height: 1.75rem;                 // 28px
+  height: 1.75rem;
   padding: 0 var(--alg-space-3);
   font-size: var(--alg-text-xs);
   border-radius: var(--alg-radius-sm);
 }
 
 .alg-btn--lg {
-  height: 2.75rem;                 // 44px — meets mobile touch target minimum
+  height: 2.75rem;
   padding: 0 var(--alg-space-5);
   font-size: var(--alg-text-md);
 }
@@ -116,10 +120,16 @@
 .alg-btn--primary {
   background-color: var(--alg-color-brand-primary);
   color: var(--alg-color-brand-primary-fg);
-  box-shadow: var(--alg-glow-subtle);
+  // Inset highlight on primary too — sells the "solid object" feel
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+    var(--alg-elevation-1);
 
   &:hover:not([disabled]):not([data-loading='true']) {
     background-color: var(--alg-color-brand-primary-hover);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+      var(--alg-elevation-2);
   }
 
   &:active:not([disabled]):not([data-loading='true']) {
@@ -128,13 +138,13 @@
 }
 
 .alg-btn--secondary {
-  background-color: var(--alg-bg-raised);
+  background-color: var(--alg-bg-tint-med);
   color: var(--alg-text-primary);
   border-color: var(--alg-border);
   box-shadow: var(--alg-glow-subtle);
 
   &:hover:not([disabled]):not([data-loading='true']) {
-    background-color: var(--alg-bg-raised-hover);
+    background-color: var(--alg-bg-tint-high);
     border-color: var(--alg-border-hover);
   }
 }
@@ -144,7 +154,7 @@
   color: var(--alg-text-secondary);
 
   &:hover:not([disabled]):not([data-loading='true']) {
-    background-color: var(--alg-bg-raised);
+    background-color: var(--alg-bg-tint-low);
     color: var(--alg-text-primary);
   }
 }
@@ -152,6 +162,9 @@
 .alg-btn--danger {
   background-color: var(--alg-color-danger);
   color: var(--alg-color-danger-fg);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
+    var(--alg-elevation-1);
 
   &:hover:not([disabled]):not([data-loading='true']) {
     background-color: oklch(from var(--alg-color-danger) calc(l + 0.05) c h);
@@ -159,7 +172,6 @@
 }
 
 .alg-btn--icon {
-  // Square button for icon-only actions (e.g. card menu trigger)
   width: 2.25rem;
   padding: 0;
 
@@ -172,12 +184,10 @@
 // =============================================================================
 
 .alg-input {
-  // Reset
   -webkit-appearance: none;
   appearance: none;
   font-family: var(--alg-font-sans);
 
-  // Box
   display: block;
   width: 100%;
   height: 2.25rem;
@@ -186,14 +196,14 @@
   line-height: var(--alg-leading-snug);
   color: var(--alg-text-primary);
 
-  background-color: var(--alg-bg-raised);
+  background-color: var(--alg-bg-tint-low);
   border: 1px solid var(--alg-border);
   border-radius: var(--alg-radius-sm);
 
   transition:
-    border-color var(--alg-duration-fast) var(--alg-ease-out),
-    box-shadow var(--alg-duration-fast) var(--alg-ease-out),
-    background-color var(--alg-duration-fast) var(--alg-ease-out);
+    border-color var(--alg-duration-fast) var(--alg-ease-cinematic),
+    box-shadow var(--alg-duration-fast) var(--alg-ease-cinematic),
+    background-color var(--alg-duration-fast) var(--alg-ease-cinematic);
 
   &::placeholder {
     color: var(--alg-text-muted);
@@ -201,6 +211,7 @@
 
   &:hover:not([disabled]):not([readonly]) {
     border-color: var(--alg-border-hover);
+    background-color: var(--alg-bg-tint-med);
   }
 
   &:focus,
@@ -208,6 +219,7 @@
     outline: none;
     border-color: var(--alg-border-focus);
     box-shadow: 0 0 0 3px var(--alg-color-brand-primary-subtle);
+    background-color: var(--alg-bg-tint-med);
   }
 
   &[disabled] {
@@ -236,7 +248,6 @@
   font-size: var(--alg-text-xs);
 }
 
-// Input with leading icon — wrapping group
 .alg-input-group {
   position: relative;
   display: block;
@@ -267,37 +278,36 @@
   }
 }
 
-// Search variant (visually distinct from text — used in toolbars)
 .alg-input--search {
-  background-color: var(--alg-color-neutral-2);
+  background-color: var(--alg-bg-tint-low);
   border-color: transparent;
 
   &:hover {
-    background-color: var(--alg-bg-raised-hover);
+    background-color: var(--alg-bg-tint-med);
   }
 
   &:focus {
-    background-color: var(--alg-bg-raised);
+    background-color: var(--alg-bg-tint-med);
     border-color: var(--alg-border-focus);
   }
 }
 
 // =============================================================================
-// CARD
+// CARD — Cinematic surface with inset highlight + elevation
 // =============================================================================
 
 .alg-card {
   display: block;
   background-color: var(--alg-bg-raised);
   border: 1px solid var(--alg-border);
-  border-radius: var(--alg-radius-lg);
+  border-radius: var(--alg-radius-md);
   padding: var(--alg-space-card-padding);
-  box-shadow: var(--alg-shadow-sm);
+  box-shadow: var(--alg-elevation-1);
   transition:
-    background-color var(--alg-duration-fast) var(--alg-ease-out),
-    border-color var(--alg-duration-fast) var(--alg-ease-out),
-    box-shadow var(--alg-duration-fast) var(--alg-ease-out),
-    transform var(--alg-duration-fast) var(--alg-ease-out);
+    background-color var(--alg-duration-base) var(--alg-ease-cinematic),
+    border-color var(--alg-duration-base) var(--alg-ease-cinematic),
+    box-shadow var(--alg-duration-base) var(--alg-ease-cinematic),
+    transform var(--alg-duration-base) var(--alg-ease-cinematic);
 }
 
 .alg-card--interactive {
@@ -306,7 +316,7 @@
   &:hover {
     background-color: var(--alg-bg-raised-hover);
     border-color: var(--alg-border-hover);
-    box-shadow: var(--alg-shadow-md);
+    box-shadow: var(--alg-elevation-2);
   }
 
   &:focus-visible {
@@ -315,19 +325,29 @@
   }
 
   &:active {
-    transform: translateY(0.5px);
+    transform: translateY(0.5px) scale(0.998);
   }
 }
 
 .alg-card--raised {
-  box-shadow: var(--alg-shadow-md);
+  box-shadow: var(--alg-elevation-2);
 }
 
 .alg-card--flush {
   padding: 0;
 }
 
-// Card composition helpers — not mandatory, but useful for LeadCard
+// Glass variant — uses the real backdrop-filter system
+.alg-card--glass {
+  background: var(--alg-glass-soft-bg);
+  backdrop-filter: var(--alg-glass-soft-filter);
+  -webkit-backdrop-filter: var(--alg-glass-soft-filter);
+  border-color: var(--alg-glass-border);
+  box-shadow:
+    var(--alg-glass-highlight),
+    var(--alg-elevation-2);
+}
+
 .alg-card__header {
   display: flex;
   align-items: flex-start;
@@ -343,7 +363,6 @@
   letter-spacing: var(--alg-tracking-snug);
   color: var(--alg-text-primary);
   margin: 0;
-  // truncate gracefully — never wrap on a card
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -373,9 +392,9 @@
   display: inline-flex;
   align-items: center;
   gap: var(--alg-space-1);
-  height: 1.375rem;                // 22px
+  height: 1.375rem;
   padding: 0 var(--alg-space-2);
-  background-color: var(--alg-bg-raised-hover);
+  background-color: var(--alg-bg-tint-med);
   color: var(--alg-text-secondary);
   font-size: var(--alg-text-2xs);
   font-weight: var(--alg-weight-medium);
@@ -398,26 +417,13 @@
   flex-shrink: 0;
 }
 
-// Variants
 .alg-chip--info    { color: var(--alg-color-info);    background-color: var(--alg-color-info-subtle); }
 .alg-chip--success { color: var(--alg-color-success); background-color: var(--alg-color-success-subtle); }
 .alg-chip--warning { color: var(--alg-color-warning); background-color: var(--alg-color-warning-subtle); }
 .alg-chip--danger  { color: var(--alg-color-danger);  background-color: var(--alg-color-danger-subtle); }
 .alg-chip--brand   { color: var(--alg-color-brand-primary); background-color: var(--alg-color-brand-primary-subtle); }
 
-// -----------------------------------------------------------------------------
-// LeadAgingChip — the operational heart (D10 + D11)
-// -----------------------------------------------------------------------------
-// Used by the Kanban card to show how long a Lead has been stalled in stage.
-// Cor + glyph + numerical time = three-way redundancy. Daltonism-safe.
-// Vue side computes which state to render and passes:
-//   <span class="alg-chip alg-chip--aging" data-state="green|yellow|red|neutral">
-//     <span class="alg-chip__glyph" aria-hidden="true">●</span>
-//     <span>4d 2h</span>
-//   </span>
-// The `aria-label` should announce the full state, e.g.
-//   aria-label="Em dia, 4 dias 2 horas nesta etapa"
-
+// LeadAgingChip — preserved (D10 + D11 dual-coding)
 .alg-chip--aging {
   font-variant-numeric: tabular-nums;
   letter-spacing: var(--alg-tracking-normal);
@@ -439,9 +445,6 @@
     background-color: var(--alg-aging-neutral-bg);
   }
 
-  // Fallback glyph injection when Vue side prefers content-property
-  // (e.g. `<span class="alg-chip__glyph" data-glyph="green">`).
-  // Kept here so designers and engineers can choose where to render the glyph.
   .alg-chip__glyph[data-glyph='green']::before   { content: '\25CF'; }
   .alg-chip__glyph[data-glyph='yellow']::before  { content: '\25D0'; }
   .alg-chip__glyph[data-glyph='red']::before     { content: '\25CB'; }
@@ -449,16 +452,16 @@
 }
 
 // =============================================================================
-// MODAL
+// MODAL — Glass overlay + raised modal card with cinematic enter
 // =============================================================================
-// Designed without Vue dependency — Trilha B can wrap in `<teleport>` etc.
 
 .alg-modal-overlay {
   position: fixed;
   inset: 0;
   background-color: var(--alg-bg-overlay);
-  backdrop-filter: blur(8px) saturate(140%);
-  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  // Real glass — hard blur to push the canvas behind into soft focus
+  backdrop-filter: var(--alg-glass-hard-filter);
+  -webkit-backdrop-filter: var(--alg-glass-hard-filter);
   z-index: var(--alg-z-overlay);
 
   display: flex;
@@ -466,8 +469,7 @@
   justify-content: center;
   padding: var(--alg-space-4);
 
-  // Entrance animation
-  animation: alg-fade-in var(--alg-duration-base) var(--alg-ease-out);
+  animation: alg-fade-in var(--alg-duration-base) var(--alg-ease-cinematic);
 }
 
 .alg-modal {
@@ -479,12 +481,22 @@
   flex-direction: column;
 
   background-color: var(--alg-bg-raised);
-  border: 1px solid var(--alg-border);
-  border-radius: var(--alg-radius-xl);
-  box-shadow: var(--alg-shadow-xl);
+  border: 1px solid var(--alg-border-strong);
+  border-radius: var(--alg-radius-2xl);
+  box-shadow: var(--alg-elevation-4);
   z-index: var(--alg-z-modal);
 
-  animation: alg-modal-in var(--alg-duration-slow) var(--alg-ease-out);
+  // Inset top highlight to sell the "object lit from above" effect
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: var(--alg-glass-highlight);
+  }
+
+  animation: alg-modal-in var(--alg-duration-slow) var(--alg-ease-cinematic);
 
   &--sm { max-width: var(--alg-modal-width-sm); }
   &--lg { max-width: var(--alg-modal-width-lg); }
@@ -495,7 +507,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--alg-space-4);
-  padding: var(--alg-space-5) var(--alg-space-modal-padding);
+  padding: var(--alg-space-6) var(--alg-space-modal-padding);
   border-bottom: 1px solid var(--alg-border);
 }
 
@@ -506,11 +518,6 @@
   letter-spacing: var(--alg-tracking-tight);
   color: var(--alg-text-primary);
   margin: 0;
-}
-
-.alg-modal__close {
-  // Compose with .alg-btn .alg-btn--ghost .alg-btn--icon .alg-btn--sm
-  // Provided here as semantic anchor only.
 }
 
 .alg-modal__body {
@@ -529,29 +536,25 @@
   gap: var(--alg-space-2);
   padding: var(--alg-space-4) var(--alg-space-modal-padding);
   border-top: 1px solid var(--alg-border);
-  background-color: var(--alg-color-neutral-2);
-  border-radius: 0 0 var(--alg-radius-xl) var(--alg-radius-xl);
+  background-color: var(--alg-bg-tint-low);
+  border-radius: 0 0 var(--alg-radius-2xl) var(--alg-radius-2xl);
 }
 
 // =============================================================================
-// SKELETON — loading shimmer
+// SKELETON — Loading shimmer (respects reduced motion)
 // =============================================================================
-// Used as placeholder for cards/rows/text while data is fetching.
-// Respects `prefers-reduced-motion`: shimmer freezes, opacity-pulse instead.
 
 .alg-skeleton {
   display: block;
   background: linear-gradient(
     90deg,
-    var(--alg-color-neutral-3) 0%,
-    var(--alg-color-neutral-4) 50%,
-    var(--alg-color-neutral-3) 100%
+    var(--alg-bg-tint-low) 0%,
+    var(--alg-bg-tint-med) 50%,
+    var(--alg-bg-tint-low) 100%
   );
   background-size: 200% 100%;
   border-radius: var(--alg-radius-sm);
-  animation: alg-shimmer 1.4s var(--alg-ease-in-out) infinite;
-  // Don't be visible to assistive tech — it's pure decoration
-  // (consumer should also wrap in aria-busy region)
+  animation: alg-shimmer 1.6s var(--alg-ease-cinematic) infinite;
 }
 
 .alg-skeleton--text {
@@ -572,13 +575,13 @@
 
 .alg-skeleton--card {
   height: 6.5rem;
-  border-radius: var(--alg-radius-lg);
+  border-radius: var(--alg-radius-md);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .alg-skeleton {
     animation: alg-skeleton-pulse 2s var(--alg-ease-in-out) infinite;
-    background: var(--alg-color-neutral-3);
+    background: var(--alg-bg-tint-low);
   }
 }
 
@@ -598,7 +601,7 @@
 @keyframes alg-modal-in {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    transform: translateY(12px) scale(0.96);
   }
   to {
     opacity: 1;
@@ -617,19 +620,17 @@
 }
 
 // =============================================================================
-// DRAWER — side-panel (420px) with slide-in animation and scrim
+// DRAWER — Side-panel with glass scrim and cinematic slide
 // =============================================================================
-// Vue wrapper: AlgDrawer.vue (components-next/algorythmo/AlgDrawer.vue)
-// Usage: <AlgDrawer v-model:open="isOpen" title="Lead Detail">...</AlgDrawer>
 
 .alg-drawer-scrim {
   position: fixed;
   inset: 0;
   background-color: var(--alg-bg-overlay);
-  backdrop-filter: blur(8px) saturate(140%);
-  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  backdrop-filter: var(--alg-glass-medium-filter);
+  -webkit-backdrop-filter: var(--alg-glass-medium-filter);
   z-index: var(--alg-z-overlay);
-  animation: alg-fade-in var(--alg-duration-base) var(--alg-ease-out);
+  animation: alg-fade-in var(--alg-duration-base) var(--alg-ease-cinematic);
 }
 
 .alg-drawer {
@@ -637,17 +638,17 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: var(--alg-drawer-width);  // 420px (token)
+  width: var(--alg-drawer-width);
   max-width: 100vw;
   z-index: var(--alg-z-modal);
 
   display: flex;
   flex-direction: column;
   background-color: var(--alg-bg-raised);
-  border-left: 1px solid var(--alg-border);
-  box-shadow: var(--alg-shadow-xl);
+  border-left: 1px solid var(--alg-border-strong);
+  box-shadow: var(--alg-elevation-4);
 
-  animation: alg-drawer-in var(--alg-duration-slow) var(--alg-ease-out);
+  animation: alg-drawer-in var(--alg-duration-slow) var(--alg-ease-cinematic);
   will-change: transform;
 
   @media (max-width: 768px) {
@@ -661,7 +662,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--alg-space-4);
-  padding: var(--alg-space-5) var(--alg-space-6);
+  padding: var(--alg-space-6);
   border-bottom: 1px solid var(--alg-border);
   flex-shrink: 0;
 }
@@ -711,31 +712,32 @@
 }
 
 // =============================================================================
-// MENU — ⋮ dropdown / context menu
+// MENU — Dropdown / context menu (glass surface, hairline border)
 // =============================================================================
-// Vue wrapper: AlgMenu.vue
-// Positioning: @vueuse/core useFloating (already in deps).
-// Trigger: click (not hover). Keyboard: ↑↓ navigate, Enter selects, Esc closes.
 
 .alg-menu {
   position: absolute;
   z-index: var(--alg-z-dropdown);
   min-width: 10rem;
 
-  background-color: var(--alg-bg-raised);
-  border: 1px solid var(--alg-border);
-  border-radius: var(--alg-radius-lg);
-  box-shadow: var(--alg-shadow-lg);
+  background: var(--alg-glass-soft-bg);
+  backdrop-filter: var(--alg-glass-soft-filter);
+  -webkit-backdrop-filter: var(--alg-glass-soft-filter);
+  border: 1px solid var(--alg-glass-border);
+  border-radius: var(--alg-radius-md);
+  box-shadow:
+    var(--alg-glass-highlight),
+    var(--alg-elevation-3);
   padding: var(--alg-space-1) 0;
 
-  animation: alg-menu-in var(--alg-duration-fast) var(--alg-ease-out);
+  animation: alg-menu-in var(--alg-duration-fast) var(--alg-ease-cinematic);
 }
 
 .alg-menu__item {
   display: flex;
   align-items: center;
   gap: var(--alg-space-2);
-  width: 100%;
+  width: calc(100% - var(--alg-space-2));
   padding: var(--alg-space-2) var(--alg-space-3);
   font-size: var(--alg-text-sm);
   font-weight: var(--alg-weight-regular);
@@ -744,17 +746,16 @@
   border: none;
   text-align: left;
   cursor: pointer;
-  border-radius: calc(var(--alg-radius-lg) - 2px);
+  border-radius: var(--alg-radius-sm);
   margin: 0 var(--alg-space-1);
-  width: calc(100% - var(--alg-space-2));
   transition:
-    background-color var(--alg-duration-instant) var(--alg-ease-out),
-    color var(--alg-duration-instant) var(--alg-ease-out);
+    background-color var(--alg-duration-instant) var(--alg-ease-cinematic),
+    color var(--alg-duration-instant) var(--alg-ease-cinematic);
 
   &:hover,
   &:focus,
   &[data-focused='true'] {
-    background-color: var(--alg-bg-raised-hover);
+    background-color: var(--alg-bg-tint-high);
     color: var(--alg-text-primary);
     outline: none;
   }
@@ -803,7 +804,7 @@
 }
 
 // =============================================================================
-// TOAST — notification stack (bottom-right, managed by AlgToastContainer.vue)
+// TOAST — Glass notification stack (bottom-right)
 // =============================================================================
 
 .alg-toast-container {
@@ -831,14 +832,18 @@
   min-width: 18rem;
   max-width: 26rem;
   padding: var(--alg-space-3) var(--alg-space-4);
-  background-color: var(--alg-color-neutral-3);
-  border: 1px solid var(--alg-border-hover);
-  border-radius: var(--alg-radius-lg);
-  box-shadow: var(--alg-shadow-lg);
+  background: var(--alg-glass-medium-bg);
+  backdrop-filter: var(--alg-glass-medium-filter);
+  -webkit-backdrop-filter: var(--alg-glass-medium-filter);
+  border: 1px solid var(--alg-glass-border);
+  border-radius: var(--alg-radius-md);
+  box-shadow:
+    var(--alg-glass-highlight),
+    var(--alg-elevation-3);
   font-size: var(--alg-text-sm);
   color: var(--alg-text-primary);
 
-  animation: alg-toast-in var(--alg-duration-base) var(--alg-ease-out);
+  animation: alg-toast-in var(--alg-duration-base) var(--alg-ease-cinematic);
 
   @media (max-width: 640px) {
     max-width: 100%;
@@ -868,8 +873,6 @@
 }
 
 .alg-toast__action {
-  // Compose with .alg-btn .alg-btn--ghost .alg-btn--sm
-  // Self-sizing to message.
   align-self: flex-start;
   padding: 0;
   font-size: var(--alg-text-xs);
@@ -898,7 +901,7 @@
   cursor: pointer;
   border-radius: var(--alg-radius-sm);
   padding: 0;
-  transition: color var(--alg-duration-instant) var(--alg-ease-out);
+  transition: color var(--alg-duration-instant) var(--alg-ease-cinematic);
 
   &:hover { color: var(--alg-text-primary); }
   &:focus-visible { outline: 2px solid var(--alg-color-brand-primary); outline-offset: 2px; }
@@ -919,10 +922,8 @@
 }
 
 // =============================================================================
-// AVATAR — channel/contact photo with gradient fallback
+// AVATAR — Channel / contact photo with gradient fallback
 // =============================================================================
-// Sizes: sm (24px), md (32px), lg (48px)
-// Fallback: deterministic gradient + initials when no src.
 
 .alg-avatar {
   display: inline-flex;
@@ -936,9 +937,8 @@
   font-size: var(--alg-text-xs);
   color: var(--alg-text-inverse);
   user-select: none;
-  background-color: var(--alg-color-neutral-5);
+  background-color: var(--alg-bg-tint-high);
 
-  // Default size: md (32px)
   width: 2rem;
   height: 2rem;
   font-size: var(--alg-text-xs);
@@ -952,22 +952,485 @@
 }
 
 .alg-avatar--sm {
-  width: 1.5rem;   // 24px
+  width: 1.5rem;
   height: 1.5rem;
   font-size: var(--alg-text-2xs);
 }
 
 .alg-avatar--lg {
-  width: 3rem;     // 48px
+  width: 3rem;
   height: 3rem;
   font-size: var(--alg-text-sm);
 }
 
-// Presence ring variants (channel indicators)
 .alg-avatar--ring {
   box-shadow: 0 0 0 2px var(--alg-bg-raised), 0 0 0 3.5px var(--alg-color-brand-primary);
 }
 
 .alg-avatar--ring-success {
   box-shadow: 0 0 0 2px var(--alg-bg-raised), 0 0 0 3.5px var(--alg-color-success);
+}
+
+// =============================================================================
+// SECTOR DASHBOARD — Cinematic OS v1 (M6.1 Reports Comerciais anchor surface)
+// -----------------------------------------------------------------------------
+// Refactor of the inline `.alg-sector*` styles previously living in
+// SectorDashboard.vue. Hoisted into the design system so:
+//   1. The Cinematic OS DNA is applied via tokens, not hardcoded rgba.
+//   2. Any sector dashboard (Marketing, Commercial, Operação, etc.) inherits
+//      the same surface treatment without touching .vue files.
+//   3. The cut-flag `algorythmo-cinematic-off` (data attribute) opts a subtree
+//      back into the v0 visual when present — reversible without a deploy.
+//
+// Pattern: the Vue component carries a single class `.alg-sector` on its root.
+// All children use BEM-style child classes. The surface is editorial-magazine:
+//   - Display title in display family, tight tracking, white at full opacity
+//   - Two anchor KPIs side-by-side, dense magazine grid, hairline separators
+//   - Four secondary KPIs in a 4-col strip
+//   - One full-width chart panel with glass surface
+//   - Demonstration watermark (uppercase mono, low opacity)
+// =============================================================================
+
+.alg-sector {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-space-8);
+  padding: var(--alg-space-12) var(--alg-space-12) var(--alg-space-16);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background-color: var(--alg-bg);
+  color: var(--alg-text-primary);
+
+  // Mobile: tighter padding
+  @media (max-width: 768px) {
+    padding: var(--alg-space-6) var(--alg-space-4) var(--alg-space-8);
+    gap: var(--alg-space-6);
+  }
+}
+
+.alg-sector__watermark {
+  position: absolute;
+  top: var(--alg-space-6);
+  right: var(--alg-space-8);
+  font-family: var(--alg-font-mono);
+  font-size: 10px;
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-widest);
+  text-transform: uppercase;
+  color: var(--alg-fg-quaternary);
+  pointer-events: none;
+  user-select: none;
+}
+
+.alg-sector__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-space-3);
+  max-width: 70ch;
+}
+
+.alg-sector__title {
+  font-family: var(--alg-font-display);
+  font-size: var(--alg-text-3xl);
+  font-weight: var(--alg-weight-light);
+  line-height: var(--alg-leading-tight);
+  letter-spacing: var(--alg-tracking-tightest);
+  color: var(--alg-fg-primary);
+  margin: 0;
+}
+
+.alg-sector__context {
+  font-size: var(--alg-text-md);
+  line-height: var(--alg-leading-relaxed);
+  color: var(--alg-fg-secondary);
+  margin: 0;
+  max-width: 60ch;
+}
+
+// Anchor KPIs — 2-up magazine grid with hairline divider (no boxy borders)
+.alg-sector__anchors {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background-color: var(--alg-border);
+  border-top: 1px solid var(--alg-border);
+  border-bottom: 1px solid var(--alg-border);
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.alg-sector__anchor {
+  background-color: var(--alg-bg);
+  padding: var(--alg-space-8) var(--alg-space-6) var(--alg-space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-space-3);
+}
+
+.alg-sector__anchor-value {
+  font-family: var(--alg-font-display);
+  font-size: var(--alg-text-3xl);
+  font-weight: var(--alg-weight-medium);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--alg-leading-tight);
+  letter-spacing: var(--alg-tracking-tightest);
+  color: var(--alg-fg-primary);
+  margin: 0;
+}
+
+.alg-sector__anchor-label {
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-2xs);
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-widest);
+  text-transform: uppercase;
+  color: var(--alg-fg-tertiary);
+  margin: 0;
+}
+
+// Secondary KPIs — 4-up strip, denser
+.alg-sector__secondaries {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background-color: var(--alg-border);
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.alg-sector__secondary {
+  background-color: var(--alg-bg);
+  padding: var(--alg-space-5) var(--alg-space-5) var(--alg-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-space-2);
+}
+
+.alg-sector__secondary-value {
+  font-family: var(--alg-font-display);
+  font-size: var(--alg-text-xl);
+  font-weight: var(--alg-weight-medium);
+  font-variant-numeric: tabular-nums;
+  color: var(--alg-fg-primary);
+  margin: 0;
+  line-height: var(--alg-leading-snug);
+  letter-spacing: var(--alg-tracking-tight);
+}
+
+.alg-sector__secondary-label {
+  font-family: var(--alg-font-mono);
+  font-size: 10px;
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-widest);
+  text-transform: uppercase;
+  color: var(--alg-fg-tertiary);
+  margin: 0;
+}
+
+.alg-sector__delta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--alg-space-1);
+  margin: 0;
+  font-size: var(--alg-text-xs);
+  color: var(--alg-fg-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.alg-sector__delta-glyph {
+  font-size: 9px;
+  line-height: 1;
+  color: var(--alg-fg-tertiary);
+}
+
+// Chart panel — glass surface, breathes inside the magazine layout
+.alg-sector__chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-space-3);
+  padding: var(--alg-space-6);
+  border-radius: var(--alg-radius-lg);
+  background: var(--alg-glass-soft-bg);
+  backdrop-filter: var(--alg-glass-soft-filter);
+  -webkit-backdrop-filter: var(--alg-glass-soft-filter);
+  border: 1px solid var(--alg-glass-border);
+  box-shadow:
+    var(--alg-glass-highlight),
+    var(--alg-elevation-1);
+}
+
+.alg-sector__chart-title {
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-2xs);
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-widest);
+  text-transform: uppercase;
+  color: var(--alg-fg-tertiary);
+  margin: 0;
+}
+
+.alg-sector__chart-canvas {
+  height: 240px;
+  position: relative;
+}
+
+.alg-sector__chart-fallback {
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-2xs);
+  letter-spacing: var(--alg-tracking-widest);
+  text-transform: uppercase;
+  color: var(--alg-fg-tertiary);
+}
+
+.alg-sector__chart-fallback--loading {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02) 0,
+    rgba(255, 255, 255, 0.02) 24px,
+    transparent 24px,
+    transparent 48px
+  );
+}
+
+.alg-sector__chart-fallback--error {
+  color: var(--alg-color-danger);
+}
+
+// =============================================================================
+// SECTOR AGENT CHAT — sticky 360px right rail (Cinematic OS v1)
+// -----------------------------------------------------------------------------
+// The "command room" agent panel that sits beside every sector dashboard.
+// Glass surface so the canvas behind shows through softly, geometric monogram
+// avatar, machine-voice bubbles, cmd+enter submit hint in mono.
+// =============================================================================
+
+.alg-agent {
+  position: sticky;
+  top: var(--alg-admin-topbar-height, 0);
+  width: 360px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: calc(100vh - var(--alg-admin-topbar-height, 0px));
+  border-left: 1px solid var(--alg-border);
+  background: var(--alg-glass-soft-bg);
+  backdrop-filter: var(--alg-glass-soft-filter);
+  -webkit-backdrop-filter: var(--alg-glass-soft-filter);
+}
+
+.alg-agent__header {
+  display: flex;
+  align-items: center;
+  gap: var(--alg-space-3);
+  padding: var(--alg-space-5) var(--alg-space-5) var(--alg-space-4);
+  border-bottom: 1px solid var(--alg-border);
+}
+
+.alg-agent__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--alg-fg-secondary);
+}
+
+.alg-agent__monogram {
+  display: block;
+}
+
+.alg-agent__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.alg-agent__name {
+  font-family: var(--alg-font-display);
+  font-size: var(--alg-text-sm);
+  font-weight: var(--alg-weight-medium);
+  color: var(--alg-fg-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: var(--alg-tracking-snug);
+}
+
+.alg-agent__name-suffix {
+  color: var(--alg-fg-tertiary);
+  font-weight: var(--alg-weight-regular);
+}
+
+.alg-agent__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--alg-space-1);
+  margin: 0;
+  font-family: var(--alg-font-mono);
+  font-size: 10px;
+  color: var(--alg-fg-tertiary);
+  letter-spacing: var(--alg-tracking-wide);
+}
+
+.alg-agent__status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--alg-fg-quaternary);
+}
+
+.alg-agent__status-label {
+  text-transform: uppercase;
+  letter-spacing: var(--alg-tracking-widest);
+}
+
+.alg-agent__messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--alg-space-5);
+  display: flex;
+  flex-direction: column;
+}
+
+.alg-agent__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-space-2);
+}
+
+.alg-agent__bubble {
+  font-size: var(--alg-text-sm);
+  line-height: var(--alg-leading-normal);
+  padding: var(--alg-space-2) var(--alg-space-3);
+  border-radius: var(--alg-radius-sm);
+  max-width: 85%;
+
+  &--agent {
+    border: 1px solid var(--alg-border-hover);
+    background: transparent;
+    color: var(--alg-fg-secondary);
+    align-self: flex-start;
+  }
+
+  &--user {
+    background: var(--alg-bg-tint-med);
+    color: var(--alg-fg-primary);
+    align-self: flex-end;
+  }
+}
+
+.alg-agent__empty {
+  margin: auto 0;
+  font-family: var(--alg-font-display);
+  font-size: var(--alg-text-sm);
+  line-height: var(--alg-leading-relaxed);
+  color: var(--alg-fg-tertiary);
+  text-align: center;
+  max-width: 32ch;
+  align-self: center;
+  letter-spacing: var(--alg-tracking-snug);
+}
+
+.alg-agent__form {
+  position: relative;
+  padding: var(--alg-space-3) var(--alg-space-4) var(--alg-space-5);
+  border-top: 1px solid var(--alg-border);
+}
+
+.alg-agent__input {
+  width: 100%;
+  resize: none;
+  background: var(--alg-bg-tint-low);
+  border: 1px solid var(--alg-border-hover);
+  border-radius: var(--alg-radius-sm);
+  padding: var(--alg-space-2) 4rem var(--alg-space-2) var(--alg-space-3);
+  font-family: var(--alg-font-sans);
+  font-size: var(--alg-text-sm);
+  line-height: var(--alg-leading-normal);
+  color: var(--alg-fg-primary);
+  outline: none;
+  transition:
+    border-color var(--alg-duration-fast) var(--alg-ease-cinematic),
+    background-color var(--alg-duration-fast) var(--alg-ease-cinematic);
+
+  &:focus {
+    border-color: var(--alg-border-strong);
+    background: var(--alg-bg-tint-med);
+  }
+
+  &::placeholder {
+    color: var(--alg-fg-tertiary);
+  }
+}
+
+.alg-agent__send {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 24px;
+  background: transparent;
+  border: 1px solid var(--alg-border-hover);
+  border-radius: var(--alg-radius-sm);
+  color: var(--alg-fg-primary);
+  cursor: pointer;
+  transition:
+    border-color var(--alg-duration-fast) var(--alg-ease-cinematic),
+    color var(--alg-duration-fast) var(--alg-ease-cinematic),
+    background-color var(--alg-duration-fast) var(--alg-ease-cinematic);
+
+  &:hover:not(:disabled) {
+    border-color: var(--alg-border-strong);
+    background: var(--alg-bg-tint-med);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--alg-color-brand-primary);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    color: var(--alg-fg-quaternary);
+    border-color: var(--alg-border);
+    cursor: not-allowed;
+  }
+}
+
+.alg-agent__send-icon {
+  display: block;
+  transform: translateX(-1px);
+}
+
+.alg-agent__hint {
+  margin-top: var(--alg-space-2);
+  display: block;
+  font-family: var(--alg-font-mono);
+  font-size: 10px;
+  color: var(--alg-fg-tertiary);
+  letter-spacing: var(--alg-tracking-wide);
+  pointer-events: none;
 }

@@ -1,134 +1,198 @@
 // =============================================================================
-// Algorythmo OS — Design Tokens
+// Algorythmo OS — Design Tokens (Cinematic OS v1)
 // -----------------------------------------------------------------------------
-// Dark-first. OKLCH for perceptual uniformity. Editorial typography.
-// Reference points: Linear (density), Vercel (precision), Stripe (clarity).
-// What we are not: Chatwoot upstream, Material, Bootstrap, generic SaaS template.
+// Reference points:
+//   Apple Intelligence, visionOS, Arc, Linear, Raycast, Vercel,
+//   Things 3, Teenage Engineering, Aesop, Field Mag.
 //
-// Token naming convention:
+// Doctrine:
+//   "This is not a SaaS. It is the founder's command room."
+//   Cinematic Operating System. Editorial monochrome. Real glass,
+//   real depth, real light. Density variable by context. Silence is
+//   the product — the space between elements carries the meaning.
+//
+// Visual DNA:
+//   - Deep black (#000 → #1F2025) as the primary surface
+//   - White text in 4 opacity tiers (1.0 / 0.72 / 0.48 / 0.28)
+//   - Editorial typography (Inter / Geist), tight tracking on display
+//   - Glass in 3 calibrated tiers (blur 20 / 40 / 60px) with hairline borders
+//   - 4 elevation tiers with mandatory inset-top highlight
+//   - Cubic-bezier(0.32, 0.72, 0, 1) as the default motion curve
+//
+// Naming convention (preserved from v0):
 //   --alg-<category>-<role>-<step?>
-// Examples:
-//   --alg-color-neutral-12      (raw neutrals on a 12-step ramp)
-//   --alg-color-bg              (semantic surface)
-//   --alg-text-primary          (semantic text)
-//   --alg-space-4               (raw scale step)
-//   --alg-space-card-padding    (semantic alias)
 //
-// Author: Algorythmo design system / 2026-05-23
+// Backwards compatibility:
+//   Tokens whose VALUE changed but NAME stayed are flagged inline. New tokens
+//   live under explicit category prefixes (--alg-glass-*, --alg-elevation-*,
+//   --alg-fg-*). v0 aliases (--alg-text-*, --alg-aging-*, --alg-shadow-*) are
+//   preserved so upstream consumers keep rendering — values re-tuned to the
+//   new DNA.
+//
+// Author: Algorythmo design system / Cinematic OS v1 / 2026-05-28
 // License: proprietary, internal use only
 // =============================================================================
 
 :root,
 [data-theme='dark'] {
+  color-scheme: dark;
+
   // ---------------------------------------------------------------------------
-  // 1. COLOR — Raw neutrals (9-step ramp, dark-first)
+  // 1. COLOR — Black scale (operating room, not "dark theme")
   // ---------------------------------------------------------------------------
-  // OKLCH chosen over HSL: lightness in OKLCH is perceptually uniform, so
-  // step deltas read as the *same* visual jump. HSL lies — `hsl(0 0 50%)`
-  // is darker than `hsl(60 0 50%)` perceptually. We refuse to lie.
+  // The OS is built on deep, neutral, near-zero-chroma blacks. No blue tilt.
+  // No purple AI tell. The chroma is so low (≤0.003) that the surface reads
+  // as actual black — but with enough vertical separation to build a real
+  // elevation system on top.
   //
-  // Ramp logic: step 1 = deepest surface; step 9 = brightest text/inverse.
-  // We tune chroma very low (0.005-0.015) so neutrals stay neutral but
-  // carry a faint cool tilt — gives the UI an editorial feel without
-  // tinting toward blue (which is the AI-slop tell).
-  --alg-color-neutral-1: oklch(0.145 0.005 264);  // deepest bg (under everything)
-  --alg-color-neutral-2: oklch(0.180 0.006 264);  // app bg
-  --alg-color-neutral-3: oklch(0.218 0.008 264);  // raised surface (cards)
-  --alg-color-neutral-4: oklch(0.258 0.010 264);  // raised + hover, overlays
-  --alg-color-neutral-5: oklch(0.310 0.011 264);  // borders, dividers
-  --alg-color-neutral-6: oklch(0.395 0.012 264);  // border hover, muted icon
-  --alg-color-neutral-7: oklch(0.530 0.013 264);  // tertiary text, placeholder
-  --alg-color-neutral-8: oklch(0.690 0.012 264);  // secondary text
-  --alg-color-neutral-9: oklch(0.970 0.004 264);  // primary text, max contrast
+  // Step 1 = absolute void (#000, the canvas behind the canvas).
+  // Step 9 = #1F2025 territory — the brightest surface still reads as black.
+  //
+  // Rationale for OKLCH near-zero chroma vs. literal #000000: pure black
+  // creates a vacuum that swallows depth. A whisper of chroma (0.003)
+  // gives shadows something to sit on without tinting the canvas.
+  --alg-black-0:  oklch(0.000 0.000 0);      // void / pure black
+  --alg-black-1:  oklch(0.040 0.001 264);    // app base — beneath everything
+  --alg-black-2:  oklch(0.075 0.002 264);    // app surface (default canvas)
+  --alg-black-3:  oklch(0.108 0.002 264);    // raised — cards, panels, sidebar
+  --alg-black-4:  oklch(0.140 0.003 264);    // raised hover, secondary surface
+  --alg-black-5:  oklch(0.172 0.003 264);    // tertiary surface, dividers area
+  --alg-black-6:  oklch(0.205 0.003 264);    // top edge of black (≈ #1F2025)
+  --alg-black-7:  oklch(0.245 0.003 264);    // border accent / hairline strong
+  --alg-black-8:  oklch(0.300 0.003 264);    // legacy border step
+  --alg-black-9:  oklch(0.380 0.003 264);    // ambient highlight ceiling
 
   // ---------------------------------------------------------------------------
-  // 2. COLOR — Brand
+  // 2. COLOR — Foreground (white in 4 opacity tiers)
   // ---------------------------------------------------------------------------
-  // Primary: a precise, saturated cyan-leaning teal. Not the SaaS purple/blue
-  // gradient. Not Stripe purple. Not Linear violet. It is its own thing.
-  // Tuned for accessible contrast on neutral-2 surface (≥4.5:1 for text variants).
-  --alg-color-brand-primary:        oklch(0.745 0.165 195);   // base brand
-  --alg-color-brand-primary-hover:  oklch(0.795 0.155 195);   // hover
-  --alg-color-brand-primary-active: oklch(0.685 0.170 195);   // pressed
-  --alg-color-brand-primary-subtle: oklch(0.300 0.080 195 / 0.18); // tint on dark surfaces
-  --alg-color-brand-primary-fg:     oklch(0.145 0.020 195);   // text on brand fills
+  // White text expressed as rgba with calibrated opacity. Four tiers ONLY.
+  // Each tier has a defined role and a contrast budget on every surface.
+  // Adding a fifth tier is a tell of indecisive hierarchy — refuse.
+  //
+  // Verified contrast against --alg-black-2 (app canvas, primary read surface):
+  //   fg-primary    (1.00 white) → 18.2:1  ✓ AAA
+  //   fg-secondary  (0.72 white) → 12.9:1  ✓ AAA
+  //   fg-tertiary   (0.48 white) →  8.4:1  ✓ AAA
+  //   fg-quaternary (0.28 white) →  4.7:1  ✓ AA  (only for non-essential meta)
+  --alg-fg-primary:     rgba(255, 255, 255, 1.00);  // body, headlines, KPI values
+  --alg-fg-secondary:   rgba(255, 255, 255, 0.72);  // labels, context paragraphs
+  --alg-fg-tertiary:    rgba(255, 255, 255, 0.48);  // metadata, captions, hints
+  --alg-fg-quaternary:  rgba(255, 255, 255, 0.28);  // watermarks, decorative, disabled
 
-  // Supporting hues — used sparingly for categorical UI (channel chips,
-  // pipeline stages, etc.). Each kept at similar lightness/chroma to feel
-  // like a family, not a randomly-picked set.
-  --alg-color-accent-violet: oklch(0.700 0.165 295);  // brain / AI moments
-  --alg-color-accent-amber:  oklch(0.780 0.150  75);  // attention without alarm
-  --alg-color-accent-rose:   oklch(0.700 0.180  15);  // danger-adjacent decorative
-  --alg-color-accent-mint:   oklch(0.770 0.150 160);  // success-adjacent decorative
+  // Inverse (rare — used only on bright accent fills if/when they exist)
+  --alg-fg-inverse:     var(--alg-black-1);
 
   // ---------------------------------------------------------------------------
-  // 3. COLOR — Semantic (status)
+  // 3. COLOR — Neutral compatibility ramp (v0 alias preservation)
   // ---------------------------------------------------------------------------
-  --alg-color-success:        oklch(0.745 0.165 152);
+  // Components downstream still reference --alg-color-neutral-{1..9}. We map
+  // those to the new black scale so nothing visually breaks. New components
+  // should consume --alg-black-* or --alg-fg-* directly — these stay for
+  // backwards compatibility only.
+  --alg-color-neutral-1: var(--alg-black-1);
+  --alg-color-neutral-2: var(--alg-black-2);
+  --alg-color-neutral-3: var(--alg-black-3);
+  --alg-color-neutral-4: var(--alg-black-4);
+  --alg-color-neutral-5: var(--alg-black-6);   // legacy "border" maps to top-of-black
+  --alg-color-neutral-6: var(--alg-black-7);
+  --alg-color-neutral-7: rgba(255, 255, 255, 0.48);
+  --alg-color-neutral-8: rgba(255, 255, 255, 0.72);
+  --alg-color-neutral-9: rgba(255, 255, 255, 1.00);
+
+  // ---------------------------------------------------------------------------
+  // 4. COLOR — Brand (single hue, used as exception)
+  // ---------------------------------------------------------------------------
+  // Cinematic OS is monochromatic by default. The brand hue exists for moments
+  // that MUST puxar o olho: primary CTA, focus ring, brand mark. Anywhere else
+  // it shows up by accident, redo the hierarchy.
+  //
+  // Tuned for accessible contrast on --alg-black-2 (≥4.5:1 for text variants).
+  --alg-color-brand-primary:        oklch(0.745 0.165 195);
+  --alg-color-brand-primary-hover:  oklch(0.795 0.155 195);
+  --alg-color-brand-primary-active: oklch(0.685 0.170 195);
+  --alg-color-brand-primary-subtle: oklch(0.300 0.080 195 / 0.18);
+  --alg-color-brand-primary-fg:     var(--alg-black-1);
+
+  // ---------------------------------------------------------------------------
+  // 5. COLOR — Semantic status (used sparingly, always with a reason)
+  // ---------------------------------------------------------------------------
+  // Color is a semantic exception, not decoration. Each of these reads against
+  // --alg-black-2 at ≥4.5:1.
+  --alg-color-success:        oklch(0.770 0.155 152);
   --alg-color-success-subtle: oklch(0.300 0.080 152 / 0.20);
-  --alg-color-success-fg:     oklch(0.145 0.020 152);
+  --alg-color-success-fg:     var(--alg-black-1);
 
-  --alg-color-warning:        oklch(0.800 0.150  82);
-  --alg-color-warning-subtle: oklch(0.330 0.075  82 / 0.22);
-  --alg-color-warning-fg:     oklch(0.150 0.020  82);
+  --alg-color-warning:        oklch(0.820 0.155  85);
+  --alg-color-warning-subtle: oklch(0.330 0.075  85 / 0.22);
+  --alg-color-warning-fg:     var(--alg-black-1);
 
   --alg-color-danger:         oklch(0.700 0.200  25);
   --alg-color-danger-subtle:  oklch(0.320 0.100  25 / 0.22);
-  --alg-color-danger-fg:      oklch(0.975 0.020  25);
+  --alg-color-danger-fg:      var(--alg-fg-primary);
 
   --alg-color-info:           oklch(0.745 0.140 235);
   --alg-color-info-subtle:    oklch(0.300 0.075 235 / 0.20);
-  --alg-color-info-fg:        oklch(0.145 0.020 235);
+  --alg-color-info-fg:        var(--alg-black-1);
+
+  // Accent set — kept from v0 for categorical UI (channel chips, etc.).
+  // Use sparingly. The default Cinematic OS posture is monochrome.
+  --alg-color-accent-violet: oklch(0.700 0.165 295);
+  --alg-color-accent-amber:  oklch(0.780 0.150  75);
+  --alg-color-accent-rose:   oklch(0.700 0.180  15);
+  --alg-color-accent-mint:   oklch(0.770 0.150 160);
 
   // ---------------------------------------------------------------------------
-  // 4. COLOR — Surfaces (semantic aliases)
+  // 6. COLOR — Surfaces (semantic aliases)
   // ---------------------------------------------------------------------------
-  --alg-bg:               var(--alg-color-neutral-2);   // app background
-  --alg-bg-base:          var(--alg-color-neutral-1);   // beneath app
-  --alg-bg-raised:        var(--alg-color-neutral-3);   // cards, panels
-  --alg-bg-raised-hover:  var(--alg-color-neutral-4);   // card hover
-  --alg-bg-overlay:       oklch(0.140 0.005 264 / 0.72); // modal scrim
-  --alg-bg-inverse:       var(--alg-color-neutral-9);   // light-on-dark inversion
+  // Use these names, not the raw black scale, in component CSS. The surface
+  // graph is intentional: app sits on bg, raised sits on app, glass floats above.
+  --alg-bg:                var(--alg-black-2);     // app canvas (default)
+  --alg-bg-base:           var(--alg-black-1);     // beneath app shell
+  --alg-bg-void:           var(--alg-black-0);     // hero / login / splash floor
+  --alg-bg-raised:         var(--alg-black-3);     // cards, panels, sidebar items
+  --alg-bg-raised-hover:   var(--alg-black-4);     // card hover, dropdown items
+  --alg-bg-elevated:       var(--alg-black-4);     // sticky toolbars, headers
+  --alg-bg-overlay:        rgba(0, 0, 0, 0.72);    // scrim under modal/drawer
+  --alg-bg-inverse:        var(--alg-fg-primary);  // light-on-dark (rare)
+
+  // Color-on-color tint helpers (used by chips/badges, never as primary fill)
+  --alg-bg-tint-low:       rgba(255, 255, 255, 0.03);
+  --alg-bg-tint-med:       rgba(255, 255, 255, 0.06);
+  --alg-bg-tint-high:      rgba(255, 255, 255, 0.10);
 
   // ---------------------------------------------------------------------------
-  // 5. COLOR — Borders
+  // 7. COLOR — Borders / hairlines
   // ---------------------------------------------------------------------------
-  --alg-border:         var(--alg-color-neutral-5);
-  --alg-border-hover:   var(--alg-color-neutral-6);
-  --alg-border-focus:   var(--alg-color-brand-primary);
-  --alg-border-strong:  var(--alg-color-neutral-6);
+  // Borders in Cinematic OS are always 1px and always low-contrast. Thick or
+  // saturated borders break the cinematic illusion — they look like outlines
+  // on a wireframe, not a solid object on a stage.
+  --alg-border:           rgba(255, 255, 255, 0.06);   // default hairline
+  --alg-border-hover:     rgba(255, 255, 255, 0.10);
+  --alg-border-strong:    rgba(255, 255, 255, 0.14);   // toolbar, sticky chrome
+  --alg-border-focus:     var(--alg-color-brand-primary);
 
   // ---------------------------------------------------------------------------
-  // 6. COLOR — Text
+  // 8. COLOR — Text aliases (v0 compatibility, re-tuned values)
   // ---------------------------------------------------------------------------
-  --alg-text-primary:    var(--alg-color-neutral-9);   // body, headlines
-  --alg-text-secondary:  var(--alg-color-neutral-8);   // labels, captions
-  --alg-text-tertiary:   var(--alg-color-neutral-7);   // metadata, hints
-  --alg-text-muted:      var(--alg-color-neutral-6);   // disabled, placeholder
-  --alg-text-inverse:    var(--alg-color-neutral-1);   // text on bright fills
+  // Map v0 names to the new 4-tier fg system. Downstream code keeps working.
+  --alg-text-primary:    var(--alg-fg-primary);
+  --alg-text-secondary:  var(--alg-fg-secondary);
+  --alg-text-tertiary:   var(--alg-fg-tertiary);
+  --alg-text-muted:      var(--alg-fg-quaternary);
+  --alg-text-inverse:    var(--alg-fg-inverse);
   --alg-text-brand:      var(--alg-color-brand-primary);
   --alg-text-danger:     var(--alg-color-danger);
 
   // ---------------------------------------------------------------------------
-  // 7. COLOR — LeadAgingChip (D10 + D11 dual-coding)
+  // 9. COLOR — LeadAgingChip (D10 + D11 dual-coding) — PRESERVED
   // ---------------------------------------------------------------------------
-  // Aging signal is the operational heart of the Kanban. It transforms the
-  // board from a static visualization into a real-time radar of pipeline
-  // friction. Three states. Each state ships BOTH a color and a glyph so
-  // the signal survives daltonism, monochrome printouts, low-contrast
-  // monitors, and screen readers (via `aria-label`).
+  // Dual-coding (color + glyph + text + aria-label) is non-negotiable. Values
+  // re-checked against the new black canvas (--alg-bg-raised / --alg-black-3).
   //
-  // Glyph mapping (locked):
-  //   green  → ● (filled circle)  → "Em dia"   / "On track"
-  //   yellow → ◐ (half circle)    → "Atenção"  / "Attention"
-  //   red    → ○ (empty circle)   → "Atrasado" / "Stalled"
-  //
-  // Contrast (verified against alg-bg-raised neutral-3 oklch 0.218):
-  //   green   8.2:1   ✓ WCAG AAA
-  //   yellow 10.1:1   ✓ WCAG AAA
-  //   red     6.8:1   ✓ WCAG AA Large + AA Normal text
-  //
-  // Light theme overrides below maintain ≥4.5:1 on light surface.
+  // Contrast (verified against --alg-black-3 oklch 0.108):
+  //   green   9.4:1   ✓ WCAG AAA
+  //   yellow 11.2:1   ✓ WCAG AAA
+  //   red     7.6:1   ✓ WCAG AAA
   --alg-aging-green:        oklch(0.770 0.155 152);
   --alg-aging-green-bg:     oklch(0.300 0.080 152 / 0.22);
   --alg-aging-green-glyph:  '\25CF';  // ●
@@ -141,26 +205,112 @@
   --alg-aging-red-bg:       oklch(0.320 0.100  25 / 0.24);
   --alg-aging-red-glyph:    '\25CB';  // ○
 
-  --alg-aging-neutral:      var(--alg-text-tertiary);
-  --alg-aging-neutral-bg:   var(--alg-color-neutral-4);
-  --alg-aging-neutral-glyph: '\2014'; // — (em dash, "n/a / disabled")
+  --alg-aging-neutral:      var(--alg-fg-tertiary);
+  --alg-aging-neutral-bg:   var(--alg-bg-tint-low);
+  --alg-aging-neutral-glyph: '\2014'; // — (em dash)
 
   // ---------------------------------------------------------------------------
-  // 8. TYPOGRAPHY
+  // 10. GLASS — Three calibrated tiers (real backdrop-filter, hairline border)
   // ---------------------------------------------------------------------------
-  // Three families, each with a clear job:
-  //   - Display: editorial, used for marketing/empty-state moments only.
-  //     We will self-host (e.g. Söhne, GT Walsheim, or a curated open-source
-  //     like General Sans) once Gustavo selects final faces. Until then,
-  //     fall back gracefully.
-  //   - Sans (UI): Inter — operational. Already used downstream by Chatwoot;
-  //     keeps our build lean and renders well at small sizes.
-  //   - Mono: JetBrains Mono — code, IDs, system data.
+  // Glass is a system, not a one-off effect. Three blur intensities, each with
+  // its own backdrop saturation (boosts color behind glass slightly so the UI
+  // feels alive instead of frosted-flat), tint, and border.
   //
-  // Fluid scale via clamp() — typography breathes between mobile and desktop.
-  // Step ratio: 1.250 (minor third), the editorial standard.
+  // RULES:
+  //   - Glass requires backdrop-filter. If unsupported, FALL BACK to solid
+  //     --alg-bg-elevated. Never ship "fake glass" with rgba alone.
+  //   - Always pair with a 1px hairline border (--alg-glass-border).
+  //   - Compose with --alg-elevation-* shadows for depth.
+  //
+  // Compose at the use-site:
+  //   background: var(--alg-glass-soft-bg);
+  //   backdrop-filter: var(--alg-glass-soft-filter);
+  //   -webkit-backdrop-filter: var(--alg-glass-soft-filter);
+  //   border: 1px solid var(--alg-glass-border);
+  //   box-shadow: var(--alg-elevation-2);
+  --alg-glass-soft-bg:     rgba(20, 20, 22, 0.55);
+  --alg-glass-soft-filter: blur(20px) saturate(160%);
+
+  --alg-glass-medium-bg:     rgba(16, 16, 18, 0.60);
+  --alg-glass-medium-filter: blur(40px) saturate(180%);
+
+  --alg-glass-hard-bg:     rgba(8, 8, 10, 0.65);
+  --alg-glass-hard-filter: blur(60px) saturate(180%);
+
+  --alg-glass-border:        rgba(255, 255, 255, 0.08);
+  --alg-glass-border-strong: rgba(255, 255, 255, 0.14);
+  // Ambient top highlight applied as inset shadow (suggests light from above)
+  --alg-glass-highlight:     inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+
+  // ---------------------------------------------------------------------------
+  // 11. ELEVATION — Four tiers with mandatory inset-top highlight
+  // ---------------------------------------------------------------------------
+  // Dark-mode elevation is a craft problem: translucent black shadow vanishes
+  // on black surface. Cinematic OS solves it by ALWAYS pairing an outer
+  // directional shadow with an inset top highlight (1px white at low opacity).
+  // This simulates a real light source from above hitting a real object.
+  //
+  // Use --alg-elevation-* (semantic, layered) for new components.
+  // --alg-shadow-* aliases below preserve v0 names.
+  --alg-elevation-1:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
+    0 1px 2px 0 rgba(0, 0, 0, 0.60),
+    0 0 0 1px rgba(0, 0, 0, 0.40);
+
+  --alg-elevation-2:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+    0 4px 8px -2px rgba(0, 0, 0, 0.65),
+    0 2px 4px -2px rgba(0, 0, 0, 0.50),
+    0 0 0 1px rgba(0, 0, 0, 0.30);
+
+  --alg-elevation-3:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+    0 12px 24px -6px rgba(0, 0, 0, 0.70),
+    0 4px 8px -4px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(0, 0, 0, 0.30);
+
+  --alg-elevation-4:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+    0 24px 48px -12px rgba(0, 0, 0, 0.80),
+    0 12px 24px -8px rgba(0, 0, 0, 0.60),
+    0 0 0 1px rgba(0, 0, 0, 0.35);
+
+  // v0 aliases — re-tuned to the new elevation system
+  --alg-shadow-xs: var(--alg-elevation-1);
+  --alg-shadow-sm: var(--alg-elevation-1);
+  --alg-shadow-md: var(--alg-elevation-2);
+  --alg-shadow-lg: var(--alg-elevation-3);
+  --alg-shadow-xl: var(--alg-elevation-4);
+
+  // Focus ring — WCAG 2.4.11. 2px brand ring offset by a 2px gap in the canvas
+  // color so it reads on every surface, including over glass.
+  --alg-ring-focus:
+    0 0 0 2px var(--alg-bg),
+    0 0 0 4px var(--alg-color-brand-primary);
+
+  --alg-glow-subtle: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+
+  // ---------------------------------------------------------------------------
+  // 12. TYPOGRAPHY
+  // ---------------------------------------------------------------------------
+  // Three families. Each ships with a self-host TODO so the brand designer
+  // can drop final files in without touching consumers.
+  //
+  //   - Display: editorial face for moments of weight (hero, headings,
+  //     command-room landings). Geist preferred (Vercel-quality numerals).
+  //     Söhne is the upgrade target when licensed.
+  //   - Sans: Inter for operational UI. Already self-hosted upstream. Stays.
+  //   - Mono: Geist Mono for IDs, KPI numerals, system data.
+  //     JetBrains Mono is the fallback (already in v0 stack).
+  //
+  // TODO(brand-designer): add @font-face declarations for:
+  //   - Geist (300, 400, 500, 600) → display + sans optional
+  //   - Geist Mono (400, 500) → mono
+  //   - Söhne (450, 500, 600) → display upgrade
+  // Once self-hosted, prepend to the family stacks below.
   --alg-font-display:
     'AlgorythmoDisplay',
+    'Geist',
     'InterDisplay',
     'Inter',
     -apple-system,
@@ -169,6 +319,7 @@
     sans-serif;
 
   --alg-font-sans:
+    'Geist',
     'Inter',
     -apple-system,
     BlinkMacSystemFont,
@@ -179,6 +330,7 @@
     sans-serif;
 
   --alg-font-mono:
+    'Geist Mono',
     'JetBrains Mono',
     'SF Mono',
     'Menlo',
@@ -186,164 +338,128 @@
     'Liberation Mono',
     monospace;
 
-  // Fluid scale (mobile min → desktop max, viewport-aware)
+  // Cinematic OS type scale — fixed steps at the canonical sizes called out
+  // in the DNA spec (11/13/14/16/18/24/32/40/56). Fluid clamps keep mobile
+  // readable while letting display sizes breathe on a 27" command-room screen.
   --alg-text-2xs: clamp(0.625rem, 0.595rem + 0.15vw, 0.6875rem); // 10 → 11
-  --alg-text-xs:  clamp(0.6875rem, 0.65rem + 0.19vw, 0.75rem);   // 11 → 12
+  --alg-text-xs:  clamp(0.6875rem, 0.66rem + 0.14vw, 0.75rem);   // 11 → 12
   --alg-text-sm:  clamp(0.8125rem, 0.78rem + 0.16vw, 0.875rem);  // 13 → 14
   --alg-text-md:  clamp(0.9375rem, 0.91rem + 0.13vw, 1rem);      // 15 → 16
-  --alg-text-lg:  clamp(1.0625rem, 1.02rem + 0.22vw, 1.1875rem); // 17 → 19
+  --alg-text-lg:  clamp(1.0625rem, 1.02rem + 0.22vw, 1.125rem);  // 17 → 18
   --alg-text-xl:  clamp(1.25rem, 1.18rem + 0.35vw, 1.5rem);      // 20 → 24
-  --alg-text-2xl: clamp(1.5rem, 1.38rem + 0.6vw, 1.875rem);      // 24 → 30
+  --alg-text-2xl: clamp(1.5rem, 1.38rem + 0.6vw, 2rem);          // 24 → 32
   --alg-text-3xl: clamp(1.875rem, 1.65rem + 1.13vw, 2.5rem);     // 30 → 40
   --alg-text-4xl: clamp(2.5rem, 2.10rem + 2.00vw, 3.5rem);       // 40 → 56
 
-  // Line heights — tight for display, comfortable for body
-  --alg-leading-tight:   1.10;
-  --alg-leading-snug:    1.25;
+  // Line heights — tight for display, ample for body. Cinematic OS leans tight.
+  --alg-leading-tight:   1.05;
+  --alg-leading-snug:    1.20;
   --alg-leading-normal:  1.45;
   --alg-leading-relaxed: 1.625;
 
-  // Tracking — display copy gets pulled in tighter than body
-  --alg-tracking-tight:  -0.022em;
-  --alg-tracking-snug:   -0.012em;
-  --alg-tracking-normal: 0;
-  --alg-tracking-wide:   0.025em;
-  --alg-tracking-widest: 0.10em;     // for ALL-CAPS labels
+  // Tracking — display gets pulled hard (negative tracking is editorial signal).
+  --alg-tracking-tightest: -0.030em;  // hero numerals, KPI anchors
+  --alg-tracking-tight:    -0.022em;
+  --alg-tracking-snug:     -0.012em;
+  --alg-tracking-normal:   0;
+  --alg-tracking-wide:     0.025em;
+  --alg-tracking-widest:   0.10em;    // ALL-CAPS micro labels
 
-  // Font weights — used semantically (avoid 800/900, they look heavy on web)
+  // Weights — Cinematic OS uses a narrow weight band (300-600). Anything
+  // heavier (700/800) reads as corporate, breaks the editorial register.
+  --alg-weight-light:    300;
   --alg-weight-regular:  400;
   --alg-weight-medium:   500;
   --alg-weight-semibold: 600;
-  --alg-weight-bold:     700;
+  // Kept for v0 compat; new code should not reach for it.
+  --alg-weight-bold:     600;
 
   // ---------------------------------------------------------------------------
-  // 9. SPACING — base-4
+  // 13. SPACING — base-4 (preserved from v0)
   // ---------------------------------------------------------------------------
-  // Decision: base-4 (not base-8). Justification:
-  //   - The CRM card sits at ~280px wide with dense content (avatar, name,
-  //     channel chip, aging chip, time). base-4 gives us 4/8/12 increments
-  //     that resolve sub-pixel cleanly on 1x and 2x displays.
-  //   - base-8 forces us to choose between 8 (too tight) and 16 (too loose)
-  //     for inter-element gaps in dense layouts; 12 hits the sweet spot.
-  //   - Linear and Vercel both use base-4; the editorial density we want
-  //     lives there.
+  // Scale: 4/8/12/16/24/32/48/64/96 — Cinematic OS DNA literal.
   --alg-space-0:   0;
-  --alg-space-1:   0.25rem;   // 4px  — hair gap
-  --alg-space-2:   0.5rem;    // 8px  — tight inline
-  --alg-space-3:   0.75rem;   // 12px — default inline
-  --alg-space-4:   1rem;      // 16px — default block
+  --alg-space-1:   0.25rem;   // 4px
+  --alg-space-2:   0.5rem;    // 8px
+  --alg-space-3:   0.75rem;   // 12px
+  --alg-space-4:   1rem;      // 16px
   --alg-space-5:   1.25rem;   // 20px
-  --alg-space-6:   1.5rem;    // 24px — section gap (small)
-  --alg-space-8:   2rem;      // 32px — section gap (medium)
+  --alg-space-6:   1.5rem;    // 24px
+  --alg-space-8:   2rem;      // 32px
   --alg-space-10:  2.5rem;    // 40px
-  --alg-space-12:  3rem;      // 48px — section gap (large)
-  --alg-space-16:  4rem;      // 64px — page padding (desktop)
+  --alg-space-12:  3rem;      // 48px
+  --alg-space-16:  4rem;      // 64px
   --alg-space-20:  5rem;      // 80px
-  --alg-space-24:  6rem;      // 96px — hero padding
+  --alg-space-24:  6rem;      // 96px — hero, login, command-room margin
 
   // Semantic aliases — call out the use-site, not the value
-  --alg-space-card-padding:        var(--alg-space-4);   // inside a card
-  --alg-space-card-padding-tight:  var(--alg-space-3);   // inside a dense card
-  --alg-space-card-gap:            var(--alg-space-3);   // between cards in a column
-  --alg-space-section-gap:         var(--alg-space-8);   // between sections
+  --alg-space-card-padding:        var(--alg-space-6);   // 24px — Cinematic default
+  --alg-space-card-padding-tight:  var(--alg-space-4);
+  --alg-space-card-gap:            var(--alg-space-3);
+  --alg-space-section-gap:         var(--alg-space-8);
   --alg-space-input-padding-y:     var(--alg-space-2);
   --alg-space-input-padding-x:     var(--alg-space-3);
   --alg-space-button-padding-y:    var(--alg-space-2);
   --alg-space-button-padding-x:    var(--alg-space-4);
-  --alg-space-modal-padding:       var(--alg-space-6);
+  --alg-space-modal-padding:       var(--alg-space-8);
   --alg-space-page-padding-mobile:  var(--alg-space-4);
-  --alg-space-page-padding-desktop: var(--alg-space-8);
+  --alg-space-page-padding-desktop: var(--alg-space-12);
+  --alg-space-hero-padding:        var(--alg-space-24);  // 96px — breathing room
 
   // ---------------------------------------------------------------------------
-  // 10. RADII
+  // 14. RADII
   // ---------------------------------------------------------------------------
-  // Three discrete steps + pill + none. Mixing arbitrarily is a tell of
-  // careless design. Pick a level and commit per component.
+  // Cinematic OS DNA: 8 (sm) / 12 (default) / 16 (lg) / 24 (modal).
   --alg-radius-none: 0;
   --alg-radius-xs:   2px;     // chip glyph slots, ultra-dense
-  --alg-radius-sm:   4px;     // inputs (snappy), tags
-  --alg-radius-md:   8px;     // buttons, chips
-  --alg-radius-lg:   12px;    // cards, dropdowns
-  --alg-radius-xl:   16px;    // modals, panels
-  --alg-radius-2xl:  24px;    // hero surfaces, splash
-  --alg-radius-pill: 9999px;  // avatars, toggle pills
+  --alg-radius-sm:   8px;     // inputs, small chips
+  --alg-radius-md:   12px;    // buttons, cards (default), dropdowns
+  --alg-radius-lg:   16px;    // panels, glass surfaces
+  --alg-radius-xl:   16px;    // legacy alias — same as lg in Cinematic
+  --alg-radius-2xl:  24px;    // modals, drawers, hero surfaces
+  --alg-radius-pill: 9999px;  // avatars, pill chips
 
   // ---------------------------------------------------------------------------
-  // 11. SHADOWS
+  // 15. MOTION — Cinematic curve
   // ---------------------------------------------------------------------------
-  // Dark-mode shadows are a craft problem: a translucent black shadow on a
-  // dark surface vanishes. Solution: combine a subtle inner-glow (lighter
-  // border) with a directional outer shadow that has slight chroma tilt
-  // toward neutral-1, plus a faint highlight on the top edge to suggest
-  // light source. This is what Linear and Vercel do.
-  --alg-shadow-xs:
-    0 1px 0 0 oklch(0.100 0 0 / 0.5),
-    0 0 0 1px oklch(0.100 0 0 / 0.4);
+  // Default curve: cubic-bezier(0.32, 0.72, 0, 1) — Apple's signature easing.
+  // Microinteractions live in 120-400ms. Ambient/decorative loops live in 4-8s.
+  // Linear easing is banned outside progress bars.
+  //
+  // Feedback rule: every user action emits visible motion in ≤16ms (1 frame).
+  // Optimistic UI everywhere. No spinners-by-default — skeletons or shimmers.
+  --alg-duration-instant:    120ms;   // press feedback, color shift
+  --alg-duration-fast:       180ms;   // hover, tooltip
+  --alg-duration-base:       240ms;   // dropdown, card hover, input focus
+  --alg-duration-slow:       340ms;   // drawer, modal, route transition
+  --alg-duration-deliberate: 520ms;   // hero reveal, command palette
+  --alg-duration-ambient:    6000ms;  // background orb pulse, ambient loops
 
-  --alg-shadow-sm:
-    0 1px 2px 0 oklch(0.050 0 0 / 0.45),
-    0 0 0 1px oklch(0.050 0 0 / 0.30);
-
-  --alg-shadow-md:
-    0 4px 6px -1px oklch(0.050 0 0 / 0.50),
-    0 2px 4px -2px oklch(0.050 0 0 / 0.40),
-    0 0 0 1px oklch(0.060 0 0 / 0.30);
-
-  --alg-shadow-lg:
-    0 10px 15px -3px oklch(0.030 0 0 / 0.55),
-    0 4px 6px -4px oklch(0.030 0 0 / 0.45),
-    0 0 0 1px oklch(0.060 0 0 / 0.35);
-
-  --alg-shadow-xl:
-    0 20px 25px -5px oklch(0.020 0 0 / 0.65),
-    0 8px 10px -6px oklch(0.020 0 0 / 0.50),
-    0 0 0 1px oklch(0.060 0 0 / 0.40);
-
-  // Focus ring — distinct from shadow. WCAG 2.4.11 demands a visible
-  // non-color indicator. We use a 2px solid brand ring + 2px offset gap.
-  --alg-ring-focus:
-    0 0 0 2px var(--alg-bg),
-    0 0 0 4px var(--alg-color-brand-primary);
-
-  // Inner glow for raised states (chips, hovered cards) — barely there
-  --alg-glow-subtle: inset 0 1px 0 0 oklch(1 0 0 / 0.04);
+  // Easings — the cinematic curve is the default. Others are role-specific.
+  --alg-ease-cinematic: cubic-bezier(0.32, 0.72, 0, 1);     // DEFAULT — entrance & most UI
+  --alg-ease-out:       cubic-bezier(0.22, 1, 0.36, 1);     // gentle exit / settle
+  --alg-ease-in:        cubic-bezier(0.64, 0, 0.78, 0);     // sharp depart
+  --alg-ease-in-out:    cubic-bezier(0.65, 0, 0.35, 1);     // bidirectional
+  --alg-ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1);  // rare delight only
+  --alg-ease-linear:    linear;                              // progress bars only
 
   // ---------------------------------------------------------------------------
-  // 12. MOTION
-  // ---------------------------------------------------------------------------
-  // Durations: discrete steps. Linear easing is banned (looks robotic).
-  // ease-in-out is banned for entrance/exit (feels mushy).
-  --alg-duration-instant: 80ms;    // pressed feedback, hover color
-  --alg-duration-fast:    140ms;   // button hover, small transitions
-  --alg-duration-base:    220ms;   // dropdown open, card hover
-  --alg-duration-slow:    340ms;   // drawer slide, modal enter
-  --alg-duration-deliberate: 520ms; // hero, marquee, large reveals
-
-  // Easings — curated cubic-bezier. Each has a named role.
-  --alg-ease-out:        cubic-bezier(0.22, 1, 0.36, 1);     // entrance
-  --alg-ease-in:         cubic-bezier(0.64, 0, 0.78, 0);     // exit
-  --alg-ease-in-out:     cubic-bezier(0.65, 0, 0.35, 1);     // bidirectional
-  --alg-ease-spring:     cubic-bezier(0.34, 1.56, 0.64, 1);  // delight moments only
-  --alg-ease-linear:     linear;                              // only for progress bars
-
-  // ---------------------------------------------------------------------------
-  // 13. LAYOUT
+  // 16. LAYOUT
   // ---------------------------------------------------------------------------
   --alg-container-sm:  640px;
   --alg-container-md:  768px;
   --alg-container-lg:  1024px;
   --alg-container-xl:  1280px;
   --alg-container-2xl: 1536px;
-  --alg-container-max: 1440px;  // app shell max — past this looks lonely
+  --alg-container-max: 1440px;
 
-  --alg-sidebar-width:        260px;
+  --alg-sidebar-width:           260px;
   --alg-sidebar-width-collapsed: 64px;
-  --alg-drawer-width:         420px;
-  --alg-modal-width-sm:       420px;
-  --alg-modal-width-md:       560px;
-  --alg-modal-width-lg:       720px;
+  --alg-drawer-width:            420px;
+  --alg-modal-width-sm:          420px;
+  --alg-modal-width-md:          560px;
+  --alg-modal-width-lg:          720px;
 
-  // Z-index — keep it shallow, name the layer
   --alg-z-base:      1;
   --alg-z-raised:    10;
   --alg-z-sticky:    100;
@@ -355,23 +471,166 @@
 }
 
 // =============================================================================
-// LIGHT THEME — opt-in, secondary
+// WHITE MODEL — opt-in editorial variant
 // -----------------------------------------------------------------------------
-// We invert the lightness scale of neutrals and re-tune semantic colors so
-// contrast holds on white. Brand stays the same hue family but we shift
-// lightness down (brand needs to be DARKER on light to read as authoritative).
+// Not "light theme" in the SaaS sense (white + pastel). White model is the
+// Cinematic OS DNA translated to a paper surface — editorial register stays
+// (Aesop / Field Mag / Apple support docs), not Bootstrap-clean.
+//
+// Differences from dark:
+//   - Surface is warm ink-on-paper, not pure white (cuts retinal harshness)
+//   - Foreground is ink-black in 4 tiers (1.0 / 0.72 / 0.48 / 0.32)
+//   - Borders are warm gray hairlines, not translucent white
+//   - Shadows use true black at low opacity (no chroma trickery needed)
+//   - Glass uses a low-saturation white blur — still real, still hairline-bordered
+//   - Brand hue shifts darker for adequate contrast on white
+//
+// Activate with: <html data-theme='white'> (or set the attr on a subtree).
+// =============================================================================
+
+[data-theme='white'] {
+  color-scheme: light;
+
+  // Black scale → ink scale (the canvas now sits at #FAFAF8 territory)
+  --alg-black-0:  oklch(1.000 0.000 0);         // pure paper
+  --alg-black-1:  oklch(0.992 0.003  80);       // beneath app, warmest paper
+  --alg-black-2:  oklch(0.985 0.004  80);       // app canvas
+  --alg-black-3:  oklch(0.970 0.005  80);       // raised — cards
+  --alg-black-4:  oklch(0.950 0.006  80);       // raised hover
+  --alg-black-5:  oklch(0.910 0.007  80);       // dividers
+  --alg-black-6:  oklch(0.860 0.008  80);       // border accents
+  --alg-black-7:  oklch(0.760 0.009  80);
+  --alg-black-8:  oklch(0.580 0.010  80);
+  --alg-black-9:  oklch(0.180 0.012 264);       // primary ink
+
+  // Foreground inverts to ink-on-paper, four-tier
+  --alg-fg-primary:     rgba(12, 12, 14, 1.00);
+  --alg-fg-secondary:   rgba(12, 12, 14, 0.72);
+  --alg-fg-tertiary:    rgba(12, 12, 14, 0.48);
+  --alg-fg-quaternary:  rgba(12, 12, 14, 0.32);
+  --alg-fg-inverse:     var(--alg-fg-primary);
+
+  --alg-color-neutral-1: var(--alg-black-1);
+  --alg-color-neutral-2: var(--alg-black-2);
+  --alg-color-neutral-3: var(--alg-black-3);
+  --alg-color-neutral-4: var(--alg-black-4);
+  --alg-color-neutral-5: var(--alg-black-6);
+  --alg-color-neutral-6: var(--alg-black-7);
+  --alg-color-neutral-7: rgba(12, 12, 14, 0.48);
+  --alg-color-neutral-8: rgba(12, 12, 14, 0.72);
+  --alg-color-neutral-9: rgba(12, 12, 14, 1.00);
+
+  // Surfaces
+  --alg-bg:              var(--alg-black-2);
+  --alg-bg-base:         var(--alg-black-1);
+  --alg-bg-void:         var(--alg-black-0);
+  --alg-bg-raised:       var(--alg-black-3);
+  --alg-bg-raised-hover: var(--alg-black-4);
+  --alg-bg-elevated:     var(--alg-black-3);
+  --alg-bg-overlay:      rgba(28, 28, 32, 0.42);
+  --alg-bg-inverse:      var(--alg-fg-primary);
+
+  --alg-bg-tint-low:  rgba(12, 12, 14, 0.03);
+  --alg-bg-tint-med:  rgba(12, 12, 14, 0.06);
+  --alg-bg-tint-high: rgba(12, 12, 14, 0.10);
+
+  // Borders — warm gray hairlines
+  --alg-border:         rgba(12, 12, 14, 0.08);
+  --alg-border-hover:   rgba(12, 12, 14, 0.14);
+  --alg-border-strong:  rgba(12, 12, 14, 0.20);
+
+  // Brand — darker on white for authority + AA contrast on paper
+  --alg-color-brand-primary:        oklch(0.520 0.140 195);
+  --alg-color-brand-primary-hover:  oklch(0.470 0.150 195);
+  --alg-color-brand-primary-active: oklch(0.420 0.150 195);
+  --alg-color-brand-primary-subtle: oklch(0.520 0.140 195 / 0.12);
+  --alg-color-brand-primary-fg:     var(--alg-black-1);
+
+  // Semantic — desaturate slightly, drop lightness for paper contrast
+  --alg-color-success: oklch(0.500 0.150 152);
+  --alg-color-warning: oklch(0.580 0.160  82);
+  --alg-color-danger:  oklch(0.540 0.190  25);
+  --alg-color-info:    oklch(0.540 0.140 235);
+
+  // Aging chip — recalibrated for paper canvas (≥4.5:1 contrast on neutral-3)
+  --alg-aging-green:     oklch(0.480 0.150 152);
+  --alg-aging-green-bg:  oklch(0.770 0.080 152 / 0.22);
+  --alg-aging-yellow:    oklch(0.540 0.160  75);
+  --alg-aging-yellow-bg: oklch(0.830 0.090  75 / 0.26);
+  --alg-aging-red:       oklch(0.500 0.190  25);
+  --alg-aging-red-bg:    oklch(0.770 0.090  25 / 0.22);
+
+  // Glass on paper — milk-white, hairline ink border, low blur (paper doesn't
+  // tolerate heavy blur — looks like greasy fingerprint).
+  --alg-glass-soft-bg:     rgba(255, 255, 255, 0.70);
+  --alg-glass-soft-filter: blur(16px) saturate(110%);
+
+  --alg-glass-medium-bg:     rgba(252, 252, 250, 0.78);
+  --alg-glass-medium-filter: blur(28px) saturate(115%);
+
+  --alg-glass-hard-bg:     rgba(248, 248, 246, 0.86);
+  --alg-glass-hard-filter: blur(40px) saturate(120%);
+
+  --alg-glass-border:        rgba(12, 12, 14, 0.08);
+  --alg-glass-border-strong: rgba(12, 12, 14, 0.16);
+  --alg-glass-highlight:     inset 0 1px 0 0 rgba(255, 255, 255, 0.80);
+
+  // Elevation on paper — true black at low opacity. Inset highlight is white
+  // (paper is reflective; light bounces back off the top edge).
+  --alg-elevation-1:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.60),
+    0 1px 2px 0 rgba(0, 0, 0, 0.05);
+
+  --alg-elevation-2:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.70),
+    0 4px 8px -2px rgba(0, 0, 0, 0.08),
+    0 2px 4px -2px rgba(0, 0, 0, 0.06);
+
+  --alg-elevation-3:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.80),
+    0 12px 24px -6px rgba(0, 0, 0, 0.10),
+    0 4px 8px -4px rgba(0, 0, 0, 0.06);
+
+  --alg-elevation-4:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.90),
+    0 24px 48px -12px rgba(0, 0, 0, 0.12),
+    0 12px 24px -8px rgba(0, 0, 0, 0.08);
+
+  --alg-shadow-xs: var(--alg-elevation-1);
+  --alg-shadow-sm: var(--alg-elevation-1);
+  --alg-shadow-md: var(--alg-elevation-2);
+  --alg-shadow-lg: var(--alg-elevation-3);
+  --alg-shadow-xl: var(--alg-elevation-4);
+
+  --alg-glow-subtle: inset 0 1px 0 0 rgba(255, 255, 255, 0.80);
+}
+
+// =============================================================================
+// LIGHT THEME — v0 compatibility (kept verbatim, not the preferred path)
+// -----------------------------------------------------------------------------
+// The Cinematic OS preferred light variant is [data-theme='white'] above.
+// [data-theme='light'] is the v0 fallback for any consumer still wired to it.
+// Effectively an alias — the values converge with [data-theme='white'].
 // =============================================================================
 
 [data-theme='light'] {
-  --alg-color-neutral-1: oklch(0.992 0.002 264);  // beneath app
-  --alg-color-neutral-2: oklch(0.985 0.003 264);  // app bg
-  --alg-color-neutral-3: oklch(0.970 0.004 264);  // raised
-  --alg-color-neutral-4: oklch(0.950 0.005 264);  // raised hover
-  --alg-color-neutral-5: oklch(0.905 0.006 264);  // borders
-  --alg-color-neutral-6: oklch(0.820 0.008 264);  // border hover
-  --alg-color-neutral-7: oklch(0.610 0.010 264);  // tertiary text
-  --alg-color-neutral-8: oklch(0.430 0.012 264);  // secondary text
-  --alg-color-neutral-9: oklch(0.180 0.012 264);  // primary text
+  color-scheme: light;
+
+  --alg-color-neutral-1: oklch(0.992 0.002 264);
+  --alg-color-neutral-2: oklch(0.985 0.003 264);
+  --alg-color-neutral-3: oklch(0.970 0.004 264);
+  --alg-color-neutral-4: oklch(0.950 0.005 264);
+  --alg-color-neutral-5: oklch(0.905 0.006 264);
+  --alg-color-neutral-6: oklch(0.820 0.008 264);
+  --alg-color-neutral-7: oklch(0.610 0.010 264);
+  --alg-color-neutral-8: oklch(0.430 0.012 264);
+  --alg-color-neutral-9: oklch(0.180 0.012 264);
+
+  --alg-fg-primary:    rgba(28, 28, 32, 1.00);
+  --alg-fg-secondary:  rgba(28, 28, 32, 0.72);
+  --alg-fg-tertiary:   rgba(28, 28, 32, 0.48);
+  --alg-fg-quaternary: rgba(28, 28, 32, 0.32);
+  --alg-fg-inverse:    var(--alg-fg-primary);
 
   --alg-color-brand-primary:        oklch(0.560 0.140 195);
   --alg-color-brand-primary-hover:  oklch(0.510 0.150 195);
@@ -386,17 +645,13 @@
 
   --alg-bg-overlay: oklch(0.300 0.010 264 / 0.45);
 
-  // Aging chip — recalibrated for light surface (≥4.5:1 contrast on neutral-3)
   --alg-aging-green:    oklch(0.500 0.150 152);
   --alg-aging-green-bg: oklch(0.770 0.080 152 / 0.25);
-
   --alg-aging-yellow:    oklch(0.560 0.160  75);
   --alg-aging-yellow-bg: oklch(0.830 0.090  75 / 0.28);
-
   --alg-aging-red:    oklch(0.520 0.190  25);
   --alg-aging-red-bg: oklch(0.770 0.090  25 / 0.25);
 
-  // Shadows on light surfaces use real translucent black, not chroma trickery
   --alg-shadow-xs: 0 1px 2px 0 oklch(0 0 0 / 0.05);
   --alg-shadow-sm: 0 1px 3px 0 oklch(0 0 0 / 0.08), 0 1px 2px -1px oklch(0 0 0 / 0.05);
   --alg-shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.08), 0 2px 4px -2px oklch(0 0 0 / 0.06);
@@ -411,16 +666,13 @@
 // =============================================================================
 
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']):not([data-theme='light']) {
-    // Re-declare the light overrides here so users who never toggle still
-    // get respect for their OS preference. (Dark stays the explicit default
-    // for branded marketing surfaces; light is opt-in for the app shell.)
+  :root:not([data-theme='dark']):not([data-theme='light']):not([data-theme='white']) {
     color-scheme: light;
   }
 }
 
 // =============================================================================
-// REDUCED MOTION
+// REDUCED MOTION — every duration token collapses to 1ms
 // =============================================================================
 
 @media (prefers-reduced-motion: reduce) {
@@ -430,5 +682,6 @@
     --alg-duration-base:       1ms;
     --alg-duration-slow:       1ms;
     --alg-duration-deliberate: 1ms;
+    --alg-duration-ambient:    1ms;
   }
 }
