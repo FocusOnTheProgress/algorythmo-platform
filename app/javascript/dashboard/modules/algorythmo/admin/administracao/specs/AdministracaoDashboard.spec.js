@@ -1,52 +1,95 @@
-// algorythmo: M6.3 — AdministracaoDashboard composition spec.
-import { describe, it, expect, vi } from 'vitest';
+// algorythmo: plan 0007 M2-e — Administration migrated to SectorShellV2.
+// The route entry now delegates to AdministrationShell, which composes the v2
+// shell: dense Overview (default) + three mocked sub-tabs + a full-width agent
+// chat. Asserts the shell wiring, the Overview watermark contract, and
+// per-sub-tab cut-flag gating — without exercising the heavy chart internals
+// (stubbed).
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import AdministracaoDashboard from '../AdministracaoDashboard.vue';
-import administracaoMock from '../../mocks/sectors/administracao';
 
 vi.mock('vue-i18n', () => ({
-  useI18n: () => ({ t: key => key }),
+  useI18n: () => ({ t: (key, params) => (params ? `${key}` : key) }),
+}));
+
+vi.mock('vue-router', () => ({
+  useRoute: () => ({ params: { accountId: '1' } }),
+}));
+
+const featureGate = vi.fn(() => false);
+vi.mock('dashboard/composables/store', () => ({
+  useMapGetter: () => ({ value: featureGate }),
 }));
 
 function mountDashboard() {
   return mount(AdministracaoDashboard, {
     global: {
       stubs: {
+        Icon: { props: ['icon'], template: '<i :data-icon="icon" />' },
         LineChart: { template: '<div class="alg-stub-line" />' },
-        PieChart: { template: '<div class="alg-stub-pie" />' },
       },
     },
   });
 }
 
-describe('AdministracaoDashboard (M6.3 derived)', () => {
-  it('renders side-by-side layout (dashboard + agent chat)', () => {
-    const wrapper = mountDashboard();
-    expect(wrapper.find('.alg-sector-layout').exists()).toBe(true);
-    expect(wrapper.find('.alg-sector').exists()).toBe(true);
-    expect(wrapper.find('.alg-agent').exists()).toBe(true);
+describe('AdministracaoDashboard (M2-e)', () => {
+  beforeEach(() => {
+    featureGate.mockReset();
+    featureGate.mockReturnValue(false);
   });
 
-  it('passes the founder-locked Administração mock to SectorDashboard', () => {
+  it('mounts without error', () => {
+    expect(() => mountDashboard()).not.toThrow();
+  });
+
+  it('renders the SectorShellV2 shell (not the old side-by-side layout)', () => {
     const wrapper = mountDashboard();
-    expect(wrapper.find('.alg-sector').attributes('aria-label')).toBe(
-      administracaoMock.headingKey
+    expect(wrapper.find('.alg-shell').exists()).toBe(true);
+    expect(wrapper.find('.alg-sector-layout').exists()).toBe(false);
+  });
+
+  it('Overview is the first tab and is selected by default', () => {
+    const wrapper = mountDashboard();
+    const tabs = wrapper.findAll('[role="tab"]');
+    expect(tabs[0].attributes('aria-selected')).toBe('true');
+  });
+
+  it('exposes Overview plus the three Administration sub-tabs when nothing is cut', () => {
+    const wrapper = mountDashboard();
+    const tabs = wrapper.findAll('[role="tab"]');
+    // overview + estrategia + metas + indicadores
+    expect(tabs).toHaveLength(4);
+  });
+
+  it('Overview cards each carry the demonstration watermark', () => {
+    const wrapper = mountDashboard();
+    const watermarks = wrapper.findAll('.alg-overview__watermark');
+    expect(watermarks.length).toBe(3);
+  });
+
+  it('anchors the agent chat at the foot via the chatHeadingKey', () => {
+    const wrapper = mountDashboard();
+    expect(wrapper.find('.alg-shell__chat-heading').text()).toBe(
+      'ALGORYTHMO_ADMIN.SECTORS.ADMINISTRATION.AGENT_CHAT_HEADING'
     );
   });
 
-  it('renders the Contratos + Renovações anchor values', () => {
+  it('hides a sub-tab when its cut flag is active (D10)', () => {
+    featureGate.mockImplementation(
+      (_accountId, flag) =>
+        flag === 'algorythmo_cut_sector_administration_estrategia'
+    );
     const wrapper = mountDashboard();
-    const values = wrapper
-      .findAll('.alg-sector__anchor-value')
-      .map(el => el.text());
-    expect(values).toEqual(['138', '9']);
+    const tabs = wrapper.findAll('[role="tab"]');
+    expect(tabs).toHaveLength(3);
+    expect(wrapper.find('#alg-sector-panel-estrategia').exists()).toBe(false);
   });
 
-  it('renders 4 secondary KPIs (documentos / aprovações / cadastros / auditorias)', () => {
+  it('never cuts the Overview tab even if every sub-tab is cut', () => {
+    featureGate.mockReturnValue(true);
     const wrapper = mountDashboard();
-    const values = wrapper
-      .findAll('.alg-sector__secondary-value')
-      .map(el => el.text());
-    expect(values).toEqual(['24', '7', '18', '3']);
+    const tabs = wrapper.findAll('[role="tab"]');
+    expect(tabs).toHaveLength(1);
+    expect(tabs[0].attributes('aria-selected')).toBe('true');
   });
 });
