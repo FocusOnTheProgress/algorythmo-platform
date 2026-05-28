@@ -152,10 +152,50 @@ const toggleShortcutModalFn = show => {
 
 useSidebarKeyboardShortcuts(toggleShortcutModalFn);
 
+// algorythmo: M2-a — D6: sidebar expanded state persists per user in localStorage.
+// Key: `algorythmo:sidebar:expanded:{userId}`. Value: JSON string of expanded item name or null.
+// Falls back gracefully to in-memory ref when localStorage is unavailable (SSR / private mode).
+const currentUser = useMapGetter('auth/getCurrentUser');
+
+const readExpandedFromStorage = userId => {
+  try {
+    const raw = localStorage.getItem(
+      `algorythmo:sidebar:expanded:${userId ?? 'anonymous'}`
+    );
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeExpandedToStorage = (userId, value) => {
+  try {
+    localStorage.setItem(
+      `algorythmo:sidebar:expanded:${userId ?? 'anonymous'}`,
+      JSON.stringify(value)
+    );
+  } catch {
+    // localStorage unavailable — state degrades to in-memory only
+  }
+};
+
 const expandedItem = ref(null);
 
+// algorythmo: M2-a — D6: restore persisted expanded item once currentUser is available.
+watch(
+  () => currentUser.value?.id,
+  userId => {
+    if (userId) {
+      expandedItem.value = readExpandedFromStorage(userId);
+    }
+  },
+  { immediate: true }
+);
+
 const setExpandedItem = name => {
+  // algorythmo: M2-a — D6: toggle collapsed/expanded; persist choice for this user.
   expandedItem.value = expandedItem.value === name ? null : name;
+  writeExpandedToStorage(currentUser.value?.id, expandedItem.value);
 };
 
 const {
@@ -544,7 +584,12 @@ const menuItems = computed(() => {
       ],
     },
 
-    // ── GESTÃO block ──────────────────────────────────────────────────────────
+    // ── GESTÃO / MANAGEMENT block ─────────────────────────────────────────────
+    // algorythmo: M2-a — D1 order: Commercial / Marketing / Operations / Procurement
+    //             / HR / Facilities / Finance / Administration.
+    //             D11: sidebar labels in English (new SIDEBAR.ALG_SECTOR_* keys).
+    //             D10: per-sector cut-flags (default OFF = sector visible).
+    //             D6: chevron + collapse fix handled in SidebarGroup.vue.
     // algorythmo: M5 sidebar restructure — GESTÃO header (admin-only to avoid orphan for agents)
     ...(isAdmin.value
       ? [
@@ -556,136 +601,171 @@ const menuItems = computed(() => {
           },
         ]
       : []),
-    // algorythmo: M5 sidebar restructure — Relatórios Comerciais (renamed from Reports)
-    {
-      name: 'Reports',
-      label: t('SIDEBAR.RELATORIOS_COMERCIAIS'),
-      icon: 'i-lucide-chart-spline',
-      children: [
-        // algorythmo: M6.1-b — "Visão Comercial" first child (D13, plan 0006).
-        // Default ON for admin: flag NOT cut → entry visible → redirect lands here.
-        // Super-admin can cut algorythmo_cut_reports_commercial to restore upstream default.
-        ...(algorythmoCutHidden.value.reports_commercial
-          ? []
-          : [
-              {
-                name: 'Commercial Reports',
-                label: t('SIDEBAR.RELATORIOS_COMERCIAIS_VISAO'),
-                to: accountScopedRoute('commercial_reports'),
-                activeOn: ['commercial_reports'],
-              },
-            ]),
-        {
-          name: 'Report Overview',
-          label: t('SIDEBAR.REPORTS_OVERVIEW'),
-          to: accountScopedRoute('account_overview_reports'),
-        },
-        {
-          name: 'Report Conversation',
-          label: t('SIDEBAR.REPORTS_CONVERSATION'),
-          to: accountScopedRoute('conversation_reports'),
-        },
-        ...reportRoutes.value,
-        {
-          name: 'Reports CSAT',
-          label: t('SIDEBAR.CSAT'),
-          to: accountScopedRoute('csat_reports'),
-        },
-        {
-          name: 'Reports SLA',
-          label: t('SIDEBAR.REPORTS_SLA'),
-          to: accountScopedRoute('sla_reports'),
-        },
-        // algorythmo: feature-gate algorythmo_cut_reports_bot
-        ...(algorythmoCutHidden.value.reports_bot
-          ? []
-          : [
-              {
-                name: 'Reports Bot',
-                label: t('SIDEBAR.REPORTS_BOT'),
-                to: accountScopedRoute('bot_reports'),
-              },
-            ]),
-      ],
-    },
-    // algorythmo: M5 sidebar restructure — Operação placeholder (M6.0 ships content)
-    {
-      name: 'AdminOperacao',
-      icon: 'i-lucide-factory',
-      label: t('ALGORYTHMO_ADMIN.OPERACAO.TITLE'),
-      activeOn: ['algorythmo_admin_operacao'],
-      to: accountScopedRoute('algorythmo_admin_operacao'),
-    },
-    // algorythmo: M5 sidebar restructure — Compras placeholder
-    {
-      name: 'AdminCompras',
-      icon: 'i-lucide-shopping-cart',
-      label: t('ALGORYTHMO_ADMIN.COMPRAS.TITLE'),
-      activeOn: ['algorythmo_admin_compras'],
-      to: accountScopedRoute('algorythmo_admin_compras'),
-    },
-    // algorythmo: M5 sidebar restructure — Administração placeholder
-    {
-      name: 'AdminAdministracao',
-      icon: 'i-lucide-briefcase',
-      label: t('ALGORYTHMO_ADMIN.ADMINISTRACAO.TITLE'),
-      activeOn: ['algorythmo_admin_administracao'],
-      to: accountScopedRoute('algorythmo_admin_administracao'),
-    },
-    // algorythmo: M5 sidebar restructure — Financeiro placeholder
-    {
-      name: 'AdminFinanceiro',
-      icon: 'i-lucide-landmark',
-      label: t('ALGORYTHMO_ADMIN.FINANCEIRO.TITLE'),
-      activeOn: ['algorythmo_admin_financeiro'],
-      to: accountScopedRoute('algorythmo_admin_financeiro'),
-    },
-    // algorythmo: M5 sidebar restructure — RH placeholder
-    {
-      name: 'AdminRh',
-      icon: 'i-lucide-users-round',
-      label: t('ALGORYTHMO_ADMIN.RH.TITLE'),
-      activeOn: ['algorythmo_admin_rh'],
-      to: accountScopedRoute('algorythmo_admin_rh'),
-    },
-    // algorythmo: M5 sidebar restructure — Marketing placeholder
-    // M5 ships Marketing as a flat link. Nesting Campaigns under Marketing
-    // moves to M6.6 (Marketing dashboard) alongside the spec update for
-    // spec/system/algorythmo/cuts/campaigns.spec.ts.
-    {
-      name: 'AdminMarketing',
-      icon: 'i-lucide-megaphone',
-      label: t('ALGORYTHMO_ADMIN.MARKETING.TITLE'),
-      activeOn: ['algorythmo_admin_marketing'],
-      to: accountScopedRoute('algorythmo_admin_marketing'),
-    },
-    // algorythmo: feature-gate algorythmo_cut_campaigns (kept top-level for M5)
-    ...(algorythmoCutHidden.value.campaigns
+
+    // ── 1. Commercial (was "Relatórios Comerciais") ───────────────────────────
+    // algorythmo: M2-a — D1: Commercial is 1st in Management. D10: cut-flag gates entire sector.
+    // D11: label now uses SIDEBAR.ALG_SECTOR_COMMERCIAL ("Commercial") for sidebar only;
+    //      old SIDEBAR.RELATORIOS_COMERCIAIS key preserved in i18n as alias.
+    ...(algorythmoCutHidden.value.sector_commercial
       ? []
       : [
           {
-            name: 'Campaigns',
-            label: t('SIDEBAR.CAMPAIGNS'),
-            icon: 'i-lucide-send',
+            name: 'Reports',
+            label: t('SIDEBAR.ALG_SECTOR_COMMERCIAL'),
+            icon: 'i-lucide-chart-spline',
             children: [
+              // algorythmo: M6.1-b — "Visão Comercial" first child (D13, plan 0006).
+              ...(algorythmoCutHidden.value.reports_commercial
+                ? []
+                : [
+                    {
+                      name: 'Commercial Reports',
+                      label: t('SIDEBAR.RELATORIOS_COMERCIAIS_VISAO'),
+                      to: accountScopedRoute('commercial_reports'),
+                      activeOn: ['commercial_reports'],
+                    },
+                  ]),
               {
-                name: 'Live chat',
-                label: t('SIDEBAR.LIVE_CHAT'),
-                to: accountScopedRoute('campaigns_livechat_index'),
+                name: 'Report Overview',
+                label: t('SIDEBAR.REPORTS_OVERVIEW'),
+                to: accountScopedRoute('account_overview_reports'),
               },
               {
-                name: 'SMS',
-                label: t('SIDEBAR.SMS'),
-                to: accountScopedRoute('campaigns_sms_index'),
+                name: 'Report Conversation',
+                label: t('SIDEBAR.REPORTS_CONVERSATION'),
+                to: accountScopedRoute('conversation_reports'),
+              },
+              ...reportRoutes.value,
+              {
+                name: 'Reports CSAT',
+                label: t('SIDEBAR.CSAT'),
+                to: accountScopedRoute('csat_reports'),
               },
               {
-                name: 'WhatsApp',
-                label: t('SIDEBAR.WHATSAPP'),
-                to: accountScopedRoute('campaigns_whatsapp_index'),
+                name: 'Reports SLA',
+                label: t('SIDEBAR.REPORTS_SLA'),
+                to: accountScopedRoute('sla_reports'),
               },
+              // algorythmo: feature-gate algorythmo_cut_reports_bot
+              ...(algorythmoCutHidden.value.reports_bot
+                ? []
+                : [
+                    {
+                      name: 'Reports Bot',
+                      label: t('SIDEBAR.REPORTS_BOT'),
+                      to: accountScopedRoute('bot_reports'),
+                    },
+                  ]),
             ],
           },
         ]),
+
+    // ── 2. Marketing ──────────────────────────────────────────────────────────
+    // algorythmo: M2-a — D1: 2nd in Management. D10: sector cut-flag.
+    // D11: label "Marketing" (English). Sub-tabs in PT delivered in M2-d.
+    ...(algorythmoCutHidden.value.sector_marketing
+      ? []
+      : [
+          {
+            name: 'AdminMarketing',
+            icon: 'i-lucide-megaphone',
+            label: t('SIDEBAR.ALG_SECTOR_MARKETING'),
+            activeOn: ['algorythmo_admin_marketing'],
+            to: accountScopedRoute('algorythmo_admin_marketing'),
+          },
+        ]),
+
+    // ── 3. Operations (was "Operação") ────────────────────────────────────────
+    // algorythmo: M2-a — D1: 3rd. D11: "Operations". D10: sector cut-flag.
+    ...(algorythmoCutHidden.value.sector_operations
+      ? []
+      : [
+          {
+            name: 'AdminOperacao',
+            icon: 'i-lucide-factory',
+            label: t('SIDEBAR.ALG_SECTOR_OPERATIONS'),
+            activeOn: ['algorythmo_admin_operacao'],
+            to: accountScopedRoute('algorythmo_admin_operacao'),
+          },
+        ]),
+
+    // ── 4. Procurement (was "Compras") ────────────────────────────────────────
+    // algorythmo: M2-a — D1: 4th. D11: "Procurement". D10: sector cut-flag.
+    ...(algorythmoCutHidden.value.sector_procurement
+      ? []
+      : [
+          {
+            name: 'AdminCompras',
+            icon: 'i-lucide-shopping-cart',
+            label: t('SIDEBAR.ALG_SECTOR_PROCUREMENT'),
+            activeOn: ['algorythmo_admin_compras'],
+            to: accountScopedRoute('algorythmo_admin_compras'),
+          },
+        ]),
+
+    // ── 5. HR (was "RH") ─────────────────────────────────────────────────────
+    // algorythmo: M2-a — D1: 5th. D11: "HR". D10: sector cut-flag.
+    ...(algorythmoCutHidden.value.sector_hr
+      ? []
+      : [
+          {
+            name: 'AdminRh',
+            icon: 'i-lucide-users-round',
+            label: t('SIDEBAR.ALG_SECTOR_HR'),
+            activeOn: ['algorythmo_admin_rh'],
+            to: accountScopedRoute('algorythmo_admin_rh'),
+          },
+        ]),
+
+    // ── 6. Facilities (NOVO — placeholder) ───────────────────────────────────
+    // algorythmo: M2-a — Facilities entry hidden until M2-g ships the route.
+    // cut-flag `algorythmo_cut_sector_facilities` is ACTIVE by default (set in feature_flag_bits.rb
+    // as position 24) so the entry stays hidden. After M2-g merges, super-admin sets
+    // cut to false (OFF) to make the entry visible, per memory `project_cut_flag_convention.md`.
+    // Convention note: cut ON = hidden (inverted for sector_facilities only — rota ainda não existe).
+    ...(algorythmoCutHidden.value.sector_facilities
+      ? []
+      : [
+          {
+            name: 'AdminFacilities',
+            icon: 'i-lucide-building',
+            label: t('SIDEBAR.ALG_SECTOR_FACILITIES'),
+            activeOn: ['algorythmo_admin_facilities'],
+            to: accountScopedRoute('algorythmo_admin_facilities'),
+          },
+        ]),
+
+    // ── 7. Finance (was "Financeiro") ─────────────────────────────────────────
+    // algorythmo: M2-a — D1: 7th. D11: "Finance". D10: sector cut-flag.
+    ...(algorythmoCutHidden.value.sector_finance
+      ? []
+      : [
+          {
+            name: 'AdminFinanceiro',
+            icon: 'i-lucide-landmark',
+            label: t('SIDEBAR.ALG_SECTOR_FINANCE'),
+            activeOn: ['algorythmo_admin_financeiro'],
+            to: accountScopedRoute('algorythmo_admin_financeiro'),
+          },
+        ]),
+
+    // ── 8. Administration (was "Administração") ───────────────────────────────
+    // algorythmo: M2-a — D1: 8th. D11: "Administration". D10: sector cut-flag.
+    ...(algorythmoCutHidden.value.sector_administration
+      ? []
+      : [
+          {
+            name: 'AdminAdministracao',
+            icon: 'i-lucide-briefcase',
+            label: t('SIDEBAR.ALG_SECTOR_ADMINISTRATION'),
+            activeOn: ['algorythmo_admin_administracao'],
+            to: accountScopedRoute('algorythmo_admin_administracao'),
+          },
+        ]),
+
+    // algorythmo: M2-a — D8: Campaigns top-level entry intentionally omitted.
+    // Routes remain live — accessed via URL or via Marketing > Campanhas once M2-d ships.
+    // Flag `algorythmo_cut_campaigns_top_level` exists in registry for future restore path.
 
     // ── ESTRATÉGIA block ──────────────────────────────────────────────────────
     // algorythmo: M5 sidebar restructure — ESTRATÉGIA header (admin-only)
@@ -744,8 +824,12 @@ const menuItems = computed(() => {
     },
 
     // ── Remaining upstream surfaces ───────────────────────────────────────────
-    // algorythmo: feature-gate algorythmo_cut_help_center
-    ...(algorythmoCutHidden.value.help_center
+    // algorythmo: M2-a — D7: Help Center top-level entry hidden by default via
+    // `algorythmo_cut_help_center_top_level` (cut ACTIVE = hidden).
+    // Routes remain live; content will be exposed as Commercial > Customer Support in M2-c.
+    // Legacy `algorythmo_cut_help_center` flag also honoured for backward compat.
+    ...(algorythmoCutHidden.value.help_center ||
+    algorythmoCutHidden.value.help_center_top_level
       ? []
       : [
           {

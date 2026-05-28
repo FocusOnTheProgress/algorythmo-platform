@@ -1,5 +1,5 @@
 // algorythmo: feature-gate algorythmo_cut_*
-// Route-tree static coverage check for the 13 cut flags.
+// Route-tree static coverage check for cut flags.
 //
 // Loading the actual route files would drag in every dashboard Vue component
 // (heavy + mock surface). Instead we read each `*.routes.js` as text and
@@ -7,6 +7,10 @@
 // catches the failure mode the adversarial reviewer flagged: a typo in the
 // meta key value (e.g. `'algorythmo_cut_compaigns'`) would otherwise leave
 // the surface ungated forever, with no other signal.
+//
+// algorythmo: M2-a — added SIDEBAR_ONLY_FLAGS: flags that gate sidebar visibility
+// only (no route-level Policy enforcement). These are exempt from the
+// "every flag must appear in a route" check — they live in Sidebar.vue directly.
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -48,6 +52,23 @@ const usagesByFlag = [...declarationsByFile.entries()].reduce(
   new Map()
 );
 
+// algorythmo: M2-a — sidebar-only flags gate sidebar entry visibility in Sidebar.vue.
+// They do NOT appear in route meta because they don't enforce Policy-level access control —
+// the underlying routes remain accessible via URL when the sidebar entry is hidden.
+// Adding a flag here requires a code comment in Sidebar.vue explaining why it's sidebar-only.
+const SIDEBAR_ONLY_FLAGS = new Set([
+  'campaigns_top_level',
+  'help_center_top_level',
+  'sector_commercial',
+  'sector_marketing',
+  'sector_operations',
+  'sector_procurement',
+  'sector_hr',
+  'sector_facilities',
+  'sector_finance',
+  'sector_administration',
+]);
+
 describe('algorythmo cut flag route coverage', () => {
   it('every declared algorythmoCutFlag is a known cut flag key', () => {
     const known = new Set(ALGORYTHMO_CUT_FLAG_KEYS);
@@ -65,18 +86,32 @@ describe('algorythmo cut flag route coverage', () => {
     expect(malformed).toEqual([]);
   });
 
-  it('every cut flag in the constant list is referenced by at least one route', () => {
+  it('every non-sidebar-only cut flag in the constant list is referenced by at least one route', () => {
     // Surfaces a stale flag (declared in JS but never wired into a route) so it
     // gets reviewed before drifting further.
+    // SIDEBAR_ONLY_FLAGS are exempt — they gate sidebar entries in Sidebar.vue, not routes.
     const orphans = ALGORYTHMO_CUT_FLAG_NAMES.filter(
-      name => !usagesByFlag.has(`algorythmo_cut_${name}`)
+      name =>
+        !SIDEBAR_ONLY_FLAGS.has(name) &&
+        !usagesByFlag.has(`algorythmo_cut_${name}`)
     );
     expect(orphans).toEqual([]);
   });
 
+  it('sidebar-only flags are all accounted for in the SIDEBAR_ONLY_FLAGS set', () => {
+    // Guard: every name in SIDEBAR_ONLY_FLAGS must exist in ALGORYTHMO_CUT_FLAG_NAMES.
+    // Prevents phantom entries in the set that no longer match the registry.
+    const registered = new Set(ALGORYTHMO_CUT_FLAG_NAMES);
+    const phantoms = [...SIDEBAR_ONLY_FLAGS].filter(
+      name => !registered.has(name)
+    );
+    expect(phantoms).toEqual([]);
+  });
+
   it('found cut flag declarations across the route tree', () => {
     // Exact count guard: any addition or removal must update this number intentionally.
-    // Current tally (verified 2026-05-27, M6.1-a): 24 declarations across all *.routes.js files.
+    // Current tally (verified 2026-05-28, M2-a): 24 declarations across all *.routes.js files.
+    // Sidebar-only flags are not counted here (they live in Sidebar.vue, not routes).
     // To recount: grep -r "algorythmoCutFlag:" app/javascript/dashboard/routes/dashboard/ | wc -l
     const totalDeclarations = [...declarationsByFile.values()].reduce(
       (sum, arr) => sum + arr.length,

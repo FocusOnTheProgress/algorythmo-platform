@@ -4,7 +4,15 @@
     "RELATORIOS_COMERCIAIS_VISAO": "Visão Comercial",
     "ALGORYTHMO_SECTION_GESTAO": "Gestão",
     "ALGORYTHMO_SECTION_ESTRATEGIA": "Estratégia",
-    "ALGORYTHMO_SECTION_INTELIGENCIA": "Inteligência"
+    "ALGORYTHMO_SECTION_INTELIGENCIA": "Inteligência",
+    "ALG_SECTOR_COMMERCIAL": "Commercial",
+    "ALG_SECTOR_MARKETING": "Marketing",
+    "ALG_SECTOR_OPERATIONS": "Operations",
+    "ALG_SECTOR_PROCUREMENT": "Procurement",
+    "ALG_SECTOR_HR": "HR",
+    "ALG_SECTOR_FACILITIES": "Facilities",
+    "ALG_SECTOR_FINANCE": "Finance",
+    "ALG_SECTOR_ADMINISTRATION": "Administration"
   },
   "ALGORYTHMO_ADMIN": {
     "READ_ONLY_NOTICE": "Você está visualizando como administrador. Para falar com o time, use a Inbox interna.",
@@ -155,6 +163,10 @@
       "TITLE": "Marketing",
       "OVERVIEW": "Visão Geral",
       "BODY": "Em construção — os dashboards de marketing com métricas reais chegam em breve."
+    },
+    "FACILITIES": {
+      "TITLE": "Facilities",
+      "BODY": "Em construção — os dashboards de facilities com métricas reais chegam em breve."
     },
     "C_LEVELS": {
       "TITLE": "Mesa Executiva",

@@ -259,6 +259,7 @@ watch(
     </template>
     <!-- Expanded State -->
     <template v-else>
+      <!-- algorythmo: M2-a — pass name for aria-controls wiring -->
       <SidebarGroupHeader
         :icon
         :name
@@ -271,10 +272,19 @@ watch(
         :is-expanded="isExpanded"
         @toggle="toggleTrigger"
       />
+      <!-- algorythmo: M2-a — D6 collapse fix.
+           Previously `isExpanded || hasActiveChild` leaked the active sub-item
+           through even when the user had explicitly collapsed the group.
+           Collapsed is collapsed: only show children when isExpanded is true.
+           Auto-expand on active child is handled by onMounted + watch(hasActiveChild)
+           above — so first-load still lands in the right sector. -->
       <ul
         v-if="hasChildren"
-        v-show="isExpanded || hasActiveChild"
+        v-show="isExpanded"
+        :id="`sidebar-children-${name}`"
         class="grid m-0 list-none sidebar-group-children min-w-0"
+        role="list"
+        :aria-label="label"
       >
         <template v-for="child in children" :key="child.name">
           <SidebarSubGroup
@@ -285,11 +295,14 @@ watch(
             :is-expanded="isExpanded"
             :active-child="activeChild"
           />
+          <!-- algorythmo: M2-a — D6 collapse fix: removed `|| activeChild?.name === child.name`
+               so collapsed group hides ALL sub-items, including the active one. -->
           <SidebarGroupLeaf
             v-else-if="isAllowed(child.to)"
-            v-show="isExpanded || activeChild?.name === child.name"
+            v-show="isExpanded"
             v-bind="child"
             :active="activeChild?.name === child.name"
+            :tabindex="isExpanded ? 0 : -1"
           />
         </template>
       </ul>

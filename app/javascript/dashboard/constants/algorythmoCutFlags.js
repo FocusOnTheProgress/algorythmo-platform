@@ -24,6 +24,23 @@ export const ALGORYTHMO_CUT_FLAG_NAMES = Object.freeze([
   // Route wired in M6.1-b; flag added here first so the registry is the
   // single source of truth for known cut-flag names.
   'reports_commercial',
+  // algorythmo: M2-a — top-level sidebar entries deliberately cut (hidden by default).
+  // Convention INVERTED here: cut ACTIVE = surface HIDDEN. These are top-level
+  // Campaigns and Help Center entries that have been replaced by sub-tabs in M2-d
+  // (Campaigns → Marketing > Campanhas) and M2-c (Help Center → Commercial > Customer Support).
+  // Rotas permanecem vivas via URL direta — só a entrada top-level some da sidebar.
+  'campaigns_top_level',
+  'help_center_top_level',
+  // algorythmo: M2-a — per-sector cut flags. Default OFF = sector visible.
+  // EXCEPTION: sector_facilities default ON (cut active = hidden) until M2-g ships the route.
+  'sector_commercial',
+  'sector_marketing',
+  'sector_operations',
+  'sector_procurement',
+  'sector_hr',
+  'sector_facilities',
+  'sector_finance',
+  'sector_administration',
 ]);
 
 // Full flag keys (with the `algorythmo_cut_` prefix) for direct equality checks

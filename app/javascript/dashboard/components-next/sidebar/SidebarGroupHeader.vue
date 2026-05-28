@@ -7,6 +7,8 @@ const props = defineProps({
   to: { type: [Object, String], default: '' },
   label: { type: String, default: '' },
   icon: { type: [String, Object], default: '' },
+  // algorythmo: M2-a — D6 chevron: name threads through to aria-controls
+  name: { type: String, default: '' },
   expandable: { type: Boolean, default: false },
   isExpanded: { type: Boolean, default: false },
   isActive: { type: Boolean, default: false },
@@ -25,17 +27,19 @@ const count = computed(() =>
 
 <template>
   <component
-    :is="to ? 'router-link' : 'div'"
-    class="flex items-center gap-2 px-1.5 py-1 rounded-lg h-8 min-w-0"
-    role="button"
+    :is="expandable ? 'button' : to ? 'router-link' : 'div'"
+    class="flex items-center gap-2 px-1.5 py-1 rounded-lg h-8 min-w-0 w-full text-left"
+    :type="expandable ? 'button' : undefined"
     draggable="false"
-    :to="to"
+    :to="!expandable && to ? to : undefined"
     :title="label"
     :class="{
       'text-n-slate-12 bg-n-alpha-2 font-medium': isActive && !hasActiveChild,
       'text-n-slate-12 font-medium': hasActiveChild,
       'text-n-slate-11 hover:bg-n-alpha-2': !isActive && !hasActiveChild,
     }"
+    :aria-expanded="expandable ? isExpanded : undefined"
+    :aria-controls="expandable && name ? `sidebar-children-${name}` : undefined"
     @click.stop="emit('toggle')"
   >
     <div v-if="icon" class="relative flex items-center gap-2">
@@ -66,11 +70,14 @@ const count = computed(() =>
         {{ count }}
       </span>
     </div>
+    <!-- algorythmo: M2-a — D6 chevron indicator: always visible when expandable.
+         Rotates 180deg when expanded (down→up). Uses opacity swap under reduced-motion.
+         Was previously `v-show="isExpanded"` which made it invisible when collapsed. -->
     <span
       v-if="expandable"
-      v-show="isExpanded"
-      class="i-lucide-chevron-up size-3"
-      @click.stop="emit('toggle')"
+      class="i-lucide-chevron-down size-3 flex-shrink-0 transition-transform duration-200 motion-reduce:transition-none"
+      :class="[isExpanded ? 'rotate-180' : 'rotate-0']"
+      aria-hidden="true"
     />
   </component>
 </template>
