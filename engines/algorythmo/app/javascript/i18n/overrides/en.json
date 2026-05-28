@@ -102,6 +102,42 @@
           "ENPS_LABEL": "eNPS"
         }
       },
+      "FINANCE": {
+        "HEADING": "Finance",
+        "AGENT_CHAT_HEADING": "Talk to the Finance sector agent",
+        "OVERVIEW": {
+          "TAB": "Overview",
+          "ARIA": "Consolidated overview of the Finance sector",
+          "A_PAGAR_LABEL": "Contas a Pagar",
+          "A_PAGAR_CHART": "Payables 30d (R$ K)",
+          "A_RECEBER_LABEL": "Contas a Receber",
+          "A_RECEBER_CHART": "Receivables 30d (R$ K)",
+          "FLUXO_LABEL": "Fluxo de Caixa",
+          "FLUXO_CHART": "Cash balance (R$ K)",
+          "MARGEM_LABEL": "Margem",
+          "MARGEM_CHART": "Operating margin (%)",
+          "LUCRO_LABEL": "Lucro",
+          "LUCRO_CHART": "Net profit (R$ K)",
+          "PLANEJAMENTO_LABEL": "Planejamento",
+          "PLANEJAMENTO_CHART": "Budget adherence (%)"
+        }
+      },
+      "HR": {
+        "HEADING": "HR",
+        "AGENT_CHAT_HEADING": "Talk to the HR sector agent",
+        "OVERVIEW": {
+          "TAB": "Overview",
+          "ARIA": "Consolidated overview of the HR sector",
+          "CONTRATACAO_LABEL": "Contratação",
+          "CONTRATACAO_CHART": "Hires this month",
+          "TREINAMENTO_LABEL": "Treinamento",
+          "TREINAMENTO_CHART": "Training completion (%)",
+          "CULTURA_LABEL": "Cultura",
+          "CULTURA_CHART": "eNPS",
+          "PRODUTIVIDADE_LABEL": "Produtividade",
+          "PRODUTIVIDADE_CHART": "Productivity index (pts)"
+        }
+      },
       "MARKETING": {
         "HEADING": "Marketing",
         "AGENT_CHAT_HEADING": "Talk to the Marketing sector agent",
