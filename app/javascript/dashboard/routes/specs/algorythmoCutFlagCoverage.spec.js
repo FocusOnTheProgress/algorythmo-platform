@@ -71,6 +71,15 @@ const SIDEBAR_ONLY_FLAGS = new Set([
   // Sidebar-only (no route meta): the report routes stay live and URL-reachable.
   'reports_labels',
   'reports_inbox',
+  // algorythmo: M2-d — Marketing per-sub-tab cuts. Shell-only (no route meta):
+  // they gate tab visibility inside MarketingShell.vue, not a route. The
+  // Marketing route itself stays reachable; a cut only drops the tab.
+  'sector_marketing_branding',
+  'sector_marketing_campanhas',
+  'sector_marketing_redes_sociais',
+  'sector_marketing_trafego',
+  'sector_marketing_crm',
+  'sector_marketing_retencao',
 ]);
 
 describe('algorythmo cut flag route coverage', () => {

@@ -86,6 +86,8 @@ jobs:
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/commercial-mock-contract.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/CustomerSupportPane.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/commercial-overview-contract.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/marketing/specs/MarketingDashboard.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/marketing/specs/marketing-overview-contract.spec.js \
             --no-coverage
 
   # algorythmo: rspec scoped to Algorythmo engine + Captain feature-gate.

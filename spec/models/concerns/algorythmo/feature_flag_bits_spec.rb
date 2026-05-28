@@ -8,9 +8,10 @@ RSpec.describe Algorythmo::FeatureFlagBits do
   describe 'CUT_FLAG_NAMES' do
     # algorythmo: M2-a added positions 17–26 (top-level + sector cuts).
     # algorythmo: M2-c added positions 27–28 (reports_labels / reports_inbox).
+    # algorythmo: M2-d added positions 29–34 (Marketing per-sub-tab cuts).
     # ORDER IS IMMUTABLE — reordering corrupts existing bigint data.
-    it 'contains exactly 28 flags' do
-      expect(described_class::CUT_FLAG_NAMES.size).to eq(28)
+    it 'contains exactly 34 flags' do
+      expect(described_class::CUT_FLAG_NAMES.size).to eq(34)
     end
 
     it 'is frozen' do
@@ -57,10 +58,31 @@ RSpec.describe Algorythmo::FeatureFlagBits do
         expect(account.algorythmo_cut_enabled?('reports_inbox')).to be false
       end
     end
+
+    # algorythmo: M2-d — Marketing per-sub-tab cuts (positions 29–34).
+    # Any future flag appends AFTER these — order stays fixed.
+    describe 'Marketing sub-tab cuts (M2-d, positions 29–34)' do
+      {
+        'sector_marketing_branding' => 29,
+        'sector_marketing_campanhas' => 30,
+        'sector_marketing_redes_sociais' => 31,
+        'sector_marketing_trafego' => 32,
+        'sector_marketing_crm' => 33,
+        'sector_marketing_retencao' => 34
+      }.each do |flag, position|
+        it "#{flag} occupies bit-position #{position} (array index #{position - 1})" do
+          expect(described_class::CUT_FLAG_NAMES.index(flag) + 1).to eq(position)
+        end
+
+        it "#{flag} defaults to false on a new account (sub-tab visible by default)" do
+          expect(account.algorythmo_cut_enabled?(flag)).to be false
+        end
+      end
+    end
   end
 
   describe '#algorythmo_cut_enabled?' do
-    it 'returns false for all 28 flags on a fresh account' do
+    it 'returns false for all 34 flags on a fresh account' do
       described_class::CUT_FLAG_NAMES.each do |flag|
         expect(account.algorythmo_cut_enabled?(flag)).to(
           be(false),
@@ -114,7 +136,7 @@ RSpec.describe Algorythmo::FeatureFlagBits do
   end
 
   describe '#all_algorythmo_cut_flags' do
-    it 'returns a hash with all 28 flags' do
+    it 'returns a hash with all 34 flags' do
       result = account.all_algorythmo_cut_flags
       expect(result.keys).to match_array(described_class::CUT_FLAG_NAMES)
     end

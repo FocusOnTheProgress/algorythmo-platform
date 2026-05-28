@@ -3,7 +3,7 @@
 # Manages Algorythmo OS cut-surface feature flags stored in the dedicated
 # accounts.algorythmo_feature_flags bigint column.
 #
-# Flags occupy positions 1–28 — all safely within the signed bigint range (max: 63).
+# Flags occupy positions 1–34 — all safely within the signed bigint range (max: 63).
 # Zero collision with Chatwoot upstream accounts.feature_flags column.
 #
 # Include in Account via `include Algorythmo::FeatureFlagBits`.
@@ -23,6 +23,9 @@ module Algorythmo::FeatureFlagBits
   # Positions 27–28 — algorythmo: M2-c: reports_labels / reports_inbox.
   #   Hide the legacy Label/Inbox report tabs from the Commercial sidebar; routes stay live.
   #   Default NOT cut (visible).
+  # Positions 29–34 — algorythmo: M2-d: per-sub-tab cuts for the Marketing shell.
+  #   sector_marketing_{branding,campanhas,redes_sociais,trafego,crm,retencao}: hide one
+  #   tab inside MarketingShell.vue. Default NOT cut (visible); Overview tab is never cut.
   CUT_FLAG_NAMES = %w[
     campaigns
     help_center
@@ -52,6 +55,12 @@ module Algorythmo::FeatureFlagBits
     sector_administration
     reports_labels
     reports_inbox
+    sector_marketing_branding
+    sector_marketing_campanhas
+    sector_marketing_redes_sociais
+    sector_marketing_trafego
+    sector_marketing_crm
+    sector_marketing_retencao
   ].freeze
 
   # Positions 14–15: "enable flags" — check means SHOW the feature (opposite semantic from cut flags).

@@ -104,6 +104,7 @@
       },
       "MARKETING": {
         "HEADING": "Marketing",
+        "AGENT_CHAT_HEADING": "Talk to the Marketing sector agent",
         "CONTEXT": "CAC, ROAS, leads and funnel — the company's acquisition engine.",
         "CHART_TITLE": "Qualified leads — last 12 weeks",
         "ANCHOR": {
@@ -115,6 +116,32 @@
           "MQLS_LABEL": "MQLs this month",
           "CTR_LABEL": "Avg CTR",
           "CPL_LABEL": "Cost per lead"
+        },
+        "OVERVIEW": {
+          "TAB": "Overview",
+          "ARIA": "Consolidated overview of the Marketing sector",
+          "BRANDING_LABEL": "Branding",
+          "BRANDING_CHART": "Brand awareness (%)",
+          "CAMPANHAS_LABEL": "Campanhas",
+          "CAMPANHAS_CHART": "Consolidated ROAS",
+          "REDES_SOCIAIS_LABEL": "Redes Sociais",
+          "REDES_SOCIAIS_CHART": "Avg engagement (%)",
+          "TRAFEGO_LABEL": "Tráfego",
+          "TRAFEGO_CHART": "Conversion rate (%)",
+          "CRM_LABEL": "CRM",
+          "CRM_CHART": "Active leads in base",
+          "RETENCAO_LABEL": "Retenção",
+          "RETENCAO_CHART": "Customer retention (%)"
+        },
+        "CAMPANHAS": {
+          "TAB": "Campanhas",
+          "ARIA": "Marketing campaigns — ongoing and one-off",
+          "HEADING": "Campanhas",
+          "HINT": "Open the campaign builders. Ongoing and one-off campaigns stay live — they have only been gathered here.",
+          "ONGOING_LABEL": "Campanhas contínuas",
+          "ONGOING_DESC": "Automated live-chat triggers as the visitor browses.",
+          "ONE_OFF_LABEL": "Campanhas pontuais",
+          "ONE_OFF_DESC": "One-off SMS or WhatsApp sends to a segmented audience."
         }
       },
       "COMMERCIAL": {

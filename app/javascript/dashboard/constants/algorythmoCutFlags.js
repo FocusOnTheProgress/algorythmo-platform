@@ -53,6 +53,17 @@ export const ALGORYTHMO_CUT_FLAG_NAMES = Object.freeze([
   // reachable by URL. Convention: cut ACTIVE = hidden; default OFF = visible.
   'reports_labels',
   'reports_inbox',
+  // algorythmo: M2-d — per-sub-tab cut flags for the Marketing shell (D10).
+  // Each gates one tab inside MarketingShell.vue (NOT a sidebar entry):
+  // cut ACTIVE = tab hidden; default OFF = tab visible. The Overview tab is
+  // never cut. These are sidebar/shell-only cuts (no route-level Policy) — see
+  // SIDEBAR_ONLY_FLAGS in algorythmoCutFlagCoverage.spec.js.
+  'sector_marketing_branding',
+  'sector_marketing_campanhas',
+  'sector_marketing_redes_sociais',
+  'sector_marketing_trafego',
+  'sector_marketing_crm',
+  'sector_marketing_retencao',
 ]);
 
 // Full flag keys (with the `algorythmo_cut_` prefix) for direct equality checks
