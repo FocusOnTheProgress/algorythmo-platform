@@ -1,6 +1,6 @@
 import { frontendURL } from '../../../../helper/URLHelper';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
-import store from 'dashboard/store';
+import { defaultReportsRedirectHandler } from './reports.redirect';
 
 import ReportsWrapper from './components/ReportsWrapper.vue';
 import Index from './Index.vue';
@@ -131,26 +131,10 @@ const revisedReportRoutes = [
   },
 ];
 
-// algorythmo: M6.1-b — exported for unit testing. Resolves the default Reports
-// landing route based on the algorythmo_cut_reports_commercial flag (D13).
-// Defaults to commercial_reports unless the cut-flag is explicitly enabled
-// (=== true). NaN/missing accountId falls into the default — safe because the
-// outer navigation guard (routes/index.js) already redirects unauthenticated
-// or unscoped navigations before this resolver runs.
-export const resolveDefaultReportsRedirect = (to, getterFactory = null) => {
-  const isFeatureEnabledonAccount =
-    getterFactory ?? store.getters['accounts/isFeatureEnabledonAccount'];
-  const accountId = Number(to.params.accountId);
-  const isCut =
-    isFeatureEnabledonAccount(
-      accountId,
-      'algorythmo_cut_reports_commercial'
-    ) === true;
-  return {
-    name: isCut ? 'account_overview_reports' : 'commercial_reports',
-    params: to.params,
-  };
-};
+// algorythmo: M6.1-b — re-exported for backwards compatibility with the static
+// spec scan. Real definition lives in ./reports.redirect.js (small, store-only
+// module so unit tests don't pull the full route graph / amplitude / tslib).
+export { resolveDefaultReportsRedirect } from './reports.redirect';
 
 export default {
   routes: [
@@ -159,10 +143,13 @@ export default {
       component: ReportsWrapper,
       children: [
         // algorythmo: M6.1-b — dynamic redirect: admins land on Visão Comercial by
-        // default (D13, plan 0006). See resolveDefaultReportsRedirect above.
+        // default (D13, plan 0006). Async to await accounts/get before reading the
+        // cut-flag — without the await, a cut user reloading /reports gets bounced
+        // to /dashboard because the resolver runs before the global guard's
+        // accounts/get await (see ./reports.redirect.js).
         {
           path: '',
-          redirect: to => resolveDefaultReportsRedirect(to),
+          redirect: defaultReportsRedirectHandler,
         },
         // algorythmo: M6.1-b — Relatórios Comerciais overlay (first child = default target).
         // Placeholder shell; real composition (SectorDashboard + mock) arrives in M6.1-c.
