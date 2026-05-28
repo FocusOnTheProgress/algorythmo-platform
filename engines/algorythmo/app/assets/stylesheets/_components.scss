@@ -20,6 +20,48 @@
 @import 'tokens';
 
 // =============================================================================
+// GLASS MIXIN
+// -----------------------------------------------------------------------------
+// Every glass surface must follow this pattern:
+//   1. Solid fallback background so the surface is never invisible
+//   2. @supports gate so backdrop-filter only activates when supported
+//   3. Always pair with a hairline border at the call-site
+//
+// Usage:
+//   @include alg-glass(soft);   // panels, agent rail, chart
+//   @include alg-glass(medium); // toast, drawer scrim
+//   @include alg-glass(hard);   // modal overlay, command palette
+// =============================================================================
+
+@mixin alg-glass($tier: soft) {
+  @if $tier == soft {
+    background: var(--alg-bg-elevated);
+
+    @supports (backdrop-filter: blur(1px)) {
+      background: var(--alg-glass-soft-bg);
+      backdrop-filter: var(--alg-glass-soft-filter);
+      -webkit-backdrop-filter: var(--alg-glass-soft-filter);
+    }
+  } @else if $tier == medium {
+    background: var(--alg-bg-elevated);
+
+    @supports (backdrop-filter: blur(1px)) {
+      background: var(--alg-glass-medium-bg);
+      backdrop-filter: var(--alg-glass-medium-filter);
+      -webkit-backdrop-filter: var(--alg-glass-medium-filter);
+    }
+  } @else if $tier == hard {
+    background: var(--alg-bg-overlay);
+
+    @supports (backdrop-filter: blur(1px)) {
+      background: var(--alg-glass-hard-bg);
+      backdrop-filter: var(--alg-glass-hard-filter);
+      -webkit-backdrop-filter: var(--alg-glass-hard-filter);
+    }
+  }
+}
+
+// =============================================================================
 // BUTTON
 // =============================================================================
 
@@ -83,21 +125,35 @@
 
   &[data-loading='true'] {
     cursor: progress;
-    color: transparent !important;
+    pointer-events: none;
     position: relative;
+    // Hide text without making it invisible to screen readers — color: transparent
+    // keeps content in the a11y tree (announced as "loading" via aria-busy)
+    color: transparent !important;
 
+    // Three-dot pulse indicator (Linear-style) — no spinner per system doctrine.
+    // Dots pulse sequentially left → center → right to imply motion without rotation.
     &::after {
-      content: '';
+      content: '● ● ●';
       position: absolute;
       inset: 0;
-      margin: auto;
-      width: 1rem;
-      height: 1rem;
-      border-radius: 50%;
-      border: 2px solid currentcolor;
-      border-right-color: transparent;
-      color: var(--alg-text-primary);
-      animation: alg-spin 0.7s linear infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 6px;
+      letter-spacing: 0.15em;
+      color: currentcolor;
+      // Shimmer sweep across the three dots
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.25) 0%,
+        rgba(255, 255, 255, 0.90) 50%,
+        rgba(255, 255, 255, 0.25) 100%
+      );
+      background-clip: text;
+      -webkit-background-clip: text;
+      background-size: 200% 100%;
+      animation: alg-btn-shimmer 1.2s var(--alg-ease-in-out) infinite;
     }
   }
 }
@@ -337,11 +393,9 @@
   padding: 0;
 }
 
-// Glass variant — uses the real backdrop-filter system
+// Glass variant — real backdrop-filter with @supports fallback via mixin
 .alg-card--glass {
-  background: var(--alg-glass-soft-bg);
-  backdrop-filter: var(--alg-glass-soft-filter);
-  -webkit-backdrop-filter: var(--alg-glass-soft-filter);
+  @include alg-glass(soft);
   border-color: var(--alg-glass-border);
   box-shadow:
     var(--alg-glass-highlight),
@@ -458,10 +512,9 @@
 .alg-modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: var(--alg-bg-overlay);
-  // Real glass — hard blur to push the canvas behind into soft focus
-  backdrop-filter: var(--alg-glass-hard-filter);
-  -webkit-backdrop-filter: var(--alg-glass-hard-filter);
+  // Glass hard — pushes the canvas behind into soft focus.
+  // Solid fallback for browsers without backdrop-filter support.
+  @include alg-glass(hard);
   z-index: var(--alg-z-overlay);
 
   display: flex;
@@ -579,19 +632,19 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  // The universal token rule in _tokens.scss collapses all animations to 0.01ms.
+  // Skeleton gets a static tint — no animation at all — which is the correct
+  // reduced-motion behavior: indicate loading via opacity, not shimmer motion.
   .alg-skeleton {
-    animation: alg-skeleton-pulse 2s var(--alg-ease-in-out) infinite;
-    background: var(--alg-bg-tint-low);
+    animation: none !important;
+    background: var(--alg-bg-tint-med);
+    opacity: 0.7;
   }
 }
 
 // =============================================================================
 // KEYFRAMES
 // =============================================================================
-
-@keyframes alg-spin {
-  to { transform: rotate(360deg); }
-}
 
 @keyframes alg-fade-in {
   from { opacity: 0; }
@@ -614,6 +667,13 @@
   100% { background-position: -200% 0; }
 }
 
+// Button loading indicator — shimmer sweep across three dots.
+// alg-spin removed: spinners are forbidden by system doctrine (§11.4 DESIGN.md).
+@keyframes alg-btn-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 @keyframes alg-skeleton-pulse {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.55; }
@@ -626,9 +686,7 @@
 .alg-drawer-scrim {
   position: fixed;
   inset: 0;
-  background-color: var(--alg-bg-overlay);
-  backdrop-filter: var(--alg-glass-medium-filter);
-  -webkit-backdrop-filter: var(--alg-glass-medium-filter);
+  @include alg-glass(medium);
   z-index: var(--alg-z-overlay);
   animation: alg-fade-in var(--alg-duration-base) var(--alg-ease-cinematic);
 }
@@ -720,9 +778,7 @@
   z-index: var(--alg-z-dropdown);
   min-width: 10rem;
 
-  background: var(--alg-glass-soft-bg);
-  backdrop-filter: var(--alg-glass-soft-filter);
-  -webkit-backdrop-filter: var(--alg-glass-soft-filter);
+  @include alg-glass(soft);
   border: 1px solid var(--alg-glass-border);
   border-radius: var(--alg-radius-md);
   box-shadow:
@@ -832,9 +888,7 @@
   min-width: 18rem;
   max-width: 26rem;
   padding: var(--alg-space-3) var(--alg-space-4);
-  background: var(--alg-glass-medium-bg);
-  backdrop-filter: var(--alg-glass-medium-filter);
-  -webkit-backdrop-filter: var(--alg-glass-medium-filter);
+  @include alg-glass(medium);
   border: 1px solid var(--alg-glass-border);
   border-radius: var(--alg-radius-md);
   box-shadow:
@@ -969,6 +1023,26 @@
 
 .alg-avatar--ring-success {
   box-shadow: 0 0 0 2px var(--alg-bg-raised), 0 0 0 3.5px var(--alg-color-success);
+}
+
+// =============================================================================
+// SECTOR LAYOUT — wrapper used by every sector dashboard overlay
+// =============================================================================
+
+.alg-sector-layout {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+
+  // On mobile, stack dashboard above agent panel
+  @media (max-width: 768px) {
+    flex-direction: column;
+    overflow-y: auto;
+    height: auto;
+  }
 }
 
 // =============================================================================
@@ -1160,9 +1234,7 @@
   gap: var(--alg-space-3);
   padding: var(--alg-space-6);
   border-radius: var(--alg-radius-lg);
-  background: var(--alg-glass-soft-bg);
-  backdrop-filter: var(--alg-glass-soft-filter);
-  -webkit-backdrop-filter: var(--alg-glass-soft-filter);
+  @include alg-glass(soft);
   border: 1px solid var(--alg-glass-border);
   box-shadow:
     var(--alg-glass-highlight),
@@ -1220,17 +1292,28 @@
 
 .alg-agent {
   position: sticky;
-  top: var(--alg-admin-topbar-height, 0);
+  top: var(--alg-admin-topbar-height);
   width: 360px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-height: calc(100vh - var(--alg-admin-topbar-height, 0px));
+  max-height: calc(100vh - var(--alg-admin-topbar-height));
   border-left: 1px solid var(--alg-border);
-  background: var(--alg-glass-soft-bg);
-  backdrop-filter: var(--alg-glass-soft-filter);
-  -webkit-backdrop-filter: var(--alg-glass-soft-filter);
+  @include alg-glass(soft);
+
+  // On mobile the agent panel collapses to full-width and stacks below the
+  // dashboard content. The sector layout switches to column at ≤768px, so
+  // the panel expands to fill the available width naturally.
+  @media (max-width: 768px) {
+    position: static;
+    width: 100%;
+    max-width: none;
+    max-height: 60vh;
+    border-left: none;
+    border-top: 1px solid var(--alg-border);
+    flex-shrink: 0;
+  }
 }
 
 .alg-agent__header {

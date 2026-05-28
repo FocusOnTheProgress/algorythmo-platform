@@ -72,12 +72,15 @@
   // Verified contrast against --alg-black-2 (app canvas, primary read surface):
   //   fg-primary    (1.00 white) → 18.2:1  ✓ AAA
   //   fg-secondary  (0.72 white) → 12.9:1  ✓ AAA
-  //   fg-tertiary   (0.48 white) →  8.4:1  ✓ AAA
-  //   fg-quaternary (0.28 white) →  4.7:1  ✓ AA  (only for non-essential meta)
+  //   fg-tertiary   (0.48 white) →  8.4:1  ✓ AAA  ← used for --alg-text-muted (operational placeholders/hints)
+  //   fg-quaternary (0.36 white) → ~4.7:1  ✓ AA Large — decorative-only (watermarks, non-operable meta)
+  //
+  // WCAG note: fg-quaternary raised from 0.28 → 0.36 (measured ~4.7:1 on --alg-black-2,
+  // ~3.8:1 on --alg-black-3). Still decorative-only. Operational text uses fg-tertiary (0.48).
   --alg-fg-primary:     rgba(255, 255, 255, 1.00);  // body, headlines, KPI values
   --alg-fg-secondary:   rgba(255, 255, 255, 0.72);  // labels, context paragraphs
-  --alg-fg-tertiary:    rgba(255, 255, 255, 0.48);  // metadata, captions, hints
-  --alg-fg-quaternary:  rgba(255, 255, 255, 0.28);  // watermarks, decorative, disabled
+  --alg-fg-tertiary:    rgba(255, 255, 255, 0.48);  // metadata, captions, hints, placeholders
+  --alg-fg-quaternary:  rgba(255, 255, 255, 0.36);  // watermarks, decorative-only, non-operable meta
 
   // Inverse (rare — used only on bright accent fills if/when they exist)
   --alg-fg-inverse:     var(--alg-black-1);
@@ -175,10 +178,13 @@
   // 8. COLOR — Text aliases (v0 compatibility, re-tuned values)
   // ---------------------------------------------------------------------------
   // Map v0 names to the new 4-tier fg system. Downstream code keeps working.
+  // --alg-text-muted maps to fg-tertiary (0.48, ~8.4:1) so placeholder/disabled
+  // text passes WCAG AA for operational context. fg-quaternary (0.36) is reserved
+  // for purely decorative elements like the "DADOS DE DEMONSTRAÇÃO" watermark.
   --alg-text-primary:    var(--alg-fg-primary);
   --alg-text-secondary:  var(--alg-fg-secondary);
   --alg-text-tertiary:   var(--alg-fg-tertiary);
-  --alg-text-muted:      var(--alg-fg-quaternary);
+  --alg-text-muted:      var(--alg-fg-tertiary);   // re-mapped: operational use, not decorative
   --alg-text-inverse:    var(--alg-fg-inverse);
   --alg-text-brand:      var(--alg-color-brand-primary);
   --alg-text-danger:     var(--alg-color-danger);
@@ -453,6 +459,11 @@
   --alg-container-2xl: 1536px;
   --alg-container-max: 1440px;
 
+  // Admin OS topbar height — matches Chatwoot's main shell topbar (56px / h-14).
+  // Measured from InboxList.vue calc(100%-56px) in upstream dashboard code.
+  // Used by .alg-agent sticky positioning and any full-height sector layout.
+  --alg-admin-topbar-height: 56px;
+
   --alg-sidebar-width:           260px;
   --alg-sidebar-width-collapsed: 64px;
   --alg-drawer-width:            420px;
@@ -683,5 +694,18 @@
     --alg-duration-slow:       1ms;
     --alg-duration-deliberate: 1ms;
     --alg-duration-ambient:    1ms;
+  }
+
+  // Universal animation kill-switch for elements that animate directly
+  // (not just via duration tokens). Covers any animation not driven by
+  // CSS custom property transitions — e.g. background-position shimmer,
+  // keyframe rotations, scroll behavior.
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

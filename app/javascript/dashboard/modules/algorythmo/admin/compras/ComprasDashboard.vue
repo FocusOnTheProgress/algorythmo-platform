@@ -12,14 +12,3 @@ import comprasMock from '../mocks/sectors/compras';
     <SectorAgentChat :sector-name-key="comprasMock.headingKey" />
   </main>
 </template>
-
-<style scoped lang="scss">
-.alg-sector-layout {
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  overflow: hidden;
-}
-</style>

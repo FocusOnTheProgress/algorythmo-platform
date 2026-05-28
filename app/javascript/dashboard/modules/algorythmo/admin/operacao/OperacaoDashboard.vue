@@ -14,14 +14,3 @@ import operacaoMock from '../mocks/sectors/operacao';
     <SectorAgentChat :sector-name-key="operacaoMock.headingKey" />
   </main>
 </template>
-
-<style scoped lang="scss">
-.alg-sector-layout {
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  overflow: hidden;
-}
-</style>

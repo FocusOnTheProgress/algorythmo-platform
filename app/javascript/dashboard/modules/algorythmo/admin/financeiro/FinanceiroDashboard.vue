@@ -12,14 +12,3 @@ import financeiroMock from '../mocks/sectors/financeiro';
     <SectorAgentChat :sector-name-key="financeiroMock.headingKey" />
   </main>
 </template>
-
-<style scoped lang="scss">
-.alg-sector-layout {
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  overflow: hidden;
-}
-</style>

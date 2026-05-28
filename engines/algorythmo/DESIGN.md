@@ -383,11 +383,13 @@ Classes `.alg-*` e tokens `--alg-*` ficam globais. Vue components consomem via c
 
 ---
 
-## 10. Cut-flag para revert
+## 10. Reversão do Cinematic OS v1
 
-`data-alg-cinematic="v1"` no root do overlay (M6.1 Reports Comerciais — `ReportsCommercialOverlay.vue`) sinaliza Cinematic OS ativo. Default LIGADO. Para reverter um subtree ao visual antigo sem deploy, basta remover o atributo ou setar `v0`. Padrão `algorythmoCutFlags.js` (memória `project_cut_flag_convention`).
+**Cinematic OS v1 é forward-only.** Não há runtime toggle ou cut-flag para o visual register — a decisão foi feita pelo founder em 2026-05-28 (PR #82 review).
 
-Cut-flag de rota (`algorythmo_cut_reports_commercial`) é independente — esconde a tela inteira, não troca o tema.
+O atributo `data-alg-cinematic` foi removido de `ReportsCommercialOverlay.vue` e de todos os dashboards de setor. Para reverter o visual a um estado anterior é necessário fazer deploy de um branch revert — não existe atalho sem deploy.
+
+Cut-flag de rota (`algorythmo_cut_reports_commercial`) é independente — esconde a tela inteira, não troca o visual. Essa flag continua válida e segue o padrão `algorythmoCutFlags.js`.
 
 ---
 
