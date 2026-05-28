@@ -1,6 +1,7 @@
 {
   "SIDEBAR": {
     "RELATORIOS_COMERCIAIS": "Commercial Reports",
+    "RELATORIOS_COMERCIAIS_VISAO": "Commercial Overview",
     "ALGORYTHMO_SECTION_GESTAO": "Management",
     "ALGORYTHMO_SECTION_ESTRATEGIA": "Strategy",
     "ALGORYTHMO_SECTION_INTELIGENCIA": "Intelligence"
@@ -112,6 +113,21 @@
           "MQLS_LABEL": "MQLs this month",
           "CTR_LABEL": "Avg CTR",
           "CPL_LABEL": "Cost per lead"
+        }
+      },
+      "COMMERCIAL": {
+        "HEADING": "Commercial Overview",
+        "CONTEXT": "Pipeline, conversion and revenue — mid and bottom funnel over the last 30 days.",
+        "CHART_TITLE": "Closed revenue (R$ K) — last 12 weeks",
+        "ANCHOR": {
+          "RECEITA_LABEL": "Closed revenue (30d)",
+          "CONVERSAO_LABEL": "Lead → close conversion"
+        },
+        "SECONDARY": {
+          "LEADS_LABEL": "New leads (30d)",
+          "CICLO_LABEL": "Avg cycle (days)",
+          "TICKET_LABEL": "Avg ticket (BRL)",
+          "CANAL_LABEL": "Top channel (% share)"
         }
       }
     },

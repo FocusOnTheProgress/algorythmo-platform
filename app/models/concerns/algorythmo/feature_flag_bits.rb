@@ -3,17 +3,19 @@
 # Manages Algorythmo OS cut-surface feature flags stored in the dedicated
 # accounts.algorythmo_feature_flags bigint column.
 #
-# Flags occupy positions 1–15 — all safely within the signed bigint range (max: 63).
+# Flags occupy positions 1–16 — all safely within the signed bigint range (max: 63).
 # Zero collision with Chatwoot upstream accounts.feature_flags column.
 #
 # Include in Account via `include Algorythmo::FeatureFlagBits`.
 module Algorythmo::FeatureFlagBits
   extend ActiveSupport::Concern
 
-  # Short names of the 15 cut surfaces, in bit-position order (1-based).
+  # Short names of the 16 cut surfaces, in bit-position order (1-based).
   # Position N = array index N-1. Order is IMMUTABLE — reordering corrupts existing data.
   # Positions 14–15 migrated from features.yml (algorythmo_show_captain pos 64, algorythmo_crm pos 65)
   # to this dedicated column to eliminate signed bigint overflow risk.
+  # Position 16 — algorythmo: M6.1-a: reports_commercial (Relatórios Comerciais overlay).
+  #   Default NOT cut (= overlay visible for all accounts until explicitly disabled).
   CUT_FLAG_NAMES = %w[
     campaigns
     help_center
@@ -30,10 +32,11 @@ module Algorythmo::FeatureFlagBits
     conversation_workflow
     show_captain
     crm
+    reports_commercial
   ].freeze
 
   # Positions 14–15: "enable flags" — check means SHOW the feature (opposite semantic from cut flags).
-  # Explicit list (not last(2)) so appending a 16th cut flag doesn't silently corrupt the split.
+  # Explicit list (not last(2)) so appending further cut flags doesn't silently corrupt the split.
   ENABLE_FLAG_NAMES = %w[show_captain crm].freeze
   raise 'ENABLE_FLAG_NAMES must be a subset of CUT_FLAG_NAMES' \
     unless (ENABLE_FLAG_NAMES - CUT_FLAG_NAMES).empty?
@@ -62,7 +65,7 @@ module Algorythmo::FeatureFlagBits
     send(:"algorythmo_cut_#{name}?")
   end
 
-  # Returns a hash of all 15 cut flags and their enabled state for this account.
+  # Returns a hash of all 16 cut flags and their enabled state for this account.
   def all_algorythmo_cut_flags
     CUT_FLAG_NAMES.index_with { |name| algorythmo_cut_enabled?(name) }
   end

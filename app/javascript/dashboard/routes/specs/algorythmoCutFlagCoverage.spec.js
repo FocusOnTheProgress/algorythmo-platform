@@ -75,12 +75,13 @@ describe('algorythmo cut flag route coverage', () => {
   });
 
   it('found cut flag declarations across the route tree', () => {
-    // Sanity: the regex should have matched at least the 13 surfaces we know
-    // about. If the count drops it means a route file lost its gate.
+    // Exact count guard: any addition or removal must update this number intentionally.
+    // Current tally (verified 2026-05-27, M6.1-a): 24 declarations across all *.routes.js files.
+    // To recount: grep -r "algorythmoCutFlag:" app/javascript/dashboard/routes/dashboard/ | wc -l
     const totalDeclarations = [...declarationsByFile.values()].reduce(
       (sum, arr) => sum + arr.length,
       0
     );
-    expect(totalDeclarations).toBeGreaterThanOrEqual(13);
+    expect(totalDeclarations).toBe(24);
   });
 });
