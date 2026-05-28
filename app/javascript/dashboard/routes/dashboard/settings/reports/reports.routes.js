@@ -1,5 +1,6 @@
 import { frontendURL } from '../../../../helper/URLHelper';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
+import { defaultReportsBeforeEnter } from './reports.redirect';
 
 import ReportsWrapper from './components/ReportsWrapper.vue';
 import Index from './Index.vue';
@@ -24,11 +25,11 @@ import BotReports from './BotReports.vue';
 import LiveReports from './LiveReports.vue';
 import SLAReports from './SLAReports.vue';
 
-// algorythmo: M6.1-a — placeholder; replaced by the real overlay component in M6.1-b.
-// Plain object (no defineAsyncComponent) — there is no chunk to defer and no real
-// component to lazy-load yet. Exists solely so algorythmoCutFlagCoverage.spec.js
-// can assert the cut-flag is wired into a route between M6.1-a and M6.1-b.
-const ReportsCommercialPlaceholder = { template: '<div />' };
+// algorythmo: M6.1-b — real overlay component; replaces the M6.1-a stub.
+const ReportsCommercialOverlay = () =>
+  import(
+    'dashboard/modules/algorythmo/admin/reports-commercial/ReportsCommercialOverlay.vue'
+  );
 
 const meta = {
   featureFlag: FEATURE_FLAGS.REPORTS,
@@ -136,16 +137,19 @@ export default {
       path: frontendURL('accounts/:accountId/reports'),
       component: ReportsWrapper,
       children: [
-        // algorythmo: M6.1-a — redirect unchanged from upstream; still targets account_overview_reports.
-        // M6.1-b replaces this with a store-gated redirect: commercial_reports when NOT cut,
-        // account_overview_reports as upstream fallback when cut.
+        // algorythmo: M6.1-b — dynamic redirect via beforeEnter. Vue Router 4
+        // awaits beforeEnter (NOT the `redirect:` option), so the guard can
+        // hydrate accounts/get before reading the cut-flag. The guard skips
+        // the dispatch when state is already known, which leaves the warm-nav
+        // path single-fetch. See ./reports.redirect.js for the contract.
         {
           path: '',
-          redirect: to => {
-            return { name: 'account_overview_reports', params: to.params };
-          },
+          name: 'reports_default_redirect',
+          beforeEnter: defaultReportsBeforeEnter,
+          component: { render: () => null },
         },
-        // algorythmo: M6.1-a — placeholder route; component replaced in M6.1-b.
+        // algorythmo: M6.1-b — Relatórios Comerciais overlay (first child = default target).
+        // Placeholder shell; real composition (SectorDashboard + mock) arrives in M6.1-c.
         {
           path: 'commercial',
           name: 'commercial_reports',
@@ -154,7 +158,7 @@ export default {
             // algorythmo: feature-gate algorythmo_cut_reports_commercial
             algorythmoCutFlag: 'algorythmo_cut_reports_commercial',
           },
-          component: ReportsCommercialPlaceholder,
+          component: ReportsCommercialOverlay,
         },
         {
           path: 'overview',
