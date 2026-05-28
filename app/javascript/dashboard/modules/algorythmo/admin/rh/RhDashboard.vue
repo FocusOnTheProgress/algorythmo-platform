@@ -1,14 +1,12 @@
 <script setup>
-// algorythmo: M6.5 RH — derived sector dashboard. Same composition as M6.0
-// canonical. Plan 0005 §M6.5.
-import SectorDashboard from '../sectors/SectorDashboard.vue';
-import SectorAgentChat from '../sectors/SectorAgentChat.vue';
-import rhMock from '../mocks/sectors/rh';
+// algorythmo: plan 0007 M2-f — HR route entry.
+// Kept at this path because routes.js loads `algorythmo_admin_rh` from here; it
+// now delegates to HrShell (SectorShellV2). The previous M6.5 composition
+// (SectorDashboard + 360px SectorAgentChat rail) is superseded by the v2 shell
+// (Overview + sub-tabs + full-width agent chat, D4).
+import HrShell from './HrShell.vue';
 </script>
 
 <template>
-  <main class="alg-sector-layout">
-    <SectorDashboard :mock="rhMock" />
-    <SectorAgentChat :sector-name-key="rhMock.headingKey" />
-  </main>
+  <HrShell />
 </template>
