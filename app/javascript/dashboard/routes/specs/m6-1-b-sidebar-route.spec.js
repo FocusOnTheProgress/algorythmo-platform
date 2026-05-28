@@ -78,21 +78,25 @@ describe('M6.1-b — i18n keys', () => {
     );
   });
 
-  it('pt_BR has ALGORYTHMO_ADMIN.COMMERCIAL.BODY defined', () => {
-    expect(typeof pt.ALGORYTHMO_ADMIN.COMMERCIAL.BODY).toBe('string');
-    expect(pt.ALGORYTHMO_ADMIN.COMMERCIAL.BODY.length).toBeGreaterThan(0);
-  });
-
-  it('en has ALGORYTHMO_ADMIN.COMMERCIAL.BODY defined and != PT', () => {
-    expect(typeof en.ALGORYTHMO_ADMIN.COMMERCIAL.BODY).toBe('string');
-    expect(en.ALGORYTHMO_ADMIN.COMMERCIAL.BODY).not.toBe(
-      pt.ALGORYTHMO_ADMIN.COMMERCIAL.BODY
+  it('en mirrors SECTORS.COMMERCIAL.HEADING with a distinct, non-empty string', () => {
+    expect(typeof en.ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.HEADING).toBe(
+      'string'
+    );
+    expect(
+      en.ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.HEADING.length
+    ).toBeGreaterThan(0);
+    expect(en.ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.HEADING).not.toBe(
+      pt.ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.HEADING
     );
   });
 
-  it('does not duplicate the title in ALGORYTHMO_ADMIN.COMMERCIAL.TITLE', () => {
-    expect(pt.ALGORYTHMO_ADMIN.COMMERCIAL.TITLE).toBeUndefined();
-    expect(en.ALGORYTHMO_ADMIN.COMMERCIAL.TITLE).toBeUndefined();
+  // The top-level ALGORYTHMO_ADMIN.COMMERCIAL placeholder block was retired
+  // in M6.1-d cleanup — the overlay reads headingKey/contextKey from
+  // commercialMock + ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.* now. The block
+  // should NOT come back; if it does, someone is reintroducing a dead key.
+  it('ALGORYTHMO_ADMIN.COMMERCIAL placeholder block is fully retired (PT + EN)', () => {
+    expect(pt.ALGORYTHMO_ADMIN.COMMERCIAL).toBeUndefined();
+    expect(en.ALGORYTHMO_ADMIN.COMMERCIAL).toBeUndefined();
   });
 });
 
