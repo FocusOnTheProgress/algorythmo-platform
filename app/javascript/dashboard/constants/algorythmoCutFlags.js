@@ -41,6 +41,12 @@ export const ALGORYTHMO_CUT_FLAG_NAMES = Object.freeze([
   'sector_facilities',
   'sector_finance',
   'sector_administration',
+  // algorythmo: M2-c — hide the legacy Chatwoot Label/Inbox report tabs from the
+  // Commercial sidebar (D10). Sidebar-only cuts (mirror reports_bot's intent but
+  // without route-level enforcement): the underlying report routes stay live and
+  // reachable by URL. Convention: cut ACTIVE = hidden; default OFF = visible.
+  'reports_labels',
+  'reports_inbox',
 ]);
 
 // Full flag keys (with the `algorythmo_cut_` prefix) for direct equality checks

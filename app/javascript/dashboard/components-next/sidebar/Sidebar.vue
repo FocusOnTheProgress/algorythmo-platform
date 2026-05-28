@@ -352,6 +352,10 @@ const closeMobileSidebar = () => {
   emit('closeMobileSidebar');
 };
 
+// algorythmo: M2-c — D10: Label and Inbox report tabs are hidden from the
+// Commercial sidebar via algorythmo_cut_reports_labels / _reports_inbox
+// (cut ACTIVE = hidden). Routes stay live and URL-reachable; only the sidebar
+// entries drop. Default OFF = visible, per memory project_cut_flag_convention.
 const newReportRoutes = () => [
   {
     name: 'Reports Agent',
@@ -359,17 +363,25 @@ const newReportRoutes = () => [
     to: accountScopedRoute('agent_reports_index'),
     activeOn: ['agent_reports_show'],
   },
-  {
-    name: 'Reports Label',
-    label: t('SIDEBAR.REPORTS_LABEL'),
-    to: accountScopedRoute('label_reports_index'),
-  },
-  {
-    name: 'Reports Inbox',
-    label: t('SIDEBAR.REPORTS_INBOX'),
-    to: accountScopedRoute('inbox_reports_index'),
-    activeOn: ['inbox_reports_show'],
-  },
+  ...(algorythmoCutHidden.value.reports_labels
+    ? []
+    : [
+        {
+          name: 'Reports Label',
+          label: t('SIDEBAR.REPORTS_LABEL'),
+          to: accountScopedRoute('label_reports_index'),
+        },
+      ]),
+  ...(algorythmoCutHidden.value.reports_inbox
+    ? []
+    : [
+        {
+          name: 'Reports Inbox',
+          label: t('SIDEBAR.REPORTS_INBOX'),
+          to: accountScopedRoute('inbox_reports_index'),
+          activeOn: ['inbox_reports_show'],
+        },
+      ]),
   {
     name: 'Reports Team',
     label: t('SIDEBAR.REPORTS_TEAM'),

@@ -67,6 +67,10 @@ const SIDEBAR_ONLY_FLAGS = new Set([
   'sector_facilities',
   'sector_finance',
   'sector_administration',
+  // algorythmo: M2-c — Label/Inbox report tabs hidden from the Commercial sidebar.
+  // Sidebar-only (no route meta): the report routes stay live and URL-reachable.
+  'reports_labels',
+  'reports_inbox',
 ]);
 
 describe('algorythmo cut flag route coverage', () => {
