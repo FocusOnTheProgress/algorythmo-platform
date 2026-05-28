@@ -572,6 +572,7 @@ const menuItems = computed(() => {
                 name: 'Commercial Reports',
                 label: t('SIDEBAR.RELATORIOS_COMERCIAIS_VISAO'),
                 to: accountScopedRoute('commercial_reports'),
+                activeOn: ['commercial_reports'],
               },
             ]),
         {

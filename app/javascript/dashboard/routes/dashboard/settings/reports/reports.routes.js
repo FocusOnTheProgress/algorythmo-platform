@@ -131,6 +131,27 @@ const revisedReportRoutes = [
   },
 ];
 
+// algorythmo: M6.1-b — exported for unit testing. Resolves the default Reports
+// landing route based on the algorythmo_cut_reports_commercial flag (D13).
+// Defaults to commercial_reports unless the cut-flag is explicitly enabled
+// (=== true). NaN/missing accountId falls into the default — safe because the
+// outer navigation guard (routes/index.js) already redirects unauthenticated
+// or unscoped navigations before this resolver runs.
+export const resolveDefaultReportsRedirect = (to, getterFactory = null) => {
+  const isFeatureEnabledonAccount =
+    getterFactory ?? store.getters['accounts/isFeatureEnabledonAccount'];
+  const accountId = Number(to.params.accountId);
+  const isCut =
+    isFeatureEnabledonAccount(
+      accountId,
+      'algorythmo_cut_reports_commercial'
+    ) === true;
+  return {
+    name: isCut ? 'account_overview_reports' : 'commercial_reports',
+    params: to.params,
+  };
+};
+
 export default {
   routes: [
     {
@@ -138,27 +159,10 @@ export default {
       component: ReportsWrapper,
       children: [
         // algorythmo: M6.1-b — dynamic redirect: admins land on Visão Comercial by
-        // default (D13, plan 0006). Upstream behaviour (account_overview_reports) is
-        // preserved as the fallback when a super-admin enables the cut-flag for a tenant.
-        // Store is imported at module level (same pattern as routes/index.js) — safe
-        // because redirect runs at navigation time, never at parse time.
+        // default (D13, plan 0006). See resolveDefaultReportsRedirect above.
         {
           path: '',
-          redirect: to => {
-            const isFeatureEnabledonAccount =
-              store.getters['accounts/isFeatureEnabledonAccount'];
-            const accountId = Number(to.params.accountId);
-            // isCut === true means the feature is hidden; default false = visible.
-            const isCut =
-              isFeatureEnabledonAccount(
-                accountId,
-                'algorythmo_cut_reports_commercial'
-              ) === true;
-            return {
-              name: isCut ? 'account_overview_reports' : 'commercial_reports',
-              params: to.params,
-            };
-          },
+          redirect: to => resolveDefaultReportsRedirect(to),
         },
         // algorythmo: M6.1-b — Relatórios Comerciais overlay (first child = default target).
         // Placeholder shell; real composition (SectorDashboard + mock) arrives in M6.1-c.
