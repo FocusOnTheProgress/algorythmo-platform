@@ -80,6 +80,23 @@ const SIDEBAR_ONLY_FLAGS = new Set([
   'sector_marketing_trafego',
   'sector_marketing_crm',
   'sector_marketing_retencao',
+  // algorythmo: M2-e — Operations/Procurement/Administration per-sub-tab cuts.
+  // Shell-only (no route meta): they gate tab visibility inside their sector
+  // shell (OperationsShell / ProcurementShell / AdministrationShell), not a
+  // route. The sector route itself stays reachable; a cut only drops the tab.
+  'sector_operations_estoque',
+  'sector_operations_reposicao',
+  'sector_operations_logistica',
+  'sector_operations_organizacao',
+  'sector_operations_entrega',
+  'sector_operations_expedicao',
+  'sector_procurement_fornecedores',
+  'sector_procurement_reposicao',
+  'sector_procurement_custo',
+  'sector_procurement_giro',
+  'sector_administration_estrategia',
+  'sector_administration_metas',
+  'sector_administration_indicadores',
 ]);
 
 describe('algorythmo cut flag route coverage', () => {
