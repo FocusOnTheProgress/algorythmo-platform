@@ -1,6 +1,6 @@
 import { frontendURL } from '../../../../helper/URLHelper';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
-import { defaultReportsRedirectHandler } from './reports.redirect';
+import { defaultReportsBeforeEnter } from './reports.redirect';
 
 import ReportsWrapper from './components/ReportsWrapper.vue';
 import Index from './Index.vue';
@@ -131,25 +131,22 @@ const revisedReportRoutes = [
   },
 ];
 
-// algorythmo: M6.1-b — re-exported for backwards compatibility with the static
-// spec scan. Real definition lives in ./reports.redirect.js (small, store-only
-// module so unit tests don't pull the full route graph / amplitude / tslib).
-export { resolveDefaultReportsRedirect } from './reports.redirect';
-
 export default {
   routes: [
     {
       path: frontendURL('accounts/:accountId/reports'),
       component: ReportsWrapper,
       children: [
-        // algorythmo: M6.1-b — dynamic redirect: admins land on Visão Comercial by
-        // default (D13, plan 0006). Async to await accounts/get before reading the
-        // cut-flag — without the await, a cut user reloading /reports gets bounced
-        // to /dashboard because the resolver runs before the global guard's
-        // accounts/get await (see ./reports.redirect.js).
+        // algorythmo: M6.1-b — dynamic redirect via beforeEnter. Vue Router 4
+        // awaits beforeEnter (NOT the `redirect:` option), so the guard can
+        // hydrate accounts/get before reading the cut-flag. The guard skips
+        // the dispatch when state is already known, which leaves the warm-nav
+        // path single-fetch. See ./reports.redirect.js for the contract.
         {
           path: '',
-          redirect: defaultReportsRedirectHandler,
+          name: 'reports_default_redirect',
+          beforeEnter: defaultReportsBeforeEnter,
+          component: { render: () => null },
         },
         // algorythmo: M6.1-b — Relatórios Comerciais overlay (first child = default target).
         // Placeholder shell; real composition (SectorDashboard + mock) arrives in M6.1-c.

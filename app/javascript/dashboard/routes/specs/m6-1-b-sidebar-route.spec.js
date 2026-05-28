@@ -1,5 +1,5 @@
 // algorythmo: M6.1-b — sidebar entry + route + redirect spec.
-// Mixed static-text scan + behavioral coverage of the default-redirect logic.
+// Mixed static-text scan + behavioral coverage of the default-redirect guard.
 // Behavioral block imports the resolver module directly (no transitive Vue /
 // amplitude / tslib chain), so the suite runs in any CI env without hoisting.
 import fs from 'node:fs';
@@ -133,39 +133,37 @@ describe('M6.1-b — reports.routes.js wiring', () => {
     );
   });
 
-  it('uses the async defaultReportsRedirectHandler for the index redirect', () => {
-    // Hydrating accounts/get inside the redirect is the only way a cut user
-    // reloading /reports lands on /reports/overview instead of /dashboard.
-    expect(src).toContain('defaultReportsRedirectHandler');
+  it('uses beforeEnter (not redirect:) so Vue Router awaits the async resolver', () => {
+    // Vue Router 4 awaits beforeEnter; it does NOT await the redirect option.
+    // This is the only wiring that makes the hard-reload race fix actually fire.
+    expect(src).toContain('beforeEnter: defaultReportsBeforeEnter');
     expect(src).toContain("from './reports.redirect'");
-  });
-
-  it('re-exports resolveDefaultReportsRedirect from the redirect module', () => {
-    expect(src).toContain('export { resolveDefaultReportsRedirect }');
   });
 });
 
-// ── 4. resolveDefaultReportsRedirect — BEHAVIOR ──────────────────────────
+// ── 4. resolveDefaultReportsRedirect + beforeEnter — BEHAVIOR ────────────
 // Vitest hoists vi.mock to the top of the file. Mocking 'dashboard/store'
-// lets us load the resolver module without booting Vuex. The new
-// reports.redirect.js module imports ONLY dashboard/store — no transitive
-// Vue SFCs, no amplitude, no tslib — so this block runs anywhere.
+// lets us load the resolver module without booting Vuex. The redirect
+// module imports ONLY dashboard/store — no transitive Vue SFCs, no
+// amplitude, no tslib — so this block runs anywhere.
 vi.mock('dashboard/store', () => ({
   default: {
     getters: {
-      'accounts/isFeatureEnabledonAccount': () => false,
+      'accounts/isFeatureEnabledonAccount': () => undefined,
     },
     dispatch: vi.fn(() => Promise.resolve()),
   },
 }));
 
-describe('M6.1-b — resolveDefaultReportsRedirect behavior', () => {
+describe('M6.1-b — default redirect behavior', () => {
   let resolveDefaultReportsRedirect;
-  let defaultReportsRedirectHandler;
+  let defaultReportsBeforeEnter;
+  let store;
 
   beforeAll(async () => {
-    ({ resolveDefaultReportsRedirect, defaultReportsRedirectHandler } =
+    ({ resolveDefaultReportsRedirect, defaultReportsBeforeEnter } =
       await import('../dashboard/settings/reports/reports.redirect.js'));
+    store = (await import('dashboard/store')).default;
   });
 
   const buildTo = (accountId = '1') => ({ params: { accountId } });
@@ -185,8 +183,6 @@ describe('M6.1-b — resolveDefaultReportsRedirect behavior', () => {
   });
 
   it('treats non-boolean truthy values as NOT cut (strict === true check)', () => {
-    // Defensive: getter could return undefined/null/0 for missing accounts.
-    // None of those should accidentally trigger the upstream fallback.
     [undefined, null, 0, '', 'true', 1].forEach(v => {
       const getter = () => v;
       const result = resolveDefaultReportsRedirect(buildTo('42'), getter);
@@ -209,10 +205,13 @@ describe('M6.1-b — resolveDefaultReportsRedirect behavior', () => {
     );
   });
 
-  it('async handler awaits accounts/get with explicit accountId before resolving', async () => {
-    const store = (await import('dashboard/store')).default;
+  // beforeEnter contract: hydrate when state unknown, skip when known.
+  // The hydrate-when-unknown path is what fixes the hard-reload race.
+  // The skip-when-known path is what avoids the double accounts/get on warm nav.
+  it('beforeEnter dispatches accounts/get with explicit accountId when flag state is unknown', async () => {
     store.dispatch.mockClear();
-    const result = await defaultReportsRedirectHandler(buildTo('55'));
+    store.getters['accounts/isFeatureEnabledonAccount'] = () => undefined;
+    const result = await defaultReportsBeforeEnter(buildTo('55'));
     expect(store.dispatch).toHaveBeenCalledWith('accounts/get', {
       silent: true,
       accountId: 55,
@@ -220,11 +219,26 @@ describe('M6.1-b — resolveDefaultReportsRedirect behavior', () => {
     expect(result.name).toBe('commercial_reports');
   });
 
-  it('async handler skips dispatch when accountId is not finite', async () => {
-    const store = (await import('dashboard/store')).default;
+  it('beforeEnter SKIPS dispatch when flag state is already known (warm nav, no double-fetch)', async () => {
     store.dispatch.mockClear();
-    await defaultReportsRedirectHandler({ params: { accountId: 'oops' } });
+    store.getters['accounts/isFeatureEnabledonAccount'] = () => false;
+    const result = await defaultReportsBeforeEnter(buildTo('55'));
     expect(store.dispatch).not.toHaveBeenCalled();
+    expect(result.name).toBe('commercial_reports');
+  });
+
+  it('beforeEnter skips dispatch when accountId is not finite', async () => {
+    store.dispatch.mockClear();
+    store.getters['accounts/isFeatureEnabledonAccount'] = () => undefined;
+    await defaultReportsBeforeEnter({ params: { accountId: 'oops' } });
+    expect(store.dispatch).not.toHaveBeenCalled();
+  });
+
+  it('beforeEnter returns account_overview_reports when cut-flag is explicitly true', async () => {
+    store.dispatch.mockClear();
+    store.getters['accounts/isFeatureEnabledonAccount'] = () => true;
+    const result = await defaultReportsBeforeEnter(buildTo('55'));
+    expect(result.name).toBe('account_overview_reports');
   });
 });
 
@@ -258,8 +272,6 @@ describe('M6.1-b — Sidebar.vue', () => {
   });
 
   it("declares activeOn including 'commercial_reports' (matches sister entries)", () => {
-    // Tolerate additional active route names + single/double quotes —
-    // the load-bearing invariant is that commercial_reports lights the row.
     expect(src).toMatch(/activeOn:\s*\[[^\]]*['"]commercial_reports['"]/);
   });
 });
