@@ -97,6 +97,19 @@ const SIDEBAR_ONLY_FLAGS = new Set([
   'sector_administration_estrategia',
   'sector_administration_metas',
   'sector_administration_indicadores',
+  // algorythmo: M2-f — Finance + HR per-sub-tab cuts. Shell-only (no route meta):
+  // they gate tab visibility inside FinanceShell.vue / HrShell.vue, not a route.
+  // The sector route itself stays reachable; a cut only drops the tab.
+  'sector_finance_a_pagar',
+  'sector_finance_a_receber',
+  'sector_finance_fluxo',
+  'sector_finance_margem',
+  'sector_finance_lucro',
+  'sector_finance_planejamento',
+  'sector_hr_contratacao',
+  'sector_hr_treinamento',
+  'sector_hr_cultura',
+  'sector_hr_produtividade',
 ]);
 
 describe('algorythmo cut flag route coverage', () => {
