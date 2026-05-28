@@ -128,8 +128,10 @@
       },
       "COMMERCIAL": {
         "HEADING": "Visão Comercial",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor Commercial",
         "CONTEXT": "Pipeline, conversão e receita — meio e fundo de funil nos últimos 30 dias.",
         "CHART_TITLE": "Receita fechada (R$ mil) — últimas 12 semanas",
+        "OPEN_FULL_REPORT": "Abrir relatório completo",
         "ANCHOR": {
           "RECEITA_LABEL": "Receita fechada (30d)",
           "CONVERSAO_LABEL": "Conversão lead → fechado"
@@ -139,6 +141,32 @@
           "CICLO_LABEL": "Ciclo médio (dias)",
           "TICKET_LABEL": "Ticket médio (R$)",
           "CANAL_LABEL": "Canal principal (% participação)"
+        },
+        "OVERVIEW": {
+          "TAB": "Visão Geral",
+          "ARIA": "Visão geral consolidada do setor Commercial",
+          "OPERATIONS_LABEL": "Operações",
+          "OPERATIONS_CHART": "Receita fechada (R$ mil)",
+          "CONVERSATION_LABEL": "Conversas",
+          "CONVERSATION_CHART": "Conversas atendidas",
+          "AGENTS_LABEL": "Agentes",
+          "AGENTS_CHART": "Tempo médio de resposta",
+          "TEAMS_LABEL": "Times",
+          "TEAMS_CHART": "Resolução no SLA",
+          "SLA_LABEL": "SLA",
+          "SLA_CHART": "Cumprimento de SLA",
+          "CSAT_LABEL": "CSAT",
+          "CSAT_CHART": "Satisfação do cliente"
+        },
+        "CUSTOMER_SUPPORT": {
+          "TAB": "Atendimento ao Cliente",
+          "ARIA": "Central de ajuda — artigos e categorias para atendimento",
+          "HINT": "Conteúdo de leitura para apoiar o atendimento. A edição continua na Central de Ajuda.",
+          "LOADING": "Carregando artigos…",
+          "EMPTY": "Nenhuma central de ajuda configurada ainda.",
+          "NO_ARTICLES": "Nenhum artigo publicado nesta central de ajuda.",
+          "VIEWS": "{count} visualizações",
+          "UNCATEGORIZED": "Sem categoria"
         }
       }
     },

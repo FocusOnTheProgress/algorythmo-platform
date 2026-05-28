@@ -119,8 +119,10 @@
       },
       "COMMERCIAL": {
         "HEADING": "Commercial Overview",
+        "AGENT_CHAT_HEADING": "Talk to the Commercial sector agent",
         "CONTEXT": "Pipeline, conversion and revenue — mid and bottom funnel over the last 30 days.",
         "CHART_TITLE": "Closed revenue (R$ K) — last 12 weeks",
+        "OPEN_FULL_REPORT": "Open full report",
         "ANCHOR": {
           "RECEITA_LABEL": "Closed revenue (30d)",
           "CONVERSAO_LABEL": "Lead → close conversion"
@@ -130,6 +132,32 @@
           "CICLO_LABEL": "Avg cycle (days)",
           "TICKET_LABEL": "Avg ticket (BRL)",
           "CANAL_LABEL": "Top channel (% share)"
+        },
+        "OVERVIEW": {
+          "TAB": "Overview",
+          "ARIA": "Consolidated overview of the Commercial sector",
+          "OPERATIONS_LABEL": "Operations",
+          "OPERATIONS_CHART": "Closed revenue (R$ K)",
+          "CONVERSATION_LABEL": "Conversations",
+          "CONVERSATION_CHART": "Handled conversations",
+          "AGENTS_LABEL": "Agents",
+          "AGENTS_CHART": "Avg response time",
+          "TEAMS_LABEL": "Teams",
+          "TEAMS_CHART": "SLA resolution",
+          "SLA_LABEL": "SLA",
+          "SLA_CHART": "SLA compliance",
+          "CSAT_LABEL": "CSAT",
+          "CSAT_CHART": "Customer satisfaction"
+        },
+        "CUSTOMER_SUPPORT": {
+          "TAB": "Customer Support",
+          "ARIA": "Help center — articles and categories for support",
+          "HINT": "Read-only content to support your team. Editing stays in the Help Center.",
+          "LOADING": "Loading articles…",
+          "EMPTY": "No help center configured yet.",
+          "NO_ARTICLES": "No published articles in this help center.",
+          "VIEWS": "{count} views",
+          "UNCATEGORIZED": "Uncategorized"
         }
       }
     },

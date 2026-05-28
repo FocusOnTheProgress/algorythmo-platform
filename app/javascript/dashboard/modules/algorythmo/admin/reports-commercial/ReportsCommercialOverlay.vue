@@ -1,17 +1,12 @@
 <script setup>
-// algorythmo: M6.1-c — Reports Commercial overlay, full composition.
-// Cinematic OS v1 is forward-only. Reverting the visual register requires
-// deploying a revert branch — there is no runtime toggle.
-// Pattern: 1:1 copy of MarketingDashboard.vue convention (adversarial-accepted
-// in M6.2-M6.6). Do NOT fork SectorDashboard.
-import SectorDashboard from '../sectors/SectorDashboard.vue';
-import SectorAgentChat from '../sectors/SectorAgentChat.vue';
-import commercialMock from '../mocks/sectors/commercial';
+// algorythmo: plan 0007 M2-c — Commercial route entry.
+// Kept at this path because reports.routes.js loads `commercial_reports` from
+// here; it now delegates to CommercialShell (SectorShellV2). The previous
+// M6.1-c composition (SectorDashboard + 360px SectorAgentChat rail) is
+// superseded by the v2 shell (Overview + sub-tabs + full-width agent chat, D4).
+import CommercialShell from './CommercialShell.vue';
 </script>
 
 <template>
-  <main class="alg-sector-layout">
-    <SectorDashboard :mock="commercialMock" />
-    <SectorAgentChat :sector-name-key="commercialMock.headingKey" />
-  </main>
+  <CommercialShell />
 </template>
