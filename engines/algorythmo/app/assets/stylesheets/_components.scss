@@ -1517,3 +1517,160 @@
   letter-spacing: var(--alg-tracking-wide);
   pointer-events: none;
 }
+
+// =============================================================================
+// SECTOR SHELL v2 — Cinematic OS v2 (plan 0007, M2-b)
+// -----------------------------------------------------------------------------
+// The sector page template: dense data Overview (default) + operational
+// sub-tabs + a full-width agent chat anchored at the foot. Density is
+// `operational` (24px padding / 16px gap). The agent chat is NOT a 360px right
+// rail — it spans the column at the bottom of the page (D4). A jump-to-chat
+// button in the header scrolls it into view (D5). Active tab is a glass-soft
+// pill; reduced-motion drops the underline transition.
+// =============================================================================
+
+.alg-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-density-operational-gap);
+  padding: var(--alg-density-operational-padding);
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: var(--alg-container-max);
+  margin: 0 auto;
+  overflow-y: auto;
+  background-color: var(--alg-bg);
+  color: var(--alg-text-primary);
+
+  @media (max-width: 768px) {
+    padding: var(--alg-space-4);
+    gap: var(--alg-space-4);
+  }
+}
+
+.alg-shell__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--alg-space-4);
+}
+
+.alg-shell__title {
+  font-family: var(--alg-font-display);
+  font-size: var(--alg-text-lg);
+  font-weight: var(--alg-weight-medium);
+  line-height: var(--alg-leading-tight);
+  letter-spacing: var(--alg-tracking-snug);
+  color: var(--alg-fg-primary);
+  margin: 0;
+}
+
+.alg-shell__jump {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--alg-border-hover);
+  border-radius: var(--alg-radius-md);
+  color: var(--alg-fg-secondary);
+  cursor: pointer;
+  transition:
+    color var(--alg-duration-fast) var(--alg-ease-cinematic),
+    border-color var(--alg-duration-fast) var(--alg-ease-cinematic),
+    background-color var(--alg-duration-fast) var(--alg-ease-cinematic);
+
+  &:hover {
+    color: var(--alg-fg-primary);
+    border-color: var(--alg-border-strong);
+    background: var(--alg-bg-tint-low);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--alg-color-brand-primary);
+    outline-offset: 2px;
+  }
+}
+
+.alg-shell__jump-icon {
+  display: inline-flex;
+  font-size: 18px;
+}
+
+.alg-shell__tablist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--alg-space-1);
+  border-bottom: 1px solid var(--alg-border);
+  padding-bottom: var(--alg-space-2);
+}
+
+.alg-shell__tab {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-radius: var(--alg-radius-md);
+  padding: var(--alg-space-2) var(--alg-space-3);
+  font-family: var(--alg-font-sans);
+  font-size: var(--alg-text-sm);
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-snug);
+  color: var(--alg-fg-tertiary);
+  cursor: pointer;
+  transition:
+    color var(--alg-duration-fast) var(--alg-ease-cinematic),
+    background-color var(--alg-duration-fast) var(--alg-ease-cinematic);
+
+  &:hover {
+    color: var(--alg-fg-secondary);
+    background: var(--alg-bg-tint-low);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--alg-color-brand-primary);
+    outline-offset: 2px;
+  }
+
+  &--active {
+    color: var(--alg-fg-primary);
+    @include alg-glass(soft);
+  }
+}
+
+.alg-shell__panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+
+  &:focus-visible {
+    outline: 2px solid var(--alg-color-brand-primary);
+    outline-offset: 2px;
+    border-radius: var(--alg-radius-md);
+  }
+}
+
+.alg-shell__chat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-space-4);
+  scroll-margin-top: var(--alg-admin-topbar-height);
+}
+
+.alg-shell__chat-heading {
+  font-family: var(--alg-font-display);
+  font-size: var(--alg-text-md);
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-snug);
+  color: var(--alg-fg-primary);
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alg-shell__tab,
+  .alg-shell__jump {
+    transition: none;
+  }
+}

@@ -1,4 +1,6 @@
 <script setup>
+// algorythmo: @deprecated — migrar pra SectorShellV2 (plano 0007). Mantido
+// durante a migração dos 8 setores; remoção no M2-h (cleanup). Não estender.
 // algorythmo: Cinematic OS v1 — sector dashboard.
 // Visual register: editorial magazine (Aesop / Field Mag / Apple support docs),
 // not SaaS dashboard. Anchor KPIs sit in a 2-up grid with hairline dividers;

@@ -14,6 +14,8 @@
     "SECTORS": {
       "WATERMARK": "Demonstration data",
       "CHART_ERROR": "Chart unavailable",
+      "JUMP_TO_CHAT": "Jump to the {name} sector agent chat",
+      "TABLIST_ARIA": "{name} sector sections",
       "AGENT": {
         "ARIA_LABEL": "Sector agent panel",
         "FORM_ARIA": "Send message to agent",
