@@ -5,8 +5,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 
-const dispatch = vi.fn().mockResolvedValue(undefined);
-const getters = {};
+// vi.hoisted so the hoisted vi.mock factory below can safely close over these.
+const { dispatch, getters } = vi.hoisted(() => ({
+  dispatch: vi.fn().mockResolvedValue(undefined),
+  getters: {},
+}));
 
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({ t: (key, params) => (params ? `${key}` : key) }),
