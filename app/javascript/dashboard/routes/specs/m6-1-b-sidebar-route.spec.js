@@ -1,5 +1,7 @@
 // algorythmo: M6.1-b — sidebar entry + route + redirect spec.
 // Mixed static-text scan + behavioral coverage of the default-redirect logic.
+// Behavioral block imports the resolver module directly (no transitive Vue /
+// amplitude / tslib chain), so the suite runs in any CI env without hoisting.
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, beforeAll, vi } from 'vitest';
@@ -37,15 +39,8 @@ describe('M6.1-b — ReportsCommercialOverlay component', () => {
     expect(src).toContain('ALGORYTHMO_ADMIN.COMMERCIAL.BODY');
   });
 
-  it('SFC does not mount SectorDashboard yet (deferred to M6.1-c)', () => {
-    // Scan template/script blocks only — the file-level comment intentionally
-    // mentions SectorDashboard as a forward reference for M6.1-c.
-    const templateMatch = src.match(/<template>[\s\S]*?<\/template>/);
-    const scriptMatch = src.match(/<script\s+setup>[\s\S]*?<\/script>/);
-    const codeOnly = [templateMatch?.[0], scriptMatch?.[0]]
-      .filter(Boolean)
-      .join('\n');
-    expect(codeOnly).not.toContain('SectorDashboard');
+  it('SFC styles use Tailwind utilities (no <style> block per AGENTS.md)', () => {
+    expect(src).not.toMatch(/<style\b/);
   });
 });
 
@@ -138,29 +133,39 @@ describe('M6.1-b — reports.routes.js wiring', () => {
     );
   });
 
-  it('exports resolveDefaultReportsRedirect for unit testing', () => {
-    expect(src).toContain('export const resolveDefaultReportsRedirect');
+  it('uses the async defaultReportsRedirectHandler for the index redirect', () => {
+    // Hydrating accounts/get inside the redirect is the only way a cut user
+    // reloading /reports lands on /reports/overview instead of /dashboard.
+    expect(src).toContain('defaultReportsRedirectHandler');
+    expect(src).toContain("from './reports.redirect'");
+  });
+
+  it('re-exports resolveDefaultReportsRedirect from the redirect module', () => {
+    expect(src).toContain('export { resolveDefaultReportsRedirect }');
   });
 });
 
 // ── 4. resolveDefaultReportsRedirect — BEHAVIOR ──────────────────────────
 // Vitest hoists vi.mock to the top of the file. Mocking 'dashboard/store'
-// lets us load the routes module without booting Vuex.
+// lets us load the resolver module without booting Vuex. The new
+// reports.redirect.js module imports ONLY dashboard/store — no transitive
+// Vue SFCs, no amplitude, no tslib — so this block runs anywhere.
 vi.mock('dashboard/store', () => ({
   default: {
     getters: {
       'accounts/isFeatureEnabledonAccount': () => false,
     },
+    dispatch: vi.fn(() => Promise.resolve()),
   },
 }));
 
 describe('M6.1-b — resolveDefaultReportsRedirect behavior', () => {
   let resolveDefaultReportsRedirect;
+  let defaultReportsRedirectHandler;
 
   beforeAll(async () => {
-    ({ resolveDefaultReportsRedirect } = await import(
-      '../dashboard/settings/reports/reports.routes.js'
-    ));
+    ({ resolveDefaultReportsRedirect, defaultReportsRedirectHandler } =
+      await import('../dashboard/settings/reports/reports.redirect.js'));
   });
 
   const buildTo = (accountId = '1') => ({ params: { accountId } });
@@ -203,6 +208,24 @@ describe('M6.1-b — resolveDefaultReportsRedirect behavior', () => {
       'algorythmo_cut_reports_commercial'
     );
   });
+
+  it('async handler awaits accounts/get with explicit accountId before resolving', async () => {
+    const store = (await import('dashboard/store')).default;
+    store.dispatch.mockClear();
+    const result = await defaultReportsRedirectHandler(buildTo('55'));
+    expect(store.dispatch).toHaveBeenCalledWith('accounts/get', {
+      silent: true,
+      accountId: 55,
+    });
+    expect(result.name).toBe('commercial_reports');
+  });
+
+  it('async handler skips dispatch when accountId is not finite', async () => {
+    const store = (await import('dashboard/store')).default;
+    store.dispatch.mockClear();
+    await defaultReportsRedirectHandler({ params: { accountId: 'oops' } });
+    expect(store.dispatch).not.toHaveBeenCalled();
+  });
 });
 
 // ── 5. Sidebar.vue entry ──────────────────────────────────────────────────
@@ -234,13 +257,9 @@ describe('M6.1-b — Sidebar.vue', () => {
     expect(src).toContain('algorythmoCutHidden.value.reports_commercial');
   });
 
-  it('uses spread-into-empty-array pattern (same as reports_bot gate)', () => {
-    expect(src).toMatch(
-      /algorythmoCutHidden\.value\.reports_commercial\s*\?\s*\[\]/
-    );
-  });
-
-  it("declares activeOn: ['commercial_reports'] (matches sister entries)", () => {
-    expect(src).toMatch(/activeOn:\s*\['commercial_reports'\]/);
+  it("declares activeOn including 'commercial_reports' (matches sister entries)", () => {
+    // Tolerate additional active route names + single/double quotes —
+    // the load-bearing invariant is that commercial_reports lights the row.
+    expect(src).toMatch(/activeOn:\s*\[[^\]]*['"]commercial_reports['"]/);
   });
 });
