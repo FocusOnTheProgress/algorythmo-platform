@@ -110,6 +110,11 @@ const SIDEBAR_ONLY_FLAGS = new Set([
   'sector_hr_treinamento',
   'sector_hr_cultura',
   'sector_hr_produtividade',
+  // algorythmo: M2-g — Facilities per-sub-tab cuts. Shell-only (no route meta):
+  // they gate tab visibility inside FacilitiesShell.vue, not a route. The
+  // Facilities route itself stays reachable; a cut only drops the tab.
+  'sector_facilities_overview',
+  'sector_facilities_controle',
 ]);
 
 describe('algorythmo cut flag route coverage', () => {

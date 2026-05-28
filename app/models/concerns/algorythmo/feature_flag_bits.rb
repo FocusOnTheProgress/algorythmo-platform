@@ -34,6 +34,10 @@ module Algorythmo::FeatureFlagBits
   #   sector_finance_{a_pagar,a_receber,fluxo,margem,lucro,planejamento}: hide one tab
   #   inside FinanceShell.vue. sector_hr_{contratacao,treinamento,cultura,produtividade}:
   #   hide one tab inside HrShell.vue. Default NOT cut (visible); Overview tab is never cut.
+  # Positions 58–59 — algorythmo: M2-g: per-sub-tab cuts for the Facilities shell.
+  #   sector_facilities_overview / sector_facilities_controle: hide one tab inside
+  #   FacilitiesShell.vue. Default NOT cut (visible); the Overview tab is never cut in
+  #   practice (shell contract) — the flag exists for registry symmetry.
   CUT_FLAG_NAMES = %w[
     campaigns
     help_center
@@ -92,6 +96,8 @@ module Algorythmo::FeatureFlagBits
     sector_hr_treinamento
     sector_hr_cultura
     sector_hr_produtividade
+    sector_facilities_overview
+    sector_facilities_controle
   ].freeze
 
   # Positions 14–15: "enable flags" — check means SHOW the feature (opposite semantic from cut flags).
