@@ -1,6 +1,9 @@
 // =============================================================================
-// Algorythmo OS — Design Tokens (Cinematic OS v1)
+// Algorythmo OS — Design Tokens (Cinematic OS v2)
 // -----------------------------------------------------------------------------
+// Status: Awaiting founder approval. DESIGN.md v2 is the canonical brief —
+// any change here must match a decision documented there.
+//
 // Reference points:
 //   Apple Intelligence, visionOS, Arc, Linear, Raycast, Vercel,
 //   Things 3, Teenage Engineering, Aesop, Field Mag.
@@ -15,9 +18,20 @@
 //   - Deep black (#000 → #1F2025) as the primary surface
 //   - White text in 4 opacity tiers (1.0 / 0.72 / 0.48 / 0.28)
 //   - Editorial typography (Inter / Geist), tight tracking on display
-//   - Glass in 3 calibrated tiers (blur 20 / 40 / 60px) with hairline borders
+//   - Glass in 3 calibrated tiers (blur 20/40/60px, sat 180/200/220%, grain)
 //   - 4 elevation tiers with mandatory inset-top highlight
-//   - Cubic-bezier(0.32, 0.72, 0, 1) as the default motion curve
+//   - Cubic-bezier(0.32, 0.72, 0, 1) as the default interaction curve
+//   - Sinusoidal ambient curve for living loops (orbs, planets, breathing)
+//
+// What changed from v1 (tokens-level only — full rationale in DESIGN.md §0):
+//   1. Aurora Gradient introduced (--alg-aurora-1/2/3, --alg-aurora-grad,
+//      --alg-aurora-conduit) — sacred to Aurora Orb + Planet Avatars only
+//   2. Glass saturation raised (160/180/180 → 180/200/220)
+//   3. Glass grain token added (--alg-glass-grain) — SVG noise data-URI
+//   4. Ambient motion formalized: --alg-ease-ambient (sinusoidal),
+//      --alg-duration-ambient-fast / -ambient / -ambient-slow (4/6/8s)
+//   5. Density profiles defined (hero / editorial / operational) — apply
+//      as class on root container; padding/gap aliases below
 //
 // Naming convention (preserved from v0):
 //   --alg-<category>-<role>-<step?>
@@ -25,11 +39,10 @@
 // Backwards compatibility:
 //   Tokens whose VALUE changed but NAME stayed are flagged inline. New tokens
 //   live under explicit category prefixes (--alg-glass-*, --alg-elevation-*,
-//   --alg-fg-*). v0 aliases (--alg-text-*, --alg-aging-*, --alg-shadow-*) are
-//   preserved so upstream consumers keep rendering — values re-tuned to the
-//   new DNA.
+//   --alg-fg-*, --alg-aurora-*). v0 aliases (--alg-text-*, --alg-aging-*,
+//   --alg-shadow-*) are preserved so upstream consumers keep rendering.
 //
-// Author: Algorythmo design system / Cinematic OS v1 / 2026-05-28
+// Author: Algorythmo design system / Cinematic OS v2 / 2026-05-28
 // License: proprietary, internal use only
 // =============================================================================
 
@@ -115,6 +128,49 @@
   --alg-color-brand-primary-active: oklch(0.685 0.170 195);
   --alg-color-brand-primary-subtle: oklch(0.300 0.080 195 / 0.18);
   --alg-color-brand-primary-fg:     var(--alg-black-1);
+
+  // ---------------------------------------------------------------------------
+  // 4b. COLOR — Aurora Gradient (sacred identity — Aurora Orb + Planet Avatars)
+  // ---------------------------------------------------------------------------
+  // The ONLY rich-chroma color of the system. Lives in exactly two places:
+  // (1) the Aurora Orb (the central living intelligence object) and
+  // (2) the Planet Avatar set (agent identity).
+  //
+  // If it appears in chrome (sidebar, header, dashboard, button, card) it is
+  // a bug. Brand interaction color is --alg-color-brand-primary (cyan-teal).
+  // Aurora is identity, brand is interaction — different jobs.
+  //
+  // Stops curated for visionOS-grade depth: magenta carmim at peak chroma,
+  // rosa carmesim at the mid for emotional weight, violeta profundo at the
+  // extremities for gravity.
+  --alg-aurora-1: oklch(0.62 0.21 350);   // magenta carmim — orb center peak
+  --alg-aurora-2: oklch(0.58 0.24  12);   // rosa carmesim — mid stop
+  --alg-aurora-3: oklch(0.52 0.22 295);   // violeta profundo — extremities
+
+  // Radial composition for the Aurora Orb sphere. Light source offset 35% 30%
+  // matches the elevation system (top-left light, coherent with inset highlight).
+  --alg-aurora-grad: radial-gradient(
+    circle at 35% 30%,
+    var(--alg-aurora-1) 0%,
+    var(--alg-aurora-2) 40%,
+    var(--alg-aurora-3) 100%
+  );
+
+  // Conduit line — fades in from transparent, lights up at center, fades out.
+  // Used for the rays connecting Aurora Orb to surrounding glass cards.
+  --alg-aurora-conduit: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklch, var(--alg-aurora-1), transparent 30%) 50%,
+    transparent 100%
+  );
+
+  // Aurora halo (low-opacity glow envelope around the orb)
+  --alg-aurora-halo: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklch, var(--alg-aurora-2), transparent 75%) 0%,
+    transparent 70%
+  );
 
   // ---------------------------------------------------------------------------
   // 5. COLOR — Semantic status (used sparingly, always with a reason)
@@ -216,16 +272,21 @@
   --alg-aging-neutral-glyph: '\2014'; // — (em dash)
 
   // ---------------------------------------------------------------------------
-  // 10. GLASS — Three calibrated tiers (real backdrop-filter, hairline border)
+  // 10. GLASS — Three calibrated tiers (real backdrop-filter, hairline, grain)
   // ---------------------------------------------------------------------------
   // Glass is a system, not a one-off effect. Three blur intensities, each with
-  // its own backdrop saturation (boosts color behind glass slightly so the UI
-  // feels alive instead of frosted-flat), tint, and border.
+  // its own backdrop saturation (alive instead of frosted-flat), tint, border,
+  // and grain noise overlay.
+  //
+  // v2 changes vs v1:
+  //   - Saturation raised: 160/180/180 → 180/200/220 (more depth, more life)
+  //   - Grain noise token introduced — separates real glass from rgba-on-rgba
   //
   // RULES:
   //   - Glass requires backdrop-filter. If unsupported, FALL BACK to solid
   //     --alg-bg-elevated. Never ship "fake glass" with rgba alone.
   //   - Always pair with a 1px hairline border (--alg-glass-border).
+  //   - Always overlay --alg-glass-grain (1-2% noise via ::after pseudo).
   //   - Compose with --alg-elevation-* shadows for depth.
   //
   // Compose at the use-site:
@@ -234,19 +295,27 @@
   //   -webkit-backdrop-filter: var(--alg-glass-soft-filter);
   //   border: 1px solid var(--alg-glass-border);
   //   box-shadow: var(--alg-elevation-2);
+  //   // pseudo-element ::after with background-image: var(--alg-glass-grain);
+  //   // opacity 0.6, mix-blend-mode overlay, pointer-events none.
   --alg-glass-soft-bg:     rgba(20, 20, 22, 0.55);
-  --alg-glass-soft-filter: blur(20px) saturate(160%);
+  --alg-glass-soft-filter: blur(20px) saturate(180%);
 
   --alg-glass-medium-bg:     rgba(16, 16, 18, 0.60);
-  --alg-glass-medium-filter: blur(40px) saturate(180%);
+  --alg-glass-medium-filter: blur(40px) saturate(200%);
 
   --alg-glass-hard-bg:     rgba(8, 8, 10, 0.65);
-  --alg-glass-hard-filter: blur(60px) saturate(180%);
+  --alg-glass-hard-filter: blur(60px) saturate(220%);
 
   --alg-glass-border:        rgba(255, 255, 255, 0.08);
   --alg-glass-border-strong: rgba(255, 255, 255, 0.14);
   // Ambient top highlight applied as inset shadow (suggests light from above)
   --alg-glass-highlight:     inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+
+  // Grain noise — SVG fractalNoise filter inlined as data URI. ~600 bytes,
+  // cacheable as a CSS custom property. Applied via ::after at ~0.6% effective
+  // opacity (alpha 0.06 in the SVG matrix × layer opacity 0.6 × overlay blend).
+  // This is the tell that separates visionOS-grade glass from "rgba on rgba".
+  --alg-glass-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 
   // ---------------------------------------------------------------------------
   // 11. ELEVATION — Four tiers with mandatory inset-top highlight
@@ -412,6 +481,16 @@
   --alg-space-page-padding-desktop: var(--alg-space-12);
   --alg-space-hero-padding:        var(--alg-space-24);  // 96px — breathing room
 
+  // Density profiles — applied as a class on the root container of a page.
+  // Three profiles only: hero (login, splash), editorial (builders, settings),
+  // operational (kanban, inbox, dashboards). See DESIGN.md §3.3.
+  --alg-density-hero-padding:        var(--alg-space-24);  // 96px
+  --alg-density-hero-gap:            var(--alg-space-12);  // 48px
+  --alg-density-editorial-padding:   var(--alg-space-12);  // 48px
+  --alg-density-editorial-gap:       var(--alg-space-8);   // 32px
+  --alg-density-operational-padding: var(--alg-space-6);   // 24px
+  --alg-density-operational-gap:     var(--alg-space-4);   // 16px
+
   // ---------------------------------------------------------------------------
   // 14. RADII
   // ---------------------------------------------------------------------------
@@ -434,12 +513,17 @@
   //
   // Feedback rule: every user action emits visible motion in ≤16ms (1 frame).
   // Optimistic UI everywhere. No spinners-by-default — skeletons or shimmers.
-  --alg-duration-instant:    120ms;   // press feedback, color shift
-  --alg-duration-fast:       180ms;   // hover, tooltip
-  --alg-duration-base:       240ms;   // dropdown, card hover, input focus
-  --alg-duration-slow:       340ms;   // drawer, modal, route transition
-  --alg-duration-deliberate: 520ms;   // hero reveal, command palette
-  --alg-duration-ambient:    6000ms;  // background orb pulse, ambient loops
+  --alg-duration-instant:        120ms;   // press feedback, color shift
+  --alg-duration-fast:           180ms;   // hover, tooltip
+  --alg-duration-base:           240ms;   // dropdown, card hover, input focus
+  --alg-duration-slow:           340ms;   // drawer, modal, route transition
+  --alg-duration-deliberate:     520ms;   // hero reveal, command palette, planet stack open
+
+  // Ambient durations — infinite loops on living identity objects.
+  // Curve is sinusoidal (--alg-ease-ambient) — no perceptible directional easing.
+  --alg-duration-ambient-fast:  4000ms;   // sidebar status dot breathe, small ambient
+  --alg-duration-ambient:       6000ms;   // Aurora Orb chroma drift / halo pulse
+  --alg-duration-ambient-slow:  8000ms;   // Sunburst Orb pulse + slow rotation
 
   // Easings — the cinematic curve is the default. Others are role-specific.
   --alg-ease-cinematic: cubic-bezier(0.32, 0.72, 0, 1);     // DEFAULT — entrance & most UI
@@ -447,6 +531,7 @@
   --alg-ease-in:        cubic-bezier(0.64, 0, 0.78, 0);     // sharp depart
   --alg-ease-in-out:    cubic-bezier(0.65, 0, 0.35, 1);     // bidirectional
   --alg-ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1);  // rare delight only
+  --alg-ease-ambient:   cubic-bezier(0.45, 0.05, 0.55, 0.95); // symmetric — breathes, no direction
   --alg-ease-linear:    linear;                              // progress bars only
 
   // ---------------------------------------------------------------------------
@@ -688,12 +773,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   :root {
-    --alg-duration-instant:    1ms;
-    --alg-duration-fast:       1ms;
-    --alg-duration-base:       1ms;
-    --alg-duration-slow:       1ms;
-    --alg-duration-deliberate: 1ms;
-    --alg-duration-ambient:    1ms;
+    --alg-duration-instant:        1ms;
+    --alg-duration-fast:           1ms;
+    --alg-duration-base:           1ms;
+    --alg-duration-slow:           1ms;
+    --alg-duration-deliberate:     1ms;
+    --alg-duration-ambient-fast:   1ms;
+    --alg-duration-ambient:        1ms;
+    --alg-duration-ambient-slow:   1ms;
   }
 
   // Universal animation kill-switch for elements that animate directly
