@@ -1,14 +1,12 @@
 <script setup>
-// algorythmo: M6.6 Marketing — derived sector dashboard. Same composition
-// as M6.0 canonical. Plan 0005 §M6.6.
-import SectorDashboard from '../sectors/SectorDashboard.vue';
-import SectorAgentChat from '../sectors/SectorAgentChat.vue';
-import marketingMock from '../mocks/sectors/marketing';
+// algorythmo: plan 0007 M2-d — Marketing route entry.
+// Kept at this path because routes.js loads `algorythmo_admin_marketing` from
+// here; it now delegates to MarketingShell (SectorShellV2). The previous M6.6
+// composition (SectorDashboard + 360px SectorAgentChat rail) is superseded by
+// the v2 shell (Overview + sub-tabs + full-width agent chat, D4).
+import MarketingShell from './MarketingShell.vue';
 </script>
 
 <template>
-  <main class="alg-sector-layout">
-    <SectorDashboard :mock="marketingMock" />
-    <SectorAgentChat :sector-name-key="marketingMock.headingKey" />
-  </main>
+  <MarketingShell />
 </template>

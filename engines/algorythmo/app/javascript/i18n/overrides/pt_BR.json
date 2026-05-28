@@ -113,6 +113,7 @@
       },
       "MARKETING": {
         "HEADING": "Marketing",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor Marketing",
         "CONTEXT": "CAC, ROAS, leads e funil — o motor de aquisição da empresa.",
         "CHART_TITLE": "Leads qualificados — últimas 12 semanas",
         "ANCHOR": {
@@ -124,6 +125,32 @@
           "MQLS_LABEL": "MQLs no mês",
           "CTR_LABEL": "CTR médio",
           "CPL_LABEL": "Custo por lead"
+        },
+        "OVERVIEW": {
+          "TAB": "Visão Geral",
+          "ARIA": "Visão geral consolidada do setor Marketing",
+          "BRANDING_LABEL": "Branding",
+          "BRANDING_CHART": "Reconhecimento de marca (%)",
+          "CAMPANHAS_LABEL": "Campanhas",
+          "CAMPANHAS_CHART": "ROAS consolidado",
+          "REDES_SOCIAIS_LABEL": "Redes Sociais",
+          "REDES_SOCIAIS_CHART": "Engajamento médio (%)",
+          "TRAFEGO_LABEL": "Tráfego",
+          "TRAFEGO_CHART": "Taxa de conversão (%)",
+          "CRM_LABEL": "CRM",
+          "CRM_CHART": "Leads ativos na base",
+          "RETENCAO_LABEL": "Retenção",
+          "RETENCAO_CHART": "Retenção de clientes (%)"
+        },
+        "CAMPANHAS": {
+          "TAB": "Campanhas",
+          "ARIA": "Campanhas de marketing — contínuas e pontuais",
+          "HEADING": "Campanhas",
+          "HINT": "Abra os construtores de campanha. As campanhas contínuas e pontuais continuam vivas — só foram reunidas aqui.",
+          "ONGOING_LABEL": "Campanhas contínuas",
+          "ONGOING_DESC": "Disparos automáticos por live-chat conforme o visitante navega.",
+          "ONE_OFF_LABEL": "Campanhas pontuais",
+          "ONE_OFF_DESC": "Envios únicos por SMS ou WhatsApp para um público segmentado."
         }
       },
       "COMMERCIAL": {
