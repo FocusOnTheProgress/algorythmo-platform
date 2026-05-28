@@ -6,8 +6,11 @@ RSpec.describe Algorythmo::FeatureFlagBits do
   let(:account) { create(:account) }
 
   describe 'CUT_FLAG_NAMES' do
-    it 'contains exactly 16 flags' do
-      expect(described_class::CUT_FLAG_NAMES.size).to eq(16)
+    # algorythmo: M2-a added positions 17–26 (top-level + sector cuts).
+    # algorythmo: M2-c added positions 27–28 (reports_labels / reports_inbox).
+    # ORDER IS IMMUTABLE — reordering corrupts existing bigint data.
+    it 'contains exactly 28 flags' do
+      expect(described_class::CUT_FLAG_NAMES.size).to eq(28)
     end
 
     it 'is frozen' do
@@ -32,10 +35,32 @@ RSpec.describe Algorythmo::FeatureFlagBits do
         expect(account.all_algorythmo_cut_flags).to include('reports_commercial' => false)
       end
     end
+
+    # algorythmo: M2-c — reports_labels / reports_inbox sidebar-only cuts.
+    # Positions 27/28 must stay fixed — any future flag appends AFTER these.
+    describe 'reports_labels (M2-c, position 27)' do
+      it 'occupies bit-position 27 (array index 26)' do
+        expect(described_class::CUT_FLAG_NAMES.index('reports_labels') + 1).to eq(27)
+      end
+
+      it 'defaults to false on a new account (Label report tab visible by default)' do
+        expect(account.algorythmo_cut_enabled?('reports_labels')).to be false
+      end
+    end
+
+    describe 'reports_inbox (M2-c, position 28)' do
+      it 'occupies bit-position 28 (array index 27)' do
+        expect(described_class::CUT_FLAG_NAMES.index('reports_inbox') + 1).to eq(28)
+      end
+
+      it 'defaults to false on a new account (Inbox report tab visible by default)' do
+        expect(account.algorythmo_cut_enabled?('reports_inbox')).to be false
+      end
+    end
   end
 
   describe '#algorythmo_cut_enabled?' do
-    it 'returns false for all 16 flags on a fresh account' do
+    it 'returns false for all 28 flags on a fresh account' do
       described_class::CUT_FLAG_NAMES.each do |flag|
         expect(account.algorythmo_cut_enabled?(flag)).to(
           be(false),
@@ -89,7 +114,7 @@ RSpec.describe Algorythmo::FeatureFlagBits do
   end
 
   describe '#all_algorythmo_cut_flags' do
-    it 'returns a hash with all 16 flags' do
+    it 'returns a hash with all 28 flags' do
       result = account.all_algorythmo_cut_flags
       expect(result.keys).to match_array(described_class::CUT_FLAG_NAMES)
     end

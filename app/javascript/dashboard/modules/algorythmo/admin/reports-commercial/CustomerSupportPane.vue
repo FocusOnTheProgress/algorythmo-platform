@@ -26,8 +26,14 @@ const isReady = ref(false);
 
 const portal = computed(() => portals.value?.[0]);
 
+// algorythmo: M2-c — categories/allCategories maps allIds without filtering
+// undefined (unlike articles/allArticles which does .filter). A stale store
+// (id in allIds but not in byId after a delete elsewhere) injects undefined
+// into the v-for and throws on category.id. Filter defensively here.
+const safeCategories = computed(() => (categories.value ?? []).filter(Boolean));
+
 const categoryNameById = computed(() =>
-  Object.fromEntries((categories.value ?? []).map(c => [c.id, c.name]))
+  Object.fromEntries(safeCategories.value.map(c => [c.id, c.name]))
 );
 
 const articleRows = computed(() =>
@@ -93,9 +99,9 @@ onMounted(async () => {
         </p>
       </header>
 
-      <div v-if="categories.length" class="alg-support__categories">
+      <div v-if="safeCategories.length" class="alg-support__categories">
         <span
-          v-for="category in categories"
+          v-for="category in safeCategories"
           :key="category.id"
           class="alg-support__chip"
         >

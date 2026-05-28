@@ -84,6 +84,8 @@ jobs:
             app/javascript/dashboard/routes/specs/m6-1-b-sidebar-route.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/ReportsCommercialOverlay.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/commercial-mock-contract.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/CustomerSupportPane.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/commercial-overview-contract.spec.js \
             --no-coverage
 
   # algorythmo: rspec scoped to Algorythmo engine + Captain feature-gate.
@@ -147,6 +149,7 @@ jobs:
         run: |
           bundle exec rspec \
             engines/algorythmo/spec \
+            spec/models/concerns/algorythmo/feature_flag_bits_spec.rb \
             enterprise/spec/listeners/captain_listener_spec.rb \
             enterprise/spec/controllers/api/v1/accounts/captain/feature_gate_spec.rb \
             --profile=10 \

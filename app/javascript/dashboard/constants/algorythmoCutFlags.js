@@ -3,6 +3,12 @@
 // recognised by the dashboard. Must stay aligned with the Ruby source of truth
 // at `app/models/concerns/algorythmo/feature_flag_bits.rb::CUT_FLAG_NAMES`.
 //
+// IMPORTANT: this list is NAMES only — it does NOT encode bit-positions.
+// Bit-positions live exclusively in the Ruby CUT_FLAG_NAMES array (order is
+// immutable; reordering corrupts existing bigint data in `algorythmo_feature_flags`).
+// The JS and Ruby lists must contain the same names, but the ORDER here is
+// irrelevant to bit encoding. The coverage spec asserts the two sets agree.
+//
 // Adding a flag here without adding it to the Ruby bit-map (or vice versa)
 // would cause silent UX drift, so the route-tree validation spec in
 // `routes/specs/algorythmoCutFlagCoverage.spec.js` asserts both ends agree.

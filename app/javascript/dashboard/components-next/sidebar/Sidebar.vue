@@ -100,8 +100,9 @@ const hasAlgorythmoBrain = computed(() => {
 
 // algorythmo: feature-gate algorythmo_cut_*
 // Cut flags use inverted semantic: when enabled, the surface is HIDDEN.
-// All 13 cut flags default false → upstream surfaces remain visible until a
+// All cut flags default false → upstream surfaces remain visible until a
 // super-admin enables the cut for a specific tenant via the Algorythmo flags UI.
+// Current count: 28 flags (see algorythmoCutFlags.js + feature_flag_bits.rb).
 // The set of cut flag names lives in `constants/algorythmoCutFlags.js` and is
 // mirrored from `Algorythmo::FeatureFlagBits::CUT_FLAG_NAMES`. Adding a new
 // cut here requires updating both the constant and the Ruby bit-map; the
