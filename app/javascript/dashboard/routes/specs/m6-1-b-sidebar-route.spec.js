@@ -9,11 +9,11 @@ import { describe, it, expect, beforeAll, vi } from 'vitest';
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..', '..');
 
 // ── 1. ReportsCommercialOverlay SFC ───────────────────────────────────────
-// M6.1-b shipped a Tailwind placeholder; M6.1-c replaced it with the full
-// SectorDashboard + commercialMock composition (own spec under
-// modules/algorythmo/admin/reports-commercial/specs/). This block now only
-// asserts the contract that survives both milestones: the SFC exists at the
-// route-loader path and resolves to the M6.1-c composition.
+// M6.1-b shipped a Tailwind placeholder; M6.1-c replaced it with a
+// SectorDashboard + commercialMock composition; M2-c (plan 0007) migrates it to
+// SectorShellV2 via CommercialShell. This block asserts the contract that
+// survives every milestone: the SFC exists at the route-loader path and
+// resolves to the current Commercial composition.
 describe('M6.1-b — ReportsCommercialOverlay component', () => {
   const overlayPath = path.join(
     REPO_ROOT,
@@ -36,9 +36,8 @@ describe('M6.1-b — ReportsCommercialOverlay component', () => {
     expect(fs.existsSync(overlayPath)).toBe(true);
   });
 
-  it('SFC composes SectorDashboard with the commercial mock (M6.1-c contract)', () => {
-    expect(src).toContain('SectorDashboard');
-    expect(src).toContain("from '../mocks/sectors/commercial'");
+  it('SFC delegates to CommercialShell (M2-c — SectorShellV2 migration)', () => {
+    expect(src).toContain('CommercialShell');
   });
 });
 
