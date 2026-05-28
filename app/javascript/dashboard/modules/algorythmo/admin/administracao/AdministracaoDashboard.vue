@@ -12,14 +12,3 @@ import administracaoMock from '../mocks/sectors/administracao';
     <SectorAgentChat :sector-name-key="administracaoMock.headingKey" />
   </main>
 </template>
-
-<style scoped lang="scss">
-.alg-sector-layout {
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  overflow: hidden;
-}
-</style>

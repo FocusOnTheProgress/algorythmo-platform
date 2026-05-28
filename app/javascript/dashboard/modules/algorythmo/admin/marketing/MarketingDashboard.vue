@@ -12,14 +12,3 @@ import marketingMock from '../mocks/sectors/marketing';
     <SectorAgentChat :sector-name-key="marketingMock.headingKey" />
   </main>
 </template>
-
-<style scoped lang="scss">
-.alg-sector-layout {
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  overflow: hidden;
-}
-</style>

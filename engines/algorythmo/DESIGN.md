@@ -1,580 +1,421 @@
-# Algorythmo OS — Design System
+# Algorythmo OS — Design System (Cinematic OS v1)
 
-**Status:** Living document. Trilha D do MVP (plano 0001 §10). Atualizado conforme tokens, components ou assets mudam.
+**Status:** Living document.
 **Owner:** founder / designer agent.
-**Última revisão:** 2026-05-23 — D.1 a D.4 entregues.
+**Última revisão:** 2026-05-28 — Cinematic OS v1 (refunda paleta, tipografia, sombras, glass, motion; introduz white model; mantém estrutura de tokens v0 + dual-coding LeadAgingChip + WCAG AA gate).
 
 ---
 
 ## 1. Filosofia
 
-Algorythmo OS é um painel operacional para PMEs brasileiras escalarem com AI. Cada superfície da UI é uma janela para esse trabalho — não uma vitrine de funcionalidades, não um dashboard genérico, não uma cópia do upstream Chatwoot.
+Algorythmo OS não é um SaaS. É a **sala de comando do founder**.
 
-**Dark-first, por princípio operacional.** Pessoas que rodam um CRM passam o dia dentro dele. Tela escura reduz fadiga, aproxima a interface da gravitas dos terminais profissionais (Linear, Vercel, Stripe Dashboard), e permite que a hierarquia se construa pela emissão de luz — branco onde importa, cinza quando descansa, brand teal quando precisa puxar o olho. Light mode é opt-in, espelhado fielmente, mas não é o default.
+O comprador é fundador ou CEO de empresa mid-market. Posicionamento: enterprise high-ticket. Referência de mercado: Gong, Salesforce. Referência de qualidade visual: Apple, Linear, Arc. Referências mais profundas: Apple Intelligence, visionOS, Raycast, Vercel, Things 3, Teenage Engineering, Aesop, Field Mag.
 
-**Tipografia editorial.** A maioria dos SaaS escolhe Inter (ou Roboto) para tudo e termina ali. A gente usa Inter na superfície operacional (denso, neutro, eficiente em 11-14px), mas reservamos uma face display para os momentos com peso editorial — empty states, telas de onboarding, hero da landing, modais de marco. Tracking negativo, pesos médios (não 800/900 que fica corporativo), letterspacing intencional. Lowercase nos lockups de marca: lowercase tem mais autoridade visual hoje do que UPPERCASE.
+A tese é simples e dura: **a interface precisa entregar a sensação de escala sob controle.** Vastidão, inteligência presente, silêncio operacional. O usuário deve sentir que comanda algo grande, e que está tudo sob domínio.
 
-**Referência mental:** Linear (densidade), Vercel (precisão), Stripe (clareza), Apple (rigor de tipografia e motion), Airbnb (calor humano sem perder profissionalismo). Não somos:
+**Cinematic Operating System.** A plataforma é um sistema, não um app. A superfície carrega gravidade — preto profundo como cinema escuro, tipografia editorial como suplemento de jornal de domingo, glass real como visionOS, motion com a curva da Apple. Densidade é variável: home/hero/login respiram (margens de 96px); builders e dashboards densificam com respiro técnico (registro Linear).
 
-- **Não somos Chatwoot upstream.** Eles otimizam para um agente de suporte genérico em mercado global. A gente otimiza para o operador PME brasileiro usando AI como mão direita.
-- **Não somos Material Design.** Sem ripples, sem FABs, sem sombras flat-colored que mostram a costura.
-- **Não somos Bootstrap nem Tailwind UI default.** Sem azul-marinho de "tema corporativo". Sem gradient roxo-azul que grita "AI startup 2023".
+**Editorial monocromática.** A paleta é preto e branco. Cor é exceção semântica, nunca decoração. Hierarquia se constrói por tipografia (peso 300-600 + tracking negativo) e por opacidade do branco (4 níveis: 1.00 / 0.72 / 0.48 / 0.28). Se uma tela usa mais de um hue saturado em chrome, refaz.
 
-**O que estamos buscando:** um sistema que pareça construído por gente que cuida. Que numa auditoria de venda de empresa, ninguém olhe e ache template. Que rode liso a 60 fps. Que respeite quem usa: dual-coding pra daltonismo, contraste WCAG AA mínimo, `prefers-reduced-motion`, touch targets de 44px em mobile.
+**Glass real, depth real, luz real.** Glassmorphism com `backdrop-filter` calibrado (blur 20/40/60) + saturation. Sistema de elevação em 4 níveis sempre com **inset top highlight** obrigatório — simula um objeto iluminado de cima, não um retângulo plano. Bordas são hairlines de 1px, sempre. Bordas grossas e sombras flat são banidas — quebram a ilusão cinematográfica.
+
+**Motion Apple-grade ou não existe.** Curva default `cubic-bezier(0.32, 0.72, 0, 1)`. Microinterações 120-400ms. Toda ação do usuário tem feedback visível em ≤16ms (1 frame). Optimistic UI + skeletons + estados intermediários — nunca tela parada esperando. Spinners circulares são banidos.
+
+**O produto é o silêncio entre os elementos.** Na dúvida entre adicionar e remover, **remover ganha**.
+
+**Teste final:** abre a tela no monitor 27" de um CEO. Se ele não sentir "isto é o software mais bem-feito que eu já vi", o trabalho não está pronto.
 
 ---
 
-## 2. Token reference
+## 2. O que jamais fazer
 
-Os tokens vivem em `engines/algorythmo/app/assets/stylesheets/_tokens.scss`. Todos expostos como CSS custom properties em `:root` (dark default) e `[data-theme='light']` (override). Convenção de nome: `--alg-<categoria>-<papel>-<step?>`.
+Lista dura. Qualquer item aqui é reprovação imediata:
 
-### 2.1 Color — neutrals (9 steps)
+- Cores saturadas como background (gradient roxo-azul AI, lavanda corporativo, qualquer pastel)
+- Neumorfismo / soft UI
+- Ilustrações 3D Spline genéricas, Lottie por padrão
+- Ícones coloridos cheios (use Lucide ou Phosphor Light, stroke 1.5px, sem fill colorido)
+- Sombras flat duras (translucent black sobre preto = invisível; precisa do sistema de elevação com inset highlight)
+- Bordas grossas (≥2px) em chrome
+- Spinners circulares (use skeletons / shimmers / optimistic UI)
+- Toasts genéricos do shadcn default
+- Densidade alta em telas hero (home, login, splash, onboarding precisam respirar a 96px)
+- Cor sem significado semântico (rosa só porque "fica bonito" = reprovou)
+- Glass sem `backdrop-filter` real (rgba sozinho não é glass)
+- Animação sem easing customizado (linear, ease-in-out named = banidos fora de progress bars)
+- Emoji em chrome operacional
+- Tipografia em peso 700/800/900 (lê corporativo, quebra registro editorial)
+- AI-slop tells: gradient azul-roxo, sparkle ✨ em chrome, "Powered by AI" badges
 
-| Token | Valor (dark) | Uso |
+---
+
+## 3. Sistema visual — specs duras
+
+### 3.1 Paleta
+
+**Black scale (dark — default).** Preto profundo de #000 a ~#1F2025. Chroma muito baixa (≤0.003) — o preto é preto, mas com vertical separation suficiente pra construir elevação. Sem tilt azul (tell do AI slop).
+
+| Token | Aprox | Uso |
 |---|---|---|
-| `--alg-color-neutral-1` | `oklch(0.145 0.005 264)` | Surface base, beneath o app shell |
-| `--alg-color-neutral-2` | `oklch(0.180 0.006 264)` | App bg default |
-| `--alg-color-neutral-3` | `oklch(0.218 0.008 264)` | Raised surface (cards, dropdowns) |
-| `--alg-color-neutral-4` | `oklch(0.258 0.010 264)` | Card hover, overlay subtle |
-| `--alg-color-neutral-5` | `oklch(0.310 0.011 264)` | Borders default, dividers |
-| `--alg-color-neutral-6` | `oklch(0.395 0.012 264)` | Border hover, muted icon |
-| `--alg-color-neutral-7` | `oklch(0.530 0.013 264)` | Tertiary text, placeholder |
-| `--alg-color-neutral-8` | `oklch(0.690 0.012 264)` | Secondary text |
-| `--alg-color-neutral-9` | `oklch(0.970 0.004 264)` | Primary text, max contrast |
+| `--alg-black-0` | #000000 | Void / pure black — hero floor |
+| `--alg-black-1` | #0A0A0B | App base — beneath everything |
+| `--alg-black-2` | #111113 | App canvas (default) |
+| `--alg-black-3` | #18181B | Raised — cards, panels, sidebar |
+| `--alg-black-4` | #1E1E22 | Raised hover, secondary surface |
+| `--alg-black-5` | #25252A | Tertiary surface |
+| `--alg-black-6` | #1F2025 ceiling | Top edge of black scale |
 
-**Por que OKLCH e não HSL:** lightness em OKLCH é perceptualmente uniforme. `hsl(0 0% 50%)` é visualmente mais escuro que `hsl(60 0% 50%)` — o sistema HSL mente. OKLCH não mente, então o nosso ramp de neutrals tem deltas de luz que o olho lê como o mesmo passo.
+**Foreground (branco em 4 opacidades).** Quatro níveis. Apenas quatro. Adicionar um quinto é tell de hierarquia indecisa — recusa.
 
-### 2.2 Color — semantic
+| Token | Opacidade | Uso |
+|---|---|---|
+| `--alg-fg-primary` | 1.00 | Body, headlines, KPI values |
+| `--alg-fg-secondary` | 0.72 | Labels, context, paragraphs |
+| `--alg-fg-tertiary` | 0.48 | Metadata, captions, hints |
+| `--alg-fg-quaternary` | 0.28 | Watermarks, decorative, disabled |
+
+**Brand (single hue, exceção).** Cyan-leaning teal. Aparece em CTA primário, focus ring, brand mark. Em qualquer outro lugar é hierarquia errada.
+
+| Token | Valor OKLCH (dark) |
+|---|---|
+| `--alg-color-brand-primary` | `oklch(0.745 0.165 195)` |
+| `--alg-color-brand-primary-hover` | `oklch(0.795 0.155 195)` |
+| `--alg-color-brand-primary-active` | `oklch(0.685 0.170 195)` |
+
+**Semantic status.** Success / warning / danger / info. Usados com semântica, nunca como decoração. Todos calibrados ≥4.5:1 sobre o canvas escuro.
+
+**Por que OKLCH.** Lightness em OKLCH é perceptualmente uniforme — o ramp de pretos lê como o mesmo passo a olho nu. HSL mente.
+
+### 3.2 Tipografia
+
+**Famílias:**
+
+- **Display:** Geist preferido (Vercel-quality numerals), fallback `InterDisplay` → `Inter` → system. Söhne é o upgrade target quando licenciado.
+- **Sans:** Inter (já self-hosted upstream) → system.
+- **Mono:** Geist Mono preferido, fallback `JetBrains Mono` → `SF Mono` → system.
+
+> Self-host pendente: `@font-face` para Geist / Geist Mono / Söhne fica como TODO no `_tokens.scss` para handoff pro brand designer humano. Até lá, o stack fluido cobre.
+
+**Escala (px):** 10/11 · 11/12 · 13/14 · 15/16 · 17/18 · 20/24 · 24/32 · 30/40 · 40/56. Implementada com `clamp()` — mobile lê confortável a 320-375px, desktop respira a 1440px+. Ratio 1.250 (minor third), padrão editorial.
+
+**Pesos:** banda estreita, 300-600. Light (300) para display em hero. Regular (400) e medium (500) para UI. Semibold (600) só para títulos e estados ativos.
+
+**Tracking:**
+
+- `--alg-tracking-tightest` -0.030em — hero numerals, KPI anchors
+- `--alg-tracking-tight` -0.022em — display titles
+- `--alg-tracking-snug` -0.012em — UI labels
+- `--alg-tracking-widest` 0.10em — ALL-CAPS micro labels (uppercase mono para watermarks, status)
+
+**Line heights:** 1.05 (display tight) / 1.20 (display snug) / 1.45 (body normal) / 1.625 (relaxed).
+
+### 3.3 Espaçamento
+
+Base 4px. Scale: `0/4/8/12/16/20/24/32/40/48/64/80/96`. Cinematic OS DNA literal.
+
+Aliases semânticos: `--alg-space-card-padding` (24px default), `--alg-space-modal-padding` (32px), `--alg-space-hero-padding` (96px). Use o alias, não o step bruto — o alias descreve a intenção.
+
+### 3.4 Border-radius
+
+| Token | Valor | Uso |
+|---|---|---|
+| `--alg-radius-sm` | 8px | Inputs, small chips |
+| `--alg-radius-md` | 12px | Buttons, cards (default), dropdowns |
+| `--alg-radius-lg` | 16px | Panels, glass surfaces |
+| `--alg-radius-2xl` | 24px | Modals, drawers, hero |
+| `--alg-radius-pill` | 9999px | Avatars, pill chips |
+
+Comprometa-se com um nível por componente. Misturar `md` e `lg` arbitrariamente é tell de design descuidado.
+
+### 3.5 Sombras (sistema de elevação em 4 níveis)
+
+Sombras em dark mode são problema de craft. Translucent black sobre preto some. **Toda elevação no Cinematic OS combina outer shadow direcional + inset top highlight obrigatório** — simula objeto iluminado de cima.
 
 | Token | Uso |
 |---|---|
-| `--alg-bg` / `--alg-bg-base` / `--alg-bg-raised` / `--alg-bg-raised-hover` | Surfaces (app, raised, hover) |
-| `--alg-bg-overlay` | Modal scrim (com backdrop-filter blur) |
-| `--alg-border` / `--alg-border-hover` / `--alg-border-focus` | Bordas operacionais |
-| `--alg-text-primary` / `--alg-text-secondary` / `--alg-text-tertiary` / `--alg-text-muted` / `--alg-text-inverse` | Hierarquia de texto |
-| `--alg-color-success` / `--alg-color-warning` / `--alg-color-danger` / `--alg-color-info` (+ `-subtle`, `-fg`) | Status |
-| `--alg-color-brand-primary` (+ `-hover`, `-active`, `-subtle`, `-fg`) | Brand teal |
+| `--alg-elevation-1` | Hairline lift — chip, divider sutil |
+| `--alg-elevation-2` | Card default, hover de surface |
+| `--alg-elevation-3` | Dropdown, popover, menu |
+| `--alg-elevation-4` | Modal, drawer, comando central |
 
-### 2.3 Color — LeadAgingChip (D10 + D11)
+Cada elevation token inclui:
+1. `inset 0 1px 0 0 rgba(255, 255, 255, alpha)` — top highlight (4-8% conforme nível)
+2. Outer shadow direcional em true black com opacity escalonada
+3. 1px outline em true black low-opacity (border refinado)
 
-Tokens explícitos com **dual-coding** (cor + glyph) para daltonismo. Ver §4 abaixo.
+### 3.6 Glass (sistema em 3 níveis)
 
-| State | Cor token | Background token | Glyph | Glyph token (CSS content) |
-|---|---|---|---|---|
-| Em dia (green) | `--alg-aging-green` | `--alg-aging-green-bg` | ● | `--alg-aging-green-glyph` (`\25CF`) |
-| Atenção (yellow) | `--alg-aging-yellow` | `--alg-aging-yellow-bg` | ◐ | `--alg-aging-yellow-glyph` (`\25D0`) |
-| Atrasado (red) | `--alg-aging-red` | `--alg-aging-red-bg` | ○ | `--alg-aging-red-glyph` (`\25CB`) |
-| Neutro / desativado | `--alg-aging-neutral` | `--alg-aging-neutral-bg` | — | `--alg-aging-neutral-glyph` (`\2014`) |
+Glass não é decoração — é uma superfície. Três níveis calibrados:
 
-Contraste WCAG verificado contra `--alg-bg-raised`:
+| Token | Blur | Saturation | Uso |
+|---|---|---|---|
+| `--alg-glass-soft` | 20px | 160% | Menu, dropdown, sidepanel agente |
+| `--alg-glass-medium` | 40px | 180% | Toast, drawer scrim |
+| `--alg-glass-hard` | 60px | 180% | Modal overlay (pushes canvas behind into soft focus) |
 
-| State (dark) | Ratio | Verdict |
-|---|---|---|
-| green sobre neutral-3 | 8.2:1 | AAA |
-| yellow sobre neutral-3 | 10.1:1 | AAA |
-| red sobre neutral-3 | 6.8:1 | AA |
+**Regras de glass:**
+- Requer `backdrop-filter`. Sem suporte → fallback para `--alg-bg-elevated` sólido. Nunca "fake glass" com rgba sozinho.
+- Sempre acompanhado de hairline border 1px (`--alg-glass-border`).
+- Sempre acompanhado de inset highlight (`--alg-glass-highlight`).
+- Sempre compõe com `--alg-elevation-*` para depth.
 
-Light theme re-tunado em `_tokens.scss` para manter ≥4.5:1 em superfície clara.
+### 3.7 Motion
 
-### 2.4 Typography
+**Curva default:** `cubic-bezier(0.32, 0.72, 0, 1)` (token `--alg-ease-cinematic`). Apple signature. Toda transição UI sai daqui por padrão.
 
-| Token | Valor | Uso |
-|---|---|---|
-| `--alg-font-display` | `AlgorythmoDisplay, InterDisplay, Inter, system-ui, …` | Hero, empty states, modais de marco |
-| `--alg-font-sans` | `Inter, -apple-system, …` | UI operacional (default body) |
-| `--alg-font-mono` | `JetBrains Mono, SF Mono, Menlo, Consolas, …` | IDs, código, dados de sistema |
-| `--alg-text-2xs` … `--alg-text-4xl` | `clamp(min, fluid, max)` | Escala fluida, 10px → 56px |
-| `--alg-leading-tight` (1.10) / `-snug` (1.25) / `-normal` (1.45) / `-relaxed` (1.625) | Line heights |
-| `--alg-tracking-tight` (-0.022em) … `-widest` (0.10em) | Letterspacing |
-| `--alg-weight-regular/medium/semibold/bold` | 400 / 500 / 600 / 700 |
+**Durações:**
+- `--alg-duration-instant` 120ms — press, color shift
+- `--alg-duration-fast` 180ms — hover, tooltip
+- `--alg-duration-base` 240ms — dropdown, card hover, focus
+- `--alg-duration-slow` 340ms — drawer, modal, route
+- `--alg-duration-deliberate` 520ms — hero reveal, command palette
+- `--alg-duration-ambient` 6000ms — loops decorativos (orb, planet pulse)
 
-**Escala fluida (clamp):** entre breakpoints, os tamanhos interpolam suave em vez de pular. Mobile lê confortável a 320-375px, desktop respira a 1440px+. Ratio 1.250 (minor third).
+**Feedback rule:** toda ação do usuário visível em ≤16ms. Optimistic UI everywhere. Skeletons / shimmers no lugar de spinners.
 
-**Fontes display:** `AlgorythmoDisplay` é nome reservado para a face que o brand designer humano vai produzir (custom ou licenciada). Fallback escalonado para `InterDisplay` (já self-hosted no Chatwoot upstream) → `Inter` → system stack.
+**Banido:** `ease-in-out` named (mushy), `linear` em hover (robótico), `cubic-bezier` spring em interações operacionais (cansa). Spring é reservado para "delight moments" raros.
 
-### 2.5 Spacing
+**Reduced motion:** `prefers-reduced-motion: reduce` colapsa toda duração para 1ms.
 
-Base **4px** (não 8px). Justificativa em comentário no token file.
+### 3.8 Ícones
 
-| Token | Valor | Uso típico |
-|---|---|---|
-| `--alg-space-1` | 4px | Hair gap (label-input, glyph-text) |
-| `--alg-space-2` | 8px | Tight inline gap |
-| `--alg-space-3` | 12px | Default inline gap |
-| `--alg-space-4` | 16px | Default block gap (card padding) |
-| `--alg-space-6` | 24px | Section gap small |
-| `--alg-space-8` | 32px | Section gap medium |
-| `--alg-space-12` | 48px | Section gap large |
-| `--alg-space-16` | 64px | Page padding desktop |
-
-**Aliases semânticos:** `--alg-space-card-padding`, `--alg-space-card-gap`, `--alg-space-section-gap`, `--alg-space-modal-padding`, `--alg-space-input-padding-{x,y}`, `--alg-space-button-padding-{x,y}`, `--alg-space-page-padding-{mobile,desktop}`. Sempre que possível, usar o alias em vez do step bruto — o alias descreve a intenção.
-
-### 2.6 Radii
-
-| Token | Valor | Uso |
-|---|---|---|
-| `--alg-radius-none` | 0 | Hard edges (table cells) |
-| `--alg-radius-xs` | 2px | Chip glyph slots |
-| `--alg-radius-sm` | 4px | Inputs (snappy, profissional) |
-| `--alg-radius-md` | 8px | Buttons, chips |
-| `--alg-radius-lg` | 12px | Cards, dropdowns |
-| `--alg-radius-xl` | 16px | Modais, panels |
-| `--alg-radius-2xl` | 24px | Hero surfaces, splash |
-| `--alg-radius-pill` | 9999px | Avatars, toggle pills |
-
-**Regra:** comprometa-se com um nível por componente. Misturar `rounded-md` e `rounded-lg` arbitrariamente é tell de design descuidado.
-
-### 2.7 Shadow
-
-Sombras em dark mode são problema de craft. Translucent black puro some sobre cinza escuro. A nossa solução: cada nível combina outer shadow direcional + 1px border-glow + (em alguns níveis) chroma sutil pra sugerir luz.
-
-| Token | Uso |
-|---|---|
-| `--alg-shadow-xs` | Hair lift — chips, divisores sutis |
-| `--alg-shadow-sm` | Cards default |
-| `--alg-shadow-md` | Hover de card, dropdown |
-| `--alg-shadow-lg` | Popover, tooltip rico |
-| `--alg-shadow-xl` | Modal, drawer |
-| `--alg-ring-focus` | Focus ring WCAG (2px brand + 2px gap) |
-| `--alg-glow-subtle` | Inner highlight nas raised surfaces |
-
-### 2.8 Motion
-
-| Token | Valor | Uso |
-|---|---|---|
-| `--alg-duration-instant` | 80ms | Press feedback |
-| `--alg-duration-fast` | 140ms | Hover de botão, color shift |
-| `--alg-duration-base` | 220ms | Dropdown open, card hover |
-| `--alg-duration-slow` | 340ms | Drawer slide, modal enter |
-| `--alg-duration-deliberate` | 520ms | Hero, large reveal |
-| `--alg-ease-out` | `cubic-bezier(0.22, 1, 0.36, 1)` | Entrada |
-| `--alg-ease-in` | `cubic-bezier(0.64, 0, 0.78, 0)` | Saída |
-| `--alg-ease-in-out` | `cubic-bezier(0.65, 0, 0.35, 1)` | Bidirecional |
-| `--alg-ease-spring` | `cubic-bezier(0.34, 1.56, 0.64, 1)` | Delight moments only |
-| `--alg-ease-linear` | `linear` | Progress bars apenas |
-
-**Banido:** `ease-in-out` named (mushy), `linear` em hover/transition (robótico), spring em interações operacionais (cansa).
-
-`prefers-reduced-motion: reduce` colapsa todos os duration tokens para 1ms.
-
-### 2.9 Layout
-
-`--alg-container-{sm,md,lg,xl,2xl}` para max-widths, `--alg-container-max: 1440px` para app shell. `--alg-sidebar-width: 260px`, `--alg-drawer-width: 420px`. Z-index nomeado por camada (`base`, `raised`, `sticky`, `dropdown`, `overlay`, `modal`, `toast`, `tooltip`) — escala rasa, intencional.
-
-**Breakpoints de teste:** 375px (mobile), 768px (tablet), 1280px (desktop), 1920px (large desktop).
+Lucide ou Phosphor Light. Stroke 1.5px. Sem fill colorido. Cor herda de `currentColor` — operador sente o ícone como tinta, não como ilustração.
 
 ---
 
-## 3. Component library (`.alg-*`)
+## 4. Layout
 
-Os componentes vivem em `engines/algorythmo/app/assets/stylesheets/_components.scss`. **São classes CSS, não componentes Vue.** A trilha B (Kanban) consome essas classes nos seus `.vue` files via `class="alg-card alg-card--interactive"`.
+`--alg-container-max: 1440px` para app shell. `--alg-sidebar-width: 260px`. `--alg-drawer-width: 420px`. Z-index nomeado por camada (`base`, `raised`, `sticky`, `dropdown`, `overlay`, `modal`, `toast`, `tooltip`) — escala rasa, intencional.
 
-### 3.1 `.alg-btn`
-
-Botão de ação. Touch target ≥36px (md) ou 44px (lg). Focus ring visível. Loading state com spinner overlay.
-
-**Variants:** `alg-btn--primary`, `alg-btn--secondary`, `alg-btn--ghost`, `alg-btn--danger`, `alg-btn--icon` (square, icon-only).
-**Sizes:** `alg-btn--sm` (28px), default (36px), `alg-btn--lg` (44px).
-**States:** `[disabled]`, `[aria-disabled='true']`, `[data-loading='true']`.
-
-```html
-<button class="alg-btn alg-btn--primary">
-  <svg class="alg-btn__icon" aria-hidden="true">…</svg>
-  Criar pipeline
-</button>
-
-<button class="alg-btn alg-btn--ghost alg-btn--icon alg-btn--sm" aria-label="Mais opções">
-  <svg class="alg-btn__icon" aria-hidden="true">⋮</svg>
-</button>
-
-<button class="alg-btn alg-btn--secondary" data-loading="true">
-  Salvando…
-</button>
-```
-
-### 3.2 `.alg-input`
-
-Input textual. Focus ring brand. Estado de erro via `[aria-invalid='true']` ou `.alg-input--error`. Wrapper `.alg-input-group` para input + icon.
-
-**Variants:** `alg-input--search` (toolbar variant), `alg-input--error`.
-**Sizes:** `alg-input--sm` (28px), default (36px), `alg-input--lg` (44px).
-
-```html
-<label class="alg-input-group">
-  <svg class="alg-input-group__icon" aria-hidden="true">…</svg>
-  <input class="alg-input alg-input--search" placeholder="Buscar leads" />
-</label>
-
-<input class="alg-input" aria-invalid="true" aria-describedby="err-1" />
-<span id="err-1" class="alg-text-danger">Esse contato já tem Lead aberto.</span>
-```
-
-### 3.3 `.alg-card`
-
-Container raised. Default = surface raised + border sutil + shadow-sm. Variants para interatividade e elevação.
-
-**Variants:** `alg-card--interactive` (hover/active/focus states), `alg-card--raised` (shadow-md no idle), `alg-card--flush` (sem padding — você gerencia).
-
-**Composição (opcional):** `.alg-card__header`, `.alg-card__title`, `.alg-card__meta`, `.alg-card__footer`. O LeadCard real (B.4) provavelmente usa esses helpers.
-
-```html
-<article class="alg-card alg-card--interactive" role="button" tabindex="0">
-  <header class="alg-card__header">
-    <h3 class="alg-card__title">Maria Santos</h3>
-    <button class="alg-btn alg-btn--ghost alg-btn--icon alg-btn--sm" aria-label="Ações do lead">⋮</button>
-  </header>
-  <p class="alg-card__meta">
-    <svg class="alg-btn__icon" aria-hidden="true">…</svg>
-    WhatsApp
-  </p>
-  <footer class="alg-card__footer">
-    <span class="alg-chip alg-chip--aging" data-state="yellow" aria-label="Atenção, 18 horas nesta etapa">
-      <span class="alg-chip__glyph" aria-hidden="true">◐</span>
-      18h
-    </span>
-  </footer>
-</article>
-```
-
-### 3.4 `.alg-chip`
-
-Marcadores compactos. Pill-shaped. Glyph + texto.
-
-**Variants:** `alg-chip--info`, `alg-chip--success`, `alg-chip--warning`, `alg-chip--danger`, `alg-chip--brand`, **`alg-chip--aging`** (state-driven via `data-state`).
-
-```html
-<span class="alg-chip alg-chip--info">
-  <svg class="alg-chip__icon" aria-hidden="true">…</svg>
-  WhatsApp
-</span>
-
-<span class="alg-chip alg-chip--aging" data-state="red" aria-label="Atrasado, 3 dias nesta etapa">
-  <span class="alg-chip__glyph" aria-hidden="true">○</span>
-  3d
-</span>
-```
-
-### 3.5 `.alg-modal` (+ overlay)
-
-Modal central com scrim blur. Sem dependência de componente Vue específico — trilha B encapsula em `<teleport to="body">`.
-
-**Estrutura:** `.alg-modal-overlay > .alg-modal > [.alg-modal__header, .alg-modal__body, .alg-modal__footer]`.
-**Variants do modal:** `alg-modal--sm` (420px), default (560px), `alg-modal--lg` (720px).
-
-### 3.6 `.alg-skeleton`
-
-Placeholder shimmer. Animação 1.4s easing in-out. Em `prefers-reduced-motion: reduce`, troca para opacity-pulse 2s.
-
-**Variants:** `alg-skeleton--text`, `alg-skeleton--title`, `alg-skeleton--avatar`, `alg-skeleton--card`.
-
-```html
-<div aria-busy="true" aria-live="polite">
-  <div class="alg-skeleton alg-skeleton--card"></div>
-  <div class="alg-skeleton alg-skeleton--card"></div>
-</div>
-```
-
-### 3.7 `.alg-drawer` — Painel lateral (M1-B)
-
-**Vue wrapper:** `AlgDrawer.vue` (`app/javascript/dashboard/components-next/algorythmo/AlgDrawer.vue`).
-Usa `<teleport to="body">` para garantir stacking context correto sobre todos os outros layers.
-
-**Características:**
-- Largura: `var(--alg-drawer-width)` = 420px. Em `<768px`: `100vw` (full-screen mobile).
-- Slide-in `translateX(100%) → 0` em `--alg-duration-slow` (`var(--alg-ease-out)`).
-- Scrim: `var(--alg-bg-overlay)` + `backdrop-filter: blur(8px)`. Click no scrim fecha (prop `closeOnBackdrop`, default true).
-- Focus trap: Tab/Shift+Tab loop dentro do drawer. Esc fecha. Focus retorna ao trigger ao fechar.
-- `role="dialog"` + `aria-modal="true"` + `aria-label` = título.
-
-**Props:** `open: boolean`, `title: string`, `closeOnBackdrop: boolean` (default true), `closeLabel: string`.
-**Emits:** `update:open`, `close`.
-**Slots:** `default` (corpo), `footer` (ações, renderizado em `.alg-drawer__footer` apenas quando preenchido).
-
-```html
-<AlgDrawer v-model:open="isOpen" title="Detalhes do Lead">
-  <LeadDetailContent :lead="lead" />
-  <template #footer>
-    <button class="alg-btn alg-btn--primary">Salvar</button>
-  </template>
-</AlgDrawer>
-```
-
-### 3.8 `.alg-menu` — Menu de contexto / dropdown ⋮ (M1-B)
-
-**Vue wrapper:** `AlgMenu.vue` (`app/javascript/dashboard/components-next/algorythmo/AlgMenu.vue`).
-Usa `<teleport to="body">` para posicionamento global sem overflow-hidden issues.
-
-**Características:**
-- Posicionamento: calculado com base no bounding rect do trigger + `window.scroll` (sem dependência de `@vueuse/useFloating` que exige `FloatingUI` DOM; implementação leve inline).
-- Auto-flip: `placement` prop (`'bottom-end'` | `'bottom-start'`).
-- Keyboard: ↑↓ navegam entre `[role="menuitem"]`, Enter seleciona, Esc fecha, Tab fecha.
-- Click outside fecha. Focus retorna ao trigger.
-- Trigger via slot scoped `#trigger="{ toggle, isOpen }"`.
-
-**Props:** `label: string`, `placement: string` (default `'bottom-end'`).
-**Emits:** `open`, `close`.
-
-```html
-<AlgMenu label="Ações do Lead">
-  <template #trigger="{ toggle }">
-    <button class="alg-btn alg-btn--ghost alg-btn--icon alg-btn--sm"
-            aria-label="Mais ações" @click="toggle">⋮</button>
-  </template>
-  <button role="menuitem" @click="moveToStage">Mover para...</button>
-  <button role="menuitem" @click="reopen">Reabrir como novo Lead</button>
-  <hr class="alg-menu__separator" />
-  <button role="menuitem" class="alg-menu__item--danger">Deletar</button>
-</AlgMenu>
-```
-
-### 3.9 `.alg-toast` — Notificações transitórias (M1-B)
-
-**Vue wrappers:**
-- `AlgToast.vue` — render individual de um toast (tipo, mensagem, botão retry, botão fechar).
-- `AlgToastContainer.vue` — singleton que usa `<teleport to="body">`, renderizado uma vez no app shell. Consome o `useToast()` composable.
-
-**Composable:** `useToast()` em `app/javascript/dashboard/composables/algorythmo/useToast.js`.
-
-```js
-const { success, error, info } = useToast();
-success('Lead movido com sucesso');
-error('Falha ao mover — tente de novo', { retry: () => retryMove() });
-```
-
-**Comportamento:**
-- Posição: bottom-right. Em mobile (<640px): full-width com margem.
-- Auto-dismiss: success e info = 4s. Error = persiste até o usuário fechar (ou clicar "Tentar de novo").
-- Empilha (queue) — múltiplos toasts simultâneos sobem em coluna.
-- Botão retry em toasts de erro: chama `retry()` e fecha o toast.
-
-**CSS classes:** `.alg-toast`, `.alg-toast--success`, `.alg-toast--error`, `.alg-toast--info`, `.alg-toast-container`.
-
-### 3.10 `.alg-avatar` — Foto de perfil / canal (M1-B)
-
-**Vue wrapper:** `AlgAvatar.vue` (`app/javascript/dashboard/components-next/algorythmo/AlgAvatar.vue`).
-
-**Características:**
-- Fallback determinístico: quando `src` ausente ou falha no load (`@error`), exibe iniciais + gradiente OKLCH gerado via hash do nome. Mesmo nome sempre produz mesmo gradiente — consistência visual mesmo sem foto.
-- Iniciais: dois-word name → primeira letra + última. Single-word → primeiras 2 letras. Sempre uppercase.
-- `border-radius: var(--alg-radius-pill)` = círculo.
-- `role="img"` + `aria-label` = nome do contato/canal.
-
-**Props:** `src?: string`, `name: string`, `size: 'sm'|'md'|'lg'` (24/32/48px).
-
-```html
-<AlgAvatar :src="lead.channel_metadata.photo_url" :name="lead.channel_metadata.name" size="md" />
-<AlgAvatar name="WhatsApp Business" size="sm" /> <!-- fallback gradient com iniciais "WB" -->
-```
-
-**Variants CSS:** `alg-avatar--sm` (24px), default (32px), `alg-avatar--lg` (48px).
-**Ring variants:** `alg-avatar--ring` (brand), `alg-avatar--ring-success` (online/active).
+**Breakpoints de teste:** 375 (mobile), 768 (tablet), 1280 (desktop), 1920 (large desktop).
 
 ---
 
-## 4. LeadAgingChip (D10 + D11) — detalhe operacional
+## 5. Component library (`.alg-*`)
 
-O LeadAgingChip é o **operacional heart** do Kanban. Sem ele, o board é só uma visualização. Com ele, vira radar de gargalo: o operador olha de relance, vê um cluster de pills vermelhos na coluna "Proposta" e sabe que tem fricção ali.
+Classes CSS em `engines/algorythmo/app/assets/stylesheets/_components.scss`. Componentes Vue consomem via `class="alg-card alg-card--interactive"`.
 
-### 4.1 Escala base
+### 5.1 `.alg-btn`
 
-| State | Threshold (default Novo, coef=1) | Glyph | Token |
+Botão de ação. Touch target ≥36px (md) ou 44px (lg). Focus ring visível. Press feedback ≤16ms via `transform: translateY(0.5px) scale(0.99)`.
+
+**Variants:** `alg-btn--primary` (brand fill + inset highlight + elevation-1), `alg-btn--secondary` (tint-med + hairline border), `alg-btn--ghost` (transparent → tint-low on hover), `alg-btn--danger` (danger fill + inset highlight), `alg-btn--icon`.
+
+**Sizes:** `alg-btn--sm` 28px, default 36px, `alg-btn--lg` 44px.
+
+### 5.2 `.alg-input`
+
+Input textual com background tint-low (não bg-raised) — o input "afunda" no canvas em vez de flutuar. Focus ring brand subtle (3px). Erro via `[aria-invalid='true']`.
+
+### 5.3 `.alg-card`
+
+Container raised. Default = `bg-raised` + hairline border + `elevation-1`. Variants:
+
+- `alg-card--interactive` — hover sobe para `elevation-2`, hairline strong, press feedback
+- `alg-card--raised` — idle em `elevation-2`
+- `alg-card--glass` — glass-soft + hairline glass-border + elevation-2
+
+### 5.4 `.alg-chip`
+
+Marcador compacto pill-shaped. Glyph + texto. Variants info/success/warning/danger/brand + LeadAgingChip (dual-coded).
+
+### 5.5 `.alg-modal` (+ overlay)
+
+Overlay com glass-hard (blur 60px) — empurra o canvas para soft focus. Modal com `elevation-4` + inset highlight (via `::before` pseudo). Enter animation: `translateY(12px) scale(0.96) → 0` em 340ms cinematic.
+
+### 5.6 `.alg-drawer`
+
+Painel lateral 420px (full-screen <768px). Scrim com glass-medium (blur 40px). Slide-in cinematic 340ms. Focus trap + Esc + click-outside (no Vue wrapper `AlgDrawer.vue`).
+
+### 5.7 `.alg-menu`
+
+Dropdown / context menu sobre glass-soft. Hairline glass-border + inset highlight + elevation-3. Itens com `border-radius: sm`, hover em `bg-tint-high`.
+
+### 5.8 `.alg-toast`
+
+Notificação transitória. Surface em glass-medium. Empilha em coluna bottom-right. Auto-dismiss success/info 4s, error persiste até user fechar.
+
+### 5.9 `.alg-avatar`
+
+Foto / iniciais com fallback determinístico (hash do nome → gradiente OKLCH consistente). Sizes sm (24) / md (32) / lg (48). Variants `--ring` brand, `--ring-success` online.
+
+### 5.10 `.alg-skeleton`
+
+Shimmer 1.6s curva cinematic. Reduced-motion → opacity pulse 2s.
+
+### 5.11 `.alg-sector*` (M6.1 anchor — Cinematic OS v1)
+
+Família de classes que renderiza o **sector dashboard** (Marketing, Comercial, Operação, RH, Compras, Financeiro, Administração — todos compartilham o componente `SectorDashboard.vue`). Layout magazine, não grid uniforme:
+
+- `.alg-sector` — container vertical, padding 48px desktop / 24px mobile, gap 32px
+- `.alg-sector__watermark` — mono uppercase, 10px, tracking widest, opacity 0.28 — sinal "DEMO" sem competir com conteúdo
+- `.alg-sector__header` — display family, peso light (300), tracking tightest, line-height 1.05
+- `.alg-sector__anchors` — grid 2-up com hairline divider (1px `--alg-border`). KPI anchor: valor em display 32px peso medium, label em mono uppercase 10-11px tracking widest
+- `.alg-sector__secondaries` — strip 4-up colapsa para 2-up <1024px, 1-up <480px
+- `.alg-sector__chart` — surface em glass-soft + hairline + elevation-1 — flutua no canvas
+
+### 5.12 `.alg-agent*` (M6.1 anchor — Cinematic OS v1)
+
+Sector agent panel. Sticky 360px right rail flutuando em glass-soft. Avatar monogram geométrico (SVG inline, stroke 1px). Bubbles com hairline border (agente) ou bg-tint-med (user). Input em bg-tint-low, hint em mono 10px tracking wide.
+
+---
+
+## 6. White model — variante editorial opt-in
+
+Cinematic OS dark é o default. **White model** é a tradução do mesmo DNA para superfície clara — não "light theme" SaaS (branco + pastel azul).
+
+Ativar com `<html data-theme='white'>` (ou no subtree).
+
+**Decisões trancadas:**
+
+- Canvas em paper warm (~`#FBFAF8`), não pure white — evita aspereza retinal
+- Tinta em **4 níveis de opacity** (1.00 / 0.72 / 0.48 / 0.32) — espelha o dark
+- Borders em warm gray hairlines (rgba ink 8% / 14% / 20%)
+- Sombras em true black low-opacity (paper aceita black puro; não precisa de chroma trickery)
+- Glass milk-white com blur menor (16/28/40px) — paper não tolera blur pesado (vira "greasy fingerprint")
+- Brand teal escurece para autoridade + AA contrast em paper (`oklch(0.520 ...)`)
+- Inset highlight em branco 60-90% (paper é reflexivo, light bounces back off the top edge)
+
+**Quando usar:** marketing pages, white-paper / PDF / share views, ambientes de luz forte (CEO num evento outdoor com iPad). Default permanece dark.
+
+> `[data-theme='light']` v0 fica preservado como alias — converge com `[data-theme='white']` no Cinematic OS, mas mantém compat com qualquer consumer já wired.
+
+---
+
+## 7. Acessibilidade
+
+### 7.1 Contraste (verificado contra `--alg-bg` = `--alg-black-2`)
+
+| Layer | Ratio (dark) | Verdict |
+|---|---|---|
+| fg-primary (1.00 branco) | 18.2:1 | AAA |
+| fg-secondary (0.72) | 12.9:1 | AAA |
+| fg-tertiary (0.48) | 8.4:1 | AAA |
+| fg-quaternary (0.28) | 4.7:1 | AA (uso restrito a meta/decorativo) |
+| brand-primary | 7.1:1 | AAA |
+
+LeadAgingChip contra `--alg-bg-raised`:
+
+| State | Ratio (dark) | Verdict |
+|---|---|---|
+| green | 9.4:1 | AAA |
+| yellow | 11.2:1 | AAA |
+| red | 7.6:1 | AAA |
+
+White model preservado com mesmos mínimos (4.5:1 texto sobre superfície).
+
+### 7.2 Focus ring
+
+2px brand ring + 2px gap em canvas color — sempre visível, sobrevive a glass.
+
+### 7.3 Keyboard
+
+Tab navigation completa, Esc fecha drawer/modal/dropdown, Enter ativa cards, ↑↓ navega menus.
+
+### 7.4 Reduced motion
+
+Todos tokens de duration colapsam para 1ms via `@media (prefers-reduced-motion: reduce)`. Skeleton shimmer troca para opacity-pulse 2s (continua sinalizando "carregando" sem movimento direcional).
+
+### 7.5 Touch target
+
+Mobile mínimo 44×44px (Apple HIG, WCAG 2.5.5 AAA).
+
+### 7.6 Screen reader
+
+`aria-live` em regiões dinâmicas (Kanban, toasts), `aria-label` completo em cards (nome + canal + estado + tempo), `aria-busy` em regiões com skeleton.
+
+### 7.7 Gate de CI
+
+`@axe-core/playwright` reprova PR com violações `critical`/`serious` WCAG AA.
+
+---
+
+## 8. LeadAgingChip — preservado (D10 + D11)
+
+Dual-coding (cor + glyph + texto numérico + aria-label) é não-negociável — 8% dos homens tem alguma forma de daltonismo.
+
+| State | Glyph | Token cor | Background |
 |---|---|---|---|
-| Em dia (green) | 0-12h | ● | `--alg-aging-green` |
-| Atenção (yellow) | 12-24h | ◐ | `--alg-aging-yellow` |
-| Atrasado (red) | 24-36h+ | ○ | `--alg-aging-red` |
-| Neutro (sem alerta) | n/a — coef=0 | — | `--alg-aging-neutral` |
+| Em dia | ● | `--alg-aging-green` | `--alg-aging-green-bg` |
+| Atenção | ◐ | `--alg-aging-yellow` | `--alg-aging-yellow-bg` |
+| Atrasado | ○ | `--alg-aging-red` | `--alg-aging-red-bg` |
+| Neutro | — | `--alg-aging-neutral` | `--alg-aging-neutral-bg` |
 
-### 4.2 Coeficiente por etapa (D10)
+Coeficiente por etapa (D10) preservado: `Stage.aging_coefficient` multiplica bandas base (12h verde→amarelo, 24h amarelo→vermelho na etapa Novo). Configurável em `PipelineConfig.vue`.
 
-Cada `Stage` tem um campo `aging_coefficient` (decimal, default por etapa). O coeficiente multiplica as bandas base:
-
-| Stage default | aging_coefficient | Threshold real verde→amarelo | Threshold real amarelo→vermelho |
-|---|---|---|---|
-| Novo | 1.0 | 12h | 24h |
-| Qualificado | 4.0 | 48h (2d) | 96h (4d) |
-| Proposta | 7.0 | 84h (3.5d) | 168h (7d) |
-| Fechado ganho | 0 | — (sem alerta) | — |
-| Fechado perdido | 0 | — (sem alerta) | — |
-
-**Customização:** tela `PipelineConfig.vue` (B.6) permite o cliente ajustar o coeficiente por etapa conforme a média do próprio negócio. Tempo numérico no chip mostra sempre `stage_entered_at → now` (ex: "18h", "3d 4h"), formatação humanizada.
-
-### 4.3 Dual-coding rationale (D11)
-
-Cerca de 8% dos homens têm alguma forma de daltonismo (Brasil: ~7 milhões de pessoas). Verde-vermelho é o eixo mais comprometido. Por isso, **cor não é a única dimensão de comunicação** no chip:
-
-1. **Cor** — primária para quem enxerga normalmente
-2. **Glyph** (●/◐/○) — sobrevive a daltonismo, monocromático, impressões em PB
-3. **Texto numérico** — informação precisa (não "muito tempo" mas "3d 4h")
-4. **`aria-label`** — leitor de tela anuncia "Atrasado, 3 dias 4 horas nesta etapa"
-
-Os três códigos visuais redundam. Mesmo em B&W ou daltonismo, o operador distingue a urgência.
-
-### 4.4 Guarda explícita (F6 do eng-review round 2)
-
-Em `LeadAgingChip.vue` (B.4b), antes de qualquer cálculo:
-
+Guarda explícita em `LeadAgingChip.vue` antes de qualquer cálculo:
 ```js
 if (agingCoefficient === 0 || agingCoefficient == null) {
   return { state: 'neutral', glyph: '—' };
 }
 ```
 
-Sem isso, divisão por zero em fechado/Lost trash a UI.
-
 ---
 
-## 5. Acessibilidade
+## 9. Integração com o engine
 
-### 5.1 Contraste
-
-- Texto primário sobre superfície default: ≥10:1 (AAA).
-- Texto secundário sobre superfície default: ≥6:1 (AAA).
-- Texto tertiário sobre superfície raised: ≥4.5:1 (AA).
-- Aging chip foreground sobre seu background: ≥4.5:1 (AA) verificado em ambos os temas.
-- Focus ring: 2px solid brand + 2px gap = sempre visível (WCAG 2.4.11).
-
-### 5.2 Keyboard navigation
-
-Baseline MVP (D11 reduzido por F4):
-
-- `Tab` move foco entre cards e colunas do Kanban.
-- `Enter` no card abre `LeadDetailDrawer`.
-- `Esc` fecha drawer / modal / dropdown.
-- Drag-and-drop é **mouse-only no MVP**. `vuedraggable-next` não suporta drag-by-keyboard confiável e WAI-ARIA 1.1 deprecou `aria-grabbed`/`aria-dropeffect`. Fallback futuro: menu ⋮ → "Mover para…" — registrado pós-MVP.
-
-### 5.3 Screen reader
-
-- `aria-live="polite"` na região do Kanban anuncia transições de stage ("Lead Maria Santos movido para Qualificado").
-- Cada card carrega `aria-label` completo: nome, canal, estado de aging + tempo na etapa.
-- `aria-busy="true"` nas regiões com skeleton.
-- `role="button"` + `tabindex="0"` nos cards (são interativos sem ser `<button>` para evitar conflito com drag).
-
-### 5.4 Motion
-
-`prefers-reduced-motion: reduce` zera todos os tokens de duration (1ms). Skeleton troca shimmer por opacity-pulse 2s (continua sinalizando "ainda carregando" sem movimento direcional).
-
-### 5.5 Color scheme
-
-`prefers-color-scheme` é respeitado quando o usuário **não** escolheu tema explícito (`[data-theme]` ausente). Padrão sem preferência = dark.
-
-### 5.6 Touch target
-
-Mobile mínimo: 44×44px (Apple HIG, WCAG 2.5.5 AAA). `.alg-btn--lg` atinge 44px. Cards no Kanban são touch-targets implícitos full-card.
-
-### 5.7 Gate de CI
-
-`@axe-core/playwright` em CI reprova PR com violações `critical`/`serious` WCAG AA. Configurado em M0 (T1), validado em M1 (B.13).
-
----
-
-## 6. Integração com o engine
-
-### 6.1 Estrutura atual
-
-Os assets do engine ficam em:
+### 9.1 Estrutura
 
 ```
 engines/algorythmo/app/assets/
 ├── stylesheets/
-│   ├── _tokens.scss        ← tokens (custom properties)
-│   ├── _components.scss    ← classes .alg-*
-│   └── algorythmo.scss     ← entry point (@import 'tokens'; @import 'components';)
-└── images/
-    ├── logo-mark.svg       ← mark only (placeholder)
-    ├── logo-full.svg       ← mark + wordmark (placeholder)
-    ├── favicon.svg         ← 32x32 (placeholder)
-    └── splash.svg          ← PWA splash (placeholder)
+│   ├── _tokens.scss        ← tokens (custom properties) — Cinematic OS v1
+│   ├── _components.scss    ← classes .alg-* — Cinematic OS v1
+│   └── algorythmo.scss     ← entry point
+└── images/                 ← brand assets (placeholders)
 ```
 
-### 6.2 Como consumir (trilha B — Vue / Vite)
+### 9.2 Como consumir
 
-O upstream Chatwoot usa Vite, não Sprockets, para o frontend. Vite não tem conceito de Rails engine para assets — então a trilha B precisa importar nossos SCSS de forma explícita em vez de depender de auto-discovery.
+Já integrado em `_woot.scss` do dashboard Chatwoot:
 
-**Caminho recomendado** (a ser feito por quem implementar trilha B):
+```scss
+// algorythmo: design-system-import
+@import '../../../../../engines/algorythmo/app/assets/stylesheets/algorythmo';
+```
 
-1. Em `vite.config.mjs` adicionar alias `@algorythmo/styles` apontando para `engines/algorythmo/app/assets/stylesheets/algorythmo.scss`.
-2. No entry SCSS do dashboard upstream (`app/javascript/dashboard/assets/scss/_woot.scss`), adicionar `@import '@algorythmo/styles';` **antes** de `@import 'base'` — tag `// algorythmo: design-system-import` no upstream conforme A2-front.
-3. As classes `.alg-*` ficam disponíveis globalmente no dashboard Vue.
+Classes `.alg-*` e tokens `--alg-*` ficam globais. Vue components consomem via class binding — sem `<style scoped>` reescrevendo o sistema.
 
-Para imagens: importar relativo no Vue (`import logoMark from '@/../../engines/algorythmo/app/assets/images/logo-mark.svg?url'`) ou configurar alias `@algorythmo/images`.
+### 9.3 Bridge SCSS
 
-**Por que a trilha D não faz esse hook automaticamente:** mexer no `vite.config.mjs` é mudança global do build do upstream e cabe na trilha B (que de qualquer forma vai tocar Vue/Vite). Trilha D entrega o sistema; trilha B integra. Esse boundary mantém os PRs focados e o rebase de upstream mensal trivial.
-
-### 6.3 Como consumir (mailers / Liquid)
-
-Mailers do engine (já em `engines/algorythmo/app/views/mailers/`) podem inlinar tokens via `<style>` no `<head>` da Liquid, copiando valores de `_tokens.scss`. Email clients (Gmail, Outlook) não suportam CSS custom properties — então inline-style com valores duros. Quando o brand designer humano definir as faces finais, refletir aqui.
+`app/javascript/dashboard/assets/scss/algorythmo-bridge.scss` provê mixins SCSS-level (breakpoint queries). Use só quando precisar de construto SCSS (`@use 'algorythmo-bridge' as alg;`).
 
 ---
 
-## 7. Open questions / próximos
+## 10. Reversão do Cinematic OS v1
 
-### 7.1 Brand assets — placeholders entregues
+**Cinematic OS v1 é forward-only.** Não há runtime toggle ou cut-flag para o visual register — a decisão foi feita pelo founder em 2026-05-28 (PR #82 review).
 
-Os SVGs em `app/assets/images/` são **placeholders competentes**, não finais. Geometria honesta (anel + notch + dot), tipografia em Inter cut, brand teal aplicado. Servem para M0/M1 não bloquear no rebrand.
+O atributo `data-alg-cinematic` foi removido de `ReportsCommercialOverlay.vue` e de todos os dashboards de setor. Para reverter o visual a um estado anterior é necessário fazer deploy de um branch revert — não existe atalho sem deploy.
 
-**Founder action item:** contratar designer de marca humano para entregar:
-
-- Logo finalizado em variantes (full lockup, mark-only, monocromático, inverso) em SVG + variants PNG (192, 512, 1024) para PWA manifest.
-- Favicon multi-resolução ICO + 32×32 + 16×16 + Apple touch icon (180×180).
-- Splash screens por device class (iOS 12 sizes, Android adaptive icon foreground/background).
-- Eventual face display custom ("AlgorythmoDisplay") ou licença de uma curated (Söhne, GT Walsheim, General Sans).
-
-### 7.2 Light theme — secundário, validar
-
-Light theme foi tunado matematicamente mas não passou por sessão de design dedicada. Antes de oferecer toggle ao usuário (pós-M2 provavelmente), revisar:
-
-- Aging chip contrast em superfícies muito claras.
-- Sombras shadow-md/lg em light: o blur translucent não-tonal funciona, mas pode parecer plástico em telas baratas. Considerar version com tinta neutra-tilted.
-- Brand teal em light: precisa ser darker (já está em `_tokens.scss` light override) — confirmar legibilidade quando o brand designer human ajustar o teal final.
-
-### 7.3 Display face — placeholder
-
-`--alg-font-display` aponta para `AlgorythmoDisplay` que ainda não existe. Fallback `InterDisplay` funciona mas é o mesmo font do body, então perde a hierarquia editorial. Quando a face final entrar:
-
-1. Self-host via `next/font/local` ou link `@font-face` direto em `_tokens.scss` (preferível).
-2. Validar render em Windows ClearType, macOS, Linux freetype.
-3. Considerar variable font para reduzir peso de bundle.
-
-### 7.4 Component coverage — gaps conhecidos
-
-A trilha D entregou o núcleo. A trilha B (M1-B base) fechou os gaps para o CRM:
-
-**Entregues em M1-B (base PR #2):**
-- ✅ `.alg-drawer` — `AlgDrawer.vue` (§3.7)
-- ✅ `.alg-menu` — `AlgMenu.vue` (§3.8)
-- ✅ `.alg-toast` — `AlgToast.vue` + `AlgToastContainer.vue` + `useToast()` (§3.9)
-- ✅ `.alg-avatar` — `AlgAvatar.vue` (§3.10)
-
-**Ainda pendentes (próximas trilhas):**
-- `.alg-tooltip` — dica contextual hover-only.
-- `.alg-tabs` — telas de configuração de pipeline.
-- Form fundamentals: `.alg-label`, `.alg-fieldset`, `.alg-select`, `.alg-checkbox`, `.alg-radio`, `.alg-switch`.
-
-Quem implementar **adiciona aqui no DESIGN.md** na seção 3 e mantém o doc vivo.
-
-### 7.5 Quando re-revisar este doc
-
-- Após cada feature de UI nova (`.alg-*` ou page-level pattern).
-- Sempre que o brand designer humano entregar artefato final (logo, font, paleta refinada).
-- A cada sync mensal de upstream (verificar se primitivos de Chatwoot que a gente integra mudaram).
-- Quando habilitar light theme público — sessão de design dedicada.
-- Após primeiro feedback de cliente real rodando o produto.
+Cut-flag de rota (`algorythmo_cut_reports_commercial`) é independente — esconde a tela inteira, não troca o visual. Essa flag continua válida e segue o padrão `algorythmoCutFlags.js`.
 
 ---
 
-## 8. Princípios de design (decisão rápida)
+## 11. Princípios de decisão rápida
 
-Quando bater dúvida, lembrar:
-
-1. **Densidade > respiração inútil.** Operador profissional não quer roleplay de "spacious modern". Quer ver muita informação ao mesmo tempo, hierarquizada.
-2. **Contraste > decoração.** Hierarquia é construída por peso e cor de tinta, não por borders e backgrounds.
-3. **Motion serve a clareza.** Se a animação não ajuda alguém a entender o que mudou, ela é ruído. Banido: bounce, springs em ações operacionais, parallax, hover-lift exagerado.
-4. **Estados são designados, não tolerados.** Empty, loading, error têm a mesma atenção que happy path. Empty state genérico ("Nenhum resultado") é falha.
-5. **Acessível desde o dia 1.** Retrofit é caro. Dual-coding, keyboard nav, contrast checks no commit.
-6. **Mobile-first não é mantra, é restrição.** 375px primeiro, depois expande.
-7. **Editorial > spec sheet.** Copy importa: "Os Leads vão aparecer aqui automaticamente conforme conversas entram pelos seus canais" > "Nenhum lead encontrado".
-8. **Se parece template, redo.** Apple, Linear, Vercel não usariam isso? Refaz.
+1. **Silêncio > ruído.** Espaço entre elementos é o produto. Na dúvida, remove.
+2. **Tipografia carrega hierarquia.** Não use border / background pra hierarquizar; use peso, tracking, opacidade.
+3. **Cor é exceção semântica.** Se você ia colorir "pra ficar bonito", é hierarquia errada.
+4. **Motion Apple-grade ou nada.** Curva cinematic. Spring é raríssimo.
+5. **Glass é real ou não é glass.** `backdrop-filter` obrigatório, hairline border obrigatório, inset highlight obrigatório.
+6. **Estados são designados.** Empty/loading/error têm a mesma atenção que happy path.
+7. **Acessível desde o dia 1.** Retrofit é caro.
+8. **Mobile-first.** 375px primeiro, depois expande.
+9. **Editorial > spec sheet.** Copy é design — "Os Leads vão aparecer aqui automaticamente conforme conversas entram" > "Nenhum lead encontrado".
+10. **Se parece template, refaz.** Apple / Linear / Vercel não usariam? Refaz.
 
 ---
 
-*Fim do documento. Mantenha vivo.*
+## 12. Open questions / próximos
+
+- **Self-host de fontes.** Geist / Geist Mono / Söhne — handoff pro brand designer humano. TODO marcado em `_tokens.scss`. Fallback escalonado funciona até lá.
+- **Logo finalizado.** SVGs em `images/` são placeholders competentes. Designer humano entrega lockup full / mark / mono / inverso + favicon multi-res + splash por device.
+- **Ambient motion library.** Orb pulsante de comando, planet rotation no hero — `--alg-duration-ambient` reservado (6s), library de componentes ambientes vem na v1.1.
+- **White model em produção.** Specs trancadas. Validar com sessão de QA visual antes de oferecer toggle público.
+- **Component coverage.** Faltam ainda: `.alg-tooltip`, `.alg-tabs`, `.alg-select`, `.alg-checkbox`, `.alg-radio`, `.alg-switch`, `.alg-command-palette` (cmd+K). Adicione aqui em §5 quando implementar.
+
+---
+
+*Fim do documento. Mantenha vivo. Toda feature nova: leia esta filosofia, então construa.*
