@@ -1,14 +1,12 @@
 <script setup>
-// algorythmo: M6.4 Financeiro — derived sector dashboard. Same composition
-// as M6.0 canonical. Plan 0005 §M6.4.
-import SectorDashboard from '../sectors/SectorDashboard.vue';
-import SectorAgentChat from '../sectors/SectorAgentChat.vue';
-import financeiroMock from '../mocks/sectors/financeiro';
+// algorythmo: plan 0007 M2-f — Finance route entry.
+// Kept at this path because routes.js loads `algorythmo_admin_financeiro` from
+// here; it now delegates to FinanceShell (SectorShellV2). The previous M6.4
+// composition (SectorDashboard + 360px SectorAgentChat rail) is superseded by
+// the v2 shell (Overview + sub-tabs + full-width agent chat, D4).
+import FinanceShell from './FinanceShell.vue';
 </script>
 
 <template>
-  <main class="alg-sector-layout">
-    <SectorDashboard :mock="financeiroMock" />
-    <SectorAgentChat :sector-name-key="financeiroMock.headingKey" />
-  </main>
+  <FinanceShell />
 </template>
