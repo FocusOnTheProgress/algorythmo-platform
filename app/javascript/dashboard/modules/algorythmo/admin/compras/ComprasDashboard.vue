@@ -1,14 +1,12 @@
 <script setup>
-// algorythmo: M6.2 Compras — derived sector dashboard. Same composition as
-// the M6.0 canonical (SectorDashboard + SectorAgentChat). Plan 0005 §M6.2.
-import SectorDashboard from '../sectors/SectorDashboard.vue';
-import SectorAgentChat from '../sectors/SectorAgentChat.vue';
-import comprasMock from '../mocks/sectors/compras';
+// algorythmo: plan 0007 M2-e — Procurement route entry.
+// Kept at this path because routes.js loads `algorythmo_admin_compras` from
+// here; it now delegates to ProcurementShell (SectorShellV2). The previous M6.2
+// composition (SectorDashboard + 360px SectorAgentChat rail) is superseded by
+// the v2 shell (Overview + sub-tabs + full-width agent chat, D4).
+import ProcurementShell from './ProcurementShell.vue';
 </script>
 
 <template>
-  <main class="alg-sector-layout">
-    <SectorDashboard :mock="comprasMock" />
-    <SectorAgentChat :sector-name-key="comprasMock.headingKey" />
-  </main>
+  <ProcurementShell />
 </template>
