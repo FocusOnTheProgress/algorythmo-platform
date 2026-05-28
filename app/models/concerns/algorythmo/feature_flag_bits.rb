@@ -3,7 +3,7 @@
 # Manages Algorythmo OS cut-surface feature flags stored in the dedicated
 # accounts.algorythmo_feature_flags bigint column.
 #
-# Flags occupy positions 1–28 — all safely within the signed bigint range (max: 63).
+# Flags occupy positions 1–34 — all safely within the signed bigint range (max: 63).
 # Zero collision with Chatwoot upstream accounts.feature_flags column.
 #
 # Include in Account via `include Algorythmo::FeatureFlagBits`.
