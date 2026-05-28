@@ -26,6 +26,9 @@
 .claire/
 .claude/worktrees/
 *.log
+
+# algorythmo: pasta local de referencias visuais do founder (jpegs nao versionados)
+referências front end design/
 # Ignore application configuration
 node_modules
 master.key
