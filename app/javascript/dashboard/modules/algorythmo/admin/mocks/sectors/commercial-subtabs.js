@@ -46,7 +46,13 @@ export default [
       'ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.OVERVIEW.OPERATIONS_CHART',
     chartLabels: WEEK_LABELS,
     chartData: [38, 42, 45, 41, 48, 52, 49, 54, 51, 56, 58, 62],
-    routeName: 'account_overview_reports',
+    // algorythmo: M2-c — founder rejected account_overview_reports ("Overview", already
+    // used by the SectorShellV2 Overview tab). inbox_reports_index is the per-channel
+    // operational breakdown: volume by WhatsApp / email / API — genuinely distinct from
+    // Conversation (historical aggregate), Agents, and Teams sub-tabs. The route stays
+    // live even though reports_inbox is sidebar-cut; deep-linking from a sub-tab is
+    // by design (cut = hide sidebar entry, not block the URL).
+    routeName: 'inbox_reports_index',
   },
   {
     id: 'conversation',

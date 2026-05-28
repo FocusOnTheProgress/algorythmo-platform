@@ -59,7 +59,11 @@ describe('commercial sub-tab mock — contract', () => {
 
   it('every deep view links to a live upstream report route', () => {
     const expected = {
-      operations: 'account_overview_reports',
+      // algorythmo: M2-c founder decision — inbox_reports_index (per-channel
+      // operational breakdown) replaces account_overview_reports (rejected:
+      // too similar to the SectorShellV2 Overview tab). Route stays live even
+      // though reports_inbox is sidebar-cut; deep-link from sub-tab is by design.
+      operations: 'inbox_reports_index',
       conversation: 'conversation_reports',
       agents: 'agent_reports_index',
       teams: 'team_reports_index',
