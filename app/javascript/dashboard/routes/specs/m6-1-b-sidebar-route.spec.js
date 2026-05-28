@@ -78,6 +78,18 @@ describe('M6.1-b — i18n keys', () => {
     );
   });
 
+  it('en mirrors SECTORS.COMMERCIAL.HEADING with a distinct, non-empty string', () => {
+    expect(typeof en.ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.HEADING).toBe(
+      'string'
+    );
+    expect(
+      en.ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.HEADING.length
+    ).toBeGreaterThan(0);
+    expect(en.ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.HEADING).not.toBe(
+      pt.ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.HEADING
+    );
+  });
+
   // The top-level ALGORYTHMO_ADMIN.COMMERCIAL placeholder block was retired
   // in M6.1-d cleanup — the overlay reads headingKey/contextKey from
   // commercialMock + ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.* now. The block
