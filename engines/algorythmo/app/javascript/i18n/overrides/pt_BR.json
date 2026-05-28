@@ -281,6 +281,50 @@
           "INDICADORES_LABEL": "Análise de Indicadores",
           "INDICADORES_CHART": "Indicadores no alvo (%)"
         }
+      },
+      "FACILITIES": {
+        "HEADING": "Facilities",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor Facilities",
+        "OVERVIEW": {
+          "TAB": "Visão Geral",
+          "ARIA": "Visão geral consolidada de gastos do setor Facilities",
+          "ALUGUEL_LABEL": "Aluguel",
+          "ALUGUEL_CHART": "Aluguel mensal (R$ mil)",
+          "ENERGIA_LABEL": "Energia",
+          "ENERGIA_CHART": "Energia mensal (R$ mil)",
+          "MANUTENCAO_LABEL": "Manutenção",
+          "MANUTENCAO_CHART": "Manutenção mensal (R$ mil)",
+          "LIMPEZA_LABEL": "Limpeza",
+          "LIMPEZA_CHART": "Limpeza mensal (R$ mil)",
+          "CONSOLIDADO_LABEL": "Gasto consolidado",
+          "CONSOLIDADO_CHART": "Gasto total mensal (R$ mil)"
+        },
+        "CONTROLE": {
+          "TAB": "Controle",
+          "ARIA": "Controle de unidades e gastos do setor Facilities",
+          "UNITS_TITLE": "Unidades",
+          "UNITS_HINT": "Cadastre as unidades (lojas, depósitos, escritórios) que você acompanha. Os dados ficam salvos apenas neste navegador.",
+          "UNIT_FORM_ARIA": "Cadastrar nova unidade",
+          "UNIT_NAME": "Nome",
+          "UNIT_ADDRESS": "Endereço",
+          "ADD_UNIT": "Adicionar unidade",
+          "UNITS_EMPTY": "Nenhuma unidade cadastrada ainda.",
+          "EXPENSES_TITLE": "Gastos",
+          "EXPENSES_HINT": "Lance os gastos de cada unidade. Cadastre ao menos uma unidade antes de adicionar um gasto.",
+          "EXPENSE_FORM_ARIA": "Lançar novo gasto",
+          "EXPENSE_UNIT": "Unidade",
+          "EXPENSE_UNIT_PLACEHOLDER": "Selecione a unidade",
+          "EXPENSE_CATEGORY": "Categoria",
+          "EXPENSE_AMOUNT": "Valor",
+          "EXPENSE_DATE": "Data",
+          "EXPENSE_NOTE": "Nota",
+          "ADD_EXPENSE": "Adicionar gasto",
+          "EXPENSES_EMPTY": "Nenhum gasto lançado ainda.",
+          "ACTIONS": "Ações",
+          "REMOVE": "Remover",
+          "REMOVE_UNIT_ARIA": "Remover unidade {name}",
+          "REMOVE_EXPENSE_ARIA": "Remover gasto de {category}"
+        }
       }
     },
     "OPERACAO": {
