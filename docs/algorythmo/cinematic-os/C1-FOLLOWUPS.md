@@ -46,6 +46,11 @@ Validar contraste das telas de install no dark.
 >
 > Impacto no cliente: baixo (console é interno do operador). Por isso ficou de
 > fora do C1.1 e segue como dívida explícita.
+>
+> **Prioridade do founder (2026-05-29):** o painel super-admin será desenvolvido
+> DEPOIS, numa frente com foco próprio. O objetivo do programa Cinematic OS por
+> enquanto é o **administrador da empresa** (usuário PME). Não reabrir o
+> super-admin até essa frente dedicada.
 
 ---
 
