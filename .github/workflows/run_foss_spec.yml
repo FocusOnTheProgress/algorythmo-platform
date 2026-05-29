@@ -107,6 +107,13 @@ jobs:
             app/javascript/dashboard/modules/algorythmo/admin/facilities/specs/FacilitiesDashboard.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/facilities/specs/FacilitiesControlePane.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/facilities/specs/facilities-overview-contract.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/ChannelLeaf.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/SidebarChevron.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/SidebarCollapseNoLeak.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/SidebarGroupLeaf.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/SidebarManagementOrder.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/SidebarActiveNavRadius.spec.js \
+            app/javascript/dashboard/components/widgets/conversation/specs/OnboardingViewPurge.spec.js \
             --no-coverage
 
   # algorythmo: rspec scoped to Algorythmo engine + Captain feature-gate.
