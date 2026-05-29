@@ -195,6 +195,56 @@
           "VIEWS": "{count} visualizações",
           "UNCATEGORIZED": "Sem categoria"
         }
+      },
+      "OPERATIONS": {
+        "HEADING": "Operations",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor Operations",
+        "OVERVIEW": {
+          "TAB": "Visão Geral",
+          "ARIA": "Visão geral consolidada do setor Operations",
+          "ESTOQUE_LABEL": "Estoque",
+          "ESTOQUE_CHART": "Estoque (R$ mil)",
+          "REPOSICAO_LABEL": "Reposição",
+          "REPOSICAO_CHART": "Itens em reposição",
+          "LOGISTICA_LABEL": "Logística",
+          "LOGISTICA_CHART": "Custo de frete (% receita)",
+          "ORGANIZACAO_LABEL": "Organização",
+          "ORGANIZACAO_CHART": "Acuracidade de inventário (%)",
+          "ENTREGA_LABEL": "Entrega",
+          "ENTREGA_CHART": "Entregas no prazo (%)",
+          "EXPEDICAO_LABEL": "Expedição",
+          "EXPEDICAO_CHART": "Tempo médio de expedição (h)"
+        }
+      },
+      "PROCUREMENT": {
+        "HEADING": "Procurement",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor Procurement",
+        "OVERVIEW": {
+          "TAB": "Visão Geral",
+          "ARIA": "Visão geral consolidada do setor Procurement",
+          "FORNECEDORES_LABEL": "Fornecedores",
+          "FORNECEDORES_CHART": "Fornecedores ativos",
+          "REPOSICAO_LABEL": "Reposição",
+          "REPOSICAO_CHART": "Pedidos de reposição",
+          "CUSTO_LABEL": "Custo de Mercadoria",
+          "CUSTO_CHART": "CMV (% receita)",
+          "GIRO_LABEL": "Análise de Giro",
+          "GIRO_CHART": "Giro de estoque (dias)"
+        }
+      },
+      "ADMINISTRATION": {
+        "HEADING": "Administration",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor Administration",
+        "OVERVIEW": {
+          "TAB": "Visão Geral",
+          "ARIA": "Visão geral consolidada do setor Administration",
+          "ESTRATEGIA_LABEL": "Estratégia",
+          "ESTRATEGIA_CHART": "Iniciativas estratégicas ativas",
+          "METAS_LABEL": "Metas",
+          "METAS_CHART": "Atingimento de metas (%)",
+          "INDICADORES_LABEL": "Análise de Indicadores",
+          "INDICADORES_CHART": "Indicadores no alvo (%)"
+        }
       }
     },
     "OPERACAO": {

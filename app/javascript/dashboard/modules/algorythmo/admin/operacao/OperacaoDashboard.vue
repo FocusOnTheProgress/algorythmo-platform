@@ -1,16 +1,12 @@
 <script setup>
-// algorythmo: M6.0 Operação — canonical sector dashboard (designer-locked).
-// Wires the PR-6b skeleton + founder-locked mock into the existing /operacao
-// route. The 6 derived sectors (M6.1-M6.6) follow this exact composition.
-// Plan 0005 §M6.0.
-import SectorDashboard from '../sectors/SectorDashboard.vue';
-import SectorAgentChat from '../sectors/SectorAgentChat.vue';
-import operacaoMock from '../mocks/sectors/operacao';
+// algorythmo: plan 0007 M2-e — Operations route entry.
+// Kept at this path because routes.js loads `algorythmo_admin_operacao` from
+// here; it now delegates to OperationsShell (SectorShellV2). The previous M6.0
+// composition (SectorDashboard + 360px SectorAgentChat rail) is superseded by
+// the v2 shell (Overview + sub-tabs + full-width agent chat, D4).
+import OperationsShell from './OperationsShell.vue';
 </script>
 
 <template>
-  <main class="alg-sector-layout">
-    <SectorDashboard :mock="operacaoMock" />
-    <SectorAgentChat :sector-name-key="operacaoMock.headingKey" />
-  </main>
+  <OperationsShell />
 </template>

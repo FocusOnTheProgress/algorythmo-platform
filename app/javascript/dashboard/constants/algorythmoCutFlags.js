@@ -64,6 +64,24 @@ export const ALGORYTHMO_CUT_FLAG_NAMES = Object.freeze([
   'sector_marketing_trafego',
   'sector_marketing_crm',
   'sector_marketing_retencao',
+  // algorythmo: M2-e — per-sub-tab cut flags for the Operations, Procurement
+  // and Administration shells (D10). Each gates one tab inside its sector shell
+  // (NOT a sidebar entry): cut ACTIVE = tab hidden; default OFF = tab visible.
+  // The Overview tab is never cut. Shell-only cuts (no route-level Policy) —
+  // listed in SIDEBAR_ONLY_FLAGS in algorythmoCutFlagCoverage.spec.js.
+  'sector_operations_estoque',
+  'sector_operations_reposicao',
+  'sector_operations_logistica',
+  'sector_operations_organizacao',
+  'sector_operations_entrega',
+  'sector_operations_expedicao',
+  'sector_procurement_fornecedores',
+  'sector_procurement_reposicao',
+  'sector_procurement_custo',
+  'sector_procurement_giro',
+  'sector_administration_estrategia',
+  'sector_administration_metas',
+  'sector_administration_indicadores',
 ]);
 
 // Full flag keys (with the `algorythmo_cut_` prefix) for direct equality checks

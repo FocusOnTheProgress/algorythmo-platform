@@ -186,6 +186,56 @@
           "VIEWS": "{count} views",
           "UNCATEGORIZED": "Uncategorized"
         }
+      },
+      "OPERATIONS": {
+        "HEADING": "Operations",
+        "AGENT_CHAT_HEADING": "Talk to the Operations sector agent",
+        "OVERVIEW": {
+          "TAB": "Overview",
+          "ARIA": "Consolidated overview of the Operations sector",
+          "ESTOQUE_LABEL": "Estoque",
+          "ESTOQUE_CHART": "Inventory (R$ K)",
+          "REPOSICAO_LABEL": "Reposição",
+          "REPOSICAO_CHART": "Items in replenishment",
+          "LOGISTICA_LABEL": "Logística",
+          "LOGISTICA_CHART": "Freight cost (% revenue)",
+          "ORGANIZACAO_LABEL": "Organização",
+          "ORGANIZACAO_CHART": "Inventory accuracy (%)",
+          "ENTREGA_LABEL": "Entrega",
+          "ENTREGA_CHART": "On-time delivery (%)",
+          "EXPEDICAO_LABEL": "Expedição",
+          "EXPEDICAO_CHART": "Avg shipping time (h)"
+        }
+      },
+      "PROCUREMENT": {
+        "HEADING": "Procurement",
+        "AGENT_CHAT_HEADING": "Talk to the Procurement sector agent",
+        "OVERVIEW": {
+          "TAB": "Overview",
+          "ARIA": "Consolidated overview of the Procurement sector",
+          "FORNECEDORES_LABEL": "Fornecedores",
+          "FORNECEDORES_CHART": "Active suppliers",
+          "REPOSICAO_LABEL": "Reposição",
+          "REPOSICAO_CHART": "Replenishment orders",
+          "CUSTO_LABEL": "Custo de Mercadoria",
+          "CUSTO_CHART": "Cost of goods (% revenue)",
+          "GIRO_LABEL": "Análise de Giro",
+          "GIRO_CHART": "Inventory turnover (days)"
+        }
+      },
+      "ADMINISTRATION": {
+        "HEADING": "Administration",
+        "AGENT_CHAT_HEADING": "Talk to the Administration sector agent",
+        "OVERVIEW": {
+          "TAB": "Overview",
+          "ARIA": "Consolidated overview of the Administration sector",
+          "ESTRATEGIA_LABEL": "Estratégia",
+          "ESTRATEGIA_CHART": "Active strategic initiatives",
+          "METAS_LABEL": "Metas",
+          "METAS_CHART": "Goal attainment (%)",
+          "INDICADORES_LABEL": "Análise de Indicadores",
+          "INDICADORES_CHART": "Indicators on target (%)"
+        }
       }
     },
     "OPERACAO": {

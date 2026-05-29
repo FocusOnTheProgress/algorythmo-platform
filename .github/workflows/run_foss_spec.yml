@@ -88,6 +88,12 @@ jobs:
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/commercial-overview-contract.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/marketing/specs/MarketingDashboard.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/marketing/specs/marketing-overview-contract.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/operacao/specs/OperacaoDashboard.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/operacao/specs/operations-overview-contract.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/compras/specs/ComprasDashboard.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/compras/specs/procurement-overview-contract.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/administracao/specs/AdministracaoDashboard.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/administracao/specs/administration-overview-contract.spec.js \
             --no-coverage
 
   # algorythmo: rspec scoped to Algorythmo engine + Captain feature-gate.
