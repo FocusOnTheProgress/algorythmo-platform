@@ -70,10 +70,10 @@ describe('ReportsCommercialOverlay (M2-c)', () => {
     );
   });
 
-  it('Overview cards each carry the demonstration watermark', () => {
+  it('Overview pane carries the demonstration watermark', () => {
+    // plan 0009: single .alg-sector__watermark per pane (premium layout).
     const wrapper = mountOverlay();
-    const watermarks = wrapper.findAll('.alg-overview__watermark');
-    expect(watermarks.length).toBeGreaterThanOrEqual(subtabViews.length);
+    expect(wrapper.find('.alg-sector__watermark').exists()).toBe(true);
   });
 
   it('anchors the agent chat at the foot via the chatHeadingKey', () => {

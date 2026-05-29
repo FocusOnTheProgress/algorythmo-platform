@@ -43,6 +43,7 @@ const tabs = [
     :title-key="TITLE_KEY"
     :chat-heading-key="CHAT_HEADING_KEY"
     :tabs="tabs"
+    planet-class="alg-planet--commercial"
   >
     <template #overview>
       <CommercialOverviewPane />

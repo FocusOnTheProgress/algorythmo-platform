@@ -86,6 +86,7 @@ const isVisible = id => tabs.value.some(tab => tab.id === id);
     :title-key="TITLE_KEY"
     :chat-heading-key="CHAT_HEADING_KEY"
     :tabs="tabs"
+    planet-class="alg-planet--hr"
   >
     <template #overview>
       <HrOverviewPane />
