@@ -18,8 +18,8 @@
 //   keyboard semantics. The <article role="button" tabindex="0"> + manual
 //   Enter/Space handling pattern is what Trello, Linear and Notion use.
 //
-// Channel-icon: parent passes an already-resolved glyph; the card maps the
-// channel_origin to a translated label via i18n.
+// Channel-icon: the card derives its own inline-SVG glyph from channel_origin
+// (founder: no emoji in chrome) and maps the same origin to a translated label.
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LeadAgingChip from 'dashboard/components-next/algorythmo/LeadAgingChip.vue';
@@ -30,7 +30,7 @@ const props = defineProps({
     type: Object,
     required: true,
     // Expected shape (CONTRACT_M1B §3 v1.1.0):
-    //   { id, name, stage_id, stage_name, channel_origin, channel_icon,
+    //   { id, name, stage_id, stage_name, channel_origin,
     //     time_human, time_aria_long, aging_state,
     //     owner: { id, name, thumbnail } | null }
   },
@@ -55,6 +55,23 @@ const CHANNEL_LABEL_KEYS = Object.freeze({
   web_widget: 'WIDGET',
 });
 
+// Channel glyphs as inline Lucide-style SVG path data (founder: no emoji in
+// chrome). Stroke 1.5, currentColor, no fill — paths copied verbatim from the
+// approved mockup docs/plans/cinematic-os/preview/02-crm-kanban.html. Keyed by
+// the normalized channel; an unknown channel falls back to a generic inbox.
+const CHANNEL_ICON_PATHS = Object.freeze({
+  whatsapp:
+    '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  email:
+    '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/>',
+  instagram:
+    '<rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/>',
+  tiktok: '<path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>',
+  // Generic inbox (fallback for facebook/api/sms/webwidget/unknown).
+  generic:
+    '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+});
+
 function normalizeChannelKey(origin) {
   return String(origin ?? '')
     .toLowerCase()
@@ -65,6 +82,13 @@ function normalizeChannelKey(origin) {
 const channelLabelKey = computed(() => {
   const key = normalizeChannelKey(props.lead.channel_origin);
   return CHANNEL_LABEL_KEYS[key] ?? 'UNKNOWN';
+});
+
+// Inline SVG markup for the lead's channel. Derived from channel_origin here
+// (not passed in) so card chrome owns its own iconography.
+const channelIconSvg = computed(() => {
+  const key = normalizeChannelKey(props.lead.channel_origin);
+  return CHANNEL_ICON_PATHS[key] ?? CHANNEL_ICON_PATHS.generic;
 });
 
 const channelLabel = computed(() =>
@@ -165,13 +189,21 @@ function handleOwnerClick(event) {
     </button>
 
     <div class="alg-lead-card__meta">
-      <span
+      <!-- eslint-disable-next-line vue/no-v-html -->
+      <svg
         class="alg-lead-card__channel-icon"
         data-testid="lead-card-channel-icon"
         aria-hidden="true"
-      >
-        {{ lead.channel_icon }}
-      </span>
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        v-html="channelIconSvg"
+      />
       <span
         class="alg-lead-card__channel-label"
         data-testid="lead-card-channel-label"
@@ -333,8 +365,10 @@ function handleOwnerClick(event) {
 }
 
 .alg-lead-card__channel-icon {
-  font-size: 0.875rem;
-  line-height: 1;
+  flex-shrink: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--alg-fg-secondary);
 }
 
 .alg-lead-card__channel-label {

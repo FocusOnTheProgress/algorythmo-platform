@@ -85,37 +85,29 @@ describe('BrainViewer — tab bar', () => {
   });
 });
 
-describe('BrainViewer — aquário content', () => {
+describe('BrainViewer — aquário (knowledge hub) content', () => {
   it('renders the aquário container', async () => {
     const wrapper = await mountViewer();
     expect(wrapper.find('.alg-aquario').exists()).toBe(true);
   });
 
-  it('renders 2 anchor columns', async () => {
+  it('renders the Aurora orb core within the viewer', async () => {
+    // The living Aurora sphere is the centrepiece of the knowledge hub.
     const wrapper = await mountViewer();
-    const anchors = wrapper.findAll('.alg-aquario__column--anchor');
-    expect(anchors).toHaveLength(2);
+    expect(wrapper.findAll('.alg-aurora-orb__sphere')).toHaveLength(1);
   });
 
-  it('renders 4 secondary columns', async () => {
+  it('renders the four knowledge-layer glass tiles', async () => {
     const wrapper = await mountViewer();
-    const secondary = wrapper.findAll('.alg-aquario__column--secondary');
-    expect(secondary).toHaveLength(4);
+    expect(wrapper.findAll('.alg-glass-tile')).toHaveLength(4);
   });
 
-  it('every column has a non-empty label', async () => {
+  it('shows the editorial header (eyebrow + title)', async () => {
     const wrapper = await mountViewer();
-    const labels = wrapper.findAll('.alg-aquario__column-label');
-    expect(labels.length).toBe(6);
-    labels.forEach(l => expect(l.text().trim().length).toBeGreaterThan(0));
-  });
-
-  it('every column has at least one specimen sentence', async () => {
-    const wrapper = await mountViewer();
-    const columns = wrapper.findAll('.alg-aquario__column');
-    columns.forEach(col => {
-      expect(col.findAll('.alg-aquario__specimen').length).toBeGreaterThan(0);
-    });
+    expect(wrapper.find('.alg-aquario__eyebrow').exists()).toBe(true);
+    expect(
+      wrapper.find('.alg-aquario__title').text().trim().length
+    ).toBeGreaterThan(0);
   });
 });
 

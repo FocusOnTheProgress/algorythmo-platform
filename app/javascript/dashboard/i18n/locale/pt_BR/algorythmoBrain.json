@@ -23,6 +23,28 @@
     },
     "AQUARIO": {
       "ARIA_LABEL": "Aquário do Brain — visão organizada da inteligência da empresa",
+      "HUB": {
+        "EYEBROW": "Base de conhecimento · aquário da empresa",
+        "TITLE": "O conhecimento que move seus agentes",
+        "SUBTITLE": "839 camadas vivas na base da sua empresa. A Aurora distribui contexto para cada superfície de dado em tempo real.",
+        "ORB_ARIA": "Aurora — núcleo vivo de conhecimento da empresa",
+        "STAGE_ARIA": "Camadas de conhecimento ao redor da Aurora",
+        "DEMO_WATERMARK": "Dados de demonstração",
+        "LAYERS": {
+          "SOURCE_LABEL": "Camadas Fonte",
+          "SOURCE_VALUE": "192",
+          "SOURCE_DESC": "Conhecimento absorvido de documentos, políticas e catálogos da empresa.",
+          "HUMAN_LABEL": "Camadas Humanas",
+          "HUMAN_VALUE": "322",
+          "HUMAN_DESC": "Geradas em conversas e contextos reais com seus clientes.",
+          "AUTO_LABEL": "Camadas Automáticas",
+          "AUTO_VALUE": "237",
+          "AUTO_DESC": "Criadas automaticamente a partir de dados e sinais operacionais.",
+          "AGENT_LABEL": "Camadas de Agentes",
+          "AGENT_VALUE": "88",
+          "AGENT_DESC": "Resultado da interação entre agentes durante os fluxos de operação."
+        }
+      },
       "COLUMNS": {
         "CONVERSAS": "Conversas processadas",
         "FATOS": "Fatos da empresa",

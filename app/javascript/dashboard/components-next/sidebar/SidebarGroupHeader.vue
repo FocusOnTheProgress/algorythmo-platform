@@ -70,7 +70,12 @@ const count = computed(() =>
         v-if="dynamicCount && !expandable"
         class="rounded-md capitalize text-xs leading-5 font-medium text-center outline outline-1 px-1 flex-shrink-0"
         :class="{
-          'text-n-slate-12 outline-n-slate-6': isActive,
+          // algorythmo: cinematic-os DELTA-0009 — on the white active fill the
+          // count badge needs near-black ink (--alg-black-1) + a faint black
+          // hairline. The previous text-n-slate-12 was near-white-on-white and
+          // effectively invisible. Only the active+count case changes.
+          '[color:var(--alg-black-1)] [outline-color:rgba(0,0,0,0.18)]':
+            isActive,
           'text-n-slate-11 outline-n-strong': !isActive,
         }"
       >

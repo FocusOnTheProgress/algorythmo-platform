@@ -24,6 +24,11 @@ const props = defineProps({
   boardHasAnyLead: { type: Boolean, required: true },
   isDropTarget: { type: Boolean, default: false },
   metrics: { type: Object, default: null },
+  // The number shown in the header pill + aria. In demo mode this is the full
+  // stage total (e.g. 84) so the pill matches the metrics chip and the funnel
+  // summary, even though only a sampled subset of cards is rendered below.
+  // Real configured pipelines pass null and fall back to leads.length.
+  displayCount: { type: Number, default: null },
 });
 
 const emit = defineEmits([
@@ -56,8 +61,14 @@ const columnStyle = computed(() =>
     : {}
 );
 
+// Header pill number: the explicit stage total when provided (demo mode),
+// otherwise the count of cards actually in the column (real pipelines).
+const headerCount = computed(() =>
+  props.displayCount == null ? props.leads.length : props.displayCount
+);
+
 const stageCountLabel = computed(() => {
-  const count = props.leads.length;
+  const count = headerCount.value;
   if (count === 0) return t('ALGORYTHMO_CRM.KANBAN.STAGE_COUNT_ZERO');
   if (count === 1) return t('ALGORYTHMO_CRM.KANBAN.STAGE_COUNT_ONE');
   return t('ALGORYTHMO_CRM.KANBAN.STAGE_COUNT', { count });
@@ -150,7 +161,7 @@ const metricsAriaLabel = computed(() => {
           data-testid="stage-count"
           :aria-label="stageCountLabel"
         >
-          {{ leads.length }}
+          {{ headerCount }}
         </span>
       </div>
       <span

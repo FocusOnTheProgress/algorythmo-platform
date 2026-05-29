@@ -68,11 +68,33 @@ describe('LeadCard (CONTRACT_M1B §3 v1.1.0)', () => {
   });
 
   describe('content slots', () => {
-    it('renders channel icon hidden from screen readers', () => {
+    it('renders an inline SVG channel icon (no emoji) hidden from screen readers', () => {
       const wrapper = mountCard();
       const icon = wrapper.find('[data-testid="lead-card-channel-icon"]');
-      expect(icon.text()).toBe('\u{1F4AC}');
+      // Founder: no emoji in chrome. The glyph is an inline Lucide-style SVG
+      // derived from channel_origin (whatsapp → the chat-bubble path).
+      expect(icon.exists()).toBe(true);
+      expect(icon.element.tagName.toLowerCase()).toBe('svg');
       expect(icon.attributes('aria-hidden')).toBe('true');
+      expect(icon.html()).toContain('path');
+      // No emoji codepoint leaks into the rendered chrome.
+      expect(icon.text()).not.toContain('\u{1F4AC}');
+    });
+
+    it('derives the channel icon from channel_origin, not a passed glyph', () => {
+      // whatsapp and email resolve to different SVG paths.
+      const whatsapp = mountCard({ channel_origin: 'whatsapp' });
+      const email = mountCard({ channel_origin: 'email' });
+      const waHtml = whatsapp
+        .find('[data-testid="lead-card-channel-icon"]')
+        .html();
+      const emHtml = email
+        .find('[data-testid="lead-card-channel-icon"]')
+        .html();
+      expect(waHtml).not.toBe(emHtml);
+      // email uses the envelope rect; whatsapp does not.
+      expect(emHtml).toContain('rect');
+      expect(waHtml).not.toContain('rect');
     });
 
     it('renders the translated channel label', () => {

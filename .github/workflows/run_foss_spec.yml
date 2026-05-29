@@ -115,6 +115,9 @@ jobs:
             app/javascript/dashboard/components-next/sidebar/specs/SidebarGroupLeaf.spec.js \
             app/javascript/dashboard/components-next/sidebar/specs/SidebarManagementOrder.spec.js \
             app/javascript/dashboard/components-next/sidebar/specs/SidebarActiveNavRadius.spec.js \
+            app/javascript/dashboard/modules/algorythmo/brain/specs/BrainAquario.spec.js \
+            app/javascript/dashboard/modules/algorythmo/brain/specs/BrainViewer.spec.js \
+            app/javascript/dashboard/modules/algorythmo/brain/specs/BrainEmptyState.spec.js \
             app/javascript/dashboard/components/widgets/conversation/specs/OnboardingViewPurge.spec.js \
             --no-coverage
 

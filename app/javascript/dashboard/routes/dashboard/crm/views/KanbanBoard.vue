@@ -4,15 +4,17 @@
 //
 // Responsibility split:
 //   - This component owns: data orchestration (pipeline + leads stores), the
-//     server-Lead → presenter-Lead transform (name/icon/time/aging state),
+//     server-Lead → presenter-Lead transform (name/time/aging state),
 //     the drag coordinator wiring, the aria-live announcer, the move modal
 //     state machine.
 //   - StageColumn owns: per-column render + drop event surface.
-//   - LeadCard owns: card-level a11y + menu trigger.
+//   - LeadCard owns: card-level a11y + menu trigger + channel iconography.
 //
 // The transform stays here (not inside LeadCard) so the presenter shape
 // remains pure data — easier to test, easier to reason about, and one
-// allocation per snapshot instead of one per render.
+// allocation per snapshot instead of one per render. The channel glyph is NOT
+// part of the presenter: LeadCard derives its own inline-SVG channel icon from
+// channel_origin (founder: no emoji in chrome).
 import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
@@ -42,28 +44,11 @@ import {
   DEMO_STAGES,
   DEMO_SUMMARY,
   DEMO_METRICS_BY_STAGE,
+  DEMO_STAGE_COUNTS,
   buildDemoLeads,
 } from './demoData.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-const CHANNEL_GLYPHS = Object.freeze({
-  whatsapp: '\u{1F4AC}', // 💬
-  email: '\u2709\uFE0F', // ✉
-  facebook: '\u{1F4D8}', // 📘
-  instagram: '\u{1F4F7}', // 📷
-  tiktok: '\u{1F3B5}', // 🎵
-  api: '\u{1F517}', // 🔗
-  sms: '\u{1F4F2}', // 📲
-});
-
-function channelGlyph(origin) {
-  // Normalize: API may serialize as "Whatsapp" or "Channel::WebWidget".
-  const key = String(origin ?? '')
-    .toLowerCase()
-    .replace(/^channel::/, '');
-  return CHANNEL_GLYPHS[key] ?? '\u{1F4E5}'; // 📥 fallback
-}
 
 // Aging state per CONTRACT §4. Coefficient is days-per-stage; ratio = elapsed/coef.
 function agingStateFor(stage, stageEnteredAt, now) {
@@ -92,7 +77,6 @@ function toPresenter(lead, stage, now) {
     stage_id: lead.stage_id,
     stage_name: stage?.name ?? '',
     channel_origin: lead.channel_origin,
-    channel_icon: channelGlyph(lead.channel_origin),
     time_human: timeSinceLabel(lead.stage_entered_at, now),
     time_aria_long: humanizeDurationLongPtBr(elapsed),
     aging_state: agingStateFor(stage, lead.stage_entered_at, now),
@@ -353,6 +337,14 @@ function metricsForStageOrDemo(stageId) {
   return metricsForStage(stageId);
 }
 
+// In demo mode the column shows the full stage total (84/52/42/21) so the
+// header pill agrees with the metrics chip and the funnel summary, even though
+// only a sampled window of cards is rendered. Real pipelines return null and
+// the column falls back to the actual card count.
+function displayCountForStage(stageId) {
+  return demoActive.value ? (DEMO_STAGE_COUNTS[stageId] ?? null) : null;
+}
+
 function findRawLead(leadId) {
   if (demoActive.value) {
     return demoLeadsRef.value.find(l => l.id === leadId) ?? null;
@@ -485,6 +477,7 @@ async function handleConfirmMove({ leadId, stage }) {
         :board-has-any-lead="boardHasAnyLead"
         :is-drop-target="drag.hoveredStageId.value === stage.id"
         :metrics="metricsForStageOrDemo(stage.id)"
+        :display-count="displayCountForStage(stage.id)"
         @drag-start="drag.start"
         @drag-enter="drag.enter"
         @drag-over="drag.over"

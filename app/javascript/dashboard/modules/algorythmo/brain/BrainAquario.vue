@@ -1,64 +1,50 @@
 <script setup>
-// algorythmo: M8a Brain Aquário — museum-vitrine layout per plan 0005 §M8a.
-// Frontend-only (M3+ data plugs in once backend stable). i18n-driven specimens.
+// algorythmo: Brain "Aquário" — the company's knowledge hub (Cinematic OS).
+//
+// The founder chose this as the home for the living identity: the Aurora sphere
+// sits at the centre as the knowledge core, with light conduits reaching out to
+// glass tiles that present the knowledge layers (DESIGN.md §6.2, Ref 2, and the
+// approved mockup docs/plans/cinematic-os/preview/03-shell-sidebar.html).
+//
+// Frontend-only / demo for now (M3+ data plugs in once the Brain backend is
+// stable). The Aurora gradient appears ONLY through AlgAuroraOrb — sacred. All
+// other surfaces use --alg-* tokens (glass, fg opacities, hairlines). The demo
+// watermark keeps the illustrative nature honest (same convention as sectors).
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import {
+  AlgAuroraOrb,
+  AlgGlassTile,
+} from 'dashboard/components-next/algorythmo';
 
 const { t } = useI18n();
 
-const anchorColumns = computed(() => [
+// Four knowledge-layer tiles, arranged 2×2 around the Aurora core. Demo data in
+// the spirit of Ref 2 — labels in PT-BR via i18n, big numerals, descriptions.
+const layers = computed(() => [
   {
-    id: 'conversas',
-    label: t('ALGORYTHMO_BRAIN.AQUARIO.COLUMNS.CONVERSAS'),
-    specimens: [
-      t('ALGORYTHMO_BRAIN.AQUARIO.SPECIMENS.CONVERSAS_1'),
-      t('ALGORYTHMO_BRAIN.AQUARIO.SPECIMENS.CONVERSAS_2'),
-      t('ALGORYTHMO_BRAIN.AQUARIO.SPECIMENS.CONVERSAS_3'),
-    ],
+    id: 'source',
+    label: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYERS.SOURCE_LABEL'),
+    value: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYERS.SOURCE_VALUE'),
+    caption: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYERS.SOURCE_DESC'),
   },
   {
-    id: 'fatos',
-    label: t('ALGORYTHMO_BRAIN.AQUARIO.COLUMNS.FATOS'),
-    specimens: [
-      t('ALGORYTHMO_BRAIN.AQUARIO.SPECIMENS.FATOS_1'),
-      t('ALGORYTHMO_BRAIN.AQUARIO.SPECIMENS.FATOS_2'),
-      t('ALGORYTHMO_BRAIN.AQUARIO.SPECIMENS.FATOS_3'),
-    ],
-  },
-]);
-
-const secondaryColumns = computed(() => [
-  {
-    id: 'leads',
-    label: t('ALGORYTHMO_BRAIN.AQUARIO.COLUMNS.LEADS'),
-    specimens: [
-      t('ALGORYTHMO_BRAIN.AQUARIO.SPECIMENS.LEADS_1'),
-      t('ALGORYTHMO_BRAIN.AQUARIO.SPECIMENS.LEADS_2'),
-    ],
+    id: 'human',
+    label: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYERS.HUMAN_LABEL'),
+    value: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYERS.HUMAN_VALUE'),
+    caption: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYERS.HUMAN_DESC'),
   },
   {
-    id: 'ajustes',
-    label: t('ALGORYTHMO_BRAIN.AQUARIO.COLUMNS.AJUSTES'),
-    specimens: [
-      t('ALGORYTHMO_BRAIN.AQUARIO.SPECIMENS.AJUSTES_1'),
-      t('ALGORYTHMO_BRAIN.AQUARIO.SPECIMENS.AJUSTES_2'),
-    ],
+    id: 'auto',
+    label: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYERS.AUTO_LABEL'),
+    value: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYERS.AUTO_VALUE'),
+    caption: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYERS.AUTO_DESC'),
   },
   {
-    id: 'documentos',
-    label: t('ALGORYTHMO_BRAIN.AQUARIO.COLUMNS.DOCUMENTOS'),
-    specimens: [
-      t('ALGORYTHMO_BRAIN.AQUARIO.SPECIMENS.DOCUMENTOS_1'),
-      t('ALGORYTHMO_BRAIN.AQUARIO.SPECIMENS.DOCUMENTOS_2'),
-    ],
-  },
-  {
-    id: 'decisoes',
-    label: t('ALGORYTHMO_BRAIN.AQUARIO.COLUMNS.DECISOES'),
-    specimens: [
-      t('ALGORYTHMO_BRAIN.AQUARIO.SPECIMENS.DECISOES_1'),
-      t('ALGORYTHMO_BRAIN.AQUARIO.SPECIMENS.DECISOES_2'),
-    ],
+    id: 'agent',
+    label: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYERS.AGENT_LABEL'),
+    value: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYERS.AGENT_VALUE'),
+    caption: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYERS.AGENT_DESC'),
   },
 ]);
 </script>
@@ -68,46 +54,45 @@ const secondaryColumns = computed(() => [
     class="alg-aquario"
     :aria-label="t('ALGORYTHMO_BRAIN.AQUARIO.ARIA_LABEL')"
   >
-    <div class="alg-aquario__strata" aria-hidden="true" />
+    <span class="alg-aquario__watermark" aria-hidden="true">
+      {{ t('ALGORYTHMO_BRAIN.AQUARIO.HUB.DEMO_WATERMARK') }}
+    </span>
 
-    <div class="alg-aquario__anchor">
-      <article
-        v-for="(column, idx) in anchorColumns"
-        :key="column.id"
-        class="alg-aquario__column alg-aquario__column--anchor"
-        :class="{ 'alg-aquario__column--leftmost': idx === 0 }"
-      >
-        <h3 class="alg-aquario__column-label">{{ column.label }}</h3>
-        <ul class="alg-aquario__specimens">
-          <li
-            v-for="(specimen, sIdx) in column.specimens"
-            :key="sIdx"
-            class="alg-aquario__specimen"
-          >
-            {{ specimen }}
-          </li>
-        </ul>
-      </article>
-    </div>
+    <!-- editorial header -->
+    <header class="alg-aquario__head">
+      <p class="alg-aquario__eyebrow">
+        {{ t('ALGORYTHMO_BRAIN.AQUARIO.HUB.EYEBROW') }}
+      </p>
+      <h1 class="alg-aquario__title">
+        {{ t('ALGORYTHMO_BRAIN.AQUARIO.HUB.TITLE') }}
+      </h1>
+      <p class="alg-aquario__subtitle">
+        {{ t('ALGORYTHMO_BRAIN.AQUARIO.HUB.SUBTITLE') }}
+      </p>
+    </header>
 
-    <div class="alg-aquario__secondary">
-      <article
-        v-for="(column, idx) in secondaryColumns"
-        :key="column.id"
-        class="alg-aquario__column alg-aquario__column--secondary"
-        :class="{ 'alg-aquario__column--leftmost': idx === 0 }"
-      >
-        <h3 class="alg-aquario__column-label">{{ column.label }}</h3>
-        <ul class="alg-aquario__specimens">
-          <li
-            v-for="(specimen, sIdx) in column.specimens"
-            :key="sIdx"
-            class="alg-aquario__specimen"
-          >
-            {{ specimen }}
-          </li>
-        </ul>
-      </article>
+    <!-- the living core, centred between the knowledge-layer tiles -->
+    <div
+      class="alg-aquario__stage"
+      role="group"
+      :aria-label="t('ALGORYTHMO_BRAIN.AQUARIO.HUB.STAGE_ARIA')"
+    >
+      <div class="alg-aquario__orb" aria-hidden="false">
+        <AlgAuroraOrb
+          :size="132"
+          :conduits="6"
+          :aria-label="t('ALGORYTHMO_BRAIN.AQUARIO.HUB.ORB_ARIA')"
+        />
+      </div>
+
+      <AlgGlassTile
+        v-for="layer in layers"
+        :key="layer.id"
+        class="alg-aquario__tile"
+        :label="layer.label"
+        :value="layer.value"
+        :caption="layer.caption"
+      />
     </div>
   </section>
 </template>
@@ -117,110 +102,101 @@ const secondaryColumns = computed(() => [
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
-  padding: 1.5rem 0 3rem;
+  gap: var(--alg-space-8);
+  padding: var(--alg-space-2) 0 var(--alg-space-8);
   overflow-y: auto;
   min-height: 0;
   flex: 1;
   isolation: isolate;
 }
 
-.alg-aquario__strata {
+// "Dados de demonstração" — honest signal, mono uppercase, quaternary, top-right.
+.alg-aquario__watermark {
   position: absolute;
-  inset: 0;
-  z-index: 0;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-2xs);
+  letter-spacing: var(--alg-tracking-widest);
+  text-transform: uppercase;
+  color: var(--alg-fg-quaternary);
   pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    rgba(148, 163, 184, 0.03) 0%,
-    rgba(148, 163, 184, 0.015) 60%,
-    transparent 100%
-  );
 }
 
-.alg-aquario__anchor {
+// ── Editorial header ─────────────────────────────────────────────────────────
+.alg-aquario__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-space-2);
+  max-width: 560px;
+}
+
+.alg-aquario__eyebrow {
+  margin: 0;
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-2xs);
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-widest);
+  text-transform: uppercase;
+  color: var(--alg-fg-tertiary);
+}
+
+.alg-aquario__title {
+  margin: 0;
+  font-family: var(--alg-font-display);
+  font-size: var(--alg-text-3xl);
+  font-weight: var(--alg-weight-light);
+  letter-spacing: var(--alg-tracking-tightest);
+  line-height: var(--alg-leading-tight);
+  color: var(--alg-fg-primary);
+}
+
+.alg-aquario__subtitle {
+  margin: 0;
+  font-size: var(--alg-text-md);
+  line-height: var(--alg-leading-normal);
+  color: var(--alg-fg-secondary);
+}
+
+// ── Orb stage — 2×2 glass tiles with the Aurora core centred between them ─────
+.alg-aquario__stage {
   position: relative;
-  z-index: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0;
+  gap: var(--alg-space-5);
+  max-width: 1040px;
 }
 
-.alg-aquario__secondary {
+.alg-aquario__tile {
   position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0;
+  z-index: 2;
+  min-height: 150px;
 }
 
-@media (max-width: 1024px) {
-  .alg-aquario__secondary {
-    grid-template-columns: repeat(2, 1fr);
-  }
+// The orb is absolutely centred over the grid so the conduits read as if they
+// feed each surrounding tile. pointer-events:none keeps the tiles interactive
+// underneath. On narrow widths it scales down with the grid.
+.alg-aquario__orb {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
 
 @media (max-width: 640px) {
-  .alg-aquario__anchor,
-  .alg-aquario__secondary {
+  .alg-aquario__stage {
     grid-template-columns: 1fr;
   }
-}
 
-.alg-aquario__column {
-  padding: 0 1.75rem;
-  border-left: 1px solid rgba(148, 163, 184, 0.18);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  min-width: 0;
-}
-
-.alg-aquario__column--leftmost {
-  border-left: none;
-  padding-left: 0;
-}
-
-.alg-aquario__column-label {
-  font-family:
-    'InterDisplay',
-    'Inter',
-    -apple-system,
-    system-ui,
-    BlinkMacSystemFont,
-    sans-serif;
-  font-size: 10px;
-  font-weight: 560;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(148, 163, 184, 0.55);
-  margin: 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-}
-
-.alg-aquario__specimens {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.alg-aquario__specimen {
-  font-size: 0.8125rem;
-  line-height: 1.55;
-  color: var(--color-body, rgba(255, 255, 255, 0.82));
-  padding: 0.625rem 0.875rem;
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  border-radius: 4px;
-  background: transparent;
-}
-
-.alg-aquario__column--anchor .alg-aquario__specimen {
-  font-size: 0.875rem;
-  padding: 0.875rem 1rem;
-  border-color: rgba(148, 163, 184, 0.22);
+  // With a single column the orb would overlap the stacked tiles; let it sit
+  // inline at the top instead of floating over the list.
+  .alg-aquario__orb {
+    position: static;
+    margin-bottom: var(--alg-space-4);
+  }
 }
 </style>
