@@ -23,6 +23,28 @@
     },
     "AQUARIO": {
       "ARIA_LABEL": "Brain aquarium — organized view of company intelligence",
+      "HUB": {
+        "EYEBROW": "Knowledge base · company aquarium",
+        "TITLE": "The knowledge that moves your agents",
+        "SUBTITLE": "839 living layers in your company's base. Aurora distributes context to every data surface in real time.",
+        "ORB_ARIA": "Aurora — living core of company knowledge",
+        "STAGE_ARIA": "Knowledge layers surrounding Aurora",
+        "DEMO_WATERMARK": "Demonstration data",
+        "LAYERS": {
+          "SOURCE_LABEL": "Source Layers",
+          "SOURCE_VALUE": "192",
+          "SOURCE_DESC": "Knowledge absorbed from company documents, policies and catalogs.",
+          "HUMAN_LABEL": "Human Layers",
+          "HUMAN_VALUE": "322",
+          "HUMAN_DESC": "Generated through real conversations and contexts with your customers.",
+          "AUTO_LABEL": "Auto Layers",
+          "AUTO_VALUE": "237",
+          "AUTO_DESC": "Created automatically from operational data and signals.",
+          "AGENT_LABEL": "Agent Layers",
+          "AGENT_VALUE": "88",
+          "AGENT_DESC": "Produced by agent-to-agent interaction during operational flows."
+        }
+      },
       "COLUMNS": {
         "CONVERSAS": "Conversations processed",
         "FATOS": "Company facts",

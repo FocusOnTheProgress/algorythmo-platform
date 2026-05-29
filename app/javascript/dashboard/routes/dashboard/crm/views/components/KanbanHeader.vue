@@ -197,22 +197,26 @@ const conversionRateValue = computed(() =>
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--alg-board-divider, #e5e7eb);
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--alg-border);
 
   &--loading .alg-kanban-header__summary {
     opacity: 0.5;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--alg-duration-base, 240ms)
+      var(--alg-ease-cinematic);
   }
 
   &--error .alg-kanban-header__summary {
-    color: var(--alg-modal-fg, #111827);
+    color: var(--alg-fg-primary);
   }
 }
 
 .alg-kanban-header__title {
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-family: var(--alg-font-display);
+  font-size: var(--alg-text-lg, 1.125rem);
+  font-weight: var(--alg-weight-medium, 500);
+  letter-spacing: var(--alg-tracking-snug, -0.012em);
+  color: var(--alg-fg-primary);
   margin: 0;
   flex: 0 0 auto;
 }
@@ -224,33 +228,39 @@ const conversionRateValue = computed(() =>
   min-width: 0;
 }
 
+// Input "sinks" into the canvas (tint-low), per .alg-input doctrine (§5.2).
 .alg-kanban-header__search {
   width: 100%;
   max-width: 24rem;
-  padding: 0.4rem 0.6rem;
-  border: 1px solid var(--alg-board-divider, #e5e7eb);
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  background-color: var(--alg-board-bg, #ffffff);
-  color: var(--alg-modal-fg, #111827);
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--alg-border);
+  border-radius: var(--alg-radius-sm, 8px);
+  font-size: var(--alg-text-sm, 0.875rem);
+  background-color: var(--alg-bg-tint-low);
+  color: var(--alg-fg-primary);
+
+  &::placeholder {
+    color: var(--alg-fg-tertiary);
+  }
 
   &:focus-visible {
-    outline: 2px solid var(--alg-focus-ring, #2563eb);
-    outline-offset: 1px;
+    outline: none;
+    border-color: var(--alg-border-focus);
+    box-shadow: var(--alg-ring-focus);
   }
 }
 
 .alg-kanban-header__actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
   flex: 0 0 auto;
 }
 
 .alg-kanban-header__summary {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -258,43 +268,45 @@ const conversionRateValue = computed(() =>
   display: inline-flex;
   flex-direction: column;
   align-items: flex-end;
-  font-size: 0.75rem;
+  font-size: var(--alg-text-xs, 0.75rem);
   line-height: 1.1;
 }
 
 .alg-kanban-header__stat-label {
-  color: var(--alg-column-muted-fg, #6b7280);
+  color: var(--alg-fg-tertiary);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: 0.6875rem;
+  font-family: var(--alg-font-mono);
+  letter-spacing: var(--alg-tracking-widest, 0.1em);
+  font-size: var(--alg-text-2xs, 0.6875rem);
 }
 
 .alg-kanban-header__stat-value {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--alg-modal-fg, #111827);
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-md, 0.9375rem);
+  font-weight: var(--alg-weight-medium, 500);
+  color: var(--alg-fg-primary);
   margin-top: 0.125rem;
 }
 
 .alg-kanban-header__error-icon {
   display: inline-flex;
-  color: var(--alg-warning-fg, #b45309);
+  color: var(--alg-color-warning);
   cursor: help;
 }
 
 .alg-kanban-header__pipeline-link {
-  font-size: 0.875rem;
+  font-size: var(--alg-text-sm, 0.875rem);
   text-decoration: none;
-  color: var(--alg-cta-bg, #2563eb);
+  color: var(--alg-text-brand);
 
   &:hover {
     text-decoration: underline;
   }
 
   &:focus-visible {
-    outline: 2px solid var(--alg-focus-ring, #2563eb);
-    outline-offset: 2px;
-    border-radius: 0.125rem;
+    outline: none;
+    box-shadow: var(--alg-ring-focus);
+    border-radius: var(--alg-radius-xs, 2px);
   }
 }
 </style>

@@ -9,7 +9,8 @@
       "STAGE_COUNT_ONE": "1 lead",
       "STAGE_COUNT_ZERO": "No leads",
       "LOADING": "Loading leads",
-      "TOAST_REGION_LABEL": "CRM notifications"
+      "TOAST_REGION_LABEL": "CRM notifications",
+      "DEMO_WATERMARK": "Demonstration data"
     },
     "METRICS": {
       "SUMMARY_ARIA_LABEL": "Pipeline summary",
@@ -33,9 +34,8 @@
       "DROP_HINT": "Drop to move"
     },
     "EMPTY_STATE": {
-      "TITLE": "Your pipeline is still empty",
-      "BODY": "Connect a channel — WhatsApp, Instagram or email — so every new conversation becomes a lead automatically.",
-      "CTA": "Connect your first channel"
+      "TITLE": "Your pipeline is ready",
+      "BODY": "Leads land here on their own as conversations come in — nothing to set up."
     },
     "LEAD_CARD": {
       "ARIA_LABEL": "Lead {name}, stage {stage}, {time} in this stage, channel {channel}",
@@ -51,6 +51,7 @@
         "EMAIL": "Email",
         "INSTAGRAM": "Instagram",
         "FACEBOOK": "Facebook",
+        "TIKTOK": "TikTok",
         "WIDGET": "Web chat",
         "API": "API",
         "SMS": "SMS",

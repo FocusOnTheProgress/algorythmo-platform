@@ -78,22 +78,28 @@ describe('MarketingDashboard (M2-d)', () => {
 
   it('Campanhas links to the two live campaign routes (D8)', () => {
     const wrapper = mountDashboard();
-    const hrefs = wrapper
-      .findAll('#alg-sector-panel-campanhas a')
-      .map(a => a.text());
-    // i18n stub returns the key; assert both campaign-type labels are present.
-    expect(hrefs).toContain(
+    const links = wrapper.findAll('#alg-sector-panel-campanhas a');
+    // Exactly the two D8 campaign families (ongoing + one-off) are surfaced.
+    expect(links).toHaveLength(2);
+    // The pane now renders labels via i18n keys (the stub echoes the key), and
+    // each card also contains the "Acessar" chip + description, so the link
+    // text is a concatenation — assert the label key is *present* in the
+    // combined text of the two links rather than an exact array membership.
+    const combined = links.map(a => a.text()).join(' | ');
+    expect(combined).toContain(
       'ALGORYTHMO_ADMIN.SECTORS.MARKETING.CAMPANHAS.ONGOING_LABEL'
     );
-    expect(hrefs).toContain(
+    expect(combined).toContain(
       'ALGORYTHMO_ADMIN.SECTORS.MARKETING.CAMPANHAS.ONE_OFF_LABEL'
     );
   });
 
-  it('Overview cards each carry the demonstration watermark', () => {
+  it('Overview pane carries the demonstration watermark', () => {
+    // plan 0009: premium layout uses a single .alg-sector__watermark per pane,
+    // not one per card (the old alg-overview__watermark pattern is replaced).
     const wrapper = mountDashboard();
-    const watermarks = wrapper.findAll('.alg-overview__watermark');
-    expect(watermarks.length).toBe(6);
+    const watermark = wrapper.find('.alg-sector__watermark');
+    expect(watermark.exists()).toBe(true);
   });
 
   it('anchors the agent chat at the foot via the chatHeadingKey', () => {

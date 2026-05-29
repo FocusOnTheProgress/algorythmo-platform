@@ -28,13 +28,20 @@ const count = computed(() =>
 <template>
   <component
     :is="expandable ? 'button' : to ? 'router-link' : 'div'"
-    class="flex items-center gap-2 px-1.5 py-1 rounded-lg h-8 min-w-0 w-full text-left"
+    class="flex items-center gap-2 px-1.5 py-1 rounded-xl h-8 min-w-0 w-full text-left"
     :type="expandable ? 'button' : undefined"
     draggable="false"
     :to="!expandable && to ? to : undefined"
     :title="label"
     :class="{
-      'text-n-slate-12 bg-n-alpha-2 font-medium': isActive && !hasActiveChild,
+      // algorythmo: cinematic-os DELTA-0009 — active sidebar item = inverse-tab.
+      // Fill: white (--alg-fg-primary). Text: near-black (--alg-black-1).
+      // Radius: --alg-radius-md (12 px) — NOT pill (9999 px). Matches Ref 1.
+      // Tailwind arbitrary-value syntax reaches the design-system tokens without
+      // introducing a new CSS class or scoped style. shadow-sm adds elevation-1
+      // to sell the lifted-object look against the dark canvas.
+      '[background-color:var(--alg-fg-primary)] [color:var(--alg-black-1)] font-medium shadow-sm':
+        isActive && !hasActiveChild,
       'text-n-slate-12 font-medium': hasActiveChild,
       'text-n-slate-11 hover:bg-n-alpha-2': !isActive && !hasActiveChild,
     }"
@@ -63,7 +70,12 @@ const count = computed(() =>
         v-if="dynamicCount && !expandable"
         class="rounded-md capitalize text-xs leading-5 font-medium text-center outline outline-1 px-1 flex-shrink-0"
         :class="{
-          'text-n-slate-12 outline-n-slate-6': isActive,
+          // algorythmo: cinematic-os DELTA-0009 — on the white active fill the
+          // count badge needs near-black ink (--alg-black-1) + a faint black
+          // hairline. The previous text-n-slate-12 was near-white-on-white and
+          // effectively invisible. Only the active+count case changes.
+          '[color:var(--alg-black-1)] [outline-color:rgba(0,0,0,0.18)]':
+            isActive,
           'text-n-slate-11 outline-n-strong': !isActive,
         }"
       >

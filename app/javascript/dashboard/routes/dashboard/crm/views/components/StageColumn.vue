@@ -24,6 +24,11 @@ const props = defineProps({
   boardHasAnyLead: { type: Boolean, required: true },
   isDropTarget: { type: Boolean, default: false },
   metrics: { type: Object, default: null },
+  // The number shown in the header pill + aria. In demo mode this is the full
+  // stage total (e.g. 84) so the pill matches the metrics chip and the funnel
+  // summary, even though only a sampled subset of cards is rendered below.
+  // Real configured pipelines pass null and fall back to leads.length.
+  displayCount: { type: Number, default: null },
 });
 
 const emit = defineEmits([
@@ -43,8 +48,27 @@ const showColumnEmpty = computed(
   () => props.leads.length === 0 && props.boardHasAnyLead
 );
 
+// Per-stage status hue (DESIGN-DELTA-0009). Drives a 2px top bar + a ~12% tint
+// on the count pill ONLY — never a saturated header, never the Aurora magenta.
+// Falls back to a neutral hairline when a stage carries no accent (live stages).
+const accentColor = computed(() => props.stage?.accent ?? null);
+const columnStyle = computed(() =>
+  accentColor.value
+    ? {
+        '--alg-stage-accent': accentColor.value,
+        '--alg-stage-accent-tint': `color-mix(in oklch, ${accentColor.value} 12%, transparent)`,
+      }
+    : {}
+);
+
+// Header pill number: the explicit stage total when provided (demo mode),
+// otherwise the count of cards actually in the column (real pipelines).
+const headerCount = computed(() =>
+  props.displayCount == null ? props.leads.length : props.displayCount
+);
+
 const stageCountLabel = computed(() => {
-  const count = props.leads.length;
+  const count = headerCount.value;
   if (count === 0) return t('ALGORYTHMO_CRM.KANBAN.STAGE_COUNT_ZERO');
   if (count === 1) return t('ALGORYTHMO_CRM.KANBAN.STAGE_COUNT_ONE');
   return t('ALGORYTHMO_CRM.KANBAN.STAGE_COUNT', { count });
@@ -114,7 +138,11 @@ const metricsAriaLabel = computed(() => {
 <template>
   <section
     class="alg-stage-column"
-    :class="{ 'alg-stage-column--drop-target': isDropTarget }"
+    :class="{
+      'alg-stage-column--drop-target': isDropTarget,
+      'alg-stage-column--accented': accentColor,
+    }"
+    :style="columnStyle"
     data-testid="stage-column"
     :data-stage-id="stage.id"
     :data-stage-kind="stage.kind"
@@ -133,7 +161,7 @@ const metricsAriaLabel = computed(() => {
           data-testid="stage-count"
           :aria-label="stageCountLabel"
         >
-          {{ leads.length }}
+          {{ headerCount }}
         </span>
       </div>
       <span
@@ -197,23 +225,44 @@ const metricsAriaLabel = computed(() => {
 </template>
 
 <style lang="scss" scoped>
+// A column is a zone of canvas, not a card. It sits ON --alg-bg with a hairline
+// frame; the only colour is the 2px top status bar (attenuated stage hue) and a
+// ~12% tint on the count pill. DESIGN.md §7.1.
 .alg-stage-column {
+  position: relative;
   display: flex;
   flex-direction: column;
-  min-width: 18rem;
-  max-width: 22rem;
-  flex: 1 1 18rem;
-  background-color: var(--alg-column-bg, #f9fafb);
-  border-radius: 0.625rem;
-  padding: 0.75rem;
-  gap: 0.625rem;
+  min-width: 17.5rem;
+  max-width: 21rem;
+  flex: 1 1 17.5rem;
+  background-color: var(--alg-bg-raised);
+  border: 1px solid var(--alg-border);
+  border-radius: var(--alg-radius-lg, 16px);
+  padding: 0.875rem;
+  gap: 0.75rem;
+  box-shadow: var(--alg-elevation-1);
   transition:
-    background-color 0.15s ease,
-    box-shadow 0.15s ease;
+    box-shadow var(--alg-duration-base, 240ms) var(--alg-ease-cinematic),
+    background-color var(--alg-duration-base, 240ms) var(--alg-ease-cinematic);
+
+  // 2px status bar pinned to the top edge — the single sanctioned use of the
+  // stage hue. Hidden when no accent is provided (live stages).
+  &--accented::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    border-radius: var(--alg-radius-lg, 16px) var(--alg-radius-lg, 16px) 0 0;
+    background-color: var(--alg-stage-accent);
+  }
 
   &--drop-target {
-    background-color: var(--alg-column-bg-active, #eef2ff);
-    box-shadow: inset 0 0 0 2px var(--alg-focus-ring, #2563eb);
+    background-color: var(--alg-bg-raised-hover);
+    box-shadow:
+      var(--alg-elevation-2),
+      inset 0 0 0 2px var(--alg-border-strong);
   }
 }
 
@@ -225,24 +274,38 @@ const metricsAriaLabel = computed(() => {
 
 .alg-stage-column__header-top {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
 }
 
 .alg-stage-column__name {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: var(--alg-text-sm, 0.875rem);
+  font-weight: var(--alg-weight-medium, 500);
+  letter-spacing: var(--alg-tracking-snug, -0.012em);
   margin: 0;
-  color: var(--alg-column-header-fg, #374151);
+  color: var(--alg-fg-primary);
 }
 
+// Count pill — mono numerals on a faint tint of the stage hue (12%), or a
+// neutral tint when the stage has no accent.
 .alg-stage-column__count {
-  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.25rem;
+  padding: 0 0.4375rem;
+  border-radius: var(--alg-radius-pill, 9999px);
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-xs, 0.75rem);
   font-variant-numeric: tabular-nums;
-  color: var(--alg-column-muted-fg, #6b7280);
+  color: var(--alg-fg-secondary);
+  background-color: var(--alg-bg-tint-med);
+}
+
+.alg-stage-column--accented .alg-stage-column__count {
+  background-color: var(--alg-stage-accent-tint);
 }
 
 .alg-stage-column__metrics {
@@ -250,18 +313,19 @@ const metricsAriaLabel = computed(() => {
   flex-wrap: wrap;
   gap: 0.375rem;
   align-items: center;
-  font-size: 0.6875rem;
-  color: var(--alg-column-muted-fg, #6b7280);
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-2xs, 0.6875rem);
+  color: var(--alg-fg-tertiary);
   font-variant-numeric: tabular-nums;
 }
 
 .alg-stage-column__metric-avg {
-  font-weight: 600;
-  color: var(--alg-modal-fg, #111827);
+  font-weight: var(--alg-weight-medium, 500);
+  color: var(--alg-fg-secondary);
 }
 
 .alg-stage-column__metric-conversion {
-  color: var(--alg-column-muted-fg, #6b7280);
+  color: var(--alg-fg-tertiary);
 }
 
 .alg-stage-column__list {
@@ -270,16 +334,16 @@ const metricsAriaLabel = computed(() => {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
   min-height: 1rem;
 }
 
 .alg-stage-column__empty {
   padding: 1rem 0.5rem;
-  font-size: 0.8125rem;
-  color: var(--alg-column-muted-fg, #6b7280);
+  font-size: var(--alg-text-sm, 0.8125rem);
+  color: var(--alg-fg-tertiary);
   text-align: center;
-  border: 1px dashed var(--alg-column-empty-border, #d1d5db);
-  border-radius: 0.5rem;
+  border: 1px dashed var(--alg-border-strong);
+  border-radius: var(--alg-radius-md, 12px);
 }
 </style>

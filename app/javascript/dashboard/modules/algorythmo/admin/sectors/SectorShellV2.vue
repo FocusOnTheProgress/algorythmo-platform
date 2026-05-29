@@ -14,7 +14,6 @@
 // the chat into view. Tabs are native ARIA tabs with full keyboard support.
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import Icon from 'next/icon/Icon.vue';
 
 const props = defineProps({
   // i18n key for the sector title shown in the header.
@@ -27,6 +26,13 @@ const props = defineProps({
   chatHeadingKey: {
     type: String,
     required: true,
+  },
+  // CSS modifier class on .alg-planet for the sector agent avatar in the
+  // jump-to-chat button (e.g. 'alg-planet--operations'). If omitted the
+  // button renders without a planet avatar.
+  planetClass: {
+    type: String,
+    default: null,
   },
   // Ordered tab descriptors. `id` keys both the panel slot (`subtab-<id>`)
   // and the aria wiring; `labelKey` is an i18n key.
@@ -131,13 +137,35 @@ function jumpToChat() {
       <h1 class="alg-shell__title">{{ t(titleKey) }}</h1>
       <button
         type="button"
-        class="alg-shell__jump"
+        class="alg-agent-anchor"
         :aria-label="
           t('ALGORYTHMO_ADMIN.SECTORS.JUMP_TO_CHAT', { name: t(titleKey) })
         "
         @click="jumpToChat"
       >
-        <Icon icon="i-lucide-arrow-down-circle" class="alg-shell__jump-icon" />
+        <span
+          v-if="planetClass"
+          class="alg-planet alg-planet--sm"
+          :class="planetClass"
+          aria-hidden="true"
+        />
+        <span class="alg-agent-anchor__label">{{
+          t('ALGORYTHMO_ADMIN.SECTORS.AGENT_CTA')
+        }}</span>
+        <svg
+          class="alg-agent-anchor__arrow"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
       </button>
     </header>
 

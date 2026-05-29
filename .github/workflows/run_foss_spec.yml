@@ -78,10 +78,19 @@ jobs:
             app/javascript/survey/i18n/i18n_overlay.spec.js \
             app/javascript/widget/i18n/i18n_overlay.spec.js \
             app/javascript/dashboard/components-next/copilot/specs/CopilotLauncher.spec.js \
+            app/javascript/dashboard/components-next/algorythmo/specs \
             app/javascript/dashboard/routes/specs/algorythmoCutFlagCoverage.spec.js \
             app/javascript/dashboard/routes/specs/algorythmoFeatureFlagCoverage.spec.js \
             app/javascript/dashboard/routes/specs/m6-1-a-foundation.spec.js \
             app/javascript/dashboard/routes/specs/m6-1-b-sidebar-route.spec.js \
+            app/javascript/dashboard/routes/dashboard/crm/views/specs/demoData.spec.js \
+            app/javascript/dashboard/routes/dashboard/crm/views/components/specs/StageColumn.spec.js \
+            app/javascript/dashboard/routes/dashboard/crm/views/components/specs/LeadCard.spec.js \
+            app/javascript/dashboard/routes/dashboard/crm/views/components/specs/KanbanHeader.spec.js \
+            app/javascript/dashboard/routes/dashboard/crm/views/components/specs/MoveLeadModal.spec.js \
+            app/javascript/dashboard/routes/dashboard/crm/views/components/specs/LeadDetailDrawer.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/sectors/specs/SectorShellV2.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/sectors/specs/SectorAgentChat.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/ReportsCommercialOverlay.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/CustomerSupportPane.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/commercial-overview-contract.spec.js \
@@ -100,6 +109,16 @@ jobs:
             app/javascript/dashboard/modules/algorythmo/admin/facilities/specs/FacilitiesDashboard.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/facilities/specs/FacilitiesControlePane.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/facilities/specs/facilities-overview-contract.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/ChannelLeaf.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/SidebarChevron.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/SidebarCollapseNoLeak.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/SidebarGroupLeaf.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/SidebarManagementOrder.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/SidebarActiveNavRadius.spec.js \
+            app/javascript/dashboard/modules/algorythmo/brain/specs/BrainAquario.spec.js \
+            app/javascript/dashboard/modules/algorythmo/brain/specs/BrainViewer.spec.js \
+            app/javascript/dashboard/modules/algorythmo/brain/specs/BrainEmptyState.spec.js \
+            app/javascript/dashboard/components/widgets/conversation/specs/OnboardingViewPurge.spec.js \
             --no-coverage
 
   # algorythmo: rspec scoped to Algorythmo engine + Captain feature-gate.

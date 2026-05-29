@@ -214,6 +214,17 @@
     transparent 70%
   );
 
+  // algorythmo: aurora-beam — vertical light shaft rising through the Aurora Orb.
+  // The orb is not just a sphere; a soft column of aurora light rises off its
+  // top, like a sunbeam through cloud. Sacred: consumed ONLY by AlgAuroraOrb —
+  // never in chrome. Fades from the magenta peak at the orb top to transparent.
+  --alg-aurora-beam: linear-gradient(
+    to top,
+    color-mix(in oklch, var(--alg-aurora-1), transparent 45%) 0%,
+    color-mix(in oklch, var(--alg-aurora-2), transparent 80%) 45%,
+    transparent 100%
+  );
+
   // ---------------------------------------------------------------------------
   // 5. COLOR — Semantic status (used sparingly, always with a reason)
   // ---------------------------------------------------------------------------

@@ -41,20 +41,19 @@ test.describe('Empty State', () => {
     ).toBeVisible();
   });
 
-  test('global empty state CTA link is Tab-focusable and points to inbox setup', async ({
+  test('global empty state is editorial copy with no Chatwoot CTA (C-3 Cinematic OS)', async ({
     page,
   }) => {
     await goToCrm(page);
 
-    // CONTRACT §5 — CTA selected by testid, not by name (i18n-safe).
-    const ctaLink = page.locator('[data-testid="kanban-empty-cta"]');
-    await expect(ctaLink).toBeVisible({ timeout: 5_000 });
+    await expect(
+      page.locator('[data-testid="kanban-empty-title"]')
+    ).toBeVisible({ timeout: 5_000 });
 
-    await ctaLink.focus();
-    await expect(ctaLink).toBeFocused();
-
-    const href = await ctaLink.getAttribute('href');
-    expect(href).toContain(`/accounts/${TEST_ACCOUNT_ID}/settings/inboxes/new`);
+    // The blue "connect a channel" CTA was removed in the Cinematic OS pass.
+    await expect(page.locator('[data-testid="kanban-empty-cta"]')).toHaveCount(
+      0
+    );
   });
 
   test('per-column empty state shows subtle text when other stages have Leads', async ({

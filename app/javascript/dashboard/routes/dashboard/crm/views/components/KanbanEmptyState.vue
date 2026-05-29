@@ -1,22 +1,12 @@
 <script setup>
 // algorythmo: feature-gate algorythmo_crm
-// CONTRACT_M1B §5 — global empty state shown when the entire board has zero leads.
-// The CTA always points at `settings/inboxes/new` (channel connect flow): the
-// pipeline is fed by inbound conversations, so connecting a channel is the
-// canonical first action.
+// On-brand empty state — shown only for a genuinely-empty LIVE pipeline (the
+// default surface renders the demonstration board instead). No Chatwoot copy,
+// no blue CTA: editorial copy that frames the pipeline as something that fills
+// itself as conversations arrive (DESIGN.md §14.11 — "copy is design").
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
-import { computed } from 'vue';
 
 const { t } = useI18n();
-const route = useRoute();
-
-// router-link target keeps SPA navigation — a plain href causes a full reload
-// and re-hydrates Vuex from scratch, which feels broken next to the rest of
-// the dashboard. CONTRACT §5 requires the href to point at inboxes/new.
-const connectChannelRoute = computed(() => ({
-  path: `/app/accounts/${route.params.accountId}/settings/inboxes/new`,
-}));
 </script>
 
 <template>
@@ -27,13 +17,6 @@ const connectChannelRoute = computed(() => ({
     <p class="alg-kanban-empty__body">
       {{ t('ALGORYTHMO_CRM.EMPTY_STATE.BODY') }}
     </p>
-    <router-link
-      :to="connectChannelRoute"
-      class="alg-kanban-empty__cta"
-      data-testid="kanban-empty-cta"
-    >
-      {{ t('ALGORYTHMO_CRM.EMPTY_STATE.CTA') }}
-    </router-link>
   </div>
 </template>
 
@@ -43,41 +26,24 @@ const connectChannelRoute = computed(() => ({
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
-  padding: 4rem 1.5rem;
+  padding: var(--alg-space-24, 6rem) 1.5rem;
   text-align: center;
-  color: var(--alg-card-fg, #111827);
+  color: var(--alg-fg-primary);
 }
 
 .alg-kanban-empty__title {
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-family: var(--alg-font-display);
+  font-size: var(--alg-text-xl, 1.5rem);
+  font-weight: var(--alg-weight-light, 300);
+  letter-spacing: var(--alg-tracking-tight, -0.022em);
   margin: 0;
 }
 
 .alg-kanban-empty__body {
   max-width: 32rem;
-  font-size: 0.875rem;
-  color: var(--alg-card-muted-fg, #6b7280);
+  font-size: var(--alg-text-sm, 0.875rem);
+  line-height: var(--alg-leading-normal, 1.45);
+  color: var(--alg-fg-tertiary);
   margin: 0;
-}
-
-.alg-kanban-empty__cta {
-  margin-top: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  background-color: var(--alg-cta-bg, #2563eb);
-  color: var(--alg-cta-fg, #ffffff);
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-decoration: none;
-
-  &:hover {
-    background-color: var(--alg-cta-bg-hover, #1d4ed8);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--alg-focus-ring, #2563eb);
-    outline-offset: 2px;
-  }
 }
 </style>

@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Algorythmo OS — Pipeline de Vendas</title>
+<style>
+:root{
+  --alg-black-2:#0e0e10;--alg-black-3:#171719;--alg-black-4:#202024;
+  --fg-1:rgba(255,255,255,1);--fg-2:rgba(255,255,255,.72);--fg-3:rgba(255,255,255,.48);--fg-4:rgba(255,255,255,.30);
+  --border:rgba(255,255,255,.06);--border-h:rgba(255,255,255,.10);--border-s:rgba(255,255,255,.14);
+  --tint-low:rgba(255,255,255,.03);--tint-med:rgba(255,255,255,.06);--tint-high:rgba(255,255,255,.10);
+  --brand:oklch(.745 .165 195);
+  --success:oklch(.77 .155 152);--warning:oklch(.82 .155 85);--danger:oklch(.70 .20 25);
+  /* attenuated column hues — DELTA 3 locked values */
+  --col-novo:oklch(.55 .10 235);--col-qual:oklch(.62 .11 85);--col-prop:oklch(.55 .12 295);--col-nego:oklch(.55 .11 35);
+  --aging-green:oklch(.77 .155 152);--aging-green-bg:oklch(.30 .08 152/.22);
+  --aging-yellow:oklch(.82 .155 85);--aging-yellow-bg:oklch(.33 .075 85/.24);
+  --aging-red:oklch(.71 .20 25);--aging-red-bg:oklch(.32 .10 25/.26);
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-mono:'Geist Mono','JetBrains Mono','SF Mono',Consolas,monospace;
+  --ease:cubic-bezier(.32,.72,0,1);
+  --r-sm:8px;--r-md:12px;--r-lg:16px;
+  --grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --elev-1:inset 0 1px 0 0 rgba(255,255,255,.04),0 1px 2px 0 rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.4);
+  --elev-2:inset 0 1px 0 0 rgba(255,255,255,.05),0 4px 8px -2px rgba(0,0,0,.65),0 2px 4px -2px rgba(0,0,0,.5),0 0 0 1px rgba(0,0,0,.3);
+  --elev-4:inset 0 1px 0 0 rgba(255,255,255,.08),0 24px 48px -12px rgba(0,0,0,.8),0 12px 24px -8px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--alg-black-2);color:var(--fg-1);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;letter-spacing:-.011em;line-height:1.45;overflow-x:auto}
+.frame{max-width:1440px;margin:0 auto;min-height:100vh;padding:24px 32px 32px}
+.mono{font-family:var(--font-mono)}
+.upper{text-transform:uppercase;letter-spacing:.10em;font-family:var(--font-mono);font-size:10px;color:var(--fg-3)}
+
+/* toolbar */
+.bar{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+.bar .title{display:flex;align-items:center;gap:12px}
+.bar h1{font-size:22px;font-weight:500;letter-spacing:-.018em}
+.bar .total{font-family:var(--font-mono);font-size:12px;color:var(--fg-3);padding:3px 9px;border-radius:9999px;background:var(--tint-med)}
+.bar .spacer{flex:1}
+.selectbtn{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-2);padding:7px 11px;border-radius:var(--r-md);background:var(--tint-low);border:1px solid var(--border);cursor:pointer;transition:all .18s var(--ease)}
+.selectbtn:hover{background:var(--tint-med);border-color:var(--border-h)}
+.selectbtn svg{color:var(--fg-3)}
+.iconbtn{width:34px;height:34px;border-radius:var(--r-md);background:var(--tint-low);border:1px solid var(--border);color:var(--fg-2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .18s var(--ease)}
+.iconbtn:hover{background:var(--tint-med);border-color:var(--border-h);color:var(--fg-1)}
+.addbtn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:#04181c;background:var(--brand);border:none;padding:8px 14px;border-radius:var(--r-md);cursor:pointer;box-shadow:inset 0 1px 0 0 rgba(255,255,255,.25)}
+
+/* board */
+.board{display:flex;gap:1px;align-items:flex-start}
+.colsep{width:1px;align-self:stretch;background:var(--border)}
+.col{width:288px;flex:none;display:flex;flex-direction:column;padding:0 12px}
+.col .chead{position:sticky;top:0;padding:10px 4px 12px;background:linear-gradient(var(--alg-black-2) 70%,transparent)}
+.col .bar2{height:2px;border-radius:2px;margin-bottom:12px}
+.col .crow{display:flex;align-items:center;gap:8px}
+.col .cname{font-size:14px;font-weight:500;letter-spacing:-.012em}
+.col .ccount{font-family:var(--font-mono);font-size:11px;font-weight:500;padding:2px 8px;border-radius:9999px}
+.col .cact{margin-left:auto;display:flex;gap:2px}
+.ghost{width:26px;height:26px;border-radius:var(--r-sm);background:transparent;border:none;color:var(--fg-3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s var(--ease)}
+.ghost:hover{background:var(--tint-med);color:var(--fg-1)}
+.cards{display:flex;flex-direction:column;gap:12px}
+
+/* card */
+.card{position:relative;background:var(--alg-black-3);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;box-shadow:var(--elev-1);transition:transform .24s var(--ease),box-shadow .24s var(--ease),border-color .24s var(--ease);cursor:grab}
+.card:hover{transform:scale(1.005) translateY(-1px);box-shadow:var(--elev-2);border-color:var(--border-h)}
+.card .cname2{font-size:14px;font-weight:500;letter-spacing:-.012em;padding-right:34px}
+.card .av{position:absolute;top:14px;right:14px;width:26px;height:26px;border-radius:9999px;background:linear-gradient(135deg,#3a3a40,#1d1d20);border:1px solid var(--border-h);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:var(--fg-2)}
+.card .channel{display:inline-flex;align-items:center;gap:5px;margin-top:11px;font-family:var(--font-mono);font-size:10px;letter-spacing:.03em;color:var(--fg-2);padding:3px 8px 3px 7px;border-radius:9999px;background:var(--tint-med);border:1px solid var(--border)}
+.card .channel svg{color:var(--fg-2)}
+.card .foot{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+.aging{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:10px;padding:3px 8px;border-radius:9999px}
+.aging .dot{font-size:9px;line-height:1}
+.aging.green{color:var(--aging-green);background:var(--aging-green-bg)}
+.aging.yellow{color:var(--aging-yellow);background:var(--aging-yellow-bg)}
+.aging.red{color:var(--aging-red);background:var(--aging-red-bg)}
+.date{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:10px;color:var(--fg-3)}
+
+/* dragging card preview */
+.card.dragging{opacity:.35}
+.dragpreview{position:relative;background:rgba(16,16,18,.6);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:1px solid var(--border-s);border-radius:var(--r-lg);padding:16px;box-shadow:var(--elev-4);transform:scale(1.02) rotate(-1deg);overflow:hidden}
+.dragpreview::after{content:'';position:absolute;inset:0;background-image:var(--grain);opacity:.6;mix-blend-mode:overlay;pointer-events:none;border-radius:inherit}
+.dropzone{border:none;border-radius:var(--r-lg);height:84px;background:var(--tint-low);position:relative}
+.dropzone::before{content:'';position:absolute;inset:0;border-radius:inherit;border:2px solid var(--border-s);animation:pulse 1.8s cubic-bezier(.45,.05,.55,.95) infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.dropzone::before{animation:none;opacity:.7}}
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="bar">
+    <div class="title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fg-2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v18M6 8h13l-2.5 3.5L19 15H6"/></svg>
+      <h1>Pipeline de Vendas</h1>
+      <span class="total">334 leads</span>
+    </div>
+    <div class="spacer"></div>
+    <button class="selectbtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg> Todos os agentes <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button class="selectbtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg> Todas as caixas <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button class="iconbtn" aria-label="Ordenar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4M7 20V4M21 8l-4-4-4 4M17 4v16"/></svg></button>
+    <button class="addbtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Adicionar lead</button>
+  </div>
+
+  <div class="board">
+
+    <!-- NOVO LEAD -->
+    <section class="col" role="list" aria-label="Coluna Novo Lead, 84 leads">
+      <div class="chead">
+        <div class="bar2" style="background:var(--col-novo)"></div>
+        <div class="crow">
+          <span class="cname">Novo Lead</span>
+          <span class="ccount" style="color:var(--col-novo);background:oklch(.55 .10 235/.16)">84</span>
+          <span class="cact"><button class="ghost" aria-label="Configurar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9.4l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 6.6V6a2 2 0 1 1 4 0v.09c.7.27 1.27.84 1.51 1.51"/></svg></button><button class="ghost" aria-label="Adicionar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button></span>
+        </div>
+      </div>
+      <div class="cards">
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Patrícia Machado</div>
+          <span class="av">PM</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg> email</span>
+          <div class="foot"><span class="aging green"><span class="dot">●</span> em dia</span><span class="date"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> amanhã · 36m</span></div>
+        </article>
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Gabriela Moura</div>
+          <span class="av">GM</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg> email</span>
+          <div class="foot"><span class="aging green"><span class="dot">●</span> em dia</span><span class="date">27 de jan · 56m</span></div>
+        </article>
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Ana Pereira</div>
+          <span class="av">AP</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> whatsapp</span>
+          <div class="foot"><span class="aging yellow"><span class="dot">◐</span> atenção</span><span class="date">amanhã · 56m</span></div>
+        </article>
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Leonardo Araújo</div>
+          <span class="av">LA</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg> tiktok</span>
+          <div class="foot"><span class="aging green"><span class="dot">●</span> em dia</span><span class="date">26 de jan · 56m</span></div>
+        </article>
+      </div>
+    </section>
+
+    <div class="colsep"></div>
+
+    <!-- QUALIFICADO -->
+    <section class="col" role="list" aria-label="Coluna Qualificado, 52 leads">
+      <div class="chead">
+        <div class="bar2" style="background:var(--col-qual)"></div>
+        <div class="crow">
+          <span class="cname">Qualificado</span>
+          <span class="ccount" style="color:var(--col-qual);background:oklch(.62 .11 85/.16)">52</span>
+          <span class="cact"><button class="ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9.4l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 6.6V6a2 2 0 1 1 4 0v.09c.7.27 1.27.84 1.51 1.51"/></svg></button><button class="ghost"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button></span>
+        </div>
+      </div>
+      <div class="cards">
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Alexandre Santos</div>
+          <span class="av">AS</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> whatsapp</span>
+          <div class="foot"><span class="aging red"><span class="dot">○</span> atrasado</span><span class="date">hoje · 55m</span></div>
+        </article>
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Rodrigo Araújo</div>
+          <span class="av">RA</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg> email</span>
+          <div class="foot"><span class="aging green"><span class="dot">●</span> em dia</span><span class="date">27 de jan · 55m</span></div>
+        </article>
+
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Carlos Monteiro</div>
+          <span class="av">CM</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg> tiktok</span>
+          <div class="foot"><span class="aging yellow"><span class="dot">◐</span> atenção</span><span class="date">amanhã · 55m</span></div>
+        </article>
+      </div>
+    </section>
+
+    <div class="colsep"></div>
+
+    <!-- PROPOSTA ENVIADA -->
+    <section class="col" role="list" aria-label="Coluna Proposta Enviada, 42 leads">
+      <div class="chead">
+        <div class="bar2" style="background:var(--col-prop)"></div>
+        <div class="crow">
+          <span class="cname">Proposta Enviada</span>
+          <span class="ccount" style="color:var(--col-prop);background:oklch(.55 .12 295/.16)">42</span>
+          <span class="cact"><button class="ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9.4l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 6.6V6a2 2 0 1 1 4 0v.09c.7.27 1.27.84 1.51 1.51"/></svg></button><button class="ghost"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button></span>
+        </div>
+      </div>
+      <div class="cards">
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Paulo Santos</div>
+          <span class="av">PS</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg> instagram</span>
+          <div class="foot"><span class="aging green"><span class="dot">●</span> em dia</span><span class="date">27 de jan · 10m</span></div>
+        </article>
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Renata Castro</div>
+          <span class="av">RC</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg> email</span>
+          <div class="foot"><span class="aging green"><span class="dot">●</span> em dia</span><span class="date">amanhã · 55m</span></div>
+        </article>
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Carolina Batista</div>
+          <span class="av">CB</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg> email</span>
+          <div class="foot"><span class="aging yellow"><span class="dot">◐</span> atenção</span><span class="date">amanhã · 55m</span></div>
+        </article>
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Lucas Gonçalves</div>
+          <span class="av">LG</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> whatsapp</span>
+          <div class="foot"><span class="aging green"><span class="dot">●</span> em dia</span><span class="date">28 de jan · 55m</span></div>
+        </article>
+      </div>
+    </section>
+
+    <div class="colsep"></div>
+
+    <!-- NEGOCIAÇÃO -->
+    <section class="col" role="list" aria-label="Coluna Negociação, 21 leads">
+      <div class="chead">
+        <div class="bar2" style="background:var(--col-nego)"></div>
+        <div class="crow">
+          <span class="cname">Negociação</span>
+          <span class="ccount" style="color:var(--col-nego);background:oklch(.55 .11 35/.16)">21</span>
+          <span class="cact"><button class="ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9.4l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 6.6V6a2 2 0 1 1 4 0v.09c.7.27 1.27.84 1.51 1.51"/></svg></button><button class="ghost"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button></span>
+        </div>
+      </div>
+      <div class="cards">
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Amanda Lopes</div>
+          <span class="av">AL</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> whatsapp</span>
+          <div class="foot"><span class="aging red"><span class="dot">○</span> atrasado</span><span class="date">26 de jan · 10m</span></div>
+        </article>
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Adriana Santos</div>
+          <span class="av">AS</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg> tiktok</span>
+          <div class="foot"><span class="aging yellow"><span class="dot">◐</span> atenção</span><span class="date">amanhã · 55m</span></div>
+        </article>
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Pedro Freitas</div>
+          <span class="av">PF</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> whatsapp</span>
+          <div class="foot"><span class="aging green"><span class="dot">●</span> em dia</span><span class="date">26 de jan · 55m</span></div>
+        </article>
+        <article class="card" role="listitem" tabindex="0">
+          <div class="cname2">Eduardo Lopes</div>
+          <span class="av">EL</span>
+          <span class="channel"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> whatsapp</span>
+          <div class="foot"><span class="aging red"><span class="dot">○</span> atrasado</span><span class="date">amanhã · 55m</span></div>
+        </article>
+      </div>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>

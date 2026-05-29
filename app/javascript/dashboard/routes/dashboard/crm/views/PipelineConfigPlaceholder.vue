@@ -27,19 +27,22 @@ const { t } = useI18n();
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 2rem 1.5rem;
-  color: var(--alg-modal-fg, #111827);
-  background-color: var(--alg-board-bg, #ffffff);
+  height: 100%;
+  padding: var(--alg-density-editorial-padding, 2rem) 1.5rem;
+  color: var(--alg-fg-primary);
+  background-color: var(--alg-bg);
 
   h1 {
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-family: var(--alg-font-display);
+    font-size: var(--alg-text-xl, 1.25rem);
+    font-weight: var(--alg-weight-medium, 500);
+    letter-spacing: var(--alg-tracking-tight, -0.022em);
     margin: 0;
   }
 
   p {
-    font-size: 0.9375rem;
-    color: var(--alg-card-muted-fg, #6b7280);
+    font-size: var(--alg-text-md, 0.9375rem);
+    color: var(--alg-fg-tertiary);
     margin: 0;
   }
 }

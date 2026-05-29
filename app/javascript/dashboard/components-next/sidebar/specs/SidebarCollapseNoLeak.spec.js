@@ -26,9 +26,19 @@ describe('SidebarGroup collapse no-leak (D6)', () => {
   it('children ul v-show is exactly `isExpanded` — no hasActiveChild leak', () => {
     // The children <ul> v-show must not include `|| hasActiveChild`.
     // That fallback was the leak: it kept the active child visible even when user collapsed.
-    const ulVShowMatch = templateSection.match(
-      /v-show="([^"]+)"\s+class="grid m-0 list-none sidebar-group-children/
+    //
+    // Locate the children <ul> by its `v-if="hasChildren"` anchor and read the
+    // v-show within that opening tag. (A previous version assumed v-show was
+    // immediately followed by the `class="...sidebar-group-children"` attribute,
+    // but an `:id="..."` aria-controls attribute now sits between them.)
+    const ulTagMatch = templateSection.match(
+      /<ul\b[^>]*v-if="hasChildren"[^>]*>/s
     );
+    expect(ulTagMatch).not.toBeNull();
+    // Confirm we matched the right <ul> (the sidebar-group-children list).
+    expect(ulTagMatch[0]).toContain('sidebar-group-children');
+
+    const ulVShowMatch = ulTagMatch[0].match(/v-show="([^"]+)"/);
     expect(ulVShowMatch).not.toBeNull();
     if (ulVShowMatch) {
       const condition = ulVShowMatch[1].trim();
