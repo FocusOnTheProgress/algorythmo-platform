@@ -56,7 +56,13 @@
 // These mirror the `.dark` block of _next-colors.scss verbatim, then layer the
 // Cinematic black scale on top of the structural slate/gray/surface tokens so
 // the canvas matches --alg-black-* (deep, neutral, near-zero chroma).
-:root {
+//
+// algorythmo: cinematic-os C1.1 — scoped to :not([data-theme='white']) so the
+// White Model opt-in (which sets data-theme='white' + the --alg-* white tokens)
+// can win again. With no data-theme attribute set (the default), :not() still
+// matches, so the app stays dark-first by construction. Restores the opt-in
+// that the unscoped :root was silently overriding (see C1-FOLLOWUPS #2).
+:root:not([data-theme='white']) {
   color-scheme: dark;
 
   // --- Radix scales → dark values (mirror of _next-colors.scss .dark) --------
@@ -162,7 +168,10 @@
 // -----------------------------------------------------------------------------
 // When the boot script applies `.dark`, the host's own .dark block re-asserts
 // the Chatwoot blue. Re-purge it here so the cyan-teal wins under .dark too.
-.dark {
+//
+// algorythmo: cinematic-os C1.1 — same White Model guard as the :root block.
+// The surface-deepening overrides below must not fire when White Model is on.
+.dark:not([data-theme='white']) {
   --blue-8: 26 134 142;
   --blue-9: 14 178 178;
   --blue-10: 36 198 196;

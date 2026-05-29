@@ -43,7 +43,9 @@ const showPaywall = computed(() => shouldShowPaywall('saml'));
     <template #body>
       <SamlPaywall v-if="showPaywall" />
       <SamlSettings v-else-if="shouldShowSaml" />
-      <div v-else class="mt-6 text-sm text-slate-600">
+      <!-- algorythmo: cinematic-os C1.1 — bare text-slate-600 fell below AA
+           (~2.5:1) on the dark canvas; token-backed n-slate-11 is dark-aware. -->
+      <div v-else class="mt-6 text-sm text-n-slate-11">
         {{ $t('SECURITY_SETTINGS.SAML_DISABLED_MESSAGE') }}
       </div>
     </template>
