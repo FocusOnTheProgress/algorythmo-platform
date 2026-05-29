@@ -228,32 +228,37 @@ onBeforeUnmount(() => {
 .alg-move-lead-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.55);
+  background-color: var(--alg-bg-overlay);
+  backdrop-filter: var(--alg-glass-hard-filter);
+  -webkit-backdrop-filter: var(--alg-glass-hard-filter);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--alg-z-modal, 1000);
 }
 
 .alg-move-lead-modal {
   min-width: 22rem;
   max-width: 28rem;
-  padding: 1.5rem;
-  border-radius: 0.75rem;
-  background-color: var(--alg-modal-bg, #ffffff);
-  color: var(--alg-modal-fg, #111827);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+  padding: var(--alg-space-modal-padding, 2rem);
+  border-radius: var(--alg-radius-2xl, 24px);
+  background-color: var(--alg-bg-raised);
+  border: 1px solid var(--alg-glass-border);
+  color: var(--alg-fg-primary);
+  box-shadow: var(--alg-elevation-4);
 }
 
 .alg-move-lead-modal__title {
-  font-size: 1rem;
-  font-weight: 600;
+  font-family: var(--alg-font-display);
+  font-size: var(--alg-text-xl, 1.5rem);
+  font-weight: var(--alg-weight-medium, 500);
+  letter-spacing: var(--alg-tracking-tight, -0.022em);
   margin: 0 0 0.5rem;
 }
 
 .alg-move-lead-modal__desc {
-  font-size: 0.875rem;
-  color: var(--alg-modal-muted-fg, #6b7280);
+  font-size: var(--alg-text-sm, 0.875rem);
+  color: var(--alg-fg-secondary);
   margin: 0 0 1rem;
 }
 
@@ -270,13 +275,16 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.875rem;
+  font-size: var(--alg-text-sm, 0.875rem);
+  color: var(--alg-fg-primary);
   cursor: pointer;
-  padding: 0.375rem 0.5rem;
-  border-radius: 0.375rem;
+  padding: 0.4375rem 0.5rem;
+  border-radius: var(--alg-radius-sm, 8px);
+  transition: background-color var(--alg-duration-fast, 180ms)
+    var(--alg-ease-cinematic);
 
   &:hover {
-    background-color: var(--alg-modal-row-hover, #f3f4f6);
+    background-color: var(--alg-bg-tint-high);
   }
 }
 
@@ -288,27 +296,36 @@ onBeforeUnmount(() => {
 
 .alg-move-lead-modal__btn {
   padding: 0.5rem 0.875rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  border-radius: var(--alg-radius-md, 12px);
+  font-size: var(--alg-text-sm, 0.875rem);
+  font-weight: var(--alg-weight-medium, 500);
   cursor: pointer;
   border: none;
+  transition:
+    background-color var(--alg-duration-instant, 120ms)
+      var(--alg-ease-cinematic),
+    transform var(--alg-duration-instant, 120ms) var(--alg-ease-cinematic);
 
   &--ghost {
     background-color: transparent;
-    color: var(--alg-modal-fg, #111827);
+    color: var(--alg-fg-secondary);
 
     &:hover {
-      background-color: var(--alg-modal-row-hover, #f3f4f6);
+      background-color: var(--alg-bg-tint-high);
+      color: var(--alg-fg-primary);
     }
   }
 
   &--primary {
-    background-color: var(--alg-cta-bg, #2563eb);
-    color: var(--alg-cta-fg, #ffffff);
+    background-color: var(--alg-color-brand-primary);
+    color: var(--alg-color-brand-primary-fg);
 
     &:hover:not(:disabled) {
-      background-color: var(--alg-cta-bg-hover, #1d4ed8);
+      background-color: var(--alg-color-brand-primary-hover);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0.5px) scale(0.99);
     }
 
     &:disabled {
@@ -318,8 +335,8 @@ onBeforeUnmount(() => {
   }
 
   &:focus-visible {
-    outline: 2px solid var(--alg-focus-ring, #2563eb);
-    outline-offset: 2px;
+    outline: none;
+    box-shadow: var(--alg-ring-focus);
   }
 }
 </style>

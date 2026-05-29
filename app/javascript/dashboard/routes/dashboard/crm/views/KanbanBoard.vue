@@ -38,6 +38,12 @@ import KanbanEmptyState from './components/KanbanEmptyState.vue';
 import MoveLeadModal from './components/MoveLeadModal.vue';
 import LeadCardMenu from './components/LeadCardMenu.vue';
 import LeadDetailDrawer from './components/LeadDetailDrawer.vue';
+import {
+  DEMO_STAGES,
+  DEMO_SUMMARY,
+  DEMO_METRICS_BY_STAGE,
+  buildDemoLeads,
+} from './demoData.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -46,6 +52,7 @@ const CHANNEL_GLYPHS = Object.freeze({
   email: '\u2709\uFE0F', // ✉
   facebook: '\u{1F4D8}', // 📘
   instagram: '\u{1F4F7}', // 📷
+  tiktok: '\u{1F3B5}', // 🎵
   api: '\u{1F517}', // 🔗
   sms: '\u{1F4F2}', // 📲
 });
@@ -150,6 +157,42 @@ function rollbackMove(args) {
 
 const now = ref(Date.now());
 
+// ---------------------------------------------------------------------------
+// Demonstration mode
+// ---------------------------------------------------------------------------
+// The board renders from the live backend. On a fresh account — and in every
+// founder demo — the backend returns an empty pipeline, which previously left
+// the surface blank (and reading as broken). When the live pipeline has no
+// stages OR no leads, we fall back to a self-contained demonstration board so
+// the surface always shows the product. Demo state is purely local: drag-moves
+// mutate `demoLeadsRef` and never hit the API. A "DADOS DE DEMONSTRAÇÃO"
+// watermark keeps the nature explicit (same convention as the sectors, D12).
+const demoLeadsRef = ref(buildDemoLeads());
+
+const liveHasStages = computed(() => stages.value.length > 0);
+
+// Demo activates when the account has NO live pipeline configured (the common
+// case on a fresh account, and in every founder demo). A configured pipeline
+// that simply has no leads yet keeps its real stages and shows the on-brand
+// empty state — we never overwrite a real, intentional pipeline with demo data.
+const demoActive = computed(
+  () => !isPipelineLoading.value && !liveHasStages.value
+);
+
+const boardStages = computed(() =>
+  demoActive.value ? DEMO_STAGES : stages.value
+);
+
+function demoLeadsByStage(stageId) {
+  return demoLeadsRef.value.filter(l => l.stage_id === stageId);
+}
+
+function moveDemoLead(leadId, toStageId) {
+  demoLeadsRef.value = demoLeadsRef.value.map(l =>
+    l.id === leadId ? { ...l, stage_id: toStageId } : l
+  );
+}
+
 // Move modal + menu + announce + search state
 const moveModalOpen = ref(false);
 const moveModalLead = ref(null);
@@ -166,6 +209,10 @@ const pipelineConfigPath = computed(
 
 const drag = useDragLead({
   onMove: async ({ leadId, fromStageId, toStageId }) => {
+    if (demoActive.value) {
+      moveDemoLead(leadId, toStageId);
+      return;
+    }
     moveLeadOptimistic({ leadId, fromStageId, toStageId });
     try {
       await commitMove({ leadId, toStageId });
@@ -248,14 +295,22 @@ watch(accountId, async (newId, oldId) => {
   fetchStageMetrics();
 });
 
+const demoStageById = computed(() => {
+  const map = new Map();
+  DEMO_STAGES.forEach(s => map.set(s.id, s));
+  return map;
+});
+
 const presenterByStage = computed(() => {
   const snapshotNow = now.value;
   const needle = searchQuery.value.trim().toLowerCase();
   const out = new Map();
-  stages.value.forEach(stage => {
-    const leads = leadsByStage(stage.id);
+  const inDemo = demoActive.value;
+  const lookup = inDemo ? demoStageById.value : stageById.value;
+  boardStages.value.forEach(stage => {
+    const leads = inDemo ? demoLeadsByStage(stage.id) : leadsByStage(stage.id);
     const presenters = leads.map(l =>
-      toPresenter(l, stageById.value.get(l.stage_id) ?? stage, snapshotNow)
+      toPresenter(l, lookup.get(l.stage_id) ?? stage, snapshotNow)
     );
     out.set(
       stage.id,
@@ -271,14 +326,37 @@ const boardHasAnyLead = computed(() =>
   Array.from(presenterByStage.value.values()).some(p => p.length > 0)
 );
 
+// Demo mode always renders a populated board, so the global empty state only
+// shows for a genuinely-empty live pipeline that has stages but no leads.
 const showGlobalEmpty = computed(
   () =>
     !isPipelineLoading.value &&
+    !demoActive.value &&
     stages.value.length > 0 &&
     !boardHasAnyLead.value
 );
 
+const summaryForHeader = computed(() =>
+  demoActive.value ? DEMO_SUMMARY : metricsSummary.value
+);
+
+const metricsLoadingForHeader = computed(() =>
+  demoActive.value ? false : metricsLoading.value
+);
+
+const metricsErrorForHeader = computed(() =>
+  demoActive.value ? null : metricsError.value
+);
+
+function metricsForStageOrDemo(stageId) {
+  if (demoActive.value) return DEMO_METRICS_BY_STAGE[stageId] ?? null;
+  return metricsForStage(stageId);
+}
+
 function findRawLead(leadId) {
+  if (demoActive.value) {
+    return demoLeadsRef.value.find(l => l.id === leadId) ?? null;
+  }
   // stageMap is per-account and re-read on every call so an account switch
   // does not look up a lead in the previous tenant's map.
   const stageMap = leadStoreRef.value.stageMap;
@@ -340,6 +418,14 @@ async function handleConfirmMove({ leadId, stage }) {
   moveModalOpen.value = false;
   moveModalLead.value = null;
   if (!raw || !stage || raw.stage_id === stage.id) return;
+  if (demoActive.value) {
+    moveDemoLead(leadId, stage.id);
+    announceText.value = t('ALGORYTHMO_CRM.ANNOUNCE.MOVED', {
+      leadName: leadName(raw),
+      stageName: stage.name,
+    });
+    return;
+  }
   try {
     moveLeadOptimistic({
       leadId,
@@ -365,11 +451,20 @@ async function handleConfirmMove({ leadId, stage }) {
 
 <template>
   <main class="alg-kanban" data-testid="crm-kanban-view">
+    <span
+      v-if="demoActive"
+      class="alg-kanban__watermark"
+      data-testid="kanban-demo-watermark"
+      aria-hidden="true"
+    >
+      {{ t('ALGORYTHMO_CRM.KANBAN.DEMO_WATERMARK') }}
+    </span>
+
     <KanbanHeader
       v-model:search-value="searchQuery"
-      :summary="metricsSummary"
-      :loading="metricsLoading"
-      :error="metricsError"
+      :summary="summaryForHeader"
+      :loading="metricsLoadingForHeader"
+      :error="metricsErrorForHeader"
       :pipeline-config-path="pipelineConfigPath"
     />
 
@@ -383,13 +478,13 @@ async function handleConfirmMove({ leadId, stage }) {
       :aria-label="t('ALGORYTHMO_CRM.KANBAN.BOARD_ARIA_LABEL')"
     >
       <StageColumn
-        v-for="stage in stages"
+        v-for="stage in boardStages"
         :key="stage.id"
         :stage="stage"
         :leads="presenterByStage.get(stage.id) ?? []"
         :board-has-any-lead="boardHasAnyLead"
         :is-drop-target="drag.hoveredStageId.value === stage.id"
-        :metrics="metricsForStage(stage.id)"
+        :metrics="metricsForStageOrDemo(stage.id)"
         @drag-start="drag.start"
         @drag-enter="drag.enter"
         @drag-over="drag.over"
@@ -430,7 +525,7 @@ async function handleConfirmMove({ leadId, stage }) {
     <MoveLeadModal
       :open="moveModalOpen"
       :lead="moveModalLead"
-      :stages="stages"
+      :stages="boardStages"
       @close="moveModalOpen = false"
       @confirm="handleConfirmMove"
     />
@@ -446,17 +541,55 @@ async function handleConfirmMove({ leadId, stage }) {
 </template>
 
 <style lang="scss" scoped>
+// Cinematic OS — operational density. The board IS the dark canvas; columns
+// are zones of canvas, not white cards. The whole surface sits on --alg-bg
+// (deep black) and a subtle grain overlay gives the void texture (DESIGN.md §7).
 .alg-kanban {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: var(--alg-board-bg, #ffffff);
+  background-color: var(--alg-bg);
+  color: var(--alg-fg-primary);
+}
+
+// Grain — the same SVG noise token used by glass surfaces, at a whisper, so
+// the dark canvas reads as a real material instead of flat #111.
+.alg-kanban::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--alg-glass-grain);
+  opacity: 0.4;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.alg-kanban > * {
+  position: relative;
+  z-index: 1;
+}
+
+// "DADOS DE DEMONSTRAÇÃO" — honest signal the board is illustrative, not live.
+// Mono uppercase, quaternary opacity, top-right — present but never competing.
+.alg-kanban__watermark {
+  position: absolute;
+  top: 0.75rem;
+  right: 1.25rem;
+  z-index: 2;
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-2xs);
+  letter-spacing: var(--alg-tracking-widest);
+  text-transform: uppercase;
+  color: var(--alg-fg-quaternary);
+  pointer-events: none;
 }
 
 .alg-kanban__board {
   display: flex;
-  gap: 0.875rem;
-  padding: 1rem 1.25rem;
+  gap: var(--alg-density-operational-gap, 1rem);
+  padding: var(--alg-density-operational-padding, 1.5rem);
   overflow-x: auto;
   flex: 1;
   align-items: stretch;

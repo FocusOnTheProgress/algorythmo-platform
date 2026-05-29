@@ -91,6 +91,25 @@ describe('StageColumn (CONTRACT_M1B §2)', () => {
     expect(empty.attributes('data-stage-id')).toBe('7');
   });
 
+  it('applies the stage accent as CSS custom properties + modifier class when present', () => {
+    const wrapper = mountColumn({
+      stage: stage({ accent: 'oklch(0.55 0.10 235)' }),
+    });
+    const col = wrapper.find('[data-testid="stage-column"]');
+    expect(col.classes()).toContain('alg-stage-column--accented');
+    const style = col.attributes('style') || '';
+    expect(style).toContain('--alg-stage-accent: oklch(0.55 0.10 235)');
+    expect(style).toContain('--alg-stage-accent-tint');
+  });
+
+  it('omits the accent class + vars for a stage with no accent (live stages)', () => {
+    const wrapper = mountColumn({ stage: stage() });
+    const col = wrapper.find('[data-testid="stage-column"]');
+    expect(col.classes()).not.toContain('alg-stage-column--accented');
+    const style = col.attributes('style') || '';
+    expect(style).not.toContain('--alg-stage-accent');
+  });
+
   it('emits drop with stage payload when drop event fires', async () => {
     const wrapper = mountColumn();
     await wrapper.find('[data-testid="stage-column"]').trigger('drop');

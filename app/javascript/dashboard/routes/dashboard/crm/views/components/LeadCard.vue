@@ -48,6 +48,7 @@ const CHANNEL_LABEL_KEYS = Object.freeze({
   email: 'EMAIL',
   instagram: 'INSTAGRAM',
   facebook: 'FACEBOOK',
+  tiktok: 'TIKTOK',
   api: 'API',
   sms: 'SMS',
   webwidget: 'WIDGET',
@@ -226,40 +227,64 @@ function handleOwnerClick(event) {
 </template>
 
 <style lang="scss" scoped>
+// Glass lead card — bg-raised + hairline + elevation, lifts on hover with the
+// cinematic curve (DESIGN.md §7.2). The aging chip reads its colours from
+// --alg-chip-* vars; we map those to the real --alg-aging-* dark tokens here so
+// the (read-only) LeadAgingChip renders on-brand without us editing it.
 .alg-lead-card {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-areas:
     'name menu'
     'meta owner';
   column-gap: 0.5rem;
-  row-gap: 0.375rem;
+  row-gap: 0.5rem;
   align-items: center;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  background-color: var(--alg-bg-raised, #ffffff);
-  color: var(--alg-text-primary, #111827);
-  box-shadow: var(--alg-card-shadow, 0 1px 2px rgba(0, 0, 0, 0.06));
-  cursor: pointer;
+  padding: 0.875rem;
+  border-radius: var(--alg-radius-lg, 16px);
+  background-color: var(--alg-bg-raised);
+  border: 1px solid var(--alg-border);
+  color: var(--alg-fg-primary);
+  box-shadow: var(--alg-elevation-1);
+  cursor: grab;
   outline: none;
   min-height: 64px;
   transition:
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
+    box-shadow var(--alg-duration-base, 240ms) var(--alg-ease-cinematic),
+    border-color var(--alg-duration-base, 240ms) var(--alg-ease-cinematic),
+    transform var(--alg-duration-base, 240ms) var(--alg-ease-cinematic);
+
+  // LeadAgingChip token bridge → dark Cinematic aging palette.
+  --alg-chip-neutral-bg: var(--alg-aging-neutral-bg);
+  --alg-chip-neutral-fg: var(--alg-aging-neutral);
+  --alg-chip-green-bg: var(--alg-aging-green-bg);
+  --alg-chip-green-fg: var(--alg-aging-green);
+  --alg-chip-yellow-bg: var(--alg-aging-yellow-bg);
+  --alg-chip-yellow-fg: var(--alg-aging-yellow);
+  --alg-chip-red-bg: var(--alg-aging-red-bg);
+  --alg-chip-red-fg: var(--alg-aging-red);
 
   &:hover {
-    box-shadow: var(--alg-card-shadow-hover, 0 4px 12px rgba(0, 0, 0, 0.08));
+    box-shadow: var(--alg-elevation-2);
+    border-color: var(--alg-border-hover);
+    transform: scale(1.005);
+  }
+
+  &:active {
+    cursor: grabbing;
   }
 
   &:focus-visible {
-    box-shadow: 0 0 0 2px var(--alg-focus-ring, #2563eb);
+    box-shadow: var(--alg-ring-focus);
   }
 }
 
 .alg-lead-card__name {
   grid-area: name;
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: var(--alg-text-sm, 0.875rem);
+  font-weight: var(--alg-weight-medium, 500);
+  letter-spacing: var(--alg-tracking-snug, -0.012em);
   line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -276,21 +301,23 @@ function handleOwnerClick(event) {
   height: 1.5rem;
   padding: 0;
   border: none;
-  border-radius: 0.25rem;
+  border-radius: var(--alg-radius-sm, 8px);
   background-color: transparent;
-  color: var(--alg-text-tertiary, #6b7280);
+  color: var(--alg-fg-tertiary);
   font-size: 1rem;
   line-height: 1;
   cursor: pointer;
+  transition: background-color var(--alg-duration-fast, 180ms)
+    var(--alg-ease-cinematic);
 
   &:hover {
-    background-color: var(--alg-bg-raised-hover, #f3f4f6);
-    color: var(--alg-text-primary, #111827);
+    background-color: var(--alg-bg-tint-high);
+    color: var(--alg-fg-primary);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--alg-focus-ring, #2563eb);
-    outline-offset: 1px;
+    outline: none;
+    box-shadow: var(--alg-ring-focus);
   }
 }
 
@@ -300,9 +327,9 @@ function handleOwnerClick(event) {
   align-items: center;
   gap: 0.375rem;
   min-width: 0;
-  font-size: 0.75rem;
-  color: var(--alg-text-tertiary, #6b7280);
-  font-weight: 500;
+  font-size: var(--alg-text-xs, 0.75rem);
+  color: var(--alg-fg-tertiary);
+  font-weight: var(--alg-weight-regular, 400);
 }
 
 .alg-lead-card__channel-icon {
@@ -317,11 +344,11 @@ function handleOwnerClick(event) {
 }
 
 .alg-lead-card__sep {
-  color: var(--alg-text-muted, #9ca3af);
+  color: var(--alg-fg-quaternary);
 }
 
 .alg-lead-card__time {
-  color: var(--alg-text-tertiary, #6b7280);
+  color: var(--alg-fg-tertiary);
 }
 
 .alg-lead-card__owner {
@@ -331,14 +358,14 @@ function handleOwnerClick(event) {
   justify-content: center;
   width: 1.25rem;
   height: 1.25rem;
-  border-radius: 9999px;
+  border-radius: var(--alg-radius-pill, 9999px);
   cursor: default;
 }
 
 .alg-lead-card__owner--unassigned {
-  background-color: var(--alg-bg-raised-hover, #f3f4f6);
-  border: 1px dashed var(--alg-border-strong, #9ca3af);
-  color: var(--alg-text-tertiary, #6b7280);
+  background-color: var(--alg-bg-tint-low);
+  border: 1px dashed var(--alg-border-strong);
+  color: var(--alg-fg-tertiary);
 }
 
 .alg-lead-card__owner-glyph {

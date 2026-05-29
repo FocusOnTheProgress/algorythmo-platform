@@ -60,6 +60,7 @@ const CHANNEL_LABEL_KEYS = Object.freeze({
   email: 'EMAIL',
   instagram: 'INSTAGRAM',
   facebook: 'FACEBOOK',
+  tiktok: 'TIKTOK',
   api: 'API',
   sms: 'SMS',
   webwidget: 'WIDGET',
@@ -752,8 +753,8 @@ function handleRetry() {
   }
 
   &:focus-visible {
-    outline: 2px solid var(--alg-focus-ring, #2563eb);
-    outline-offset: 1px;
+    outline: none;
+    box-shadow: var(--alg-ring-focus);
   }
 }
 </style>

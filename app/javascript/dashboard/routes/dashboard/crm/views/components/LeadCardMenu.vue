@@ -184,15 +184,20 @@ const menuAriaLabel = computed(() =>
 </template>
 
 <style lang="scss" scoped>
+// Glass-soft dropdown (DESIGN.md §5.7) — backdrop blur + hairline + grain +
+// elevation. Falls back to solid bg-raised where backdrop-filter is missing.
 .alg-lead-card-menu {
   position: absolute;
-  z-index: 1100;
+  z-index: var(--alg-z-toast, 1100);
   min-width: 11rem;
   padding: 0.25rem;
-  border-radius: 0.5rem;
-  background-color: var(--alg-modal-bg, #ffffff);
-  color: var(--alg-modal-fg, #111827);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  border-radius: var(--alg-radius-md, 12px);
+  background-color: var(--alg-glass-soft-bg, var(--alg-bg-raised));
+  backdrop-filter: var(--alg-glass-soft-filter);
+  -webkit-backdrop-filter: var(--alg-glass-soft-filter);
+  border: 1px solid var(--alg-glass-border);
+  color: var(--alg-fg-primary);
+  box-shadow: var(--alg-elevation-3);
   transform: translateX(-100%);
 }
 
@@ -201,21 +206,23 @@ const menuAriaLabel = computed(() =>
   width: 100%;
   padding: 0.5rem 0.625rem;
   border: none;
-  border-radius: 0.375rem;
+  border-radius: var(--alg-radius-sm, 8px);
   background-color: transparent;
   color: inherit;
-  font-size: 0.875rem;
+  font-size: var(--alg-text-sm, 0.875rem);
   text-align: left;
   cursor: pointer;
+  transition: background-color var(--alg-duration-fast, 180ms)
+    var(--alg-ease-cinematic);
 
   &:hover,
   &:focus-visible {
-    background-color: var(--alg-modal-row-hover, #f3f4f6);
+    background-color: var(--alg-bg-tint-high);
     outline: none;
   }
 
   &:focus-visible {
-    box-shadow: 0 0 0 2px var(--alg-focus-ring, #2563eb);
+    box-shadow: var(--alg-ring-focus);
   }
 }
 </style>
