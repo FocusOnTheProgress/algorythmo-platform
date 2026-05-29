@@ -1,12 +1,20 @@
 <script setup>
-// algorythmo: M8a — Brain Aquário landing page.
-// Tab "Aquário" is the default landing per plan 0005 §M8a. Empty state still
-// renders the 3-step onboarding when there's no compiled truth yet.
-import { ref, computed, onMounted, watch } from 'vue';
+// algorythmo: Brain "Aquário" landing page.
+//
+// The Aquário tab IS the Aurora knowledge hub (BrainAquario.vue) — a
+// frontend-only demo showpiece (AlgAuroraOrb + glass knowledge-layer tiles).
+// It does NOT depend on the Brain backend: on the founder's single-tenant
+// instance the compiled-truth fetch fails (no brain backend configured), and
+// previously that error short-circuited the whole tab into a "Could not load
+// Brain" screen, hiding the hub entirely. Mirroring the CRM demo-board
+// philosophy, a failed OR empty load now simply shows the illustrative hub —
+// real data replaces the demo once the backend ships. We still attempt the
+// fetch so a brief, honest loading state shows on first paint, but its outcome
+// no longer gates whether the hub renders.
+import { ref, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMapGetter } from 'dashboard/composables/store';
 import { brainService } from './brain.service';
-import BrainEmptyState from './BrainEmptyState.vue';
 import BrainAquario from './BrainAquario.vue';
 
 const { t } = useI18n();
@@ -26,32 +34,19 @@ const TABS = [
 
 const activeTab = ref('viewer');
 
-const compiledTruth = ref(null);
 const isLoading = ref(true);
-const loadError = ref(null);
 
-// CRLF-safe YAML frontmatter strip. Closing `---` on its own line.
-const bodyContent = computed(() => {
-  const raw = compiledTruth.value?.content ?? '';
-  return raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').trim();
-});
-
-// Onboarding state when there's no compiled truth yet (founder hasn't pasted
-// the first instruction).
-const isEmpty = computed(
-  () => !isLoading.value && !loadError.value && !bodyContent.value
-);
-
-// Fetch when accountId is ready. On hard reload the Vuex getter resolves
-// after mount — watch + immediate covers both ordering cases.
+// Attempt the compiled-truth fetch only to drive a brief loading state on first
+// paint. The hub is frontend-only, so a failure (the common case on the
+// founder's tenant) is swallowed — the Aquário still renders its demo hub.
 async function loadBrain(id) {
   if (!id) return;
   isLoading.value = true;
-  loadError.value = null;
   try {
-    compiledTruth.value = await brainService.fetchCompiledTruth(id);
+    await brainService.fetchCompiledTruth(id);
   } catch (_e) {
-    loadError.value = t('ALGORYTHMO_BRAIN.VIEWER.ERROR');
+    // No-op: a failed/empty load is expected until the brain backend ships.
+    // The Aurora hub is illustrative and renders regardless.
   } finally {
     isLoading.value = false;
   }
@@ -98,7 +93,7 @@ watch(accountId, id => {
       </button>
     </nav>
 
-    <!-- Loading -->
+    <!-- Loading — brief, only while the first fetch is in flight. -->
     <div v-if="isLoading" class="alg-brain-loading" aria-live="polite">
       <span
         class="i-lucide-loader-circle alg-brain-loading__icon"
@@ -107,17 +102,10 @@ watch(accountId, id => {
       <span>{{ t('ALGORYTHMO_BRAIN.VIEWER.LOADING') }}</span>
     </div>
 
-    <!-- Error -->
-    <div v-else-if="loadError" class="alg-brain-error" role="alert">
-      <span class="i-lucide-circle-alert" aria-hidden="true" />
-      {{ loadError }}
-    </div>
-
-    <!-- Aquário layout — M8a per plan 0005 §M8a -->
-    <template v-else>
-      <BrainEmptyState v-if="isEmpty" />
-      <BrainAquario v-else />
-    </template>
+    <!-- Aurora knowledge hub — frontend demo showpiece. Renders regardless of
+         the backend load outcome (a failed/empty fetch shows the demo hub, not
+         an error screen) — same philosophy as the CRM demo board. -->
+    <BrainAquario v-else />
   </div>
 </template>
 
@@ -198,7 +186,7 @@ watch(accountId, id => {
   pointer-events: none;
 }
 
-// ── Loading / Error ───────────────────────────────────────────────────────────
+// ── Loading ───────────────────────────────────────────────────────────────────
 
 .alg-brain-loading {
   display: flex;
@@ -219,16 +207,5 @@ watch(accountId, id => {
   to {
     transform: rotate(360deg);
   }
-}
-
-.alg-brain-error {
-  display: flex;
-  align-items: center;
-  gap: var(--space-small, 0.5rem);
-  padding: var(--space-normal, 1rem);
-  border-radius: var(--border-radius-normal, 6px);
-  background: rgba(239, 68, 68, 0.1);
-  color: #fca5a5;
-  font-size: var(--font-size-small, 0.75rem);
 }
 </style>

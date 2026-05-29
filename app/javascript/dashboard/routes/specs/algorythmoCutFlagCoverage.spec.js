@@ -71,6 +71,14 @@ const SIDEBAR_ONLY_FLAGS = new Set([
   // Sidebar-only (no route meta): the report routes stay live and URL-reachable.
   'reports_labels',
   'reports_inbox',
+  // algorythmo: reports_commercial moved to sidebar-only. The route-level cut
+  // was removed because the flag lives only in the algorythmo_feature_flags
+  // bigint column (never in config/features.yml); on a tenant whose account
+  // payload omits algorythmo_cut_flags the fail-closed route guard blocked
+  // /reports/commercial → /dashboard, hiding the Commercial surface + its
+  // Customer Support tab. The cut is now enforced at the Sidebar entry only
+  // (algorythmoCutHidden.reports_commercial); the route stays URL-reachable.
+  'reports_commercial',
   // algorythmo: M2-d — Marketing per-sub-tab cuts. Shell-only (no route meta):
   // they gate tab visibility inside MarketingShell.vue, not a route. The
   // Marketing route itself stays reachable; a cut only drops the tab.
@@ -158,13 +166,15 @@ describe('algorythmo cut flag route coverage', () => {
 
   it('found cut flag declarations across the route tree', () => {
     // Exact count guard: any addition or removal must update this number intentionally.
-    // Current tally (verified 2026-05-28, M2-a): 24 declarations across all *.routes.js files.
+    // Tally dropped 24 → 23 when the reports_commercial route-level cut was
+    // removed (it became sidebar-only — see SIDEBAR_ONLY_FLAGS above) so the
+    // Commercial surface + Customer Support tab stay reachable for admins.
     // Sidebar-only flags are not counted here (they live in Sidebar.vue, not routes).
     // To recount: grep -r "algorythmoCutFlag:" app/javascript/dashboard/routes/dashboard/ | wc -l
     const totalDeclarations = [...declarationsByFile.values()].reduce(
       (sum, arr) => sum + arr.length,
       0
     );
-    expect(totalDeclarations).toBe(24);
+    expect(totalDeclarations).toBe(23);
   });
 });
