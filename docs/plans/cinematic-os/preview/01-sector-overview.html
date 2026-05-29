@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Algorythmo OS — Operations · Overview</title>
+<style>
+:root{
+  --alg-black-0:#000;--alg-black-1:#070708;--alg-black-2:#0e0e10;--alg-black-3:#171719;
+  --alg-black-4:#202024;--alg-black-5:#28282d;
+  --fg-1:rgba(255,255,255,1);--fg-2:rgba(255,255,255,.72);--fg-3:rgba(255,255,255,.48);--fg-4:rgba(255,255,255,.30);
+  --border:rgba(255,255,255,.06);--border-h:rgba(255,255,255,.10);--border-s:rgba(255,255,255,.14);
+  --tint-low:rgba(255,255,255,.03);--tint-med:rgba(255,255,255,.06);--tint-high:rgba(255,255,255,.10);
+  --brand:oklch(.745 .165 195);
+  --success:oklch(.77 .155 152);--warning:oklch(.82 .155 85);--danger:oklch(.70 .20 25);--info:oklch(.745 .14 235);
+  --aurora-1:oklch(.62 .21 350);--aurora-2:oklch(.58 .24 12);--aurora-3:oklch(.52 .22 295);
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-mono:'Geist Mono','JetBrains Mono','SF Mono',Consolas,monospace;
+  --ease:cubic-bezier(.32,.72,0,1);--ease-amb:cubic-bezier(.45,.05,.55,.95);
+  --r-sm:8px;--r-md:12px;--r-lg:16px;--r-2xl:24px;
+  --grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --elev-1:inset 0 1px 0 0 rgba(255,255,255,.04),0 1px 2px 0 rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.4);
+  --elev-2:inset 0 1px 0 0 rgba(255,255,255,.05),0 4px 8px -2px rgba(0,0,0,.65),0 2px 4px -2px rgba(0,0,0,.5),0 0 0 1px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--alg-black-2);color:var(--fg-1);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;font-weight:400;letter-spacing:-.011em;line-height:1.45}
+.glass{position:relative;background:rgba(20,20,22,.55);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border:1px solid var(--border);box-shadow:var(--elev-2),inset 0 1px 0 0 rgba(255,255,255,.06);overflow:hidden}
+.glass::after{content:'';position:absolute;inset:0;background-image:var(--grain);opacity:.6;mix-blend-mode:overlay;pointer-events:none;border-radius:inherit}
+.mono{font-family:var(--font-mono)}
+.upper{text-transform:uppercase;letter-spacing:.10em;font-family:var(--font-mono);font-size:10px;color:var(--fg-3)}
+
+/* shell */
+.frame{max-width:1440px;margin:0 auto;min-height:100vh}
+main{padding:24px 48px 64px;max-width:1280px;margin:0 auto}
+
+/* header */
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding-top:8px;margin-bottom:40px}
+.head .crumb{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.head .crumb .upper{color:var(--fg-3)}
+.head .crumb .sep{color:var(--fg-4)}
+.head h1{font-size:40px;font-weight:300;letter-spacing:-.030em;line-height:1.05}
+.head .sub{margin-top:10px;color:var(--fg-2);font-size:15px;max-width:560px}
+.watermark{position:absolute;top:24px;right:48px;font-size:10px}
+
+/* anchor button top-right */
+.agent-anchor{display:inline-flex;align-items:center;gap:10px;padding:8px 8px 8px 10px;border-radius:9999px;background:var(--tint-low);border:1px solid var(--border);color:var(--fg-2);text-decoration:none;transition:all .18s var(--ease);white-space:nowrap}
+.agent-anchor:hover{background:var(--tint-med);border-color:var(--border-h);color:var(--fg-1)}
+.agent-anchor .lbl{font-family:var(--font-mono);font-size:10px;letter-spacing:.10em;text-transform:uppercase}
+.agent-anchor svg{color:var(--fg-3)}
+
+/* planet avatar */
+.planet{border-radius:9999px;position:relative;flex:none;box-shadow:inset 0 1px 1px rgba(255,255,255,.25),0 1px 4px rgba(0,0,0,.5)}
+.planet::after{content:'';position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 2px 3px rgba(255,255,255,.2)}
+.p24{width:24px;height:24px}.p32{width:32px;height:32px}.p44{width:44px;height:44px}
+
+/* KPI tiles */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
+.kpi{border-radius:var(--r-lg);padding:22px 22px 20px}
+.kpi .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.kpi .icn{color:var(--fg-3)}
+.kpi .delta{font-family:var(--font-mono);font-size:11px;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:9999px}
+.kpi .delta.up{color:var(--success);background:oklch(.3 .08 152/.20)}
+.kpi .delta.down{color:var(--danger);background:oklch(.32 .10 25/.22)}
+.kpi .delta.warn{color:var(--warning);background:oklch(.33 .075 85/.22)}
+.kpi .val{font-size:34px;font-weight:500;letter-spacing:-.030em;line-height:1}
+.kpi .val .u{font-size:16px;font-weight:400;color:var(--fg-3);margin-left:3px}
+.kpi .lab{margin-top:8px;font-size:13px;color:var(--fg-2)}
+
+/* section title */
+.sect{margin:40px 0 18px;display:flex;align-items:baseline;gap:12px}
+.sect h2{font-size:18px;font-weight:500;letter-spacing:-.012em}
+.sect .ct{font-family:var(--font-mono);font-size:11px;color:var(--fg-3)}
+.hair{height:1px;background:var(--border);flex:1;align-self:center}
+
+/* drill-down sub-items */
+.subs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.sub{border-radius:var(--r-lg);padding:20px;cursor:pointer;transition:transform .24s var(--ease),box-shadow .24s var(--ease),border-color .24s var(--ease)}
+.sub:hover{transform:translateY(-2px);border-color:var(--border-h)}
+.sub .shead{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.sub .siconwrap{width:36px;height:36px;border-radius:var(--r-md);background:var(--tint-low);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--fg-2)}
+.sub h3{font-size:15px;font-weight:500;letter-spacing:-.012em}
+.sub .smeta{margin-left:auto;display:flex;align-items:center;gap:6px}
+.statusdot{width:6px;height:6px;border-radius:9999px}
+.sub .row{display:flex;align-items:baseline;justify-content:space-between;padding:7px 0;border-top:1px solid var(--border)}
+.sub .row:first-of-type{border-top:none}
+.sub .row .k{font-size:13px;color:var(--fg-3)}
+.sub .row .v{font-family:var(--font-mono);font-size:13px;color:var(--fg-1);font-weight:500}
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:10px;letter-spacing:.04em;padding:3px 8px;border-radius:9999px;background:var(--tint-med);color:var(--fg-2)}
+.chip.ok{color:var(--success);background:oklch(.3 .08 152/.18)}
+.chip.warn{color:var(--warning);background:oklch(.33 .075 85/.20)}
+.chip.risk{color:var(--danger);background:oklch(.32 .10 25/.20)}
+
+/* agent block (footer of page) */
+.agent{margin-top:64px;border-radius:var(--r-2xl);padding:32px 32px 28px}
+.agent .ahead{display:flex;align-items:center;gap:16px;margin-bottom:6px}
+.agent .ahead h2{font-size:24px;font-weight:300;letter-spacing:-.022em}
+.agent .ahead .name{font-size:24px;font-weight:300;letter-spacing:-.022em;color:var(--fg-1)}
+.agent .ahead .quote{color:var(--fg-2)}
+.agent .ahint{color:var(--fg-3);font-size:14px;margin-bottom:24px;margin-left:60px}
+.thread{display:flex;flex-direction:column;gap:14px;margin-bottom:22px}
+.bub{max-width:62%;padding:13px 16px;border-radius:var(--r-lg);font-size:14px;line-height:1.5}
+.bub.agentmsg{align-self:flex-start;background:var(--tint-low);border:1px solid var(--border);color:var(--fg-1);display:flex;gap:12px}
+.bub.agentmsg .pa{margin-top:2px}
+.bub.usermsg{align-self:flex-end;background:var(--tint-high);color:var(--fg-1)}
+.composer{display:flex;align-items:center;gap:10px;padding:6px 6px 6px 18px;border-radius:9999px;background:var(--tint-low);border:1px solid var(--border)}
+.composer input{flex:1;background:none;border:none;outline:none;color:var(--fg-1);font-family:var(--font-sans);font-size:14px}
+.composer input::placeholder{color:var(--fg-3)}
+.composer .send{width:38px;height:38px;border-radius:9999px;background:var(--brand);color:#04181c;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:inset 0 1px 0 0 rgba(255,255,255,.25)}
+.composer .hint{font-family:var(--font-mono);font-size:10px;color:var(--fg-4);text-transform:uppercase;letter-spacing:.08em}
+.typing{display:inline-flex;gap:4px;align-items:center;color:var(--fg-3);font-size:13px}
+.typing i{width:4px;height:4px;border-radius:50%;background:var(--fg-3);display:inline-block;animation:breathe 1.4s var(--ease-amb) infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes breathe{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:.9;transform:translateY(-2px)}}
+@media (prefers-reduced-motion:reduce){.typing i{animation:none;opacity:.6}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="watermark upper">Dados de demonstração</div>
+  <main>
+    <!-- editorial header -->
+    <header class="head">
+      <div>
+        <div class="crumb">
+          <span class="upper">Gestão</span>
+          <span class="sep">/</span>
+          <span class="upper" style="color:var(--fg-2)">Operations</span>
+        </div>
+        <h1>Operações</h1>
+        <p class="sub">Estoque, reposição, logística e expedição em uma única leitura. O setor está estável; reposição puxa atenção.</p>
+      </div>
+      <a class="agent-anchor" href="#sector-agent" aria-label="Falar com o agente do setor Operations">
+        <span class="planet p24" style="background:radial-gradient(circle at 32% 28%,#e7b486,#b5603a 46%,#5b2a36)"></span>
+        <span class="lbl">Falar com o agente</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </a>
+    </header>
+
+    <!-- KPI anchors -->
+    <div class="kpis">
+      <div class="kpi glass">
+        <div class="top">
+          <svg class="icn" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12"/></svg>
+          <span class="delta up">+4,2%</span>
+        </div>
+        <div class="val">1.284<span class="u">SKUs</span></div>
+        <div class="lab">Itens em estoque</div>
+      </div>
+      <div class="kpi glass">
+        <div class="top">
+          <svg class="icn" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          <span class="delta warn">23 baixos</span>
+        </div>
+        <div class="val">94,1<span class="u">%</span></div>
+        <div class="lab">Disponibilidade de catálogo</div>
+      </div>
+      <div class="kpi glass">
+        <div class="top">
+          <svg class="icn" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="6.5" cy="18.5" r="2.5"/><circle cx="16.5" cy="18.5" r="2.5"/></svg>
+          <span class="delta up">−0,4 dia</span>
+        </div>
+        <div class="val">1,8<span class="u">dias</span></div>
+        <div class="lab">Tempo médio de entrega</div>
+      </div>
+      <div class="kpi glass">
+        <div class="top">
+          <svg class="icn" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          <span class="delta down">−1,1%</span>
+        </div>
+        <div class="val">99,2<span class="u">%</span></div>
+        <div class="lab">Pedidos expedidos no prazo</div>
+      </div>
+    </div>
+
+    <!-- drill-down sub-items -->
+    <div class="sect">
+      <h2>Sub-áreas</h2>
+      <span class="ct">6 áreas</span>
+      <span class="hair"></span>
+    </div>
+    <div class="subs">
+
+      <div class="sub glass">
+        <div class="shead">
+          <span class="siconwrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg></span>
+          <h3>Estoque</h3>
+          <span class="smeta"><span class="statusdot" style="background:var(--success)"></span><span class="chip ok">Saudável</span></span>
+        </div>
+        <div class="row"><span class="k">Cobertura média</span><span class="v">31 dias</span></div>
+        <div class="row"><span class="k">Acuracidade</span><span class="v">98,6%</span></div>
+        <div class="row"><span class="k">Ruptura ativa</span><span class="v">0 SKU</span></div>
+      </div>
+
+      <div class="sub glass">
+        <div class="shead">
+          <span class="siconwrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span>
+          <h3>Reposição</h3>
+          <span class="smeta"><span class="statusdot" style="background:var(--warning)"></span><span class="chip warn">Atenção</span></span>
+        </div>
+        <div class="row"><span class="k">Ordens abertas</span><span class="v">17</span></div>
+        <div class="row"><span class="k">Abaixo do mínimo</span><span class="v">23 SKU</span></div>
+        <div class="row"><span class="k">Lead time fornecedor</span><span class="v">6,2 dias</span></div>
+      </div>
+
+      <div class="sub glass">
+        <div class="shead">
+          <span class="siconwrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="6.5" cy="18.5" r="2.5"/><circle cx="16.5" cy="18.5" r="2.5"/></svg></span>
+          <h3>Logística</h3>
+          <span class="smeta"><span class="statusdot" style="background:var(--success)"></span><span class="chip ok">No prazo</span></span>
+        </div>
+        <div class="row"><span class="k">Rotas ativas</span><span class="v">12</span></div>
+        <div class="row"><span class="k">Custo por entrega</span><span class="v">R$ 9,40</span></div>
+        <div class="row"><span class="k">Ocorrências</span><span class="v">2</span></div>
+      </div>
+
+      <div class="sub glass">
+        <div class="shead">
+          <span class="siconwrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+          <h3>Organização</h3>
+          <span class="smeta"><span class="statusdot" style="background:var(--success)"></span><span class="chip ok">Saudável</span></span>
+        </div>
+        <div class="row"><span class="k">Ocupação do CD</span><span class="v">72%</span></div>
+        <div class="row"><span class="k">Endereços livres</span><span class="v">418</span></div>
+        <div class="row"><span class="k">Inventário cíclico</span><span class="v">em dia</span></div>
+      </div>
+
+      <div class="sub glass">
+        <div class="shead">
+          <span class="siconwrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg></span>
+          <h3>Entrega</h3>
+          <span class="smeta"><span class="statusdot" style="background:var(--success)"></span><span class="chip ok">99,2%</span></span>
+        </div>
+        <div class="row"><span class="k">Entregues hoje</span><span class="v">341</span></div>
+        <div class="row"><span class="k">Em trânsito</span><span class="v">88</span></div>
+        <div class="row"><span class="k">Devoluções</span><span class="v">3</span></div>
+      </div>
+
+      <div class="sub glass">
+        <div class="shead">
+          <span class="siconwrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16h6M19 13v6"/><path d="M2 9V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4"/><path d="M2 13h10M2 17h7"/><path d="M2 9h20"/></svg></span>
+          <h3>Expedição</h3>
+          <span class="smeta"><span class="statusdot" style="background:var(--danger)"></span><span class="chip risk">Gargalo</span></span>
+        </div>
+        <div class="row"><span class="k">Fila de separação</span><span class="v">54 pedidos</span></div>
+        <div class="row"><span class="k">Capacidade usada</span><span class="v">96%</span></div>
+        <div class="row"><span class="k">Atraso médio</span><span class="v">38 min</span></div>
+      </div>
+
+    </div>
+
+    <!-- SECTOR AGENT — last element of the page -->
+    <section class="agent glass" id="sector-agent" aria-label="Chat com o agente do setor Operations">
+      <div class="ahead">
+        <span class="planet p44" style="background:radial-gradient(circle at 32% 28%,#e7b486,#b5603a 46%,#5b2a36)"></span>
+        <h2><span class="quote">Fale com o agente do setor</span> <span class="name">&ldquo;Operations&rdquo;</span></h2>
+      </div>
+      <p class="ahint">Ele lê estoque, reposição, logística e expedição em tempo real. Pergunte em linguagem natural.</p>
+
+      <div class="thread">
+        <div class="bub agentmsg">
+          <span class="planet p24 pa" style="background:radial-gradient(circle at 32% 28%,#e7b486,#b5603a 46%,#5b2a36)"></span>
+          <span>A expedição está em gargalo: 54 pedidos na fila e 96% de capacidade. O atraso médio subiu para 38 min hoje. Reposição também pede atenção — 23 SKUs abaixo do mínimo.</span>
+        </div>
+        <div class="bub usermsg">O que destrava a expedição mais rápido?</div>
+        <div class="bub agentmsg">
+          <span class="planet p24 pa" style="background:radial-gradient(circle at 32% 28%,#e7b486,#b5603a 46%,#5b2a36)"></span>
+          <span class="typing"><i></i><i></i><i></i> escrevendo</span>
+        </div>
+      </div>
+
+      <div class="composer">
+        <input placeholder="Pergunte sobre estoque, reposição, logística, expedição…" />
+        <span class="hint">Enter para enviar</span>
+        <button class="send" aria-label="Enviar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>
