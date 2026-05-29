@@ -1,7 +1,22 @@
 <!-- algorythmo: rebrand-m0 -->
-<!-- Algorythmo OS favicon — placeholder SVG for M0. -->
-<!-- Replace with final brand assets before first client demo. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="80" fill="#1f93ff"/>
-  <text x="256" y="330" font-family="system-ui, -apple-system, sans-serif" font-size="260" font-weight="700" fill="white" text-anchor="middle">A</text>
+<!-- Algorythmo OS favicon / app mark — Cinematic OS v2 placeholder (C1). -->
+<!-- Deep command-room black tile, hairline top highlight, white "A" monogram, -->
+<!-- single cyan-teal brand dot (the one permitted hue accent, DESIGN.md §3.1). -->
+<!-- Replace with final curated brand asset before GA (DESIGN.md §15). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-label="Algorythmo OS">
+  <defs>
+    <linearGradient id="tile" x1="256" y1="0" x2="256" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1E1E22"/>
+      <stop offset="1" stop-color="#0A0A0B"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#tile)"/>
+  <!-- inset top highlight (light from above — coherent with elevation system) -->
+  <rect x="1" y="1" width="510" height="510" rx="111" fill="none"
+        stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+  <text x="256" y="346"
+        font-family="'Inter','InterDisplay',-apple-system,system-ui,sans-serif"
+        font-size="300" font-weight="500" letter-spacing="-8"
+        fill="#FFFFFF" text-anchor="middle">A</text>
+  <circle cx="372" cy="150" r="22" fill="#16C8C2"/>
 </svg>

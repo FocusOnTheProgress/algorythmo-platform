@@ -3,36 +3,23 @@ import SnackbarContainer from './components/SnackBar/Container.vue';
 
 export default {
   components: { SnackbarContainer },
+  // algorythmo: rebrand-m0 — Cinematic OS is dark-first (DESIGN.md §1).
+  // The v3 shell (login / onboarding / auth) opens dark by default instead of
+  // following the OS color scheme. This is the surface the founder sees first,
+  // so it must carry the command-room identity, never the light Chatwoot look.
   data() {
-    return { theme: 'light' };
+    return { theme: 'dark' };
   },
   mounted() {
     this.setColorTheme();
-    this.listenToThemeChanges();
     this.setLocale(window.chatwootConfig.selectedLocale);
   },
   methods: {
+    // algorythmo: rebrand-m0 — force dark; OS preference no longer downgrades
+    // the auth shell to light. A light variant is an explicit opt-in (C7+).
     setColorTheme() {
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        this.theme = 'dark';
-        document.documentElement.classList.add('dark');
-      } else {
-        this.theme = 'light';
-        document.documentElement.classList.remove('dark');
-      }
-    },
-    listenToThemeChanges() {
-      const mql = window.matchMedia('(prefers-color-scheme: dark)');
-
-      mql.onchange = e => {
-        if (e.matches) {
-          this.theme = 'dark';
-          document.documentElement.classList.add('dark');
-        } else {
-          this.theme = 'light';
-          document.documentElement.classList.remove('dark');
-        }
-      };
+      this.theme = 'dark';
+      document.documentElement.classList.add('dark');
     },
     setLocale(locale) {
       if (locale) {
@@ -57,10 +44,17 @@ export default {
 
 @import '../dashboard/assets/scss/next-colors';
 
+// algorythmo: design-system-import — Cinematic OS dark-first chrome overrides.
+// The v3 auth/login shell has its own SCSS island (separate from _woot.scss),
+// so the Algorythmo design system + chrome purge layer must be imported here
+// too, otherwise the login page renders the bare Chatwoot light/blue theme.
+@import '../../../engines/algorythmo/app/assets/stylesheets/algorythmo';
+
 html,
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  // algorythmo: rebrand-m0 — Inter (host self-hosted) instead of the system
+  // stack; kills any Lato / Open Sans fallback on the auth shell.
+  font-family: var(--alg-font-sans);
   @apply h-full w-full;
 
   input,
@@ -69,8 +63,15 @@ body {
   }
 }
 
+// algorythmo: rebrand-m0 — links use the Cinematic brand cyan-teal, not the
+// Chatwoot blue `n-brand`.
 .text-link {
-  @apply text-n-brand font-medium hover:text-n-blue-10;
+  color: var(--alg-color-brand-primary);
+  @apply font-medium;
+
+  &:hover {
+    color: var(--alg-color-brand-primary-hover);
+  }
 }
 
 .v-popper--theme-tooltip .v-popper__inner {

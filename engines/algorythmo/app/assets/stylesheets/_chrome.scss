@@ -1,0 +1,320 @@
+// =============================================================================
+// Algorythmo OS — Chrome override layer (Cinematic OS v2 — C1 dark-first global)
+// -----------------------------------------------------------------------------
+// This file turns the host Chatwoot chrome dark-first and purges the Chatwoot
+// brand blue (#2781F6 / #1F93FF) from the operational surface. It is the C1
+// milestone of docs/plans/0008-cinematic-os-implementation.md.
+//
+// WHY THIS FILE EXISTS (and why it lives in the algorythmo engine, not upstream):
+//   Chatwoot themes via Tailwind `darkMode: 'class'` + a Radix-derived RGB-triplet
+//   custom-property scale defined in app/javascript/dashboard/assets/scss/
+//   _next-colors.scss (`:root` = light, `.dark` = dark). The brand hue lives in
+//   two places:
+//     1. The `--blue-*` variable family (drives `n-blue-*` utilities, focus
+//        outlines, links, text-blue).
+//     2. A HARD-CODED hex `n.brand: '#2781F6'` in theme/colors.js (drives
+//        `n-brand` utilities — primary button fills, focus rings).
+//
+//   Rather than rewrite upstream files (which would blow the soft-fork budget
+//   and break on every upstream sync), we override both sources from the
+//   algorythmo cascade layer:
+//     - Redefine the `:root` (light) next-color tokens to their dark values so
+//       the canvas reads dark even before `.dark` is applied (login, auth,
+//       any user on `auto`/`light` preference) — dark-first by construction.
+//     - Remap the `--blue-*` family to the Cinematic cyan-teal in BOTH themes.
+//     - Override the generated `n-brand` utility classes to the brand cyan-teal.
+//
+//   The one behavioral change (defaulting the boot theme to dark) lives in
+//   app/javascript/dashboard/helper/themeHelper.js, tagged + tabled as soft-fork.
+//
+// SCOPE (C1 — foundation, not polish):
+//   ✓ Dark canvas globally (login, sidebar, conversations, settings)
+//   ✓ Chatwoot blue → cyan-teal in chrome
+//   ✓ Inter forced (Lato / Open Sans fallback killed)
+//   ✓ Glass + grain + elevation on primary chrome containers
+//   ✗ Per-screen redesign, signature components (Aurora/Sunburst) → C7
+//
+// Composition order: imported by algorythmo.scss AFTER _tokens + _components,
+// but the upstream `_woot.scss` imports the whole algorythmo entry BEFORE
+// `tailwindcss/components` + `base`, so these overrides must out-specify the
+// generated utilities. Where a utility class wins by specificity/order we use
+// a scoped `:where()` + attribute layer or `!important` on brand-purge utils
+// only (documented inline). No `!important` on layout/spacing.
+//
+// Author: Algorythmo design system / Cinematic OS v2 / C1 / 2026-05-28
+// License: proprietary, internal use only
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// 1. DARK-FIRST CANVAS — redefine the host light tokens to dark values
+// -----------------------------------------------------------------------------
+// The host defines light defaults on :root and dark values on `.dark`. We make
+// the LIGHT defaults equal the dark values so the app is dark before any class
+// is applied. This covers the login / auth flow (rendered before the dashboard
+// boot script runs) and any user whose stored preference is light/auto-on-light.
+//
+// These mirror the `.dark` block of _next-colors.scss verbatim, then layer the
+// Cinematic black scale on top of the structural slate/gray/surface tokens so
+// the canvas matches --alg-black-* (deep, neutral, near-zero chroma).
+:root {
+  color-scheme: dark;
+
+  // --- Radix scales → dark values (mirror of _next-colors.scss .dark) --------
+  --slate-1: 17 17 19;
+  --slate-2: 24 25 27;
+  --slate-3: 33 34 37;
+  --slate-4: 39 42 45;
+  --slate-5: 46 49 53;
+  --slate-6: 54 58 63;
+  --slate-7: 67 72 78;
+  --slate-8: 90 97 105;
+  --slate-9: 105 110 119;
+  --slate-10: 119 123 132;
+  --slate-11: 176 180 186;
+  --slate-12: 237 238 240;
+
+  --gray-1: 17 17 17;
+  --gray-2: 25 25 25;
+  --gray-3: 34 34 34;
+  --gray-4: 42 42 42;
+  --gray-5: 49 49 49;
+  --gray-6: 58 58 58;
+  --gray-7: 72 72 72;
+  --gray-8: 96 96 96;
+  --gray-9: 110 110 110;
+  --gray-10: 123 123 123;
+  --gray-11: 180 180 180;
+  --gray-12: 238 238 238;
+
+  // --- BRAND PURGE: Chatwoot blue → Cinematic cyan-teal ----------------------
+  // The `--blue-*` family drives every `n-blue-*` utility, link color, focus
+  // outline and `--text-blue`. We retune the interactive band (8→12) to the
+  // brand cyan-teal hue (~195°) while keeping the low band (1→7) as quiet,
+  // near-neutral dark surfaces so tinted backgrounds (bg-n-blue) stay subtle.
+  // RGB triplets are the sRGB render of the OKLCH brand tokens (--alg-color-
+  // brand-primary = oklch(0.745 0.165 195)).
+  --blue-1: 10 19 21;
+  --blue-2: 13 26 29;
+  --blue-3: 11 40 44;
+  --blue-4: 8 53 58;
+  --blue-5: 12 65 71;
+  --blue-6: 18 84 90;
+  --blue-7: 22 104 112;
+  --blue-8: 26 134 142;   // brand-adjacent fill, hover band
+  --blue-9: 14 178 178;   // ← was 39 129 246 (Chatwoot blue). Now cyan-teal.
+  --blue-10: 36 198 196;  // brand hover
+  --blue-11: 90 222 216;  // brand text on dark (n-blue-11 — links, button text)
+  --blue-12: 196 244 240; // brand high-contrast
+  --text-blue: 196 244 240;
+  --solid-blue: 12 65 71;
+  --solid-blue-2: 13 26 29;
+  --border-blue-strong: 90 222 216;
+  --border-blue: 14, 178, 178, 0.5;
+
+  // Iris (used as secondary accent in a few places) → quiet teal-leaning,
+  // never the AI-slop indigo. We pull it toward the brand band.
+  --iris-9: 14 178 178;
+  --iris-10: 36 198 196;
+  --iris-11: 90 222 216;
+
+  // --- Structural surfaces → Cinematic black scale ---------------------------
+  // These are the canvas, cards and chrome. Map to --alg-black-* so the whole
+  // host shell sits on the same deep neutral black as the .alg-* components.
+  --background-color: 17 17 19;        // app canvas ≈ --alg-black-2
+  --surface-1: 10 10 11;               // beneath shell ≈ --alg-black-1
+  --surface-2: 24 24 27;               // raised ≈ --alg-black-3
+  --surface-active: 30 30 34;          // active ≈ --alg-black-4
+  --background-input-box: 255, 255, 255, 0.03;
+  --card-color: 24 24 27;
+  --solid-1: 18 18 20;
+  --solid-2: 24 24 27;
+  --solid-3: 36 36 41;
+  --solid-active: 46 46 52;
+
+  --border-strong: 46 45 50;
+  --border-weak: 31 31 37;
+  --border-container: 255, 255, 255, 0;
+
+  --overlay: 0, 0, 0, 0.6;
+  --overlay-avatar: 0, 0, 0, 0.05;
+  --button-color: 36 36 41;
+  --button-hover-color: 255, 255, 255, 0.06;
+  --label-background: 36 38 45;
+  --label-border: 255, 255, 255, 0.04;
+
+  --alpha-1: 35, 36, 42, 0.8;
+  --alpha-2: 255, 255, 255, 0.06;
+  --alpha-3: 24, 24, 27, 0.95;
+  --black-alpha-1: 0, 0, 0, 0.3;
+  --black-alpha-2: 0, 0, 0, 0.2;
+  --white-alpha: 255, 255, 255, 0.1;
+
+  // --- LABEL DESATURATION (§13) ----------------------------------------------
+  // Chatwoot ships saturated "label" hues (lime, canary, pink). The bridge to
+  // a full semantic-attenuated label system is C7; here we at least pull the
+  // shared text-amber/purple chrome tokens into a quiet register.
+  --text-amber: 255 247 234;
+  --text-purple: 232 233 254;
+}
+
+// -----------------------------------------------------------------------------
+// 2. .dark — keep parity, re-apply brand purge (the dashboard adds `.dark`)
+// -----------------------------------------------------------------------------
+// When the boot script applies `.dark`, the host's own .dark block re-asserts
+// the Chatwoot blue. Re-purge it here so the cyan-teal wins under .dark too.
+.dark {
+  --blue-8: 26 134 142;
+  --blue-9: 14 178 178;
+  --blue-10: 36 198 196;
+  --blue-11: 90 222 216;
+  --blue-12: 196 244 240;
+  --text-blue: 196 244 240;
+  --solid-blue: 12 65 71;
+  --border-blue-strong: 90 222 216;
+  --border-blue: 14, 178, 178, 0.5;
+
+  --iris-9: 14 178 178;
+  --iris-10: 36 198 196;
+  --iris-11: 90 222 216;
+
+  // Deepen the structural surfaces to the Cinematic black scale (host .dark
+  // sits a touch lighter / bluer than our command-room black).
+  --background-color: 17 17 19;
+  --surface-1: 10 10 11;
+  --surface-2: 24 24 27;
+  --card-color: 24 24 27;
+  --solid-1: 18 18 20;
+  --solid-2: 24 24 27;
+  --solid-3: 36 36 41;
+}
+
+// -----------------------------------------------------------------------------
+// 3. BRAND PURGE — the hard-coded `n-brand` utilities (#2781F6 in theme/colors.js)
+// -----------------------------------------------------------------------------
+// `n.brand` is a literal hex in the Tailwind config, so no CSS variable can
+// reach it. We override the generated utility classes directly. Scope is the
+// brand-color utilities ONLY — fills, text, outlines, rings, borders and their
+// alpha variants. `!important` is justified here: these classes are emitted by
+// Tailwind's `components`/`utilities` layers which load after our import, and
+// the intent (no Chatwoot blue anywhere in chrome) is non-negotiable per §13.
+$alg-brand: var(--alg-color-brand-primary);
+$alg-brand-hover: var(--alg-color-brand-primary-hover);
+
+.bg-n-brand {
+  background-color: #{$alg-brand} !important;
+}
+.hover\:bg-n-brand:hover {
+  background-color: #{$alg-brand} !important;
+}
+// Tailwind opacity variants compile to color-mix / rgb(.. / .1) on the literal.
+// Re-express the common tints against the brand hue.
+.bg-n-brand\/5 {
+  background-color: color-mix(in oklch, #{$alg-brand} 5%, transparent) !important;
+}
+.bg-n-brand\/10 {
+  background-color: color-mix(in oklch, #{$alg-brand} 10%, transparent) !important;
+}
+.bg-n-brand\/20,
+.hover\:bg-n-brand\/20:hover {
+  background-color: color-mix(in oklch, #{$alg-brand} 20%, transparent) !important;
+}
+.text-n-brand {
+  color: #{$alg-brand} !important;
+}
+.outline-n-brand {
+  outline-color: #{$alg-brand} !important;
+}
+.focus\:outline-n-brand:focus,
+.focus-visible\:outline-n-brand:focus-visible {
+  outline-color: #{$alg-brand} !important;
+}
+.ring-n-brand {
+  --tw-ring-color: #{$alg-brand} !important;
+}
+.border-n-brand {
+  border-color: #{$alg-brand} !important;
+}
+
+// The `.text-link` helper in _base.scss applies `text-n-brand`. Belt-and-
+// suspenders: ensure links resolve to the brand hue regardless of cascade.
+.text-link {
+  color: var(--alg-color-brand-primary) !important;
+}
+
+// -----------------------------------------------------------------------------
+// 4. TYPOGRAPHY PURGE — kill any Lato / Open Sans fallback, force Inter
+// -----------------------------------------------------------------------------
+// _woot.scss already forces an Inter stack on html/body, but some upstream
+// component styles and any stray font-family declarations can reintroduce Lato
+// / Open Sans. We pin the operational font stack to Inter (sans) and route the
+// design-system display/mono families through the --alg-font-* tokens.
+//
+// Geist / Geist Mono self-host is a documented TODO in _tokens.scss (founder
+// chose Inter / placeholder for C1; human curation later). Until then the
+// Inter stack carries operational UI and the editorial display surfaces.
+html,
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--alg-font-sans) !important;
+}
+
+// -----------------------------------------------------------------------------
+// 5. CHROME ELEVATION + GLASS — sidebar, topbar, primary surface frames
+// -----------------------------------------------------------------------------
+// C1 is foundation: a restrained pass of real depth on the chrome containers so
+// the shell reads as a command room, not a flat dark theme. Heavy polish (the
+// refounded sidebar spec §5.13, signature objects) lands in C7.
+//
+// We target the host's structural surface classes by their token-backed bg
+// utilities. Selectors are intentionally narrow (the app shell scaffolding)
+// to avoid repainting every card on the page.
+
+// App canvas — ensure the deepest neutral black sits behind everything, with a
+// faint top-lit vignette so the shell has gravity instead of flat fill.
+body.dark,
+body {
+  background-color: var(--alg-bg);
+}
+
+// Primary navigation rail (Chatwoot's left sidebar) — glass + grain + hairline.
+// Chatwoot's sidebar is the `.bg-n-background` / app-sidebar scaffold; we lift
+// it onto a soft-glass surface with an inset top highlight.
+.app-sidebar,
+[class*='sidebar'] > nav,
+nav.secondary-menu {
+  position: relative;
+  background: var(--alg-bg-base);
+  border-right: 1px solid var(--alg-border);
+  box-shadow: var(--alg-elevation-1);
+
+  @supports (backdrop-filter: blur(1px)) {
+    background: var(--alg-glass-soft-bg);
+    backdrop-filter: var(--alg-glass-soft-filter);
+    -webkit-backdrop-filter: var(--alg-glass-soft-filter);
+  }
+}
+
+// Grain layer on the primary rail — the visionOS tell. 0.6% effective opacity.
+.app-sidebar::after,
+nav.secondary-menu::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--alg-glass-grain);
+  opacity: 0.6;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+// -----------------------------------------------------------------------------
+// 6. FOCUS RING — brand cyan-teal, visible over glass (WCAG 2.4.11)
+// -----------------------------------------------------------------------------
+// Normalize the focus-visible ring to the Cinematic brand ring so keyboard
+// navigation reads consistently against the dark canvas and over glass.
+:where(a, button, [role='button'], input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--alg-ring-focus);
+}

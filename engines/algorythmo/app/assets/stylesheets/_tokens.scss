@@ -46,6 +46,48 @@
 // License: proprietary, internal use only
 // =============================================================================
 
+// =============================================================================
+// SELF-HOST FONTS — Geist / Geist Mono (TODO: human brand curation, DESIGN.md §15)
+// -----------------------------------------------------------------------------
+// The founder chose to ship C1 on Inter (already self-hosted upstream) as the
+// operational + display fallback. Geist / Geist Mono self-host is deferred to a
+// human brand-designer handoff. When the .woff2 files land in
+// engines/algorythmo/app/assets/fonts/, uncomment the @font-face blocks below
+// and the existing --alg-font-display / --alg-font-mono stacks pick them up
+// automatically (Geist is already first in those stacks).
+//
+// @font-face {
+//   font-family: 'Geist';
+//   src: url('../fonts/Geist-Light.woff2') format('woff2');
+//   font-weight: 300; font-style: normal; font-display: swap;
+// }
+// @font-face {
+//   font-family: 'Geist';
+//   src: url('../fonts/Geist-Regular.woff2') format('woff2');
+//   font-weight: 400; font-style: normal; font-display: swap;
+// }
+// @font-face {
+//   font-family: 'Geist';
+//   src: url('../fonts/Geist-Medium.woff2') format('woff2');
+//   font-weight: 500; font-style: normal; font-display: swap;
+// }
+// @font-face {
+//   font-family: 'Geist';
+//   src: url('../fonts/Geist-SemiBold.woff2') format('woff2');
+//   font-weight: 600; font-style: normal; font-display: swap;
+// }
+// @font-face {
+//   font-family: 'Geist Mono';
+//   src: url('../fonts/GeistMono-Regular.woff2') format('woff2');
+//   font-weight: 400; font-style: normal; font-display: swap;
+// }
+// @font-face {
+//   font-family: 'Geist Mono';
+//   src: url('../fonts/GeistMono-Medium.woff2') format('woff2');
+//   font-weight: 500; font-style: normal; font-display: swap;
+// }
+// =============================================================================
+
 :root,
 [data-theme='dark'] {
   color-scheme: dark;
