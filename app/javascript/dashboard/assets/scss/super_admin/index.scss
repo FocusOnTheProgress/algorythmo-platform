@@ -7,16 +7,6 @@ body {
   font-family: Inter, -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
 }
 
-// algorythmo: design-system-import — the super-admin pack shipped its own light
-// :root token scale and never imported the Algorythmo design system, so the
-// operator console stayed light + Chatwoot blue while the rest of the app went
-// dark-first (Cinematic OS C1.1, see C1-FOLLOWUPS #1). Import the full entry
-// (tokens → components → chrome) so the console inherits the dark canvas, the
-// cyan-teal brand purge and Inter. The entry's :root override is unlayered, so
-// it out-cascades the @layer base :root above regardless of import order.
-// Relative path mirrors the _woot.scss bridge, one level deeper.
-@import '../../../../../../engines/algorythmo/app/assets/stylesheets/algorythmo';
-
 @layer base {
   // FIXME: Use a common color file for all packs
   // scss-lint:disable PropertySortOrder

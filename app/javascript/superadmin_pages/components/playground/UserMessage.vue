@@ -8,12 +8,10 @@ defineProps({
 </script>
 
 <template>
-  <!-- algorythmo: cinematic-os C1.1 — purge Chatwoot blue (bg-woot-400) for the
-       brand cyan-teal fill; _chrome.scss pairs .bg-n-brand with a dark fg. -->
   <div class="w-full mb-4 flex items-center justify-end">
     <div
       v-dompurify-html="message"
-      class="px-4 py-3 bg-n-brand text-sm rounded-md inline-block"
+      class="px-4 py-3 bg-woot-400 text-white text-sm rounded-md inline-block"
     />
   </div>
 </template>

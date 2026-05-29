@@ -8,11 +8,10 @@ defineProps({
 </script>
 
 <template>
-  <!-- algorythmo: cinematic-os C1.1 — dark-canvas re-tokenization (n-* tokens). -->
   <div class="w-full mb-4 flex items-center justify-start">
     <div
       v-dompurify-html="message"
-      class="px-4 py-3 bg-n-solid-2 max-w-4xl text-n-slate-12 leading-6 text-sm rounded-md inline-block border border-n-weak"
+      class="px-4 py-3 bg-white max-w-4xl text-slate-700 leading-6 text-sm rounded-md inline-block border border-slate-100"
     />
   </div>
 </template>
