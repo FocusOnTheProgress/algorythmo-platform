@@ -78,6 +78,7 @@ jobs:
             app/javascript/survey/i18n/i18n_overlay.spec.js \
             app/javascript/widget/i18n/i18n_overlay.spec.js \
             app/javascript/dashboard/components-next/copilot/specs/CopilotLauncher.spec.js \
+            app/javascript/dashboard/components-next/algorythmo/specs \
             app/javascript/dashboard/routes/specs/algorythmoCutFlagCoverage.spec.js \
             app/javascript/dashboard/routes/specs/algorythmoFeatureFlagCoverage.spec.js \
             app/javascript/dashboard/routes/specs/m6-1-a-foundation.spec.js \
