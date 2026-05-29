@@ -256,6 +256,11 @@
         "OVERVIEW": {
           "TAB": "Visão Geral",
           "ARIA": "Visão geral consolidada de gastos do setor Facilities",
+          "NAME": "Facilities",
+          "TITLE": "Facilities",
+          "SUBTITLE": "Aluguel, energia, limpeza e manutenção — o custo de manter a empresa funcionando.",
+          "CATEGORIES_HEADER": "Categorias de gasto",
+          "CATEGORIES_COUNT": "{count} categorias",
           "ALUGUEL_LABEL": "Aluguel",
           "ALUGUEL_CHART": "Aluguel mensal (R$ mil)",
           "ENERGIA_LABEL": "Energia",

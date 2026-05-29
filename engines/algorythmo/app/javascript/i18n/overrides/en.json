@@ -256,6 +256,11 @@
         "OVERVIEW": {
           "TAB": "Overview",
           "ARIA": "Consolidated spend overview of the Facilities sector",
+          "NAME": "Facilities",
+          "TITLE": "Facilities",
+          "SUBTITLE": "Rent, energy, cleaning and maintenance — the cost of keeping the company running.",
+          "CATEGORIES_HEADER": "Spend categories",
+          "CATEGORIES_COUNT": "{count} categories",
           "ALUGUEL_LABEL": "Rent",
           "ALUGUEL_CHART": "Monthly rent (R$ K)",
           "ENERGIA_LABEL": "Energy",

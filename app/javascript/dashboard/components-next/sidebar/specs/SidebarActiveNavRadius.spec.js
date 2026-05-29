@@ -44,12 +44,15 @@ const HEADER_PATH = path.resolve(__dirname, '..', 'SidebarGroupHeader.vue');
 const source = fs.readFileSync(HEADER_PATH, 'utf8');
 
 describe('SidebarGroupHeader active-nav inverse-tab (DELTA-0009)', () => {
+  // In Vue object-syntax class bindings the class string PRECEDES its condition:
+  //   '<class-string>': isActive && !hasActiveChild
+  // so capture the quoted class string that comes right before the active
+  // condition (a previous version matched the *next* binding by mistake).
+  const ACTIVE_CLASS_RE = /'([^']+)':\s*\n?\s*isActive && !hasActiveChild/s;
+
   it('active item uses --alg-fg-primary fill token, not bg-n-alpha-2', () => {
     // The legacy grey fill must be gone from the active state binding.
-    // Extract only the class binding line for the active condition.
-    const activeClassMatch = source.match(
-      /isActive && !hasActiveChild.*?\n.*?'([^']+)'/s
-    );
+    const activeClassMatch = source.match(ACTIVE_CLASS_RE);
     expect(activeClassMatch).not.toBeNull();
     const activeClasses = activeClassMatch ? activeClassMatch[1] : '';
     expect(activeClasses).toContain('--alg-fg-primary');
@@ -57,9 +60,7 @@ describe('SidebarGroupHeader active-nav inverse-tab (DELTA-0009)', () => {
   });
 
   it('active item uses --alg-black-1 text token', () => {
-    const activeClassMatch = source.match(
-      /isActive && !hasActiveChild.*?\n.*?'([^']+)'/s
-    );
+    const activeClassMatch = source.match(ACTIVE_CLASS_RE);
     const activeClasses = activeClassMatch ? activeClassMatch[1] : '';
     expect(activeClasses).toContain('--alg-black-1');
   });
@@ -117,8 +118,19 @@ describe('SidebarGroupHeader active-nav inverse-tab (DELTA-0009)', () => {
     // rounded-xl in Tailwind v3 = 0.75 rem = 12 px = var(--alg-radius-md).
     const templateStart = source.indexOf('<template>');
     const template = templateStart >= 0 ? source.slice(templateStart) : source;
-    // The base class on the root element must use rounded-xl
+    // The base class on the root element must use rounded-xl.
     expect(template).toContain('rounded-xl');
-    expect(template).not.toContain('rounded-full');
+
+    // The radius assertion must be scoped to the ROOT nav element's static
+    // `class="..."` attribute and the active class binding — NOT the whole
+    // template. The notification badge dot legitimately uses rounded-full
+    // (it is a circle), so a template-wide ban would be a false positive.
+    const rootBaseClass = template.match(/class="(flex items-center[^"]+)"/);
+    expect(rootBaseClass).not.toBeNull();
+    expect(rootBaseClass[1]).not.toContain('rounded-full');
+
+    const activeClassMatch = template.match(ACTIVE_CLASS_RE);
+    expect(activeClassMatch).not.toBeNull();
+    expect(activeClassMatch[1]).not.toContain('rounded-full');
   });
 });
