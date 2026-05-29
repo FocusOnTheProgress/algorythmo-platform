@@ -200,11 +200,21 @@
 $alg-brand: var(--alg-color-brand-primary);
 $alg-brand-hover: var(--alg-color-brand-primary-hover);
 
+// WCAG AA FIX (C1 review blocker): the host hard-codes `bg-n-brand text-white`
+// on the primary button (components-next/button/Button.vue:104), which reaches
+// the LOGIN submit. White on the cyan-teal brand fill (L≈0.745) is only
+// ~2.07:1 — below the 4.5:1 floor. We pair the brand FILL with the brand
+// FOREGROUND token (--alg-color-brand-primary-fg = --alg-black-1, near-black),
+// which lands ~8:1 on the cyan-teal. `!important` out-specifies the co-located
+// `text-white` utility (which is not !important). This only paints text/glyphs
+// that sit ON the brand fill — it does not touch text elsewhere on the page.
 .bg-n-brand {
   background-color: #{$alg-brand} !important;
+  color: var(--alg-color-brand-primary-fg) !important;
 }
 .hover\:bg-n-brand:hover {
   background-color: #{$alg-brand} !important;
+  color: var(--alg-color-brand-primary-fg) !important;
 }
 // Tailwind opacity variants compile to color-mix / rgb(.. / .1) on the literal.
 // Re-express the common tints against the brand hue.
