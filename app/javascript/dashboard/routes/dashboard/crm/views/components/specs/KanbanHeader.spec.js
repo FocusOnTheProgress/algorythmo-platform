@@ -128,14 +128,16 @@ describe('KanbanHeader (CONTRACT_M1B §2 v1.2.0)', () => {
     expect(emitted[0]).toEqual(['Maria']);
   });
 
-  it('renders the pipeline-config-link with the provided path', () => {
+  it('no longer renders the global pipeline-config-link (moved to per-column gear in round-3)', () => {
+    // The "Configure pipeline" entry point relocated to StageColumn's gear.
+    // The header still accepts pipelineConfigPath (parent binding stays valid)
+    // but must not render a stray link in the chrome.
     const wrapper = mountHeader({
       pipelineConfigPath: '/app/accounts/7/crm/pipeline',
     });
-    const link = wrapper.find('[data-testid="pipeline-config-link"]');
-    expect(link.exists()).toBe(true);
-    // router-link rendered as <a href="…"> in the test runner.
-    expect(link.attributes('href')).toBe('/app/accounts/7/crm/pipeline');
+    expect(wrapper.find('[data-testid="pipeline-config-link"]').exists()).toBe(
+      false
+    );
   });
 
   it('keeps the kanban-title and kanban-search-input testids (CONTRACT §2)', () => {

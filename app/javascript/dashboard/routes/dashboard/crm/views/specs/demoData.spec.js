@@ -92,6 +92,41 @@ describe('CRM demo data', () => {
     ).toBeNull();
   });
 
+  it('carries the rich lead-panel profile on every demo lead (round-3)', () => {
+    DEMO_LEADS.forEach(lead => {
+      expect(typeof lead.company).toBe('string');
+      expect(typeof lead.role).toBe('string');
+      expect(Array.isArray(lead.channels)).toBe(true);
+      expect(lead.channels.length).toBeGreaterThan(0);
+      expect(Array.isArray(lead.social)).toBe(true);
+      expect(typeof lead.summary).toBe('string');
+      expect(Array.isArray(lead.qualification)).toBe(true);
+      expect(lead.qualification.length).toBeGreaterThan(0);
+      expect(Array.isArray(lead.timeline)).toBe(true);
+      expect(lead.timeline.length).toBeGreaterThan(0);
+      // conversation_id powers the "Ver conversa" CTA — must be a real number.
+      expect(Number.isFinite(lead.conversation_id)).toBe(true);
+      // due_label is optional (null for non-urgent), but when present must be a
+      // string paired with a known tone.
+      if (lead.due_label != null) {
+        expect(typeof lead.due_label).toBe('string');
+        expect(['today', 'soon']).toContain(lead.due_tone);
+      }
+    });
+  });
+
+  it('every timeline entry is stage-history shaped (id, to_stage_name, changed_at)', () => {
+    DEMO_LEADS.forEach(lead => {
+      lead.timeline.forEach(entry => {
+        expect(entry.id).toBeTruthy();
+        expect(entry.to_stage_name).toBeTruthy();
+        expect(entry.changed_at).toBeTruthy();
+        // First entry is the system "created" node (from null).
+      });
+      expect(lead.timeline[0].from_stage_id).toBeNull();
+    });
+  });
+
   it('buildDemoLeads returns a fresh, mutable copy each call', () => {
     const a = buildDemoLeads();
     const b = buildDemoLeads();

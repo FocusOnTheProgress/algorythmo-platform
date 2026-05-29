@@ -561,7 +561,7 @@ A Ref CRM valida a estrutura kanban da plataforma. **Adotamos a estrutura, rejei
 - Hover: sobe pra `elevation-2`, hairline strong, scale 1.005 (240 ms cinematic)
 - Conteúdo, top-to-bottom:
   - **Nome** em sans 14 px medium fg-primary
-  - **Chip canal** em `.alg-chip--channel` — pill com glyph do canal (whatsapp / email / instagram / tiktok) + texto em mono 11 px. Cor do glyph segue ícone monocromático stroke 1.5
+  - **Chip canal** em `.alg-chip--channel` — pill com glyph do canal (whatsapp / email / instagram / tiktok) + texto em mono 11 px. Cor do glyph = **cor da marca do canal** (WhatsApp `#25D366`, Instagram `#E1306C`, TikTok branco-no-dark, e-mail neutro) — **exceção R3 sancionada** ao monocromático, restrita a ESTE pill (sinaliza o canal de origem do lead num relance). O resto do card permanece contido, sem saturação.
   - **Avatar humano** (`.alg-avatar` sm) flutuante no canto superior direito do card
   - **LeadAgingChip** (§8) no rodapé esquerdo
   - **Chip de data** (`.alg-chip--date`) com glyph relógio e texto "Amanhã" ou "26 de jan." mono 11 px no rodapé direito

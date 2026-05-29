@@ -1,12 +1,17 @@
 <script setup>
 // algorythmo: feature-gate algorythmo_crm
-// CONTRACT_M1B §2 v1.2.0 — Kanban header with funnel summary.
+// CONTRACT_M1B §2 v1.3.0 — Kanban header with funnel summary.
 //
 // Layout: title on the left, search in the middle, summary on the right.
 // The summary block ([data-testid="kanban-metrics-summary"]) shows three
 // stats — open_leads, avg_funnel_hours, conversion_rate — each tagged with
 // data-metric-key so Playwright (M2 onda 2) and the Brain export job can
 // pick the values without parsing labels.
+//
+// Round-3 redesign: the global "Configure pipeline" text-link was REMOVED from
+// here. Pipeline configuration is now reachable only from the per-column gear
+// in StageColumn (one obvious, contextual entry point instead of a stray link
+// in the chrome).
 //
 // State handling:
 //   - loading: faded opacity. Header stays visible so the layout does not jump.
@@ -24,7 +29,6 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   error: { type: String, default: null },
   searchValue: { type: String, default: '' },
-  pipelineConfigPath: { type: String, required: true },
 });
 
 const emit = defineEmits(['update:searchValue']);
@@ -180,13 +184,6 @@ const conversionRateValue = computed(() =>
           </svg>
         </span>
       </div>
-      <router-link
-        class="alg-kanban-header__pipeline-link"
-        data-testid="pipeline-config-link"
-        :to="pipelineConfigPath"
-      >
-        {{ t('ALGORYTHMO_CRM.KANBAN.PIPELINE_CONFIG_LINK') }}
-      </router-link>
     </div>
   </header>
 </template>
@@ -292,21 +289,5 @@ const conversionRateValue = computed(() =>
   display: inline-flex;
   color: var(--alg-color-warning);
   cursor: help;
-}
-
-.alg-kanban-header__pipeline-link {
-  font-size: var(--alg-text-sm, 0.875rem);
-  text-decoration: none;
-  color: var(--alg-text-brand);
-
-  &:hover {
-    text-decoration: underline;
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: var(--alg-ring-focus);
-    border-radius: var(--alg-radius-xs, 2px);
-  }
 }
 </style>

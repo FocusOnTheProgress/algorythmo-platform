@@ -5,6 +5,8 @@
       "SEARCH_PLACEHOLDER": "Buscar lead",
       "BOARD_ARIA_LABEL": "Kanban CRM",
       "PIPELINE_CONFIG_LINK": "Configurar pipeline",
+      "CONFIGURE_STAGE_ARIA": "Configurar pipeline — {stage}",
+      "ADD_LEAD_TO_STAGE_ARIA": "Adicionar lead em {stage}",
       "STAGE_COUNT": "{count} leads",
       "STAGE_COUNT_ONE": "1 lead",
       "STAGE_COUNT_ZERO": "Sem leads",
@@ -40,6 +42,8 @@
     "LEAD_CARD": {
       "ARIA_LABEL": "Lead {name}, etapa {stage}, {time} nesta etapa, canal {channel}",
       "AGING_CHIP_ARIA_LABEL": "{time} nesta etapa",
+      "TIME_IN_STAGE_ARIA": "{time} nesta etapa",
+      "DUE_ARIA": "Follow-up para {due}",
       "MENU_BUTTON_LABEL": "Ações para lead {name}",
       "MENU_ARIA_LABEL": "Ações para lead {name}",
       "OWNER_ASSIGNED_ARIA": "Dono do lead: {name}",
@@ -78,12 +82,16 @@
     "DRAWER": {
       "CLOSE": "Fechar",
       "TITLE_FALLBACK": "Detalhes do lead",
+      "OPEN_CONVERSATION": "Ver conversa",
       "BLOCK_LABEL": {
         "CONTACT": "Contato",
-        "CHANNEL": "Canal",
+        "CHANNEL": "Canais",
         "OWNER": "Dono",
         "CONVERSATIONS": "Conversas",
-        "ACTIVITY": "Atividade"
+        "ACTIVITY": "Atividade",
+        "SUMMARY": "Resumo",
+        "QUALIFICATION": "Qualificação",
+        "SOCIAL": "Social"
       },
       "CONTACT": {
         "EMAIL_LABEL": "E-mail",
