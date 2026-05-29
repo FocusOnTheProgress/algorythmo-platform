@@ -1283,82 +1283,21 @@
 }
 
 // =============================================================================
-// SECTOR AGENT CHAT — sticky 360px right rail (Cinematic OS v1)
+// SECTOR AGENT — hero conversation strip (Cinematic OS v3, plan 0009 F-B)
 // -----------------------------------------------------------------------------
-// The "command room" agent panel that sits beside every sector dashboard.
-// Glass surface so the canvas behind shows through softly, geometric monogram
-// avatar, machine-voice bubbles, cmd+enter submit hint in mono.
+// The sector's specialist orchestrator. No longer a 360px right rail or a
+// footer afterthought: it lives inside the SOLID, FIXED hero band at the top of
+// every sector (see .alg-shell__chat below). This block styles the agent's
+// VOICE + composer — status line, one typed opening line, message thread, and
+// the input with send + voice (mic) affordances. Identity (planet + heading)
+// is owned by the hero, so there is no monogram/name header here.
 // =============================================================================
 
 .alg-agent {
-  position: sticky;
-  top: var(--alg-admin-topbar-height);
-  width: 360px;
-  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  max-height: calc(100vh - var(--alg-admin-topbar-height));
-  border-left: 1px solid var(--alg-border);
-  @include alg-glass(soft);
-
-  // On mobile the agent panel collapses to full-width and stacks below the
-  // dashboard content. The sector layout switches to column at ≤768px, so
-  // the panel expands to fill the available width naturally.
-  @media (max-width: 768px) {
-    position: static;
-    width: 100%;
-    max-width: none;
-    max-height: 60vh;
-    border-left: none;
-    border-top: 1px solid var(--alg-border);
-    flex-shrink: 0;
-  }
-}
-
-.alg-agent__header {
-  display: flex;
-  align-items: center;
   gap: var(--alg-space-3);
-  padding: var(--alg-space-5) var(--alg-space-5) var(--alg-space-4);
-  border-bottom: 1px solid var(--alg-border);
-}
-
-.alg-agent__avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  color: var(--alg-fg-secondary);
-}
-
-.alg-agent__monogram {
-  display: block;
-}
-
-.alg-agent__identity {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
   min-width: 0;
-}
-
-.alg-agent__name {
-  font-family: var(--alg-font-display);
-  font-size: var(--alg-text-sm);
-  font-weight: var(--alg-weight-medium);
-  color: var(--alg-fg-primary);
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  letter-spacing: var(--alg-tracking-snug);
-}
-
-.alg-agent__name-suffix {
-  color: var(--alg-fg-tertiary);
-  font-weight: var(--alg-weight-regular);
 }
 
 .alg-agent__status {
@@ -1385,10 +1324,7 @@
 }
 
 .alg-agent__messages {
-  flex: 1;
   min-height: 0;
-  overflow-y: auto;
-  padding: var(--alg-space-5);
   display: flex;
   flex-direction: column;
 }
@@ -1423,22 +1359,24 @@
   }
 }
 
-.alg-agent__empty {
-  margin: auto 0;
+// The agent's seeded opening line, voiced by AlgTypewriter. Editorial display
+// type in the primary fg so it reads as the intelligence speaking — not a
+// muted placeholder.
+.alg-agent__opening {
+  margin: 0;
   font-family: var(--alg-font-display);
-  font-size: var(--alg-text-sm);
+  font-size: var(--alg-text-md);
   line-height: var(--alg-leading-relaxed);
-  color: var(--alg-fg-tertiary);
-  text-align: center;
-  max-width: 32ch;
-  align-self: center;
+  color: var(--alg-fg-primary);
   letter-spacing: var(--alg-tracking-snug);
+  max-width: 64ch;
 }
 
 .alg-agent__form {
   position: relative;
-  padding: var(--alg-space-3) var(--alg-space-4) var(--alg-space-5);
-  border-top: 1px solid var(--alg-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-space-2);
 }
 
 .alg-agent__input {
@@ -1446,8 +1384,8 @@
   resize: none;
   background: var(--alg-bg-tint-low);
   border: 1px solid var(--alg-border-hover);
-  border-radius: var(--alg-radius-sm);
-  padding: var(--alg-space-2) 4rem var(--alg-space-2) var(--alg-space-3);
+  border-radius: var(--alg-radius-md);
+  padding: var(--alg-space-3) 5rem var(--alg-space-3) var(--alg-space-4);
   font-family: var(--alg-font-sans);
   font-size: var(--alg-text-sm);
   line-height: var(--alg-leading-normal);
@@ -1467,19 +1405,28 @@
   }
 }
 
-.alg-agent__send {
+// Action cluster pinned to the right edge of the input (mic + send).
+.alg-agent__actions {
   position: absolute;
-  right: 1.5rem;
-  bottom: 2.25rem;
+  top: var(--alg-space-2);
+  right: var(--alg-space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--alg-space-1);
+}
+
+// Shared composer-action button shape (mic + send). Mixin (not @extend) to
+// match the codebase convention (@include alg-glass …).
+@mixin alg-agent-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   background: transparent;
   border: 1px solid var(--alg-border-hover);
   border-radius: var(--alg-radius-sm);
-  color: var(--alg-fg-primary);
+  color: var(--alg-fg-secondary);
   cursor: pointer;
   transition:
     border-color var(--alg-duration-fast) var(--alg-ease-cinematic),
@@ -1487,6 +1434,7 @@
     background-color var(--alg-duration-fast) var(--alg-ease-cinematic);
 
   &:hover:not(:disabled) {
+    color: var(--alg-fg-primary);
     border-color: var(--alg-border-strong);
     background: var(--alg-bg-tint-med);
   }
@@ -1495,6 +1443,19 @@
     outline: 2px solid var(--alg-color-brand-primary);
     outline-offset: 2px;
   }
+}
+
+.alg-agent__mic {
+  @include alg-agent-action;
+}
+
+.alg-agent__mic-icon {
+  display: block;
+}
+
+.alg-agent__send {
+  @include alg-agent-action;
+  color: var(--alg-fg-primary);
 
   &:disabled {
     color: var(--alg-fg-quaternary);
@@ -1509,7 +1470,6 @@
 }
 
 .alg-agent__hint {
-  margin-top: var(--alg-space-2);
   display: block;
   font-family: var(--alg-font-mono);
   font-size: 10px;
@@ -1521,12 +1481,12 @@
 // =============================================================================
 // SECTOR SHELL v2 — Cinematic OS v2 (plan 0007, M2-b)
 // -----------------------------------------------------------------------------
-// The sector page template: dense data Overview (default) + operational
-// sub-tabs + a full-width agent chat anchored at the foot. Density is
-// `operational` (24px padding / 16px gap). The agent chat is NOT a 360px right
-// rail — it spans the column at the bottom of the page (D4). A jump-to-chat
-// button in the header scrolls it into view (D5). Active tab is a glass-soft
-// pill; reduced-motion drops the underline transition.
+// The sector page template: a solid, sticky Aurora-bordered HERO band — the
+// sector's specialist agent — pinned to the TOP of the column, followed by the
+// dense data Overview (default) + operational sub-tabs. There is no right rail,
+// no footer chat, and no jump-to-chat button: the agent leads the page instead
+// of trailing it. Density is `operational` (24px padding / 16px gap). Active
+// tab is a glass-soft pill; reduced-motion drops the underline transition.
 // =============================================================================
 
 .alg-shell {
@@ -1564,40 +1524,6 @@
   letter-spacing: var(--alg-tracking-snug);
   color: var(--alg-fg-primary);
   margin: 0;
-}
-
-.alg-shell__jump {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  background: transparent;
-  border: 1px solid var(--alg-border-hover);
-  border-radius: var(--alg-radius-md);
-  color: var(--alg-fg-secondary);
-  cursor: pointer;
-  transition:
-    color var(--alg-duration-fast) var(--alg-ease-cinematic),
-    border-color var(--alg-duration-fast) var(--alg-ease-cinematic),
-    background-color var(--alg-duration-fast) var(--alg-ease-cinematic);
-
-  &:hover {
-    color: var(--alg-fg-primary);
-    border-color: var(--alg-border-strong);
-    background: var(--alg-bg-tint-low);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--alg-color-brand-primary);
-    outline-offset: 2px;
-  }
-}
-
-.alg-shell__jump-icon {
-  display: inline-flex;
-  font-size: 18px;
 }
 
 .alg-shell__tablist {
@@ -1652,11 +1578,60 @@
   }
 }
 
+// HERO band — the sector's specialist orchestrator pinned to the top.
+// `.alg-shell__chat` is the AlgAuroraBorder root (it carries the Aurora frame +
+// optional glow). We make it SOLID and STICKY: an opaque elevated surface so
+// the scrolling KPI grid below never bleeds through, sticky to top:0 so it
+// stays present as the data central scrolls. position:sticky (NOT fixed) keeps
+// it inside the centered, max-width column. Order-1 so it sits above the
+// tablist; the heading retains .alg-shell__chat-heading for a11y + the 8
+// *Dashboard specs.
 .alg-shell__chat {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  // Opaque elevated background — solid, not floating glass. The KPI grid must
+  // never show through.
+  background: var(--alg-bg-elevated);
+  border-radius: var(--alg-radius-2xl);
+  // No box-shadow here: AlgAuroraBorder composes the band's elevation + aurora
+  // glow inline via its `elevation` prop (`var(--alg-elevation-2)`, passed from
+  // SectorShellV2). Declaring elevation here would lose to the component's
+  // inline style and re-introduce the round-2 flat-slab defect.
+
+  @media (max-width: 768px) {
+    // On narrow screens the sticky band would eat too much height; let it scroll
+    // with the page.
+    position: static;
+  }
+}
+
+// Inner layout: planet identity (left) + agent body (heading + voice +
+// composer). Compact band, not a full-screen splash.
+.alg-shell__hero {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--alg-space-5);
+  padding: var(--alg-space-5) var(--alg-space-6);
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: var(--alg-space-4);
+    padding: var(--alg-space-4);
+  }
+}
+
+.alg-shell__hero-planet {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.alg-shell__hero-body {
   display: flex;
   flex-direction: column;
-  gap: var(--alg-space-4);
-  scroll-margin-top: var(--alg-admin-topbar-height);
+  gap: var(--alg-space-3);
+  min-width: 0;
+  flex: 1;
 }
 
 .alg-shell__chat-heading {
@@ -1669,8 +1644,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .alg-shell__tab,
-  .alg-shell__jump {
+  .alg-shell__tab {
     transition: none;
   }
 }
@@ -2568,52 +2542,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-// Jump-to-chat anchor button (top-right of overview pane header).
-// Pill-shaped, low-opacity background, reveals planet avatar + label + arrow.
-.alg-agent-anchor {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--alg-space-2);
-  padding: 8px 8px 8px 10px;
-  border-radius: var(--alg-radius-pill);
-  background: var(--alg-bg-tint-low);
-  border: 1px solid var(--alg-border);
-  color: var(--alg-fg-secondary);
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background var(--alg-duration-fast) var(--alg-ease-cinematic),
-    border-color var(--alg-duration-fast) var(--alg-ease-cinematic),
-    color var(--alg-duration-fast) var(--alg-ease-cinematic);
-  white-space: nowrap;
-  flex-shrink: 0;
-
-  &:hover {
-    background: var(--alg-bg-tint-med);
-    border-color: var(--alg-border-hover);
-    color: var(--alg-fg-primary);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--alg-color-brand-primary);
-    outline-offset: 2px;
-  }
-}
-
-.alg-agent-anchor__label {
-  font-family: var(--alg-font-mono);
-  font-size: 10px;
-  letter-spacing: var(--alg-tracking-widest);
-  text-transform: uppercase;
-}
-
-.alg-agent-anchor__arrow {
-  color: var(--alg-fg-tertiary);
-}
-
 // Planet avatar — deterministic CSS gradient sphere for each sector agent.
-// Used in the agent-anchor button and in the sector agent chat footer.
-// No image dependency; all rendered from CSS radial-gradient.
+// Legacy CSS-class planet (sm/md/lg + per-sector gradient). The sector hero now
+// uses the richer AlgPlanetAvatar component; these classes remain for any other
+// consumer that renders a flat gradient sphere. No image dependency.
 .alg-planet {
   border-radius: 50%;
   position: relative;

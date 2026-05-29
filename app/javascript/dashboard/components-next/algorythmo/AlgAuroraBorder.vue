@@ -43,6 +43,15 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  // Base elevation shadow composed UNDER the glow, e.g. 'var(--alg-elevation-2)'.
+  // The glow is luminance, not a drop shadow — without a grounded elevation a
+  // lifted surface reads as a flat slab (the round-2 defect). box-shadow is not
+  // additive across rules, so both layers must live in one declaration; this
+  // composes them: `<elevation>, <glow>`.
+  elevation: {
+    type: String,
+    default: '',
+  },
   // Processing state — accelerates the arc drift to a ~6s feel.
   active: {
     type: Boolean,
@@ -50,10 +59,20 @@ const props = defineProps({
   },
 });
 
+// Single source of truth for the surface shadow: grounded elevation first, then
+// the Aurora glow. Applied inline so it always wins over any consumer class.
+const boxShadow = computed(() => {
+  const parts = [];
+  if (props.elevation) parts.push(props.elevation);
+  if (props.glow) parts.push('var(--alg-aurora-glow)');
+  return parts.length ? parts.join(', ') : null;
+});
+
 const rootStyle = computed(() => ({
   '--alg-border-radius': props.radius,
   '--alg-border-thickness': props.thickness,
   '--alg-border-opacity': props.intensity === 'subtle' ? '0.5' : '0.82',
+  ...(boxShadow.value ? { boxShadow: boxShadow.value } : {}),
 }));
 </script>
 
@@ -61,10 +80,7 @@ const rootStyle = computed(() => ({
   <component
     :is="as"
     class="alg-aurora-border"
-    :class="{
-      'alg-aurora-border--glow': glow,
-      'alg-aurora-border--active': active,
-    }"
+    :class="{ 'alg-aurora-border--active': active }"
     :style="rootStyle"
   >
     <span class="alg-aurora-border__frame" aria-hidden="true" />
@@ -114,11 +130,6 @@ const rootStyle = computed(() => ({
   z-index: 1;
   display: block;
   border-radius: inherit;
-}
-
-// Soft, low outer glow — only when the surface is a showpiece (dropzone/hero).
-.alg-aurora-border--glow {
-  box-shadow: var(--alg-aurora-glow);
 }
 
 // Processing: the arc quickens to the orb's 6s breath.

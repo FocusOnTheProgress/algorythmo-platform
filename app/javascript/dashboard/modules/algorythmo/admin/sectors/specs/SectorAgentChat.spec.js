@@ -14,28 +14,22 @@ function mountChat() {
 }
 
 describe('SectorAgentChat', () => {
-  it('renders the 360px aside with aria-label', () => {
+  it('renders the agent strip root with aria-label', () => {
     const wrapper = mountChat();
     const root = wrapper.find('.alg-agent');
     expect(root.exists()).toBe(true);
     expect(root.attributes('aria-label')).toBeTruthy();
   });
 
-  it('renders a geometric monogram avatar (inline SVG, not Lucide)', () => {
+  it('voices a seeded opening line via the typewriter (full text exposed)', () => {
+    // F-B: identity (planet + heading) now lives in the hero; the agent strip
+    // voices ONE seeded opening line. AlgTypewriter exposes the full line via
+    // aria-label even mid-type, so assistive tech reads it immediately.
     const wrapper = mountChat();
-    const svg = wrapper.find('.alg-agent__monogram');
-    expect(svg.exists()).toBe(true);
-    expect(svg.element.tagName.toLowerCase()).toBe('svg');
-  });
-
-  it('renders sector name + lowercase "agente" suffix', () => {
-    const wrapper = mountChat();
-    const name = wrapper.find('.alg-agent__name');
-    expect(name.text()).toContain(
-      'ALGORYTHMO_ADMIN.SECTORS.OPERATIONS.HEADING'
-    );
-    expect(wrapper.find('.alg-agent__name-suffix').text()).toBe(
-      'ALGORYTHMO_ADMIN.SECTORS.AGENT.NAME_SUFFIX'
+    const opening = wrapper.find('.alg-agent__opening');
+    expect(opening.exists()).toBe(true);
+    expect(wrapper.find('.alg-typewriter').attributes('aria-label')).toBe(
+      'ALGORYTHMO_ADMIN.SECTORS.AGENT.OPENING'
     );
   });
 
@@ -48,9 +42,9 @@ describe('SectorAgentChat', () => {
     );
   });
 
-  it('renders the empty state when no messages exist', () => {
+  it('shows the opening line (not a message list) when no messages exist', () => {
     const wrapper = mountChat();
-    expect(wrapper.find('.alg-agent__empty').exists()).toBe(true);
+    expect(wrapper.find('.alg-agent__opening').exists()).toBe(true);
     expect(wrapper.find('.alg-agent__list').exists()).toBe(false);
   });
 
@@ -58,6 +52,17 @@ describe('SectorAgentChat', () => {
     const wrapper = mountChat();
     expect(wrapper.find('.alg-agent__input').exists()).toBe(true);
     expect(wrapper.find('.alg-agent__hint').exists()).toBe(true);
+  });
+
+  it('renders a voice (mic) button — visual only, with an aria-label', () => {
+    const wrapper = mountChat();
+    const mic = wrapper.find('.alg-agent__mic');
+    expect(mic.exists()).toBe(true);
+    // Visual-only affordance: must be type="button" so it never submits.
+    expect(mic.attributes('type')).toBe('button');
+    expect(mic.attributes('aria-label')).toBe(
+      'ALGORYTHMO_ADMIN.SECTORS.AGENT.MIC_ARIA'
+    );
   });
 
   it('exposes a visible send button (not keyboard-only)', () => {
