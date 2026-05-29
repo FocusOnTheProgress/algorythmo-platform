@@ -92,6 +92,27 @@ describe('FacilitiesDashboard (M2-g)', () => {
     );
   });
 
+  it('watermark is only in the Overview pane, not in the Controle tables', () => {
+    const wrapper = mountDashboard();
+    // Overview carries the demonstration watermark (D12 contract).
+    expect(
+      wrapper
+        .find('#alg-sector-panel-overview .alg-overview__watermark')
+        .exists()
+    ).toBe(true);
+    // Controle tables must NOT carry it — data is real, not mocked.
+    expect(
+      wrapper
+        .find('#alg-sector-panel-controle .alg-control__watermark')
+        .exists()
+    ).toBe(false);
+    expect(
+      wrapper
+        .find('#alg-sector-panel-controle .alg-overview__watermark')
+        .exists()
+    ).toBe(false);
+  });
+
   it('hides the Controle sub-tab when its cut flag is active (D10)', () => {
     featureGate.mockImplementation(
       (_accountId, flag) => flag === 'algorythmo_cut_sector_facilities_controle'

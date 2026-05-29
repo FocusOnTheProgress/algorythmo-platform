@@ -2146,3 +2146,28 @@
     outline-offset: 2px;
   }
 }
+
+// Visually-hidden aria-live status node. The [role=status] / aria-live content
+// is read by screen readers without being visible to sighted users.
+.alg-control__live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Subtle "saved in this browser only" notice — replaces the watermark that was
+// removed from the Controle tables (data is user-entered, not mocked).
+.alg-control__saved-hint {
+  font-family: var(--alg-font-mono);
+  font-size: 10px;
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-wide);
+  text-transform: uppercase;
+  color: var(--alg-fg-quaternary);
+}

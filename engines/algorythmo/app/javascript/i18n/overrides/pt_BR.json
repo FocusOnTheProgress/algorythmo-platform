@@ -315,6 +315,7 @@
           "EXPENSE_UNIT": "Unidade",
           "EXPENSE_UNIT_PLACEHOLDER": "Selecione a unidade",
           "EXPENSE_CATEGORY": "Categoria",
+          "EXPENSE_CATEGORY_PLACEHOLDER": "Selecione a categoria",
           "EXPENSE_AMOUNT": "Valor",
           "EXPENSE_DATE": "Data",
           "EXPENSE_NOTE": "Nota",
@@ -323,7 +324,21 @@
           "ACTIONS": "Ações",
           "REMOVE": "Remover",
           "REMOVE_UNIT_ARIA": "Remover unidade {name}",
-          "REMOVE_EXPENSE_ARIA": "Remover gasto de {category}"
+          "REMOVE_EXPENSE_ARIA": "Remover gasto de {category}",
+          "SAVED_IN_BROWSER": "Salvo apenas neste navegador",
+          "STATUS_UNIT_ADDED": "Unidade adicionada",
+          "STATUS_UNIT_REMOVED": "Unidade removida",
+          "STATUS_EXPENSE_ADDED": "Gasto adicionado",
+          "STATUS_EXPENSE_REMOVED": "Gasto removido",
+          "CATEGORIES": {
+            "ALUGUEL": "Aluguel",
+            "ENERGIA": "Energia",
+            "AGUA": "Água",
+            "MANUTENCAO": "Manutenção",
+            "LIMPEZA": "Limpeza",
+            "INTERNET_TELEFONE": "Internet / Telefone",
+            "OUTROS": "Outros"
+          }
         }
       }
     },

@@ -306,6 +306,7 @@
           "EXPENSE_UNIT": "Unit",
           "EXPENSE_UNIT_PLACEHOLDER": "Select the unit",
           "EXPENSE_CATEGORY": "Category",
+          "EXPENSE_CATEGORY_PLACEHOLDER": "Select the category",
           "EXPENSE_AMOUNT": "Amount",
           "EXPENSE_DATE": "Date",
           "EXPENSE_NOTE": "Note",
@@ -314,7 +315,21 @@
           "ACTIONS": "Actions",
           "REMOVE": "Remove",
           "REMOVE_UNIT_ARIA": "Remove unit {name}",
-          "REMOVE_EXPENSE_ARIA": "Remove {category} expense"
+          "REMOVE_EXPENSE_ARIA": "Remove {category} expense",
+          "SAVED_IN_BROWSER": "Saved in this browser only",
+          "STATUS_UNIT_ADDED": "Unit added",
+          "STATUS_UNIT_REMOVED": "Unit removed",
+          "STATUS_EXPENSE_ADDED": "Expense added",
+          "STATUS_EXPENSE_REMOVED": "Expense removed",
+          "CATEGORIES": {
+            "ALUGUEL": "Rent",
+            "ENERGIA": "Energy",
+            "AGUA": "Water",
+            "MANUTENCAO": "Maintenance",
+            "LIMPEZA": "Cleaning",
+            "INTERNET_TELEFONE": "Internet & Phone",
+            "OUTROS": "Other"
+          }
         }
       }
     },
