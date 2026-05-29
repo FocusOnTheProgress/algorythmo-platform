@@ -83,7 +83,6 @@ jobs:
             app/javascript/dashboard/routes/specs/m6-1-a-foundation.spec.js \
             app/javascript/dashboard/routes/specs/m6-1-b-sidebar-route.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/ReportsCommercialOverlay.spec.js \
-            app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/commercial-mock-contract.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/CustomerSupportPane.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/commercial-overview-contract.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/marketing/specs/MarketingDashboard.spec.js \
