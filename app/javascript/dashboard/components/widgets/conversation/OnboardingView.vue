@@ -44,33 +44,29 @@ const greetingMessage = computed(() => {
         }}
       </p>
     </div>
+    <!-- algorythmo: cinematic-os C1.1 — dropped the image-src bindings so the
+         upstream cream/light onboarding illustrations no longer render over the
+         dark canvas. The cards keep their dark n-surface styling and the
+         setup guidance copy. -->
     <OnboardingFeatureCard
-      image-src="/dashboard/images/onboarding/omnichannel-inbox.png"
-      image-alt="Omnichannel"
       to="settings_inbox_new"
       :title="$t('ONBOARDING.ALL_CONVERSATION.TITLE')"
       :description="$t('ONBOARDING.ALL_CONVERSATION.DESCRIPTION')"
       :link-text="$t('ONBOARDING.ALL_CONVERSATION.NEW_LINK')"
     />
     <OnboardingFeatureCard
-      image-src="/dashboard/images/onboarding/teams.png"
-      image-alt="Teams"
       to="settings_teams_new"
       :title="$t('ONBOARDING.TEAM_MEMBERS.TITLE')"
       :description="$t('ONBOARDING.TEAM_MEMBERS.DESCRIPTION')"
       :link-text="$t('ONBOARDING.TEAM_MEMBERS.NEW_LINK')"
     />
     <OnboardingFeatureCard
-      image-src="/dashboard/images/onboarding/canned-responses.png"
-      image-alt="Canned responses"
       to="canned_list"
       :title="$t('ONBOARDING.CANNED_RESPONSES.TITLE')"
       :description="$t('ONBOARDING.CANNED_RESPONSES.DESCRIPTION')"
       :link-text="$t('ONBOARDING.CANNED_RESPONSES.NEW_LINK')"
     />
     <OnboardingFeatureCard
-      image-src="/dashboard/images/onboarding/labels.png"
-      image-alt="Labels"
       to="labels_list"
       :title="$t('ONBOARDING.LABELS.TITLE')"
       :description="$t('ONBOARDING.LABELS.DESCRIPTION')"
