@@ -106,6 +106,13 @@ const expenseForm = ref({
   note: '',
 });
 
+function persist() {
+  writeState(accountId.value, userId.value, {
+    units: units.value,
+    expenses: expenses.value,
+  });
+}
+
 // Load persisted state once the account/user context is known.
 function hydrate() {
   const state = readState(accountId.value, userId.value);
@@ -122,13 +129,6 @@ function hydrate() {
 onMounted(hydrate);
 // Account or user switch → re-scope to the new tenant's data (no cross-leak).
 watch([accountId, userId], hydrate);
-
-function persist() {
-  writeState(accountId.value, userId.value, {
-    units: units.value,
-    expenses: expenses.value,
-  });
-}
 
 const canAddUnit = computed(() => unitForm.value.name.trim().length > 0);
 const hasUnits = computed(() => units.value.length > 0);
