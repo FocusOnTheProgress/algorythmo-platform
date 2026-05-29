@@ -148,8 +148,8 @@ export default {
           beforeEnter: defaultReportsBeforeEnter,
           component: { render: () => null },
         },
-        // algorythmo: M6.1-b — Relatórios Comerciais overlay (first child = default target).
-        // Placeholder shell; real composition (SectorDashboard + mock) arrives in M6.1-c.
+        // algorythmo: Relatórios Comerciais overlay (first child = default target).
+        // Composition lives in CommercialShell via ReportsCommercialOverlay (plan 0007 M2-c).
         {
           path: 'commercial',
           name: 'commercial_reports',

@@ -31,7 +31,9 @@ describe('SectorAgentChat', () => {
   it('renders sector name + lowercase "agente" suffix', () => {
     const wrapper = mountChat();
     const name = wrapper.find('.alg-agent__name');
-    expect(name.text()).toContain('ALGORYTHMO_ADMIN.SECTORS.OPERATIONS.HEADING');
+    expect(name.text()).toContain(
+      'ALGORYTHMO_ADMIN.SECTORS.OPERATIONS.HEADING'
+    );
     expect(wrapper.find('.alg-agent__name-suffix').text()).toBe(
       'ALGORYTHMO_ADMIN.SECTORS.AGENT.NAME_SUFFIX'
     );
