@@ -3,13 +3,6 @@
     "SIDEBAR": {
       "BRAIN": "Brain"
     },
-    "TABS": {
-      "VIEWER": "Aquarium",
-      "AJUSTES": "Settings",
-      "HISTORICO": "History",
-      "CONFIG": "Config",
-      "COMING_SOON": "Coming soon"
-    },
     "VIEWER": {
       "HEADING": "Brain Algorythmo",
       "SUBHEADING": "What the Brain knows about your company",
@@ -22,68 +15,61 @@
       "TIMELINE_UNAVAILABLE": "History unavailable right now."
     },
     "AQUARIO": {
-      "ARIA_LABEL": "Brain aquarium — organized view of company intelligence",
+      "ARIA_LABEL": "Brain knowledge hub — the living core of company intelligence",
       "HUB": {
-        "EYEBROW": "Knowledge base · company aquarium",
+        "EYEBROW": "Knowledge base · company brain",
         "TITLE": "The knowledge that moves your agents",
-        "SUBTITLE": "839 living layers in your company's base. Aurora distributes context to every data surface in real time.",
+        "SUBTITLE": "Aurora holds your company's living memory and distributes context to every agent in real time. Below, a glimpse of what it knows right now.",
         "ORB_ARIA": "Aurora — living core of company knowledge",
-        "STAGE_ARIA": "Knowledge layers surrounding Aurora",
+        "STAGE_ARIA": "Knowledge connected to the Aurora core",
         "DEMO_WATERMARK": "Demonstration data",
-        "LAYERS": {
-          "SOURCE_LABEL": "Source Layers",
-          "SOURCE_VALUE": "192",
-          "SOURCE_DESC": "Knowledge absorbed from company documents, policies and catalogs.",
-          "HUMAN_LABEL": "Human Layers",
-          "HUMAN_VALUE": "322",
-          "HUMAN_DESC": "Generated through real conversations and contexts with your customers.",
-          "AUTO_LABEL": "Auto Layers",
-          "AUTO_VALUE": "237",
-          "AUTO_DESC": "Created automatically from operational data and signals.",
-          "AGENT_LABEL": "Agent Layers",
-          "AGENT_VALUE": "88",
-          "AGENT_DESC": "Produced by agent-to-agent interaction during operational flows."
+        "LAYER_COUNT": "839",
+        "LAYER_COUNT_LABEL": "Living layers",
+        "CARDS": {
+          "DOC_MVM": {
+            "LABEL": "Document",
+            "TITLE": "MVM — Minimum Viable Memory",
+            "BODY": "Foundational doc absorbed: mission, voice and operating principles the agents inherit.",
+            "META": "Ingested 2 days ago"
+          },
+          "FACT_VOICE": {
+            "LABEL": "Fact",
+            "TITLE": "Brand voice",
+            "BODY": "Technical yet accessible, avoids jargon. Confirms stock before promising lead times.",
+            "META": "Learned from 1,247 conversations"
+          },
+          "DECISION": {
+            "LABEL": "Decision",
+            "TITLE": "Dream cycle · May 27",
+            "BODY": "Consolidated 14 adjustments into 3 coherent rules — no contradictions left open.",
+            "META": "Consolidated automatically"
+          },
+          "LEAD": {
+            "LABEL": "Lead",
+            "TITLE": "Maria Silva → Qualified",
+            "BODY": "Moved by João at 14:32. Brain attached full context and intent for the sales team.",
+            "META": "Updated 18 min ago"
+          },
+          "CATALOG": {
+            "LABEL": "Catalog",
+            "TITLE": "1,247 active SKUs",
+            "BODY": "Product catalog refreshed and indexed — prices, specs and availability are current.",
+            "META": "Synced today"
+          },
+          "SIGNAL": {
+            "LABEL": "Signal",
+            "TITLE": "Response time −63%",
+            "BODY": "Average first reply fell from 3h to 27 min after the Brain went live across channels.",
+            "META": "Last 30 days"
+          }
         }
       },
-      "COLUMNS": {
-        "CONVERSAS": "Conversations processed",
-        "FATOS": "Company facts",
-        "LEADS": "Recent leads",
-        "AJUSTES": "Adjustments logged",
-        "DOCUMENTOS": "Documents absorbed",
-        "DECISOES": "Consolidated decisions"
-      },
-      "SPECIMENS": {
-        "CONVERSAS_1": "1,247 conversations analysed in the past 30 days.",
-        "CONVERSAS_2": "Brain identified 89 qualified leads without human intervention.",
-        "CONVERSAS_3": "Average response time dropped from 3h to 27 min after Brain went live.",
-        "FATOS_1": "Brand voice: technical yet accessible, avoids jargon.",
-        "FATOS_2": "Return policy: 30 days, no shipping cost for the customer.",
-        "FATOS_3": "Support hours: Mon-Fri 9-18h, Sat 9-13h (BR).",
-        "LEADS_1": "Maria Silva moved to Qualified by João at 14:32.",
-        "LEADS_2": "Carlos Pereira assigned to the sales team at 13:18.",
-        "AJUSTES_1": "Voice refined: technical replies are now more concise.",
-        "AJUSTES_2": "New rule: don't promise lead times before confirming stock.",
-        "DOCUMENTOS_1": "Warranty policy v2.3 absorbed 2 days ago.",
-        "DOCUMENTOS_2": "Product catalog refreshed — 1,247 active SKUs.",
-        "DECISOES_1": "Dream cycle on May 27 consolidated 14 adjustments into 3 coherent rules.",
-        "DECISOES_2": "Weekly snapshot: brand voice remains stable."
+      "DROPZONE": {
+        "ARIA_LABEL": "Attach company documents to feed the Brain",
+        "TITLE": "Attach company documents",
+        "HINT": "Drag files here. The Brain absorbs and indexes them automatically.",
+        "FORMATS": "PDF · DOCX · TXT · MD"
       }
-    },
-    "EMPTY_STATE": {
-      "ARIA_LABEL": "First steps with Brain",
-      "STEP_1_TITLE": "Paste your first instruction",
-      "STEP_1_DESC": "Describe your company, product, voice and what the Brain needs to know.",
-      "STEP_2_TITLE": "Brain processes in background",
-      "STEP_2_DESC": "Ingestion + dream cycle run automatically every night.",
-      "STEP_3_TITLE": "Ask in Cursor or Claude Code",
-      "STEP_3_DESC": "Connect via MCP stdio. Brain replies with real company context.",
-      "FOOTER": "Day-1: founder dogfooding. M3.5 opens to external clients."
-    },
-    "TIMELINE": {
-      "TYPE_ADJUSTMENT": "adjustment",
-      "TYPE_DREAM_CYCLE": "dream cycle",
-      "TYPE_SNAPSHOT": "snapshot"
     }
   }
 }
