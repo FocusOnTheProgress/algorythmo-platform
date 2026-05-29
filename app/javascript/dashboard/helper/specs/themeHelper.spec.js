@@ -3,72 +3,68 @@ import { LocalStorage } from 'shared/helpers/localStorage';
 
 vi.mock('shared/helpers/localStorage');
 
+// algorythmo: rebrand-m0 — Cinematic OS is dark-first (DESIGN.md §1).
+// The boot theme defaults to dark. Only an EXPLICIT 'light' preference opts out;
+// 'auto' resolves to dark regardless of the OS color scheme. These specs assert
+// that dark-first contract.
 describe('setColorTheme', () => {
   it('should set body class to dark if selectedColorScheme is dark', () => {
     LocalStorage.get.mockReturnValue('dark');
-    setColorTheme(true);
+    setColorTheme();
     expect(document.body.classList.contains('dark')).toBe(true);
   });
 
-  it('should set body class to dark if selectedColorScheme is auto and isOSOnDarkMode is true', () => {
+  it('should set body class to dark if selectedColorScheme is auto (dark-first, OS ignored)', () => {
     LocalStorage.get.mockReturnValue('auto');
-    setColorTheme(true);
+    setColorTheme();
     expect(document.body.classList.contains('dark')).toBe(true);
   });
 
-  it('should not set body class to dark if selectedColorScheme is auto and isOSOnDarkMode is false', () => {
+  it('should keep body dark when selectedColorScheme is auto even on a light OS', () => {
     LocalStorage.get.mockReturnValue('auto');
-    setColorTheme(false);
-    expect(document.body.classList.contains('dark')).toBe(false);
+    setColorTheme();
+    expect(document.body.classList.contains('dark')).toBe(true);
   });
 
   it('should not set body class to dark if selectedColorScheme is light', () => {
     LocalStorage.get.mockReturnValue('light');
-    setColorTheme(true);
+    setColorTheme();
     expect(document.body.classList.contains('dark')).toBe(false);
   });
 
-  it('should not set body class to dark if selectedColorScheme is undefined', () => {
+  it('should set body class to dark if selectedColorScheme is undefined (default dark-first)', () => {
     LocalStorage.get.mockReturnValue(undefined);
-    setColorTheme(true);
+    setColorTheme();
     expect(document.body.classList.contains('dark')).toBe(true);
   });
 
   it('should set documentElement style to dark if selectedColorScheme is dark', () => {
     LocalStorage.get.mockReturnValue('dark');
-    setColorTheme(true);
+    setColorTheme();
     expect(document.documentElement.getAttribute('style')).toBe(
       'color-scheme: dark;'
     );
   });
 
-  it('should set documentElement style to dark if selectedColorScheme is auto and isOSOnDarkMode is true', () => {
+  it('should set documentElement style to dark if selectedColorScheme is auto', () => {
     LocalStorage.get.mockReturnValue('auto');
-    setColorTheme(true);
+    setColorTheme();
     expect(document.documentElement.getAttribute('style')).toBe(
       'color-scheme: dark;'
     );
   });
 
-  it('should set documentElement style to light if selectedColorScheme is auto and isOSOnDarkMode is false', () => {
-    LocalStorage.get.mockReturnValue('auto');
-    setColorTheme(false);
-    expect(document.documentElement.getAttribute('style')).toBe(
-      'color-scheme: light;'
-    );
-  });
-
-  it('should set documentElement style to light if selectedColorScheme is light', () => {
+  it('should set documentElement style to light only if selectedColorScheme is light', () => {
     LocalStorage.get.mockReturnValue('light');
-    setColorTheme(true);
+    setColorTheme();
     expect(document.documentElement.getAttribute('style')).toBe(
       'color-scheme: light;'
     );
   });
 
-  it('should set documentElement style to light if selectedColorScheme is undefined', () => {
+  it('should set documentElement style to dark if selectedColorScheme is undefined', () => {
     LocalStorage.get.mockReturnValue(undefined);
-    setColorTheme(true);
+    setColorTheme();
     expect(document.documentElement.getAttribute('style')).toBe(
       'color-scheme: dark;'
     );

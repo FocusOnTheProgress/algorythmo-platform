@@ -56,6 +56,10 @@ check_file "config/installation_config.yml" "rebrand-m0"
 # M1-B design-system-import entries
 check_file "vite.config.ts" "design-system-import"
 check_file "app/javascript/dashboard/assets/scss/_woot.scss" "design-system-import"
+# C1 — Cinematic OS dark-first global theme + Chatwoot purge
+check_file "app/javascript/dashboard/helper/themeHelper.js" "rebrand-m0"
+check_file "app/javascript/v3/App.vue" "rebrand-m0"
+check_file "app/views/layouts/vueapp.html.erb" "rebrand-m0"
 
 echo ""
 if [[ "${FAILURES}" -gt 0 ]]; then

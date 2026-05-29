@@ -8,6 +8,9 @@
 // Composition order matters:
 //   1. _tokens.scss   — defines all custom properties on :root / [data-theme]
 //   2. _components.scss — consumes tokens; defines `.alg-*` classes
+//   3. _chrome.scss   — dark-first global override of the host Chatwoot chrome
+//                       (Cinematic OS v2 / C1): purges Chatwoot blue, forces the
+//                       dark canvas, applies glass/grain/elevation to the shell.
 //
 // The engine does NOT auto-hook itself into the host app's Vue / Vite build.
 // See engines/algorythmo/DESIGN.md "Integração" section for the consumer
@@ -17,6 +20,7 @@
 
 @import 'tokens';
 @import 'components';
+@import 'chrome';
 
 // Reset / normalize is intentionally NOT included here. The host Chatwoot
 // app already imports tailwindcss/base in _woot.scss — adding another reset

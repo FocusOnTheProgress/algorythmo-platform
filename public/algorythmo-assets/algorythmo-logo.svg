@@ -1,6 +1,16 @@
 <!-- algorythmo: rebrand-m0 -->
-<!-- Algorythmo OS logotype — placeholder SVG for M0. -->
-<!-- Replace with final brand assets before first client demo. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" fill="none">
-  <text x="0" y="30" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="700" fill="#1f93ff">Algorythmo OS</text>
+<!-- Algorythmo OS logotype — Cinematic OS v2 placeholder (C1). -->
+<!-- Editorial monochrome: white wordmark + a single cyan-teal brand dot as the -->
+<!-- one permitted hue accent (DESIGN.md §3.1). Weight 500, tracking tight. -->
+<!-- Replace with final curated brand asset before GA (DESIGN.md §15). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 40" fill="none" role="img" aria-label="Algorythmo OS">
+  <text x="0" y="27"
+        font-family="'Inter','InterDisplay',-apple-system,system-ui,sans-serif"
+        font-size="22" font-weight="500" letter-spacing="-0.5"
+        fill="#FFFFFF">Algorythmo</text>
+  <text x="156" y="27"
+        font-family="'Inter','InterDisplay',-apple-system,system-ui,sans-serif"
+        font-size="22" font-weight="400" letter-spacing="-0.5"
+        fill="rgba(255,255,255,0.48)">OS</text>
+  <circle cx="200" cy="11" r="3" fill="#16C8C2"/>
 </svg>

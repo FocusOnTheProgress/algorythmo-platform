@@ -6,9 +6,10 @@
     </title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=0"/>
     <% if @global_config['DISPLAY_MANIFEST'] %>
-      <meta name="msapplication-TileColor" content="#1f93ff">
+      <%# algorythmo: rebrand-m0 — chrome theme color is the command-room black (--alg-black-2), never Chatwoot blue %>
+      <meta name="msapplication-TileColor" content="#111113">
       <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
-      <meta name="theme-color" content="#1f93ff">
+      <meta name="theme-color" content="#111113">
       <%# algorythmo: rebrand-m0 — meta description updated to match Algorythmo OS positioning %>
       <meta name="description" content="<%= @global_config['INSTALLATION_NAME'] %> — AI-first CRM and customer engagement platform for growing businesses. Manage conversations, leads and AI agents from a single unified panel.">
       <% if ENV['IOS_APP_IDENTIFIER'].present? %>
@@ -75,7 +76,10 @@
     <%= vite_client_tag %>
     <%= vite_javascript_tag @application_pack %>
   </head>
-  <body class="text-slate-600">
+  <%# algorythmo: rebrand-m0 — dark-first boot. Apply `.dark` + a deep black -%>
+  <%# background inline so there is no white flash before the SPA mounts. The -%>
+  <%# Vue boot (themeHelper / v3 App) re-asserts the theme once running. -%>
+  <body class="dark text-slate-600" style="background-color:#111113">
     <div id="app"></div>
     <noscript id="noscript">This app works best with JavaScript enabled.</noscript>
     <%= yield %>

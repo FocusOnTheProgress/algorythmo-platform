@@ -2171,3 +2171,100 @@
   text-transform: uppercase;
   color: var(--alg-fg-quaternary);
 }
+
+// =============================================================================
+// DENSITY PROFILES — Cinematic OS v2 §3.3 (added in C1)
+// -----------------------------------------------------------------------------
+// Three named, auditable density profiles. A whole screen inherits its density
+// by applying ONE of these classes on the root container. Each profile sets the
+// container padding, the internal flow gap, and the heading register so the
+// page breathes (hero), reads (editorial) or works (operational) consistently.
+//
+//   .alg-density-hero        — login, splash, onboarding, Agent Studio empty.
+//                              96px padding, 48px gap, display 56 / weight 300.
+//   .alg-density-editorial   — builders, settings, prose flow.
+//                              48px padding, 32px gap, display 32 / weight 400.
+//   .alg-density-operational — kanban, inbox, dashboards, sector pages.
+//                              24px padding, 16px gap, sans 18 / weight 500.
+//
+// Mobile rule (DESIGN.md §14.10 — mobile-first): hero/editorial collapse their
+// generous desktop padding toward the operational scale so 375px stays usable.
+//
+// "Rise" rule (§3.3): inside an operational page a hero region (a sector KPI
+// anchor) may lift its gap one band (16 → 24/32) WITHOUT changing the container.
+// Use .alg-density-operational > .alg-density-rise for that local lift. The
+// inverse (densifying inside hero) is never allowed — hero is hero.
+// =============================================================================
+
+.alg-density-hero {
+  padding: var(--alg-density-hero-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-density-hero-gap);
+
+  // Heading register for this density — display face, light, hero tracking.
+  .alg-density__title,
+  > h1 {
+    font-family: var(--alg-font-display);
+    font-size: var(--alg-text-4xl);
+    font-weight: var(--alg-weight-light);
+    letter-spacing: var(--alg-tracking-tightest);
+    line-height: var(--alg-leading-tight);
+    color: var(--alg-fg-primary);
+  }
+
+  @media (max-width: 768px) {
+    padding: var(--alg-space-8);          // 96 → 32 on mobile
+    gap: var(--alg-space-6);              // 48 → 24
+  }
+}
+
+.alg-density-editorial {
+  padding: var(--alg-density-editorial-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-density-editorial-gap);
+
+  .alg-density__title,
+  > h1 {
+    font-family: var(--alg-font-display);
+    font-size: var(--alg-text-2xl);
+    font-weight: var(--alg-weight-regular);
+    letter-spacing: var(--alg-tracking-tight);
+    line-height: var(--alg-leading-snug);
+    color: var(--alg-fg-primary);
+  }
+
+  @media (max-width: 768px) {
+    padding: var(--alg-space-6);          // 48 → 24 on mobile
+    gap: var(--alg-space-6);              // 32 → 24
+  }
+}
+
+.alg-density-operational {
+  padding: var(--alg-density-operational-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-density-operational-gap);
+
+  .alg-density__title,
+  > h1 {
+    font-family: var(--alg-font-sans);
+    font-size: var(--alg-text-lg);
+    font-weight: var(--alg-weight-medium);
+    letter-spacing: var(--alg-tracking-snug);
+    line-height: var(--alg-leading-snug);
+    color: var(--alg-fg-primary);
+  }
+
+  @media (max-width: 768px) {
+    padding: var(--alg-space-4);          // 24 → 16 on mobile
+    gap: var(--alg-space-3);              // 16 → 12
+  }
+}
+
+// Local "rise" — a hero region inside an operational page lifts its gap one
+// band without changing the inherited container density.
+.alg-density-operational > .alg-density-rise {
+  gap: var(--alg-space-8);                // 16 → 32
+}
