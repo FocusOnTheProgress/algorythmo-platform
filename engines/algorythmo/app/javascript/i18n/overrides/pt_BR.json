@@ -111,6 +111,42 @@
           "ENPS_LABEL": "eNPS"
         }
       },
+      "FINANCE": {
+        "HEADING": "Finance",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor Finance",
+        "OVERVIEW": {
+          "TAB": "Visão Geral",
+          "ARIA": "Visão geral consolidada do setor Finance",
+          "A_PAGAR_LABEL": "Contas a Pagar",
+          "A_PAGAR_CHART": "A pagar 30d (R$ mil)",
+          "A_RECEBER_LABEL": "Contas a Receber",
+          "A_RECEBER_CHART": "A receber 30d (R$ mil)",
+          "FLUXO_LABEL": "Fluxo de Caixa",
+          "FLUXO_CHART": "Saldo de caixa (R$ mil)",
+          "MARGEM_LABEL": "Margem",
+          "MARGEM_CHART": "Margem operacional (%)",
+          "LUCRO_LABEL": "Lucro",
+          "LUCRO_CHART": "Lucro líquido (R$ mil)",
+          "PLANEJAMENTO_LABEL": "Planejamento",
+          "PLANEJAMENTO_CHART": "Aderência ao orçamento (%)"
+        }
+      },
+      "HR": {
+        "HEADING": "HR",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor HR",
+        "OVERVIEW": {
+          "TAB": "Visão Geral",
+          "ARIA": "Visão geral consolidada do setor HR",
+          "CONTRATACAO_LABEL": "Contratação",
+          "CONTRATACAO_CHART": "Contratações no mês",
+          "TREINAMENTO_LABEL": "Treinamento",
+          "TREINAMENTO_CHART": "Conclusão de treinamentos (%)",
+          "CULTURA_LABEL": "Cultura",
+          "CULTURA_CHART": "eNPS",
+          "PRODUTIVIDADE_LABEL": "Produtividade",
+          "PRODUTIVIDADE_CHART": "Índice de produtividade (pts)"
+        }
+      },
       "MARKETING": {
         "HEADING": "Marketing",
         "AGENT_CHAT_HEADING": "Fale com o agente do setor Marketing",

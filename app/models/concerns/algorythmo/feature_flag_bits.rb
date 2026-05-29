@@ -29,6 +29,11 @@ module Algorythmo::FeatureFlagBits
   # Positions 35–47 — algorythmo: M2-e: per-sub-tab cuts for the Operations,
   #   Procurement and Administration shells. Hide one tab inside its sector shell.
   #   Default NOT cut (visible); Overview tab is never cut.
+  # Positions 48–57 — algorythmo: M2-f: per-sub-tab cuts for the Finance + HR shells.
+  #   Finance occupies 48–53, HR occupies 54–57.
+  #   sector_finance_{a_pagar,a_receber,fluxo,margem,lucro,planejamento}: hide one tab
+  #   inside FinanceShell.vue. sector_hr_{contratacao,treinamento,cultura,produtividade}:
+  #   hide one tab inside HrShell.vue. Default NOT cut (visible); Overview tab is never cut.
   CUT_FLAG_NAMES = %w[
     campaigns
     help_center
@@ -77,6 +82,16 @@ module Algorythmo::FeatureFlagBits
     sector_administration_estrategia
     sector_administration_metas
     sector_administration_indicadores
+    sector_finance_a_pagar
+    sector_finance_a_receber
+    sector_finance_fluxo
+    sector_finance_margem
+    sector_finance_lucro
+    sector_finance_planejamento
+    sector_hr_contratacao
+    sector_hr_treinamento
+    sector_hr_cultura
+    sector_hr_produtividade
   ].freeze
 
   # Positions 14–15: "enable flags" — check means SHOW the feature (opposite semantic from cut flags).

@@ -82,6 +82,21 @@ export const ALGORYTHMO_CUT_FLAG_NAMES = Object.freeze([
   'sector_administration_estrategia',
   'sector_administration_metas',
   'sector_administration_indicadores',
+  // algorythmo: M2-f — per-sub-tab cut flags for the Finance + HR shells (D10).
+  // Each gates one tab inside FinanceShell.vue / HrShell.vue (NOT a sidebar
+  // entry): cut ACTIVE = tab hidden; default OFF = tab visible. The Overview tab
+  // is never cut. Shell-only cuts (no route-level Policy) — see
+  // SIDEBAR_ONLY_FLAGS in algorythmoCutFlagCoverage.spec.js.
+  'sector_finance_a_pagar',
+  'sector_finance_a_receber',
+  'sector_finance_fluxo',
+  'sector_finance_margem',
+  'sector_finance_lucro',
+  'sector_finance_planejamento',
+  'sector_hr_contratacao',
+  'sector_hr_treinamento',
+  'sector_hr_cultura',
+  'sector_hr_produtividade',
 ]);
 
 // Full flag keys (with the `algorythmo_cut_` prefix) for direct equality checks
