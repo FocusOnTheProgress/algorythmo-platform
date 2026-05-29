@@ -111,6 +111,12 @@ function hydrate() {
   const state = readState(accountId.value, userId.value);
   units.value = state.units;
   expenses.value = state.expenses;
+  // Migrate-on-load: readState normalizes legacy free-text category values to
+  // canonical keys in memory. Persist once so the migration survives in storage
+  // — guarded to data-bearing tenants so a fresh account never gets an empty key.
+  if (state.units.length || state.expenses.length) {
+    persist();
+  }
 }
 
 onMounted(hydrate);
