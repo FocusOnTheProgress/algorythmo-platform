@@ -90,10 +90,12 @@ describe('MarketingDashboard (M2-d)', () => {
     );
   });
 
-  it('Overview cards each carry the demonstration watermark', () => {
+  it('Overview pane carries the demonstration watermark', () => {
+    // plan 0009: premium layout uses a single .alg-sector__watermark per pane,
+    // not one per card (the old alg-overview__watermark pattern is replaced).
     const wrapper = mountDashboard();
-    const watermarks = wrapper.findAll('.alg-overview__watermark');
-    expect(watermarks.length).toBe(6);
+    const watermark = wrapper.find('.alg-sector__watermark');
+    expect(watermark.exists()).toBe(true);
   });
 
   it('anchors the agent chat at the foot via the chatHeadingKey', () => {

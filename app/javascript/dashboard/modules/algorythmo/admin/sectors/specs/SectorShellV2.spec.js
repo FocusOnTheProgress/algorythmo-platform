@@ -39,11 +39,7 @@ function mountShell(slots = {}) {
       agentChat: '<div class="test-chat">chat body</div>',
       ...slots,
     },
-    global: {
-      stubs: {
-        Icon: { props: ['icon'], template: '<i :data-icon="icon" />' },
-      },
-    },
+    global: {},
   });
 }
 
@@ -139,7 +135,7 @@ describe('SectorShellV2', () => {
     const scrollSpy = vi.fn();
     wrapper.find('.alg-shell__chat').element.scrollIntoView = scrollSpy;
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }));
-    await wrapper.find('.alg-shell__jump').trigger('click');
+    await wrapper.find('.alg-agent-anchor').trigger('click');
     expect(scrollSpy).toHaveBeenCalledWith({
       behavior: 'smooth',
       block: 'start',
@@ -151,7 +147,7 @@ describe('SectorShellV2', () => {
     const scrollSpy = vi.fn();
     wrapper.find('.alg-shell__chat').element.scrollIntoView = scrollSpy;
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));
-    await wrapper.find('.alg-shell__jump').trigger('click');
+    await wrapper.find('.alg-agent-anchor').trigger('click');
     expect(scrollSpy).toHaveBeenCalledWith({
       behavior: 'auto',
       block: 'start',
@@ -163,7 +159,7 @@ describe('SectorShellV2', () => {
     // Assert on the full resolved string, not a substring of the raw key.
     // A missing locale key would produce the raw key as the label; this
     // assertion catches that regression (S1 class of bug).
-    const label = wrapper.find('.alg-shell__jump').attributes('aria-label');
+    const label = wrapper.find('.alg-agent-anchor').attributes('aria-label');
     expect(label).toBe(
       'ALGORYTHMO_ADMIN.SECTORS.JUMP_TO_CHAT [name=SECTOR.OPERACOES.TITLE]'
     );
@@ -187,7 +183,7 @@ describe('SectorShellV2', () => {
             { id: 'overview', labelKey: 'L.B' },
           ],
         },
-        global: { stubs: { Icon: true } },
+        global: {},
       });
       expectPropValidationWarn(spy);
       spy.mockRestore();
@@ -204,7 +200,7 @@ describe('SectorShellV2', () => {
             { id: 'overview', labelKey: 'L.B' },
           ],
         },
-        global: { stubs: { Icon: true } },
+        global: {},
       });
       expectPropValidationWarn(spy);
       spy.mockRestore();

@@ -2268,3 +2268,497 @@
 .alg-density-operational > .alg-density-rise {
   gap: var(--alg-space-8);                // 16 → 32
 }
+
+// =============================================================================
+// SECTOR OVERVIEW — Premium layout (Cinematic OS v2, plan 0009)
+// -----------------------------------------------------------------------------
+// Sector overview pages follow the approved layout from the design preview:
+//   1. KPI tiles row — 4 glass cards, delta chip, icon, value, label
+//   2. Sub-area section header — "Sub-áreas" + hairline divider
+//   3. Sub-area drill-down grid — 3 glass cards per row, icon + status + rows
+//
+// The page-level editorial header and the agent chat footer live in
+// SectorShellV2; these classes govern what renders inside the #overview slot.
+// Density profile: operational (24px / 16px) with a local rise on the kpi row.
+// =============================================================================
+
+// KPI row — 4 tiles across, collapses to 2-up below 1024px, 1-up below 480px.
+.alg-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--alg-space-4);
+
+  @media (max-width: 1024px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 480px)  { grid-template-columns: 1fr; }
+}
+
+// Single KPI tile — glass surface with grain.
+.alg-kpi-tile {
+  position: relative;
+  border-radius: var(--alg-radius-lg);
+  padding: 22px 22px 20px;
+  overflow: hidden;
+
+  @include alg-glass(soft);
+  border: 1px solid var(--alg-glass-border);
+  box-shadow:
+    var(--alg-glass-highlight),
+    var(--alg-elevation-2);
+
+  // Grain overlay — the tell that separates real glass from rgba flatness.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--alg-glass-grain);
+    opacity: 0.6;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+}
+
+.alg-kpi-tile__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.alg-kpi-tile__icon {
+  color: var(--alg-fg-tertiary);
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+// Delta pill — semantic colour via modifier class.
+.alg-kpi-tile__delta {
+  font-family: var(--alg-font-mono);
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--alg-radius-pill);
+  background: var(--alg-bg-tint-med);
+  color: var(--alg-fg-tertiary);
+
+  &--up   { color: var(--alg-color-success); background: oklch(0.30 0.08 152 / 0.20); }
+  &--down { color: var(--alg-color-danger);  background: oklch(0.32 0.10 25  / 0.22); }
+  &--warn { color: var(--alg-color-warning); background: oklch(0.33 0.075 85 / 0.22); }
+}
+
+.alg-kpi-tile__value {
+  font-family: var(--alg-font-display);
+  font-size: 34px;
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-tightest);
+  line-height: 1;
+  color: var(--alg-fg-primary);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.alg-kpi-tile__unit {
+  font-size: 16px;
+  font-weight: var(--alg-weight-regular);
+  color: var(--alg-fg-tertiary);
+  margin-left: 3px;
+}
+
+.alg-kpi-tile__label {
+  margin-top: 8px;
+  font-size: var(--alg-text-sm);
+  color: var(--alg-fg-secondary);
+}
+
+// Sub-areas section header — title + count + hairline divider.
+.alg-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--alg-space-3);
+  margin: var(--alg-space-6) 0 var(--alg-space-4);
+}
+
+.alg-section-head__title {
+  font-size: var(--alg-text-lg);
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-snug);
+  color: var(--alg-fg-primary);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.alg-section-head__count {
+  font-family: var(--alg-font-mono);
+  font-size: 11px;
+  color: var(--alg-fg-tertiary);
+  white-space: nowrap;
+}
+
+.alg-section-head__line {
+  height: 1px;
+  background: var(--alg-border);
+  flex: 1;
+  align-self: center;
+}
+
+// Sub-area grid — 3 columns, collapses to 2 below 1024, 1 below 640.
+.alg-subarea-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--alg-space-4);
+
+  @media (max-width: 1024px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 640px)  { grid-template-columns: 1fr; }
+}
+
+// Sub-area card — glass, interactive hover, icon header + metric rows.
+.alg-subarea-card {
+  position: relative;
+  border-radius: var(--alg-radius-lg);
+  padding: 20px;
+  overflow: hidden;
+  cursor: pointer;
+
+  @include alg-glass(soft);
+  border: 1px solid var(--alg-glass-border);
+  box-shadow:
+    var(--alg-glass-highlight),
+    var(--alg-elevation-1);
+
+  transition:
+    transform var(--alg-duration-base) var(--alg-ease-cinematic),
+    box-shadow var(--alg-duration-base) var(--alg-ease-cinematic),
+    border-color var(--alg-duration-base) var(--alg-ease-cinematic);
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--alg-border-hover);
+    box-shadow:
+      var(--alg-glass-highlight),
+      var(--alg-elevation-2);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--alg-color-brand-primary);
+    outline-offset: 2px;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--alg-glass-grain);
+    opacity: 0.6;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+}
+
+.alg-subarea-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--alg-space-3);
+  margin-bottom: var(--alg-space-4);
+}
+
+.alg-subarea-card__icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--alg-radius-md);
+  background: var(--alg-bg-tint-low);
+  border: 1px solid var(--alg-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--alg-fg-secondary);
+  flex-shrink: 0;
+}
+
+.alg-subarea-card__name {
+  font-size: 15px;
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-snug);
+  color: var(--alg-fg-primary);
+  margin: 0;
+  flex: 1;
+}
+
+.alg-subarea-card__status {
+  display: flex;
+  align-items: center;
+  gap: var(--alg-space-1);
+  margin-left: auto;
+}
+
+.alg-subarea-card__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &--ok   { background: var(--alg-color-success); }
+  &--warn { background: var(--alg-color-warning); }
+  &--risk { background: var(--alg-color-danger); }
+}
+
+// Status chip inside sub-area card.
+.alg-subarea-card__chip {
+  font-family: var(--alg-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: var(--alg-radius-pill);
+  background: var(--alg-bg-tint-med);
+  color: var(--alg-fg-secondary);
+
+  &--ok   { color: var(--alg-color-success); background: oklch(0.30 0.08 152 / 0.18); }
+  &--warn { color: var(--alg-color-warning); background: oklch(0.33 0.075 85 / 0.20); }
+  &--risk { color: var(--alg-color-danger);  background: oklch(0.32 0.10 25  / 0.20); }
+}
+
+// Metric rows inside sub-area card.
+.alg-subarea-card__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-top: 1px solid var(--alg-border);
+
+  &:first-of-type { border-top: none; }
+}
+
+.alg-subarea-card__key {
+  font-size: var(--alg-text-sm);
+  color: var(--alg-fg-tertiary);
+}
+
+.alg-subarea-card__val {
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-sm);
+  color: var(--alg-fg-primary);
+  font-weight: var(--alg-weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+// Jump-to-chat anchor button (top-right of overview pane header).
+// Pill-shaped, low-opacity background, reveals planet avatar + label + arrow.
+.alg-agent-anchor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--alg-space-2);
+  padding: 8px 8px 8px 10px;
+  border-radius: var(--alg-radius-pill);
+  background: var(--alg-bg-tint-low);
+  border: 1px solid var(--alg-border);
+  color: var(--alg-fg-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--alg-duration-fast) var(--alg-ease-cinematic),
+    border-color var(--alg-duration-fast) var(--alg-ease-cinematic),
+    color var(--alg-duration-fast) var(--alg-ease-cinematic);
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--alg-bg-tint-med);
+    border-color: var(--alg-border-hover);
+    color: var(--alg-fg-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--alg-color-brand-primary);
+    outline-offset: 2px;
+  }
+}
+
+.alg-agent-anchor__label {
+  font-family: var(--alg-font-mono);
+  font-size: 10px;
+  letter-spacing: var(--alg-tracking-widest);
+  text-transform: uppercase;
+}
+
+.alg-agent-anchor__arrow {
+  color: var(--alg-fg-tertiary);
+}
+
+// Planet avatar — deterministic CSS gradient sphere for each sector agent.
+// Used in the agent-anchor button and in the sector agent chat footer.
+// No image dependency; all rendered from CSS radial-gradient.
+.alg-planet {
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.25),
+    0 1px 4px rgba(0, 0, 0, 0.5);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.2);
+  }
+}
+
+.alg-planet--sm  { width: 24px; height: 24px; }
+.alg-planet--md  { width: 32px; height: 32px; }
+.alg-planet--lg  { width: 44px; height: 44px; }
+
+// Sector-specific planet gradients — one per sector agent.
+// Colors are within the Aurora band (magenta/rose/violet/amber/teal/ochre).
+// Format: radial-gradient(circle at 32% 28%, <light>, <mid> 46%, <shadow>)
+.alg-planet--operations   { background: radial-gradient(circle at 32% 28%, #e7b486, #b5603a 46%, #5b2a36); }
+.alg-planet--procurement  { background: radial-gradient(circle at 32% 28%, #d4e0a0, #7a9e3a 46%, #2d4a1a); }
+.alg-planet--hr           { background: radial-gradient(circle at 32% 28%, #b8d0f0, #4a7ab0 46%, #1a2e50); }
+.alg-planet--finance      { background: radial-gradient(circle at 32% 28%, #e8c870, #c09020 46%, #604000); }
+.alg-planet--administration { background: radial-gradient(circle at 32% 28%, #c0a8e8, #7040c0 46%, #2a1060); }
+.alg-planet--marketing    { background: radial-gradient(circle at 32% 28%, #f0a0c0, #c04080 46%, #601030); }
+.alg-planet--facilities   { background: radial-gradient(circle at 32% 28%, #a8d8c0, #3a8060 46%, #103020); }
+.alg-planet--commercial   { background: radial-gradient(circle at 32% 28%, #e0b8a0, #c07040 46%, #502010); }
+
+// Overview pane wrapper — holds the KPI row + section head + sub-area grid.
+.alg-overview-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-top: var(--alg-space-2);
+}
+
+// Crumb path above the editorial title.
+.alg-overview-crumb {
+  display: flex;
+  align-items: center;
+  gap: var(--alg-space-2);
+  margin-bottom: var(--alg-space-3);
+}
+
+.alg-overview-crumb__item {
+  font-family: var(--alg-font-mono);
+  font-size: 10px;
+  letter-spacing: var(--alg-tracking-widest);
+  text-transform: uppercase;
+  color: var(--alg-fg-tertiary);
+}
+
+.alg-overview-crumb__sep {
+  color: var(--alg-fg-quaternary);
+  font-size: 10px;
+}
+
+// Editorial header inside the overview pane.
+.alg-overview-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--alg-space-6);
+  margin-bottom: var(--alg-space-6);
+}
+
+.alg-overview-head__left {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.alg-overview-title {
+  font-family: var(--alg-font-display);
+  font-size: 40px;
+  font-weight: var(--alg-weight-light);
+  letter-spacing: var(--alg-tracking-tightest);
+  line-height: 1.05;
+  color: var(--alg-fg-primary);
+  margin: 0;
+}
+
+.alg-overview-subtitle {
+  margin-top: var(--alg-space-2);
+  font-size: 15px;
+  color: var(--alg-fg-secondary);
+  max-width: 560px;
+  line-height: var(--alg-leading-normal);
+}
+
+// Customer Support (D6) — demo-data spec. =====================================
+
+.alg-cust-support {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-top: var(--alg-space-2);
+}
+
+.alg-reclame-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--alg-radius-lg);
+  padding: 20px;
+
+  @include alg-glass(soft);
+  border: 1px solid var(--alg-glass-border);
+  box-shadow:
+    var(--alg-glass-highlight),
+    var(--alg-elevation-1);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--alg-glass-grain);
+    opacity: 0.6;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+}
+
+.alg-issue-row {
+  display: flex;
+  align-items: center;
+  gap: var(--alg-space-3);
+  padding: var(--alg-space-3) 0;
+  border-bottom: 1px solid var(--alg-border);
+
+  &:last-child { border-bottom: none; }
+}
+
+.alg-issue-row__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &--open   { background: var(--alg-color-danger); }
+  &--review { background: var(--alg-color-warning); }
+  &--closed { background: var(--alg-color-success); }
+}
+
+.alg-issue-row__title {
+  flex: 1;
+  font-size: var(--alg-text-sm);
+  color: var(--alg-fg-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alg-issue-row__meta {
+  font-family: var(--alg-font-mono);
+  font-size: 11px;
+  color: var(--alg-fg-tertiary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alg-kpi-tile,
+  .alg-subarea-card {
+    transition: none;
+  }
+}

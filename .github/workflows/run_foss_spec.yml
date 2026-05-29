@@ -89,6 +89,8 @@ jobs:
             app/javascript/dashboard/routes/dashboard/crm/views/components/specs/KanbanHeader.spec.js \
             app/javascript/dashboard/routes/dashboard/crm/views/components/specs/MoveLeadModal.spec.js \
             app/javascript/dashboard/routes/dashboard/crm/views/components/specs/LeadDetailDrawer.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/sectors/specs/SectorShellV2.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/sectors/specs/SectorAgentChat.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/ReportsCommercialOverlay.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/CustomerSupportPane.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/reports-commercial/specs/commercial-overview-contract.spec.js \

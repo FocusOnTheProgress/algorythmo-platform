@@ -76,13 +76,12 @@ describe('FacilitiesDashboard (M2-g)', () => {
     expect(wrapper.find('#alg-sector-panel-controle').exists()).toBe(true);
   });
 
-  it('Overview cards each carry the demonstration watermark', () => {
+  it('Overview pane carries the demonstration watermark', () => {
+    // plan 0009: single .alg-sector__watermark per pane (premium layout).
     const wrapper = mountDashboard();
-    const watermarks = wrapper.findAll(
-      '.alg-overview .alg-overview__watermark'
-    );
-    // One per spend-area card in facilities-overview.js.
-    expect(watermarks.length).toBe(5);
+    expect(
+      wrapper.find('#alg-sector-panel-overview .alg-sector__watermark').exists()
+    ).toBe(true);
   });
 
   it('anchors the agent chat at the foot via the chatHeadingKey', () => {
@@ -92,13 +91,11 @@ describe('FacilitiesDashboard (M2-g)', () => {
     );
   });
 
-  it('watermark is only in the Overview pane, not in the Controle tables', () => {
+  it('watermark is in Overview pane, not in the Controle tables', () => {
     const wrapper = mountDashboard();
     // Overview carries the demonstration watermark (D12 contract).
     expect(
-      wrapper
-        .find('#alg-sector-panel-overview .alg-overview__watermark')
-        .exists()
+      wrapper.find('#alg-sector-panel-overview .alg-sector__watermark').exists()
     ).toBe(true);
     // Controle tables must NOT carry it — data is real, not mocked.
     expect(
@@ -107,9 +104,7 @@ describe('FacilitiesDashboard (M2-g)', () => {
         .exists()
     ).toBe(false);
     expect(
-      wrapper
-        .find('#alg-sector-panel-controle .alg-overview__watermark')
-        .exists()
+      wrapper.find('#alg-sector-panel-controle .alg-sector__watermark').exists()
     ).toBe(false);
   });
 
