@@ -145,23 +145,44 @@ const now = ref(Date.now());
 // Demonstration mode
 // ---------------------------------------------------------------------------
 // The board renders from the live backend. On a fresh account — and in every
-// founder demo — the backend returns an empty pipeline, which previously left
-// the surface blank (and reading as broken). When the live pipeline has no
-// stages OR no leads, we fall back to a self-contained demonstration board so
-// the surface always shows the product. Demo state is purely local: drag-moves
-// mutate `demoLeadsRef` and never hit the API. A "DADOS DE DEMONSTRAÇÃO"
-// watermark keeps the nature explicit (same convention as the sectors, D12).
+// founder demo — the backend returns an empty pipeline (no stages) OR a
+// configured pipeline that simply has no leads yet. In BOTH cases the surface
+// would otherwise paint nothing (or the on-brand empty state), and the founder
+// can't see the product. So we fall back to a self-contained demonstration
+// board whenever there are ZERO real leads, regardless of whether stages exist.
+// As soon as ≥1 real lead exists, the board switches to live data.
+//
+// Demo state is purely local: drag-moves mutate `demoLeadsRef` and never hit
+// the API. A "DADOS DE DEMONSTRAÇÃO" watermark keeps the nature explicit (same
+// convention as the sectors, D12).
 const demoLeadsRef = ref(buildDemoLeads());
 
 const liveHasStages = computed(() => stages.value.length > 0);
 
-// Demo activates when the account has NO live pipeline configured (the common
-// case on a fresh account, and in every founder demo). A configured pipeline
-// that simply has no leads yet keeps its real stages and shows the on-brand
-// empty state — we never overwrite a real, intentional pipeline with demo data.
-const demoActive = computed(
-  () => !isPipelineLoading.value && !liveHasStages.value
+// Whether the initial per-stage lead fetch has completed for the current
+// account. Gating demo on this (rather than a bare count === 0) avoids a demo
+// flash in the window between "pipeline loaded" and "leads arrived": while the
+// fetch is still in flight liveLeadCount is legitimately 0, but we must not
+// declare the account empty until the leads actually came back.
+const leadsFetched = ref(false);
+
+// Total real leads currently held across all live stages. Reactive: stageMap
+// and its per-stage `leads` arrays are reactive, so this recomputes as leads
+// hydrate, move, or arrive via the realtime listener. This is the "0 real
+// leads" signal that gates demo mode.
+const liveLeadCount = computed(() =>
+  stages.value.reduce((sum, s) => sum + leadsByStage(s.id).length, 0)
 );
+
+// Demo activates when the account has NO live pipeline configured (no stages —
+// the common fresh-account case) OR has stages but ZERO real leads once the
+// initial fetch has settled. A pipeline with ≥1 real lead always renders live
+// data — we never overwrite a real, populated pipeline with demo data.
+const demoActive = computed(() => {
+  if (isPipelineLoading.value) return false;
+  if (!liveHasStages.value) return true;
+  return leadsFetched.value && liveLeadCount.value === 0;
+});
 
 const boardStages = computed(() =>
   demoActive.value ? DEMO_STAGES : stages.value
@@ -234,6 +255,9 @@ let agingTimer = null;
 onMounted(async () => {
   await loadPipeline();
   await Promise.all(stages.value.map(s => fetchStage(s.id)));
+  // Initial lead fetch settled — now a zero count is a real "empty account",
+  // not a not-yet-loaded state, so demo mode can decide deterministically.
+  leadsFetched.value = true;
   // Metrics fetch is fire-and-forget: it's secondary signal — the board is
   // usable without it. The chip falls back to "—" until the response lands.
   fetchStageMetrics();
@@ -256,6 +280,9 @@ onBeforeUnmount(() => {
 // data instead of showing a stale snapshot).
 watch(accountId, async (newId, oldId) => {
   if (!newId) return;
+  // The new tenant's leads haven't been fetched yet — don't let the previous
+  // account's "fetched" state make us flash demo (or hide it) prematurely.
+  leadsFetched.value = false;
   menuOpen.value = false;
   menuLead.value = null;
   menuAnchor.value = null;
@@ -276,6 +303,7 @@ watch(accountId, async (newId, oldId) => {
   resetStageMetrics();
   await loadPipeline();
   await Promise.all(stages.value.map(s => fetchStage(s.id)));
+  leadsFetched.value = true;
   fetchStageMetrics();
 });
 
@@ -310,8 +338,13 @@ const boardHasAnyLead = computed(() =>
   Array.from(presenterByStage.value.values()).some(p => p.length > 0)
 );
 
-// Demo mode always renders a populated board, so the global empty state only
-// shows for a genuinely-empty live pipeline that has stages but no leads.
+// Global empty state. Now that demo mode activates on ZERO real leads (even
+// when stages exist), this is effectively unreachable in the normal flow — the
+// demo board replaces the empty state so the founder always sees a populated
+// kanban. The guard is kept (defence in depth) and still short-circuits on
+// demoActive: a live pipeline only shows the empty state if it somehow has
+// stages + presenter leads === 0 while NOT in demo, which the demo gate now
+// prevents.
 const showGlobalEmpty = computed(
   () =>
     !isPipelineLoading.value &&
