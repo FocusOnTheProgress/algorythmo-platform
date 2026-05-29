@@ -111,25 +111,32 @@ describe('BrainViewer — aquário (knowledge hub) content', () => {
   });
 });
 
-describe('BrainViewer — empty state', () => {
-  it('renders BrainEmptyState when compiled truth is absent', async () => {
+describe('BrainViewer — empty/failed backend still shows the demo hub', () => {
+  // The Aurora hub is a frontend-only showpiece; an empty or failed backend
+  // load must NOT hide it behind an empty-state or error screen (the live-QA
+  // bug). Mirrors the CRM demo-board philosophy: empty/error → show demo.
+
+  it('renders the Aurora hub when compiled truth is absent (empty)', async () => {
     brainService.fetchCompiledTruth.mockResolvedValue({
       meta: {},
       content: '',
     });
     const wrapper = mount(BrainViewer);
     await flushPromises();
-    expect(wrapper.find('.alg-brain-empty').exists()).toBe(true);
-    expect(wrapper.find('.alg-aquario').exists()).toBe(false);
+    expect(wrapper.find('.alg-aquario').exists()).toBe(true);
+    expect(wrapper.findAll('.alg-aurora-orb__sphere')).toHaveLength(1);
+    // No legacy empty-state onboarding.
+    expect(wrapper.find('.alg-brain-empty').exists()).toBe(false);
   });
-});
 
-describe('BrainViewer — error state', () => {
-  it('renders error alert when service throws', async () => {
+  it('renders the Aurora hub (not an error screen) when the service throws', async () => {
     brainService.fetchCompiledTruth.mockRejectedValue(new Error('network'));
     brainService.fetchTimeline.mockRejectedValue(new Error('network'));
     const wrapper = mount(BrainViewer);
     await flushPromises();
-    expect(wrapper.find('[role="alert"]').exists()).toBe(true);
+    // No "Could not load Brain" error alert — the demo hub renders instead.
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+    expect(wrapper.find('.alg-aquario').exists()).toBe(true);
+    expect(wrapper.findAll('.alg-glass-tile')).toHaveLength(4);
   });
 });

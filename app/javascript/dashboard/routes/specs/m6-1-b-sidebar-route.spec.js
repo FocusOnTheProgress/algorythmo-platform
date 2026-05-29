@@ -128,8 +128,16 @@ describe('M6.1-b — reports.routes.js wiring', () => {
     expect(src).toContain("name: 'commercial_reports'");
   });
 
-  it('wires algorythmo_cut_reports_commercial meta on the commercial route', () => {
-    expect(src).toContain(
+  it('does NOT gate the commercial route with a route-level cut-flag (reachability)', () => {
+    // The cut flag lives only in the algorythmo_feature_flags bigint column and
+    // was never registered in config/features.yml, so on a tenant whose account
+    // payload omits algorythmo_cut_flags the getter returns undefined and the
+    // fail-closed route guard (cutEnabled !== false) blocked the route, bouncing
+    // /reports/commercial to /dashboard. The route-level cut was removed so the
+    // Commercial surface (and its Customer Support tab) is always reachable for
+    // admins. The cut is still honoured at the sidebar entry + the raw report
+    // tabs. Guard against regression: the route must NOT re-introduce the gate.
+    expect(src).not.toContain(
       "algorythmoCutFlag: 'algorythmo_cut_reports_commercial'"
     );
   });

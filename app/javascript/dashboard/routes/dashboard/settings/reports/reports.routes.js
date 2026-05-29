@@ -150,14 +150,23 @@ export default {
         },
         // algorythmo: Relatórios Comerciais overlay (first child = default target).
         // Composition lives in CommercialShell via ReportsCommercialOverlay (plan 0007 M2-c).
+        //
+        // The route-level `algorythmoCutFlag` was REMOVED: the cut flag is
+        // stored only in the `algorythmo_feature_flags` bigint column (never
+        // registered in config/features.yml), so on a tenant whose account
+        // payload doesn't hydrate `algorythmo_cut_flags` the getter returns
+        // `undefined` and the fail-closed route guard (`cutEnabled !== false`)
+        // blocked the route — bouncing /reports/commercial to /dashboard and
+        // making the Commercial reports surface (and its Customer Support tab)
+        // unreachable. The Commercial section must always land on CommercialShell
+        // for admins. The cut is still honoured where it matters operationally:
+        // the SIDEBAR entry is gated by `algorythmoCutHidden.reports_commercial`,
+        // and the raw Bot/Labels/Inbox report tabs are cut separately. Same
+        // philosophy as ungating Brain + the CRM demo board.
         {
           path: 'commercial',
           name: 'commercial_reports',
-          meta: {
-            ...meta,
-            // algorythmo: feature-gate algorythmo_cut_reports_commercial
-            algorythmoCutFlag: 'algorythmo_cut_reports_commercial',
-          },
+          meta,
           component: ReportsCommercialOverlay,
         },
         {

@@ -70,6 +70,20 @@ describe('ReportsCommercialOverlay (M2-c)', () => {
     );
   });
 
+  it('Customer Support tab is reachable: activating it selects its panel and renders the pane', async () => {
+    // Reachability guarantee — the founder's "Help Center moves into Commercial
+    // as Customer Support" requirement. The last tab is Customer Support; once
+    // on CommercialShell (which the route now always lands on for admins),
+    // clicking it must reveal the CustomerSupportPane content.
+    const wrapper = mountOverlay();
+    const tabs = wrapper.findAll('[role="tab"]');
+    const supportTab = tabs[tabs.length - 1];
+    await supportTab.trigger('click');
+    expect(supportTab.attributes('aria-selected')).toBe('true');
+    // The CustomerSupportPane root (Reclame Aqui + issues demo surface) renders.
+    expect(wrapper.find('.alg-cust-support').exists()).toBe(true);
+  });
+
   it('Overview pane carries the demonstration watermark', () => {
     // plan 0009: single .alg-sector__watermark per pane (premium layout).
     const wrapper = mountOverlay();
