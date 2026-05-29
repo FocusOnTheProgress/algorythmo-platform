@@ -1959,3 +1959,215 @@
   text-transform: uppercase;
   color: var(--alg-fg-tertiary);
 }
+
+// Facilities Controle (client-side units + expenses, plan 0007 M2-g) ----------
+
+.alg-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-space-8);
+  padding-top: var(--alg-space-4);
+}
+
+.alg-control__block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-space-4);
+}
+
+.alg-control__block-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-space-1);
+}
+
+.alg-control__block-title {
+  font-family: var(--alg-font-display);
+  font-size: var(--alg-text-lg);
+  font-weight: var(--alg-weight-medium);
+  color: var(--alg-fg-primary);
+  margin: 0;
+}
+
+.alg-control__block-hint {
+  font-size: var(--alg-text-sm);
+  color: var(--alg-fg-tertiary);
+  margin: 0;
+  max-width: 60ch;
+}
+
+.alg-control__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--alg-space-3);
+}
+
+.alg-control__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--alg-space-1);
+  min-width: 0;
+  flex: 1 1 12ch;
+}
+
+.alg-control__field-label {
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-2xs);
+  letter-spacing: var(--alg-tracking-wide);
+  text-transform: uppercase;
+  color: var(--alg-fg-tertiary);
+}
+
+.alg-control__input,
+.alg-control__select {
+  font-family: var(--alg-font-sans);
+  font-size: var(--alg-text-sm);
+  color: var(--alg-fg-primary);
+  background: var(--alg-bg-tint-low);
+  border: 1px solid var(--alg-border);
+  border-radius: var(--alg-radius-sm);
+  padding: var(--alg-space-2) var(--alg-space-3);
+  width: 100%;
+
+  &::placeholder {
+    color: var(--alg-fg-quaternary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--alg-color-brand-primary);
+    outline-offset: 2px;
+  }
+}
+
+.alg-control__add {
+  font-family: var(--alg-font-sans);
+  font-size: var(--alg-text-sm);
+  font-weight: var(--alg-weight-medium);
+  color: var(--alg-fg-primary);
+  background: var(--alg-bg-tint-med);
+  border: 1px solid var(--alg-border-hover);
+  border-radius: var(--alg-radius-sm);
+  padding: var(--alg-space-2) var(--alg-space-4);
+  cursor: pointer;
+  transition: background var(--alg-duration-fast) var(--alg-ease-cinematic);
+
+  &:hover:not(:disabled) {
+    background: var(--alg-bg-tint-high);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--alg-color-brand-primary);
+    outline-offset: 2px;
+  }
+}
+
+.alg-control__table-wrap {
+  position: relative;
+  overflow-x: auto;
+  border: 1px solid var(--alg-border);
+  border-radius: var(--alg-radius-md);
+}
+
+.alg-control__watermark {
+  position: absolute;
+  top: var(--alg-space-2);
+  right: var(--alg-space-3);
+  font-family: var(--alg-font-mono);
+  font-size: 10px;
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-widest);
+  text-transform: uppercase;
+  color: var(--alg-fg-quaternary);
+  pointer-events: none;
+  user-select: none;
+}
+
+.alg-control__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--alg-text-sm);
+}
+
+.alg-control__th {
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-2xs);
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-wide);
+  text-transform: uppercase;
+  color: var(--alg-fg-tertiary);
+  text-align: left;
+  padding: var(--alg-space-3) var(--alg-space-4);
+  border-bottom: 1px solid var(--alg-border);
+  white-space: nowrap;
+}
+
+.alg-control__td {
+  color: var(--alg-fg-secondary);
+  padding: var(--alg-space-3) var(--alg-space-4);
+  border-bottom: 1px solid var(--alg-border);
+  font-variant-numeric: tabular-nums;
+}
+
+.alg-control__row:last-child .alg-control__td {
+  border-bottom: none;
+}
+
+.alg-control__empty {
+  color: var(--alg-fg-tertiary);
+  padding: var(--alg-space-6) var(--alg-space-4);
+  text-align: center;
+  font-size: var(--alg-text-sm);
+}
+
+.alg-control__remove {
+  font-family: var(--alg-font-sans);
+  font-size: var(--alg-text-xs);
+  color: var(--alg-fg-tertiary);
+  background: none;
+  border: 1px solid var(--alg-border);
+  border-radius: var(--alg-radius-sm);
+  padding: var(--alg-space-1) var(--alg-space-3);
+  cursor: pointer;
+  transition: color var(--alg-duration-fast) var(--alg-ease-cinematic);
+
+  &:hover {
+    color: var(--alg-fg-primary);
+    border-color: var(--alg-border-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--alg-color-brand-primary);
+    outline-offset: 2px;
+  }
+}
+
+// Visually-hidden aria-live status node. The [role=status] / aria-live content
+// is read by screen readers without being visible to sighted users.
+.alg-control__live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Subtle "saved in this browser only" notice — replaces the watermark that was
+// removed from the Controle tables (data is user-entered, not mocked).
+.alg-control__saved-hint {
+  font-family: var(--alg-font-mono);
+  font-size: 10px;
+  font-weight: var(--alg-weight-medium);
+  letter-spacing: var(--alg-tracking-wide);
+  text-transform: uppercase;
+  color: var(--alg-fg-quaternary);
+}

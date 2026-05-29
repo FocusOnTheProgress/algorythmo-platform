@@ -730,12 +730,12 @@ const menuItems = computed(() => {
           },
         ]),
 
-    // ── 6. Facilities (NOVO — placeholder) ───────────────────────────────────
-    // algorythmo: M2-a — Facilities entry hidden until M2-g ships the route.
-    // cut-flag `algorythmo_cut_sector_facilities` is ACTIVE by default (set in feature_flag_bits.rb
-    // as position 24) so the entry stays hidden. After M2-g merges, super-admin sets
-    // cut to false (OFF) to make the entry visible, per memory `project_cut_flag_convention.md`.
-    // Convention note: cut ON = hidden (inverted for sector_facilities only — rota ainda não existe).
+    // ── 6. Facilities (NOVO) ──────────────────────────────────────────────────
+    // algorythmo: M2-g — D1: 6th. D11: "Facilities". D10: sector cut-flag.
+    // The route ships in M2-g, so the entry now follows the standard convention:
+    // cut-flag `algorythmo_cut_sector_facilities` default OFF = sector visible.
+    // (The M2-a inverted carve-out — held hidden while the route was missing — is
+    // retired now that `algorythmo_admin_facilities` exists.)
     ...(algorythmoCutHidden.value.sector_facilities
       ? []
       : [

@@ -18,6 +18,8 @@ import algorythmoAdminAdministracaoRoutes from '../../modules/algorythmo/admin/a
 import algorythmoAdminFinanceiroRoutes from '../../modules/algorythmo/admin/financeiro/routes';
 import algorythmoAdminRhRoutes from '../../modules/algorythmo/admin/rh/routes';
 import algorythmoAdminMarketingRoutes from '../../modules/algorythmo/admin/marketing/routes';
+// algorythmo: M2-g — Facilities sector (new)
+import algorythmoAdminFacilitiesRoutes from '../../modules/algorythmo/admin/facilities/routes';
 import algorythmoAdminCLevelsRoutes from '../../modules/algorythmo/admin/c-levels/routes';
 import algorythmoAdminMarketplaceRoutes from '../../modules/algorythmo/admin/marketplace/routes';
 import AppContainer from './Dashboard.vue';
@@ -50,6 +52,7 @@ export default {
         ...algorythmoAdminFinanceiroRoutes.routes,
         ...algorythmoAdminRhRoutes.routes,
         ...algorythmoAdminMarketingRoutes.routes,
+        ...algorythmoAdminFacilitiesRoutes.routes,
         ...algorythmoAdminCLevelsRoutes.routes,
         ...algorythmoAdminMarketplaceRoutes.routes,
       ],

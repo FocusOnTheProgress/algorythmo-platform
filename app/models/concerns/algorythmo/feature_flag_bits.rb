@@ -3,7 +3,7 @@
 # Manages Algorythmo OS cut-surface feature flags stored in the dedicated
 # accounts.algorythmo_feature_flags bigint column.
 #
-# Flags occupy positions 1–47 — all safely within the signed bigint range (max: 63).
+# Flags occupy positions 1–59 — all safely within the signed bigint range (max: 63).
 # Zero collision with Chatwoot upstream accounts.feature_flags column.
 #
 # Include in Account via `include Algorythmo::FeatureFlagBits`.
@@ -18,8 +18,8 @@ module Algorythmo::FeatureFlagBits
   #   Default NOT cut (= overlay visible for all accounts until explicitly disabled).
   # Positions 17–26 — algorythmo: M2-a: top-level cuts + per-sector cuts.
   #   campaigns_top_level / help_center_top_level: top-level sidebar entries hidden by default.
-  #   sector_*: per-sector sidebar cuts; default NOT cut (visible) except sector_facilities
-  #   which is cut (hidden) until M2-g ships the Facilities route.
+  #   sector_*: per-sector sidebar cuts; default NOT cut (visible). sector_facilities follows
+  #   the standard convention since M2-g shipped the Facilities route.
   # Positions 27–28 — algorythmo: M2-c: reports_labels / reports_inbox.
   #   Hide the legacy Label/Inbox report tabs from the Commercial sidebar; routes stay live.
   #   Default NOT cut (visible).
@@ -34,6 +34,10 @@ module Algorythmo::FeatureFlagBits
   #   sector_finance_{a_pagar,a_receber,fluxo,margem,lucro,planejamento}: hide one tab
   #   inside FinanceShell.vue. sector_hr_{contratacao,treinamento,cultura,produtividade}:
   #   hide one tab inside HrShell.vue. Default NOT cut (visible); Overview tab is never cut.
+  # Positions 58–59 — algorythmo: M2-g: per-sub-tab cuts for the Facilities shell.
+  #   sector_facilities_overview / sector_facilities_controle: hide one tab inside
+  #   FacilitiesShell.vue. Default NOT cut (visible); the Overview tab is never cut in
+  #   practice (shell contract) — the flag exists for registry symmetry.
   CUT_FLAG_NAMES = %w[
     campaigns
     help_center
@@ -92,6 +96,8 @@ module Algorythmo::FeatureFlagBits
     sector_hr_treinamento
     sector_hr_cultura
     sector_hr_produtividade
+    sector_facilities_overview
+    sector_facilities_controle
   ].freeze
 
   # Positions 14–15: "enable flags" — check means SHOW the feature (opposite semantic from cut flags).

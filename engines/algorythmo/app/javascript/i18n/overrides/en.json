@@ -272,6 +272,65 @@
           "INDICADORES_LABEL": "Análise de Indicadores",
           "INDICADORES_CHART": "Indicators on target (%)"
         }
+      },
+      "FACILITIES": {
+        "HEADING": "Facilities",
+        "AGENT_CHAT_HEADING": "Talk to the Facilities sector agent",
+        "OVERVIEW": {
+          "TAB": "Overview",
+          "ARIA": "Consolidated spend overview of the Facilities sector",
+          "ALUGUEL_LABEL": "Rent",
+          "ALUGUEL_CHART": "Monthly rent (R$ K)",
+          "ENERGIA_LABEL": "Energy",
+          "ENERGIA_CHART": "Monthly energy (R$ K)",
+          "MANUTENCAO_LABEL": "Maintenance",
+          "MANUTENCAO_CHART": "Monthly maintenance (R$ K)",
+          "LIMPEZA_LABEL": "Cleaning",
+          "LIMPEZA_CHART": "Monthly cleaning (R$ K)",
+          "CONSOLIDADO_LABEL": "Consolidated spend",
+          "CONSOLIDADO_CHART": "Total monthly spend (R$ K)"
+        },
+        "CONTROLE": {
+          "TAB": "Controle",
+          "ARIA": "Units and expenses control for the Facilities sector",
+          "UNITS_TITLE": "Units",
+          "UNITS_HINT": "Register the units (stores, warehouses, offices) you track. Data is saved in this browser only.",
+          "UNIT_FORM_ARIA": "Register a new unit",
+          "UNIT_NAME": "Name",
+          "UNIT_ADDRESS": "Address",
+          "ADD_UNIT": "Add unit",
+          "UNITS_EMPTY": "No units registered yet.",
+          "EXPENSES_TITLE": "Expenses",
+          "EXPENSES_HINT": "Log each unit's expenses. Register at least one unit before adding an expense.",
+          "EXPENSE_FORM_ARIA": "Log a new expense",
+          "EXPENSE_UNIT": "Unit",
+          "EXPENSE_UNIT_PLACEHOLDER": "Select the unit",
+          "EXPENSE_CATEGORY": "Category",
+          "EXPENSE_CATEGORY_PLACEHOLDER": "Select the category",
+          "EXPENSE_AMOUNT": "Amount",
+          "EXPENSE_DATE": "Date",
+          "EXPENSE_NOTE": "Note",
+          "ADD_EXPENSE": "Add expense",
+          "EXPENSES_EMPTY": "No expenses logged yet.",
+          "ACTIONS": "Actions",
+          "REMOVE": "Remove",
+          "REMOVE_UNIT_ARIA": "Remove unit {name}",
+          "REMOVE_EXPENSE_ARIA": "Remove {category} expense",
+          "SAVED_IN_BROWSER": "Saved in this browser only",
+          "STATUS_UNIT_ADDED": "Unit added",
+          "STATUS_UNIT_REMOVED": "Unit removed",
+          "STATUS_EXPENSE_ADDED": "Expense added",
+          "STATUS_EXPENSE_REMOVED": "Expense removed",
+          "CATEGORIES": {
+            "ALUGUEL": "Rent",
+            "ENERGIA": "Energy",
+            "AGUA": "Water",
+            "MANUTENCAO": "Maintenance",
+            "LIMPEZA": "Cleaning",
+            "INTERNET_TELEFONE": "Internet & Phone",
+            "OUTROS": "Other"
+          }
+        }
       }
     },
     "OPERACAO": {

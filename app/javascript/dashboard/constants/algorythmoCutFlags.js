@@ -38,7 +38,7 @@ export const ALGORYTHMO_CUT_FLAG_NAMES = Object.freeze([
   'campaigns_top_level',
   'help_center_top_level',
   // algorythmo: M2-a — per-sector cut flags. Default OFF = sector visible.
-  // EXCEPTION: sector_facilities default ON (cut active = hidden) until M2-g ships the route.
+  // sector_facilities follows the standard convention now that M2-g ships the route.
   'sector_commercial',
   'sector_marketing',
   'sector_operations',
@@ -97,6 +97,13 @@ export const ALGORYTHMO_CUT_FLAG_NAMES = Object.freeze([
   'sector_hr_treinamento',
   'sector_hr_cultura',
   'sector_hr_produtividade',
+  // algorythmo: M2-g — per-sub-tab cut flags for the Facilities shell (D10).
+  // Each gates one tab inside FacilitiesShell.vue (NOT a sidebar entry):
+  // cut ACTIVE = tab hidden; default OFF = tab visible. The Overview tab is
+  // never cut in practice. Shell-only cuts (no route-level Policy) — see
+  // SIDEBAR_ONLY_FLAGS in algorythmoCutFlagCoverage.spec.js.
+  'sector_facilities_overview',
+  'sector_facilities_controle',
 ]);
 
 // Full flag keys (with the `algorythmo_cut_` prefix) for direct equality checks

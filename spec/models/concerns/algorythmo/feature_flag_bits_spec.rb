@@ -12,9 +12,10 @@ RSpec.describe Algorythmo::FeatureFlagBits do
     # algorythmo: M2-e added positions 35–47 (Operations/Procurement/Administration
     #   per-sub-tab cuts).
     # algorythmo: M2-f added positions 48–57 (Finance 48–53 + HR 54–57 per-sub-tab cuts).
+    # algorythmo: M2-g added positions 58–59 (Facilities overview/controle per-sub-tab cuts).
     # ORDER IS IMMUTABLE — reordering corrupts existing bigint data.
-    it 'contains exactly 57 flags' do
-      expect(described_class::CUT_FLAG_NAMES.size).to eq(57)
+    it 'contains exactly 59 flags' do
+      expect(described_class::CUT_FLAG_NAMES.size).to eq(59)
     end
 
     it 'is frozen' do
@@ -135,10 +136,27 @@ RSpec.describe Algorythmo::FeatureFlagBits do
         end
       end
     end
+
+    # algorythmo: M2-g — Facilities per-sub-tab cuts (positions 58–59).
+    # Appended after the M2-e/M2-f blocks; order immutable.
+    describe 'Facilities sub-tab cuts (M2-g, positions 58–59)' do
+      {
+        'sector_facilities_overview' => 58,
+        'sector_facilities_controle' => 59
+      }.each do |flag, position|
+        it "#{flag} occupies bit-position #{position} (array index #{position - 1})" do
+          expect(described_class::CUT_FLAG_NAMES.index(flag) + 1).to eq(position)
+        end
+
+        it "#{flag} defaults to false on a new account (sub-tab visible by default)" do
+          expect(account.algorythmo_cut_enabled?(flag)).to be false
+        end
+      end
+    end
   end
 
   describe '#algorythmo_cut_enabled?' do
-    it 'returns false for all 57 flags on a fresh account' do
+    it 'returns false for all 59 flags on a fresh account' do
       described_class::CUT_FLAG_NAMES.each do |flag|
         expect(account.algorythmo_cut_enabled?(flag)).to(
           be(false),
@@ -192,7 +210,7 @@ RSpec.describe Algorythmo::FeatureFlagBits do
   end
 
   describe '#all_algorythmo_cut_flags' do
-    it 'returns a hash with all 57 flags' do
+    it 'returns a hash with all 59 flags' do
       result = account.all_algorythmo_cut_flags
       expect(result.keys).to match_array(described_class::CUT_FLAG_NAMES)
     end
