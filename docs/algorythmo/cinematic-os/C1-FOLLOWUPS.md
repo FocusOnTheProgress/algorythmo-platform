@@ -26,6 +26,27 @@ Impacto na percepção de "produto acabado" numa demo de install: médio.
 nos packs `superadmin` e `installation/onboarding`, com o mesmo tag soft-fork.
 Validar contraste das telas de install no dark.
 
+> **Atualização C1.1 (2026-05-29) — NÃO é só importar o entry.** Tentamos no
+> PR-B do C1.1 e a review adversarial (codex, P1) pegou a regressão antes do
+> merge: importar `algorythmo.scss` no `super_admin/index.scss` deixa o `body`
+> dark (via `_chrome.scss` §5 `body { background: var(--alg-bg) }`), MAS o
+> console do Administrate é renderizado em ERB com classes Tailwind **literais**
+> hard-coded (`text-slate-800`, `border-slate-100` em `_navigation.html.erb`,
+> `_nav_item.html.erb`, `accounts/show.html.erb`, etc.). Resultado: texto escuro
+> sobre fundo escuro → **console do operador ilegível**. A import foi revertida.
+>
+> **Escopo real do "super-admin dark" (followup dedicado):**
+> 1. Retokenizar TODAS as views ERB do `app/views/super_admin/**` (trocar
+>    `slate-*`/`gray-*`/`bg-white` literais por tokens `n-*`).
+> 2. Adicionar `app/javascript/superadmin_pages/**/*.vue` ao `content` do
+>    `tailwind.config.js` (hoje fora do scan — codex P2; os utilities `n-*` que
+>    o playground usaria só existem por acidente de outros arquivos escaneados).
+> 3. SÓ ENTÃO importar o entry no pack + retokenizar o playground Robin.
+> 4. QA visual logado no console + tela de install antes de declarar pronto.
+>
+> Impacto no cliente: baixo (console é interno do operador). Por isso ficou de
+> fora do C1.1 e segue como dívida explícita.
+
 ---
 
 ## 2. White Model (`[data-theme='white']`) sobrescrito pelo `:root` dark
