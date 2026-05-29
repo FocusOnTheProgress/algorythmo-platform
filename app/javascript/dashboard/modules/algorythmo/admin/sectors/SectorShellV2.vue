@@ -149,7 +149,9 @@ function jumpToChat() {
           :class="planetClass"
           aria-hidden="true"
         />
-        <span class="alg-agent-anchor__label">Falar com o agente</span>
+        <span class="alg-agent-anchor__label">{{
+          t('ALGORYTHMO_ADMIN.SECTORS.AGENT_CTA')
+        }}</span>
         <svg
           class="alg-agent-anchor__arrow"
           width="14"

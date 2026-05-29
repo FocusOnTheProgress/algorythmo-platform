@@ -58,7 +58,6 @@ const kpis = [
 <template>
   <section
     class="alg-cust-support"
-    style="position: relative; display: flex; flex-direction: column; gap: 0"
     :aria-label="t('ALGORYTHMO_ADMIN.SECTORS.MARKETING.CAMPANHAS.ARIA')"
   >
     <span class="alg-sector__watermark" aria-hidden="true">
@@ -66,15 +65,19 @@ const kpis = [
     </span>
 
     <!-- editorial header -->
-    <div class="alg-overview-head" style="margin-top: var(--alg-space-2)">
+    <div class="alg-overview-head alg-overview-head--inset">
       <div class="alg-overview-head__left">
         <div class="alg-overview-crumb">
-          <span class="alg-overview-crumb__item">Marketing</span>
+          <span class="alg-overview-crumb__item">{{
+            t('ALGORYTHMO_ADMIN.SECTORS.MARKETING.CAMPANHAS.CRUMB_ROOT')
+          }}</span>
           <span class="alg-overview-crumb__sep">/</span>
           <span
-            class="alg-overview-crumb__item"
-            style="color: rgba(255, 255, 255, 0.72)"
-            >Campanhas</span>
+            class="alg-overview-crumb__item alg-overview-crumb__item--current"
+            >{{
+              t('ALGORYTHMO_ADMIN.SECTORS.MARKETING.CAMPANHAS.CRUMB_CURRENT')
+            }}</span
+          >
         </div>
         <h2 class="alg-overview-title">
           {{ t('ALGORYTHMO_ADMIN.SECTORS.MARKETING.CAMPANHAS.HEADING') }}
@@ -98,7 +101,8 @@ const kpis = [
           <span
             class="alg-kpi-tile__delta"
             :class="`alg-kpi-tile__delta--${kpi.delta.variant}`"
-            >{{ kpi.delta.text }}</span>
+            >{{ kpi.delta.text }}</span
+          >
         </div>
         <p class="alg-kpi-tile__value">
           {{ kpi.value }}<span class="alg-kpi-tile__unit">{{ kpi.unit }}</span>
@@ -109,8 +113,14 @@ const kpis = [
 
     <!-- Campaign type links — glass cards pointing to upstream routes -->
     <div class="alg-section-head" aria-hidden="true">
-      <h3 class="alg-section-head__title">Construtores de campanha</h3>
-      <span class="alg-section-head__count">{{ links.length }} tipos</span>
+      <h3 class="alg-section-head__title">
+        {{ t('ALGORYTHMO_ADMIN.SECTORS.MARKETING.CAMPANHAS.BUILDERS_HEADER') }}
+      </h3>
+      <span class="alg-section-head__count">{{
+        t('ALGORYTHMO_ADMIN.SECTORS.MARKETING.CAMPANHAS.BUILDERS_COUNT', {
+          count: links.length,
+        })
+      }}</span>
       <span class="alg-section-head__line" />
     </div>
 
@@ -120,7 +130,6 @@ const kpis = [
         :key="link.id"
         :to="link.to"
         class="alg-subarea-card"
-        style="text-decoration: none"
         :aria-label="t(link.labelKey)"
       >
         <div class="alg-subarea-card__head">
@@ -140,20 +149,13 @@ const kpis = [
           </span>
           <h4 class="alg-subarea-card__name">{{ t(link.labelKey) }}</h4>
           <span class="alg-subarea-card__status">
-            <span class="alg-subarea-card__chip alg-subarea-card__chip--ok">Acessar</span>
+            <span class="alg-subarea-card__chip alg-subarea-card__chip--ok">{{
+              t('ALGORYTHMO_ADMIN.SECTORS.MARKETING.CAMPANHAS.ACCESS')
+            }}</span>
           </span>
         </div>
-        <div
-          class="alg-subarea-card__row"
-          style="border-top: none; padding-top: 0"
-        >
-          <span
-            class="alg-subarea-card__key"
-            style="
-              font-size: var(--alg-text-sm);
-              color: var(--alg-fg-secondary);
-            "
-          >
+        <div class="alg-subarea-card__row alg-subarea-card__row--flush">
+          <span class="alg-subarea-card__key alg-subarea-card__key--desc">
             {{ t(link.descKey) }}
           </span>
         </div>

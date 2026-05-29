@@ -119,7 +119,6 @@ const problemasAbertos = [
 <template>
   <div
     class="alg-cust-support"
-    style="position: relative; display: flex; flex-direction: column; gap: 0"
     :aria-label="t('ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.ARIA')"
   >
     <span class="alg-sector__watermark" aria-hidden="true">
@@ -127,20 +126,29 @@ const problemasAbertos = [
     </span>
 
     <!-- editorial header -->
-    <div class="alg-overview-head" style="margin-top: var(--alg-space-2)">
+    <div class="alg-overview-head alg-overview-head--inset">
       <div class="alg-overview-head__left">
         <div class="alg-overview-crumb">
-          <span class="alg-overview-crumb__item">Commercial</span>
+          <span class="alg-overview-crumb__item">{{
+            t('ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.CRUMB_ROOT')
+          }}</span>
           <span class="alg-overview-crumb__sep">/</span>
           <span
-            class="alg-overview-crumb__item"
-            style="color: rgba(255, 255, 255, 0.72)"
-            >Atendimento</span>
+            class="alg-overview-crumb__item alg-overview-crumb__item--current"
+            >{{
+              t(
+                'ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.CRUMB_CURRENT'
+              )
+            }}</span
+          >
         </div>
-        <h2 class="alg-overview-title">Atendimento ao Cliente</h2>
+        <h2 class="alg-overview-title">
+          {{ t('ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.TITLE') }}
+        </h2>
         <p class="alg-overview-subtitle">
-          Requisições, taxa de resolução, Reclame Aqui e visibilidade de
-          problemas — o pós-venda em uma leitura.
+          {{
+            t('ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.SUBTITLE')
+          }}
         </p>
       </div>
     </div>
@@ -158,7 +166,8 @@ const problemasAbertos = [
           <span
             class="alg-kpi-tile__delta"
             :class="`alg-kpi-tile__delta--${kpi.delta.variant}`"
-            >{{ kpi.delta.text }}</span>
+            >{{ kpi.delta.text }}</span
+          >
         </div>
         <p class="alg-kpi-tile__value">
           {{ kpi.value }}<span class="alg-kpi-tile__unit">{{ kpi.unit }}</span>
@@ -169,15 +178,32 @@ const problemasAbertos = [
 
     <!-- Reclame Aqui -->
     <div class="alg-section-head" aria-hidden="true">
-      <h3 class="alg-section-head__title">Reclame Aqui</h3>
-      <span class="alg-section-head__count">{{ reclamacoesRA.length }} reclamações</span>
+      <h3 class="alg-section-head__title">
+        {{
+          t(
+            'ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.RECLAME_AQUI_HEADER'
+          )
+        }}
+      </h3>
+      <span class="alg-section-head__count">{{
+        t(
+          'ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.RECLAME_AQUI_COUNT',
+          {
+            count: reclamacoesRA.length,
+          }
+        )
+      }}</span>
       <span class="alg-section-head__line" />
     </div>
 
     <div
       class="alg-reclame-card"
       role="list"
-      aria-label="Reclamações no Reclame Aqui"
+      :aria-label="
+        t(
+          'ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.RECLAME_AQUI_LIST_ARIA'
+        )
+      "
     >
       <div
         v-for="rec in reclamacoesRA"
@@ -192,23 +218,31 @@ const problemasAbertos = [
           aria-hidden="true"
         />
         <span class="alg-issue-row__title">{{ rec.titulo }}</span>
-        <span class="alg-issue-row__meta">{{ rec.statusLabel }} · {{ rec.dias }}</span>
+        <span class="alg-issue-row__meta"
+          >{{ rec.statusLabel }} · {{ rec.dias }}</span
+        >
         <span
           v-if="rec.nota"
-          class="alg-subarea-card__chip alg-subarea-card__chip--ok"
-          style="margin-left: var(--alg-space-2); flex-shrink: 0"
-          >{{ rec.nota }}</span>
+          class="alg-subarea-card__chip alg-subarea-card__chip--ok alg-subarea-card__chip--inline-end"
+          >{{ rec.nota }}</span
+        >
       </div>
     </div>
 
     <!-- Problemas em aberto -->
-    <div
-      class="alg-section-head"
-      style="margin-top: var(--alg-space-4)"
-      aria-hidden="true"
-    >
-      <h3 class="alg-section-head__title">Problemas em aberto</h3>
-      <span class="alg-section-head__count">{{ problemasAbertos.length }} issues</span>
+    <div class="alg-section-head alg-section-head--spaced" aria-hidden="true">
+      <h3 class="alg-section-head__title">
+        {{
+          t(
+            'ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.ISSUES_HEADER'
+          )
+        }}
+      </h3>
+      <span class="alg-section-head__count">{{
+        t('ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.ISSUES_COUNT', {
+          count: problemasAbertos.length,
+        })
+      }}</span>
       <span class="alg-section-head__line" />
     </div>
 
@@ -240,10 +274,7 @@ const problemasAbertos = [
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
           </span>
-          <h4
-            class="alg-subarea-card__name"
-            style="font-size: 13px; line-height: 1.35"
-          >
+          <h4 class="alg-subarea-card__name alg-subarea-card__name--compact">
             {{ prob.titulo }}
           </h4>
           <span class="alg-subarea-card__status">
@@ -259,15 +290,23 @@ const problemasAbertos = [
           </span>
         </div>
         <div class="alg-subarea-card__row">
-          <span class="alg-subarea-card__key">Prioridade</span>
+          <span class="alg-subarea-card__key">{{
+            t('ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.PRIORITY')
+          }}</span>
           <span class="alg-subarea-card__val">{{ prob.prioridade }}</span>
         </div>
         <div class="alg-subarea-card__row">
-          <span class="alg-subarea-card__key">Área responsável</span>
+          <span class="alg-subarea-card__key">{{
+            t(
+              'ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.RESPONSIBLE_AREA'
+            )
+          }}</span>
           <span class="alg-subarea-card__val">{{ prob.area }}</span>
         </div>
         <div class="alg-subarea-card__row">
-          <span class="alg-subarea-card__key">Status</span>
+          <span class="alg-subarea-card__key">{{
+            t('ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.STATUS')
+          }}</span>
           <span
             class="alg-subarea-card__chip"
             :class="
@@ -275,7 +314,16 @@ const problemasAbertos = [
                 ? 'alg-subarea-card__chip--risk'
                 : 'alg-subarea-card__chip--warn'
             "
-            >{{ prob.status === 'open' ? 'Aberto' : 'Em análise' }}</span>
+            >{{
+              prob.status === 'open'
+                ? t(
+                    'ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.STATUS_OPEN'
+                  )
+                : t(
+                    'ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.CUSTOMER_SUPPORT.STATUS_REVIEW'
+                  )
+            }}</span
+          >
         </div>
       </div>
     </div>

@@ -2378,6 +2378,9 @@
   align-items: baseline;
   gap: var(--alg-space-3);
   margin: var(--alg-space-6) 0 var(--alg-space-4);
+
+  // Extra top breathing room when a second section follows the first.
+  &--spaced { margin-top: var(--alg-space-4); }
 }
 
 .alg-section-head__title {
@@ -2420,6 +2423,7 @@
   padding: 20px;
   overflow: hidden;
   cursor: pointer;
+  text-decoration: none;
 
   @include alg-glass(soft);
   border: 1px solid var(--alg-glass-border);
@@ -2484,6 +2488,12 @@
   color: var(--alg-fg-primary);
   margin: 0;
   flex: 1;
+
+  // Compact variant — used when the name is a longer problem title.
+  &--compact {
+    font-size: 13px;
+    line-height: 1.35;
+  }
 }
 
 .alg-subarea-card__status {
@@ -2517,6 +2527,12 @@
   &--ok   { color: var(--alg-color-success); background: oklch(0.30 0.08 152 / 0.18); }
   &--warn { color: var(--alg-color-warning); background: oklch(0.33 0.075 85 / 0.20); }
   &--risk { color: var(--alg-color-danger);  background: oklch(0.32 0.10 25  / 0.20); }
+
+  // Chip pinned to the trailing edge of an issue row (e.g. Reclame Aqui score).
+  &--inline-end {
+    margin-left: var(--alg-space-2);
+    flex-shrink: 0;
+  }
 }
 
 // Metric rows inside sub-area card.
@@ -2528,11 +2544,20 @@
   border-top: 1px solid var(--alg-border);
 
   &:first-of-type { border-top: none; }
+
+  // Flush row used for free-text descriptions (no divider, no top padding).
+  &--flush {
+    border-top: none;
+    padding-top: 0;
+  }
 }
 
 .alg-subarea-card__key {
   font-size: var(--alg-text-sm);
   color: var(--alg-fg-tertiary);
+
+  // Description variant — softer color, wraps as a paragraph.
+  &--desc { color: var(--alg-fg-secondary); }
 }
 
 .alg-subarea-card__val {
@@ -2624,6 +2649,7 @@
 
 // Overview pane wrapper — holds the KPI row + section head + sub-area grid.
 .alg-overview-pane {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -2644,6 +2670,9 @@
   letter-spacing: var(--alg-tracking-widest);
   text-transform: uppercase;
   color: var(--alg-fg-tertiary);
+
+  // Current (active) crumb leaf — brighter than the path root.
+  &--current { color: var(--alg-fg-secondary); }
 }
 
 .alg-overview-crumb__sep {
@@ -2658,6 +2687,9 @@
   justify-content: space-between;
   gap: var(--alg-space-6);
   margin-bottom: var(--alg-space-6);
+
+  // Slight top inset when the header sits directly under a sub-tab strip.
+  &--inset { margin-top: var(--alg-space-2); }
 }
 
 .alg-overview-head__left {
@@ -2687,6 +2719,7 @@
 // Customer Support (D6) — demo-data spec. =====================================
 
 .alg-cust-support {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0;

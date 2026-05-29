@@ -96,7 +96,6 @@ const subareas = [
 <template>
   <div
     class="alg-overview-pane"
-    style="position: relative"
     :aria-label="t('ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.OVERVIEW.ARIA')"
   >
     <span class="alg-sector__watermark" aria-hidden="true">
@@ -106,17 +105,20 @@ const subareas = [
     <div class="alg-overview-head">
       <div class="alg-overview-head__left">
         <div class="alg-overview-crumb">
-          <span class="alg-overview-crumb__item">Gestão</span>
+          <span class="alg-overview-crumb__item">{{
+            t('ALGORYTHMO_ADMIN.SECTORS.CRUMB_ROOT')
+          }}</span>
           <span class="alg-overview-crumb__sep">/</span>
           <span
-            class="alg-overview-crumb__item"
-            style="color: rgba(255, 255, 255, 0.72)"
-            >Commercial</span>
+            class="alg-overview-crumb__item alg-overview-crumb__item--current"
+            >{{ t('ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.OVERVIEW.NAME') }}</span
+          >
         </div>
-        <h2 class="alg-overview-title">Comercial</h2>
+        <h2 class="alg-overview-title">
+          {{ t('ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.OVERVIEW.TITLE') }}
+        </h2>
         <p class="alg-overview-subtitle">
-          Pipeline, conversão, receita e atendimento — o coração comercial da
-          empresa.
+          {{ t('ALGORYTHMO_ADMIN.SECTORS.COMMERCIAL.OVERVIEW.SUBTITLE') }}
         </p>
       </div>
     </div>
@@ -133,7 +135,8 @@ const subareas = [
           <span
             class="alg-kpi-tile__delta"
             :class="`alg-kpi-tile__delta--${kpi.delta.variant}`"
-            >{{ kpi.delta.text }}</span>
+            >{{ kpi.delta.text }}</span
+          >
         </div>
         <p class="alg-kpi-tile__value">
           {{ kpi.value }}<span class="alg-kpi-tile__unit">{{ kpi.unit }}</span>
@@ -143,8 +146,12 @@ const subareas = [
     </div>
 
     <div class="alg-section-head" aria-hidden="true">
-      <h3 class="alg-section-head__title">Sub-áreas</h3>
-      <span class="alg-section-head__count">{{ subareas.length }} áreas</span>
+      <h3 class="alg-section-head__title">
+        {{ t('ALGORYTHMO_ADMIN.SECTORS.SUBAREAS_HEADER') }}
+      </h3>
+      <span class="alg-section-head__count">{{
+        t('ALGORYTHMO_ADMIN.SECTORS.SUBAREAS_COUNT', { count: subareas.length })
+      }}</span>
       <span class="alg-section-head__line" />
     </div>
 
@@ -174,7 +181,8 @@ const subareas = [
             <span
               class="alg-subarea-card__chip"
               :class="`alg-subarea-card__chip--${area.status}`"
-              >{{ area.statusLabel }}</span>
+              >{{ area.statusLabel }}</span
+            >
           </span>
         </div>
         <div
