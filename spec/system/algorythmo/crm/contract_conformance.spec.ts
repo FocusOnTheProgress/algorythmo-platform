@@ -149,7 +149,7 @@ test.describe('CONTRACT_M1B v1.0.0 — surface conformance', () => {
     expect(chipAriaLabel ?? '').not.toBe('');
   });
 
-  test('§5 (global) — kanban-empty-state + title + CTA render when board is globally empty', async ({
+  test('§5 (global) — on-brand empty state (title + body, no Chatwoot CTA) renders when board is globally empty', async ({
     page,
   }) => {
     await loginAsAdmin(page);
@@ -162,10 +162,11 @@ test.describe('CONTRACT_M1B v1.0.0 — surface conformance', () => {
     await expect(
       page.locator('[data-testid="kanban-empty-title"]')
     ).toBeVisible();
-    const cta = page.locator('[data-testid="kanban-empty-cta"]');
-    await expect(cta).toBeVisible();
-    const href = await cta.getAttribute('href');
-    expect(href).toMatch(/\/accounts\/\d+\/settings\/inboxes\/new$/);
+    // C-3 (Cinematic OS): the Chatwoot "connect a channel" CTA + blue button
+    // were removed. The empty state is editorial copy only — assert no CTA.
+    await expect(
+      page.locator('[data-testid="kanban-empty-cta"]')
+    ).toHaveCount(0);
 
     // CONTRACT §5 — when global empty renders, the board MUST NOT be visible
     // to the user. `toBeHidden()` allows two equally valid implementations:
