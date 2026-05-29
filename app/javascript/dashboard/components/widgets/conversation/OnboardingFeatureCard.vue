@@ -31,7 +31,11 @@ defineProps({
   <div
     class="h-full w-full bg-n-surface-2 border border-n-weak rounded-lg p-4 flex flex-col"
   >
-    <div class="flex-1 flex items-center justify-center">
+    <!-- algorythmo: cinematic-os C1.1 — upstream onboarding illustrations ship
+         with baked-in cream/light backgrounds that clash with the dark canvas
+         and can't be re-tinted. Render the image only when one is provided so
+         the Algorythmo dark empty-state stays clean. -->
+    <div v-if="imageSrc" class="flex-1 flex items-center justify-center">
       <img :src="imageSrc" :alt="imageAlt" class="h-36 w-auto mx-auto" />
     </div>
     <div class="mt-auto">

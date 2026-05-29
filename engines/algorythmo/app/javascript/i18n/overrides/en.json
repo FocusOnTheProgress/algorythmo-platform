@@ -4,7 +4,15 @@
     "RELATORIOS_COMERCIAIS_VISAO": "Commercial Overview",
     "ALGORYTHMO_SECTION_GESTAO": "Management",
     "ALGORYTHMO_SECTION_ESTRATEGIA": "Strategy",
-    "ALGORYTHMO_SECTION_INTELIGENCIA": "Intelligence"
+    "ALGORYTHMO_SECTION_INTELIGENCIA": "Intelligence",
+    "ALG_SECTOR_COMMERCIAL": "Commercial",
+    "ALG_SECTOR_MARKETING": "Marketing",
+    "ALG_SECTOR_OPERATIONS": "Operations",
+    "ALG_SECTOR_PROCUREMENT": "Procurement",
+    "ALG_SECTOR_HR": "HR",
+    "ALG_SECTOR_FACILITIES": "Facilities",
+    "ALG_SECTOR_FINANCE": "Finance",
+    "ALG_SECTOR_ADMINISTRATION": "Administration"
   },
   "ALGORYTHMO_ADMIN": {
     "READ_ONLY_NOTICE": "You're viewing as an administrator. To message the team, use the internal Inbox.",
@@ -283,6 +291,10 @@
       "OVERVIEW": "Overview",
       "BODY": "Under construction — marketing dashboards with real metrics coming soon."
     },
+    "FACILITIES": {
+      "TITLE": "Facilities",
+      "BODY": "Under construction — facilities dashboards with real metrics coming soon."
+    },
     "C_LEVELS": {
       "TITLE": "Executive Board",
       "SIDEBAR_LABEL": "C-Levels",
@@ -337,6 +349,11 @@
   },
   "CONVERSATION": {
     "NATIVE_APP_ADVISORY": "This message was sent from the native app. Reply from Algorythmo OS to maintain the message window."
+  },
+  "ONBOARDING": {
+    "GREETING_MORNING": "Good morning, {name}. Welcome to {installationName}.",
+    "GREETING_AFTERNOON": "Good afternoon, {name}. Welcome to {installationName}.",
+    "GREETING_EVENING": "Good evening, {name}. Welcome to {installationName}."
   },
   "GENERAL_SETTINGS": {
     "UPDATE_CHATWOOT": "An update {latestChatwootVersion} for Algorythmo OS is available. Please update your instance.",
