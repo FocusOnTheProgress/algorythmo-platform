@@ -117,7 +117,7 @@ Lista dura. Qualquer item aqui é reprovação imediata:
 | `--alg-color-brand-primary-hover` | `oklch(0.795 0.155 195)` |
 | `--alg-color-brand-primary-active` | `oklch(0.685 0.170 195)` |
 
-**Aurora Gradient — identidade cromática viva.** A única cromia rica do sistema. Aparece exclusivamente no Aurora Orb (§6.2) e no Planet Avatar set (§6.3). Em chrome operacional, **nunca**.
+**Aurora Gradient — identidade cromática viva.** A única cromia rica do sistema. Aparece no Aurora Orb (§6.2) e no Planet Avatar set (§6.3). Dois usos de **superfície-assinatura** estendem — não relaxam — essa regra: os atoms `--memory`/`--criteria` em prose (§6.4) e a **Aurora Border** (§6.6), restrita às superfícies onde a inteligência viva fala ou ingere. Em chrome operacional, **nunca**.
 
 | Token | Valor OKLCH | Papel |
 |---|---|---|
@@ -127,7 +127,7 @@ Lista dura. Qualquer item aqui é reprovação imediata:
 | `--alg-aurora-grad` | `radial-gradient(circle at 35% 30%, var(--alg-aurora-1) 0%, var(--alg-aurora-2) 40%, var(--alg-aurora-3) 100%)` | Composição assinatura |
 | `--alg-aurora-conduit` | `linear-gradient(90deg, transparent 0%, color-mix(in oklch, var(--alg-aurora-1), transparent 30%) 50%, transparent 100%)` | Raios de conexão (fade fora-dentro-fora) |
 
-**Regra de sacralidade:** se o Aurora Gradient aparecer fora do Aurora Orb ou de um Planet Avatar, é reprovação imediata. Não é "decoração de hero", não é "destaque de KPI", não é "splash de empty state". É identidade — escassa, deliberada, viva.
+**Regra de sacralidade:** se o Aurora Gradient aparecer fora do Aurora Orb, de um Planet Avatar, ou das duas superfícies-assinatura sancionadas (atoms §6.4, Aurora Border §6.6), é reprovação imediata. Não é "decoração de hero", não é "destaque de KPI", não é "splash de empty state". É identidade — escassa, deliberada, viva. As exceções são **fechadas e nomeadas**: ampliá-las exige decisão de design, nunca julgamento de implementação.
 
 **Semantic status.** Success / warning / danger / info. Atenuados em dark, ≥4.5:1 sobre canvas. Usados com semântica, nunca como decoração.
 
@@ -516,6 +516,22 @@ Sobre a foto, sempre um **canvas frame** de glass com radius `2xl` (24 px) — a
 **No White Model.** A foto não vai pra P&B atenuada — vai pra **highkey claro** (`filter: grayscale(80%) brightness(1.2) contrast(0.95)`, opacity 0.55) — a Ref 4 validou esse caminho.
 
 **Princípio de sacralidade.** **Não usar stock fotos genéricas.** Curadoria humana obrigatória. Sem pessoas. Sem cidade. Sem produto. Sem "AI imagery". É natureza épica, escala, silêncio, escuridão — geografia que reflete a tese da sala de comando.
+
+### 6.6 Aurora Border
+
+**O que é.** Um frame hairline em Aurora Gradient com **um único arco brilhante** que deriva devagar pela borda — um cometa, nunca um anel arco-íris, nunca um spinner de loading. Componente `AlgAuroraBorder`. Marca uma superfície como **lugar onde a inteligência viva fala ou ingere**.
+
+**Onde aparece (lista fechada).**
+
+- Hero do agente de setor — onde a inteligência **fala** (§F-B).
+- Dropzone "Anexar documentos da empresa" do Brain hub — onde a inteligência **ingere** (§F-D).
+- Distribuição premium (P-4) pode estendê-la a **outras superfícies-assinatura** equivalentes — nunca a chrome operacional.
+
+**Onde NÃO aparece.** KPI cards, list views, painéis genéricos, sidebar, modais utilitários, cards de kanban. Aurora Border em chrome operacional é a **mesma reprovação** do orb fora de lugar.
+
+**Execução (anti-slop — a esfera reprovada da rodada 2 é o aviso permanente).** Espessura hairline (`1px`, `1.5px` no máximo em hero). Opacidade contida (`0.5` subtle / `0.82` normal). UM arco, não um anel cheio. Drift lento (`--alg-duration-ambient-slow` 8 s; `--alg-duration-ambient` 6 s no estado `active`). Glow externo opcional e baixo (`--alg-aurora-glow`). `prefers-reduced-motion` congela o arco — a borda fica presente, viva pela cor, sem movimento direcional.
+
+**Princípio de sacralidade.** A Aurora Border é **identidade de superfície, não ornamento**. Escassa e nomeada como o orb. Se ela "decora" uma superfície que não é onde a inteligência fala ou ingere, é hierarquia errada — reprovação.
 
 ---
 
