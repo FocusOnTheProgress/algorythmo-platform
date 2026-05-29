@@ -1,7 +1,8 @@
-// algorythmo: feature-gate algorythmo_brain
-// Route definitions for the Algorythmo Brain surface. Route is registered
-// unconditionally so deep-links resolve once the flag flips on; the sidebar
-// entry and route guard control actual visibility.
+// algorythmo: Brain surface — ungated for single-tenant; route open to
+// permitted roles. The `algorythmo_brain` feature flag was never registered as
+// an enableable feature, which left the route permanently hidden. For this
+// single-tenant founder instance the gate is removed so the Aurora knowledge
+// hub is reachable; the `permissions` meta still scopes it to permitted roles.
 import { frontendURL } from 'dashboard/helper/URLHelper';
 import BrainViewer from '../../../modules/algorythmo/brain/BrainViewer.vue';
 
@@ -12,7 +13,6 @@ export default {
       name: 'algorythmo_brain_viewer',
       meta: {
         permissions: ['administrator', 'agent', 'custom_role'],
-        algorythmoFeatureFlag: 'algorythmo_brain',
       },
       component: BrainViewer,
     },

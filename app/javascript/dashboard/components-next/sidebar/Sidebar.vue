@@ -87,17 +87,6 @@ const hasAlgorythmoCrm = computed(() => {
   );
 });
 
-// algorythmo: feature-gate algorythmo_brain
-// Brain nav entry is hidden until algorythmo_brain flips on.
-// Positioned after CRM (between CRM and Contacts) — cross-cutting surface
-// that M4 Manu will consume across all surfaces (D-D1).
-const hasAlgorythmoBrain = computed(() => {
-  return isFeatureEnabledonAccount.value(
-    accountId.value,
-    FEATURE_FLAGS.ALGORYTHMO_BRAIN
-  );
-});
-
 // algorythmo: feature-gate algorythmo_cut_*
 // Cut flags use inverted semantic: when enabled, the surface is HIDDEN.
 // All cut flags default false → upstream surfaces remain visible until a
@@ -814,9 +803,10 @@ const menuItems = computed(() => {
         ]
       : []),
     // algorythmo: M5 sidebar restructure — Brain MOVED from original position (D1: one entry point)
-    // algorythmo: feature-gate algorythmo_brain
-    // "Brain" is the product name (Algorythmo Brain) — intentionally untranslated.
-    ...(hasAlgorythmoBrain.value
+    // Brain is ungated for this single-tenant instance — shown to admins,
+    // consistent with the INTELIGÊNCIA section + the route's administrator
+    // permission. "Brain" is the product name (Algorythmo Brain) — untranslated.
+    ...(isAdmin.value
       ? [
           {
             name: 'AlgorythmoBrain',
