@@ -8,10 +8,14 @@
 // would otherwise get a silent permanent block in prod with no signal, since the
 // getter returns undefined → fail-closed-blocked. The allowlist + dev warn keeps
 // that mistake loud during development.
+// NOTE: `algorythmo_brain` was removed here — Brain is ungated for this
+// single-tenant instance (its route no longer carries an algorythmoFeatureFlag
+// meta), so listing it would orphan the allowlist (declared but unused by any
+// route), which the coverage spec rightly flags. Re-add it here only if the
+// Brain route is gated again.
 export const ALGORYTHMO_FEATURE_FLAG_KEYS = Object.freeze([
   'algorythmo_show_captain',
   'algorythmo_crm',
-  'algorythmo_brain',
 ]);
 
 export const isKnownAlgorythmoFeatureFlag = key =>

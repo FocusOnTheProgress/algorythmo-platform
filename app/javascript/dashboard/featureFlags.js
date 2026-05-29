@@ -53,9 +53,9 @@ export const FEATURE_FLAGS = {
   // algorythmo: feature-gate algorythmo_crm
   // Enables the Algorythmo CRM kanban surface (sidebar + /crm route + APIs).
   ALGORYTHMO_CRM: 'algorythmo_crm',
-  // algorythmo: feature-gate algorythmo_brain
-  // Enables the Brain nav entry + /brain route. Default false until M3 ships.
-  ALGORYTHMO_BRAIN: 'algorythmo_brain',
+  // NOTE: ALGORYTHMO_BRAIN was removed — Brain is ungated for this
+  // single-tenant instance (route open to permitted roles, sidebar shown to
+  // admins). The flag was never registered as an enableable feature.
 };
 
 export const PREMIUM_FEATURES = [
