@@ -40,10 +40,10 @@
       },
       "FINANCE": {
         "HEADING": "Financeiro",
-        "AGENT_CHAT_HEADING": "Fale com o agente do setor Finance",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor Financeiro",
         "OVERVIEW": {
           "TAB": "Visão Geral",
-          "ARIA": "Visão geral consolidada do setor Finance",
+          "ARIA": "Visão geral consolidada do setor Financeiro",
           "NAME": "Financeiro",
           "TITLE": "Financeiro",
           "SUBTITLE": "Contas a pagar, receber, fluxo de caixa e margem — a saúde financeira da empresa em uma leitura.",
@@ -63,10 +63,10 @@
       },
       "HR": {
         "HEADING": "RH",
-        "AGENT_CHAT_HEADING": "Fale com o agente do setor HR",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor RH",
         "OVERVIEW": {
           "TAB": "Visão Geral",
-          "ARIA": "Visão geral consolidada do setor HR",
+          "ARIA": "Visão geral consolidada do setor RH",
           "NAME": "RH",
           "TITLE": "Recursos Humanos",
           "SUBTITLE": "Contratação, treinamento, cultura e produtividade — o capital humano da empresa em uma leitura.",
@@ -132,7 +132,7 @@
       },
       "COMMERCIAL": {
         "HEADING": "Visão Comercial",
-        "AGENT_CHAT_HEADING": "Fale com o agente do setor Commercial",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor Comercial",
         "CONTEXT": "Pipeline, conversão e receita — meio e fundo de funil nos últimos 30 dias.",
         "CHART_TITLE": "Receita fechada (R$ mil) — últimas 12 semanas",
         "OPEN_FULL_REPORT": "Abrir relatório completo",
@@ -148,7 +148,7 @@
         },
         "OVERVIEW": {
           "TAB": "Visão Geral",
-          "ARIA": "Visão geral consolidada do setor Commercial",
+          "ARIA": "Visão geral consolidada do setor Comercial",
           "NAME": "Comercial",
           "TITLE": "Comercial",
           "SUBTITLE": "Pipeline, conversão, receita e atendimento — o coração comercial da empresa.",
@@ -192,10 +192,10 @@
       },
       "OPERATIONS": {
         "HEADING": "Operações",
-        "AGENT_CHAT_HEADING": "Fale com o agente do setor Operations",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor Operações",
         "OVERVIEW": {
           "TAB": "Visão Geral",
-          "ARIA": "Visão geral consolidada do setor Operations",
+          "ARIA": "Visão geral consolidada do setor Operações",
           "NAME": "Operações",
           "TITLE": "Operações",
           "SUBTITLE": "Estoque, reposição, logística e expedição em uma única leitura. O setor está estável; reposição puxa atenção.",
@@ -215,10 +215,10 @@
       },
       "PROCUREMENT": {
         "HEADING": "Compras",
-        "AGENT_CHAT_HEADING": "Fale com o agente do setor Procurement",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor Compras",
         "OVERVIEW": {
           "TAB": "Visão Geral",
-          "ARIA": "Visão geral consolidada do setor Procurement",
+          "ARIA": "Visão geral consolidada do setor Compras",
           "NAME": "Compras",
           "TITLE": "Compras",
           "SUBTITLE": "Fornecedores, reposição, CMV e giro — o abastecimento da operação sob controle.",
@@ -234,10 +234,10 @@
       },
       "ADMINISTRATION": {
         "HEADING": "Administração",
-        "AGENT_CHAT_HEADING": "Fale com o agente do setor Administration",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor Administração",
         "OVERVIEW": {
           "TAB": "Visão Geral",
-          "ARIA": "Visão geral consolidada do setor Administration",
+          "ARIA": "Visão geral consolidada do setor Administração",
           "NAME": "Administração",
           "TITLE": "Administração",
           "SUBTITLE": "Estratégia, metas e indicadores — o painel de controle executivo da empresa.",
@@ -251,10 +251,10 @@
       },
       "FACILITIES": {
         "HEADING": "Instalações",
-        "AGENT_CHAT_HEADING": "Fale com o agente do setor Facilities",
+        "AGENT_CHAT_HEADING": "Fale com o agente do setor Instalações",
         "OVERVIEW": {
           "TAB": "Visão Geral",
-          "ARIA": "Visão geral consolidada de gastos do setor Facilities",
+          "ARIA": "Visão geral consolidada de gastos do setor Instalações",
           "NAME": "Instalações",
           "TITLE": "Instalações",
           "SUBTITLE": "Aluguel, energia, limpeza e manutenção — o custo de manter a empresa funcionando.",
@@ -273,7 +273,7 @@
         },
         "CONTROLE": {
           "TAB": "Controle",
-          "ARIA": "Controle de unidades e gastos do setor Facilities",
+          "ARIA": "Controle de unidades e gastos do setor Instalações",
           "UNITS_TITLE": "Unidades",
           "UNITS_HINT": "Cadastre as unidades (lojas, depósitos, escritórios) que você acompanha. Os dados ficam salvos apenas neste navegador.",
           "UNIT_FORM_ARIA": "Cadastrar nova unidade",
