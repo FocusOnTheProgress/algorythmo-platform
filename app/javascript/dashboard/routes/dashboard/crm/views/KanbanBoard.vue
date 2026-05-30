@@ -15,9 +15,17 @@
 // allocation per snapshot instead of one per render. The channel glyph is NOT
 // part of the presenter: LeadCard derives its own inline-SVG channel icon from
 // channel_origin (founder: no emoji in chrome).
-import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import {
+  computed,
+  ref,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+} from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
+import { algStagger } from 'dashboard/composables/algorythmo/useAlgMotion.js';
 import {
   usePipelineStore,
   clearPipelineStoreForAccount,
@@ -40,6 +48,7 @@ import KanbanEmptyState from './components/KanbanEmptyState.vue';
 import MoveLeadModal from './components/MoveLeadModal.vue';
 import LeadCardMenu from './components/LeadCardMenu.vue';
 import LeadDetailDrawer from './components/LeadDetailDrawer.vue';
+import PipelineConfigPlaceholder from './PipelineConfigPlaceholder.vue';
 import {
   DEMO_STAGES,
   DEMO_SUMMARY,
@@ -209,6 +218,32 @@ const searchQuery = ref('');
 const drawerOpen = ref(false);
 const drawerLead = ref(null);
 
+// Pipeline-config reveal (C5). Hidden behind the header gear; clicking toggles
+// an inline config panel over the board — the single, contained config entry.
+const configOpen = ref(false);
+function toggleConfig() {
+  configOpen.value = !configOpen.value;
+}
+function closeConfig() {
+  configOpen.value = false;
+}
+
+// Card entrance choreography (shared motion system). When the board first
+// paints its cards we stagger them in — one curve, one reduced-motion contract.
+// Guarded so it runs once per first paint, not on every reactive change (a drag
+// or a search keystroke must not re-trigger the whole board fading in).
+const boardRef = ref(null);
+let cardsRevealed = false;
+function revealCards() {
+  if (cardsRevealed) return;
+  const root = boardRef.value;
+  if (!root) return;
+  const cards = root.querySelectorAll('[data-testid="lead-card"]');
+  if (!cards.length) return;
+  cardsRevealed = true;
+  algStagger(cards, { each: 0.035, y: 10 });
+}
+
 const drag = useDragLead({
   onMove: async ({ leadId, fromStageId, toStageId }) => {
     if (demoActive.value) {
@@ -249,7 +284,18 @@ const drag = useDragLead({
 const AGING_TICK_MS = 30_000;
 let agingTimer = null;
 
+// Esc closes the pipeline-config reveal (C5) — keyboard parity with the drawer.
+function handleConfigEsc(event) {
+  if (event.key === 'Escape' && configOpen.value) {
+    configOpen.value = false;
+  }
+}
+
 onMounted(async () => {
+  document.addEventListener('keydown', handleConfigEsc);
+  // Demo cards (the common founder path) are in the DOM on first paint — reveal
+  // them right away. Live cards reveal via the boardHasAnyLead watcher below.
+  nextTick(revealCards);
   await loadPipeline();
   await Promise.all(stages.value.map(s => fetchStage(s.id)));
   // Initial lead fetch settled — now a zero count is a real "empty account",
@@ -266,6 +312,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   if (agingTimer !== null) clearInterval(agingTimer);
   agingTimer = null;
+  document.removeEventListener('keydown', handleConfigEsc);
 });
 
 // Re-fetch when accountId changes. The store refs above re-bind to the new
@@ -291,6 +338,7 @@ watch(accountId, async (newId, oldId) => {
   // the new account's drawer.
   drawerOpen.value = false;
   drawerLead.value = null;
+  configOpen.value = false;
   if (oldId && oldId !== newId) {
     clearLeadStoreForAccount(oldId);
     clearPipelineStoreForAccount(oldId);
@@ -334,6 +382,12 @@ const presenterByStage = computed(() => {
 const boardHasAnyLead = computed(() =>
   Array.from(presenterByStage.value.values()).some(p => p.length > 0)
 );
+
+// Reveal live cards the first time the board actually has any (the demo path is
+// handled in onMounted). One-shot via the cardsRevealed guard inside.
+watch(boardHasAnyLead, has => {
+  if (has) nextTick(revealCards);
+});
 
 // Global empty state. Now that demo mode activates on ZERO real leads (even
 // when stages exist), this is effectively unreachable in the normal flow — the
@@ -487,12 +541,15 @@ async function handleConfirmMove({ leadId, stage }) {
       :summary="summaryForHeader"
       :loading="metricsLoadingForHeader"
       :error="metricsErrorForHeader"
+      :config-open="configOpen"
+      @toggle-config="toggleConfig"
     />
 
     <KanbanEmptyState v-if="showGlobalEmpty" />
 
     <div
       v-else
+      ref="boardRef"
       class="alg-kanban__board"
       data-testid="kanban-board"
       role="region"
@@ -526,6 +583,32 @@ async function handleConfirmMove({ leadId, stage }) {
     >
       {{ announceText }}
     </div>
+
+    <!-- Pipeline-config reveal (C5) — overlay panel behind the header gear. -->
+    <transition name="alg-config-scrim">
+      <div
+        v-if="configOpen"
+        class="alg-kanban__config-scrim"
+        aria-hidden="true"
+        @click="closeConfig"
+      />
+    </transition>
+    <transition name="alg-config-panel">
+      <aside
+        v-if="configOpen"
+        class="alg-kanban__config-panel"
+        data-testid="kanban-config-panel"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="t('ALGORYTHMO_CRM.PIPELINE_CONFIG.PLACEHOLDER_TITLE')"
+      >
+        <PipelineConfigPlaceholder
+          embedded
+          :stages="boardStages"
+          @close="closeConfig"
+        />
+      </aside>
+    </transition>
 
     <LeadCardMenu
       :open="menuOpen"
@@ -627,5 +710,58 @@ async function handleConfirmMove({ leadId, stage }) {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+// Pipeline-config reveal (C5) — scrim + right-docked panel over the board.
+.alg-kanban__config-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.alg-kanban__config-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  width: min(26rem, 100%);
+  display: flex;
+}
+
+.alg-kanban__config-panel > * {
+  width: 100%;
+}
+
+// Enter/exit — cinematic curve, slide from the right (mirrors the lead drawer).
+.alg-config-scrim-enter-active,
+.alg-config-scrim-leave-active {
+  transition: opacity var(--alg-duration-base, 240ms) var(--alg-ease-cinematic);
+}
+.alg-config-scrim-enter-from,
+.alg-config-scrim-leave-to {
+  opacity: 0;
+}
+
+.alg-config-panel-enter-active {
+  transition: transform var(--alg-duration-slow, 340ms)
+    var(--alg-ease-cinematic);
+}
+.alg-config-panel-leave-active {
+  transition: transform var(--alg-duration-base, 240ms)
+    var(--alg-ease-cinematic);
+}
+.alg-config-panel-enter-from,
+.alg-config-panel-leave-to {
+  transform: translateX(100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alg-config-panel-enter-active,
+  .alg-config-panel-leave-active {
+    transition: none;
+  }
 }
 </style>

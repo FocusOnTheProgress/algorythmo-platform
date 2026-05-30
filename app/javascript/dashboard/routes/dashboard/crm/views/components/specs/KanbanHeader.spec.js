@@ -147,4 +147,29 @@ describe('KanbanHeader (CONTRACT_M1B §2 v1.2.0)', () => {
       true
     );
   });
+
+  // Round-4 (C5) — pipeline-config gear lives in the header (top-right).
+  describe('pipeline-config gear (C5)', () => {
+    it('renders the gear with the toggle a11y contract', () => {
+      const wrapper = mountHeader();
+      const gear = wrapper.find('[data-testid="kanban-config-gear"]');
+      expect(gear.exists()).toBe(true);
+      expect(gear.element.tagName).toBe('BUTTON');
+      expect(gear.attributes('aria-haspopup')).toBe('dialog');
+      expect(gear.attributes('aria-expanded')).toBe('false');
+    });
+
+    it('emits toggle-config on click', async () => {
+      const wrapper = mountHeader();
+      await wrapper.find('[data-testid="kanban-config-gear"]').trigger('click');
+      expect(wrapper.emitted('toggle-config')).toHaveLength(1);
+    });
+
+    it('reflects the open state via aria-expanded + active class', () => {
+      const wrapper = mountHeader({ configOpen: true });
+      const gear = wrapper.find('[data-testid="kanban-config-gear"]');
+      expect(gear.attributes('aria-expanded')).toBe('true');
+      expect(gear.classes()).toContain('is-active');
+    });
+  });
 });

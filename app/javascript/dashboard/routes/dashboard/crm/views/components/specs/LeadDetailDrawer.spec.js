@@ -649,12 +649,64 @@ describe('LeadDetailDrawer (CONTRACT_M1B §7 v1.1.0)', () => {
       });
     });
 
-    it('disables the CTA and does not route when conversation_id is absent', async () => {
-      const wrapper = mountDrawer({ lead: baseLead() });
+    it('stays enabled and falls back to the conversations view when conversation_id is absent', async () => {
+      // C3: the action is never dead. With no concrete thread linked yet (live
+      // leads pre lead→conversation join), it routes to the conversations view
+      // instead of disabling. See TODO(lead-linkage) in the component.
+      const wrapper = mountDrawer({ lead: baseLead(), accountId: '7' });
       const cta = wrapper.find('[data-testid="drawer-open-conversation"]');
-      expect(cta.attributes('disabled')).toBeDefined();
+      expect(cta.attributes('disabled')).toBeUndefined();
+      expect(cta.attributes('data-has-conversation')).toBe('false');
       await cta.trigger('click');
-      expect(routerPush).not.toHaveBeenCalled();
+      expect(routerPush).toHaveBeenCalledWith({
+        name: 'home',
+        params: { accountId: '7' },
+      });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Round-4 (C2) — lead-intelligence shell (future lead-nurturing agent)
+  // -------------------------------------------------------------------------
+  describe('INTELIGÊNCIA DO LEAD block (C2)', () => {
+    it('always renders the intelligence block (shell present even with no data)', () => {
+      const wrapper = mountDrawer({ lead: baseLead() });
+      const block = wrapper.find('[data-testid="drawer-intelligence-block"]');
+      expect(block.exists()).toBe(true);
+      // No intelligence data → the pending/empty copy stands in.
+      expect(
+        wrapper.find('[data-testid="drawer-intelligence-empty"]').exists()
+      ).toBe(true);
+      expect(
+        wrapper.find('[data-testid="drawer-intelligence-research"]').exists()
+      ).toBe(false);
+    });
+
+    it('renders research findings and conversation memory when provided', () => {
+      const wrapper = mountDrawer({
+        lead: baseLead({
+          intelligence: {
+            research: [
+              { source: 'linkedin', text: 'Sócia há 12 anos.' },
+              { source: 'web', text: 'Citada em matéria regional.' },
+            ],
+            memory: ['Orçamento aprovado.', 'Decisora final.'],
+          },
+        }),
+      });
+      const research = wrapper.find(
+        '[data-testid="drawer-intelligence-research"]'
+      );
+      const memory = wrapper.find('[data-testid="drawer-intelligence-memory"]');
+      expect(research.exists()).toBe(true);
+      expect(research.text()).toContain('Sócia há 12 anos.');
+      expect(research.text()).toContain('Citada em matéria regional.');
+      expect(memory.exists()).toBe(true);
+      expect(memory.text()).toContain('Orçamento aprovado.');
+      expect(memory.text()).toContain('Decisora final.');
+      expect(
+        wrapper.find('[data-testid="drawer-intelligence-empty"]').exists()
+      ).toBe(false);
     });
   });
 });

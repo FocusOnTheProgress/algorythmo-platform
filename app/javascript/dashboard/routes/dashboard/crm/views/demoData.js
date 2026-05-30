@@ -12,9 +12,12 @@
 // "DADOS DE DEMONSTRAÇÃO" watermark on the board makes the nature explicit —
 // same honesty convention as the sector dashboards (plan 0005 §9 / D12).
 //
-// Stage hues are the exact OKLCH values locked in DESIGN-DELTA-0009 — applied
-// as a 2px column top-bar and a ~12% tint on the count pill ONLY. Never as a
-// saturated header, never the Aurora magenta (sacred to the orb/avatars).
+// Stage hues (REF CRM). Each stage carries an OKLCH accent that drives the
+// COLOURED HEADER BLOCK that crowns its column — blue / yellow / purple /
+// orange, matching the reference one-to-one. Tones are calibrated to read as
+// the ref's vivid-but-controlled headers: lightness L≈0.62-0.78 so white ink
+// holds AA contrast, chroma C≤0.16 so the colour is rich without going neon.
+// Never the Aurora magenta (sacred to the orb/avatars).
 
 // Aging coefficient = days-per-stage; the board derives green/yellow/red from
 // elapsed / (coef * 1 day). Values picked so the demo shows all three states.
@@ -25,7 +28,7 @@ export const DEMO_STAGES = Object.freeze([
     kind: 'open',
     position: 1,
     aging_coefficient: 1,
-    accent: 'oklch(0.55 0.10 235)', // info — azul cinematic
+    accent: 'oklch(0.62 0.15 245)', // info — azul (REF: "Novo Lead")
   },
   {
     id: 'demo-qualificado',
@@ -33,7 +36,9 @@ export const DEMO_STAGES = Object.freeze([
     kind: 'open',
     position: 2,
     aging_coefficient: 3,
-    accent: 'oklch(0.62 0.11 85)', // warning — âmbar quieto
+    accent: 'oklch(0.78 0.15 88)', // warning — amarelo (REF: "Qualificado")
+    // Yellow is too bright for white ink — the ref uses dark text on this one.
+    accent_ink: 'dark',
   },
   {
     id: 'demo-proposta',
@@ -41,7 +46,7 @@ export const DEMO_STAGES = Object.freeze([
     kind: 'open',
     position: 3,
     aging_coefficient: 5,
-    accent: 'oklch(0.55 0.12 295)', // accent-violet — semântico de estágio
+    accent: 'oklch(0.62 0.16 300)', // violeta (REF: "Proposta Enviada")
   },
   {
     id: 'demo-negociacao',
@@ -49,7 +54,7 @@ export const DEMO_STAGES = Object.freeze([
     kind: 'open',
     position: 4,
     aging_coefficient: 7,
-    accent: 'oklch(0.55 0.11 35)', // danger-adjacent — laranja-marrom
+    accent: 'oklch(0.68 0.16 48)', // laranja (REF: "Negociação")
   },
 ]);
 
@@ -205,6 +210,26 @@ export const DEMO_LEADS = Object.freeze([
     due_tone: 'soon',
     due_at: inFuture(1 * DAY),
     timeline: buildTimeline('01', [['Novo Lead', 0.08, null]]),
+    // Lead-nurturing agent enrichment (demo). In production this is filled by
+    // the agent researching social/web + remembering the conversation. Shape:
+    //   research: [{ source, text }]  — LinkedIn/Instagram/Facebook/web findings
+    //   memory:   [string]            — things the agent learned from the chat
+    intelligence: {
+      research: [
+        {
+          source: 'instagram',
+          text: 'Perfil ativo (~4k seguidores), publica sobre casa e organização.',
+        },
+        {
+          source: 'web',
+          text: 'Sem CNPJ associado — compra como pessoa física.',
+        },
+      ],
+      memory: [
+        'Quer fechar antes do fim do mês.',
+        'Já comparou com dois concorrentes; preço é o fator decisivo.',
+      ],
+    },
   },
   {
     id: 'demo-l-02',
@@ -429,6 +454,23 @@ export const DEMO_LEADS = Object.freeze([
       ['Novo Lead', 3, null],
       ['Qualificado', 1, 'Ana Prado'],
     ]),
+    intelligence: {
+      research: [
+        {
+          source: 'linkedin',
+          text: 'Sócia-proprietária há 12 anos; negócio familiar com ~40 funcionários.',
+        },
+        {
+          source: 'web',
+          text: 'Empresa citada em matéria regional sobre expansão para nova unidade.',
+        },
+      ],
+      memory: [
+        'Orçamento já aprovado internamente.',
+        'Prefere começar no próximo ciclo fiscal.',
+        'Decisora final — não precisa de aval de terceiros.',
+      ],
+    },
   },
   {
     id: 'demo-l-08',
@@ -802,6 +844,22 @@ export const DEMO_LEADS = Object.freeze([
       ['Proposta Enviada', 19, 'Carlos Nunes'],
       ['Negociação', 16, 'Carlos Nunes'],
     ]),
+    intelligence: {
+      research: [
+        {
+          source: 'linkedin',
+          text: 'VP de novos negócios; passagem por duas multinacionais antes da Holding.',
+        },
+        {
+          source: 'web',
+          text: 'Holding com 6 unidades de negócio; contrato master cobre todas.',
+        },
+      ],
+      memory: [
+        'Negociação travada na aprovação do board.',
+        'Sensível a SLA — pediu garantias contratuais de disponibilidade.',
+      ],
+    },
   },
 ]);
 

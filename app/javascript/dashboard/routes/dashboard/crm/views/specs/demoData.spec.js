@@ -9,13 +9,15 @@ import {
   buildDemoLeads,
 } from '../demoData.js';
 
-// Exact OKLCH hues locked in DESIGN-DELTA-0009. The 2px top bar + count-pill
-// tint must use these and only these — a regression here is a brand bug.
+// OKLCH stage hues (REF CRM). Each drives the COLOURED HEADER BLOCK that crowns
+// its column — blue / yellow / purple / orange, matching the reference. Tones
+// are calibrated so white (or, for the bright yellow, dark) ink holds AA
+// contrast. A regression here is a brand bug.
 const EXPECTED_ACCENTS = {
-  'demo-novo': 'oklch(0.55 0.10 235)',
-  'demo-qualificado': 'oklch(0.62 0.11 85)',
-  'demo-proposta': 'oklch(0.55 0.12 295)',
-  'demo-negociacao': 'oklch(0.55 0.11 35)',
+  'demo-novo': 'oklch(0.62 0.15 245)',
+  'demo-qualificado': 'oklch(0.78 0.15 88)',
+  'demo-proposta': 'oklch(0.62 0.16 300)',
+  'demo-negociacao': 'oklch(0.68 0.16 48)',
 };
 
 describe('CRM demo data', () => {
@@ -32,9 +34,19 @@ describe('CRM demo data', () => {
     });
   });
 
-  it('uses the exact DESIGN-DELTA-0009 OKLCH accent per stage', () => {
+  it('uses the exact REF CRM OKLCH accent per stage', () => {
     DEMO_STAGES.forEach(stage => {
       expect(stage.accent).toBe(EXPECTED_ACCENTS[stage.id]);
+    });
+  });
+
+  it('marks only the bright (yellow) stage for dark header ink (AA contrast)', () => {
+    // The yellow "Qualificado" header is too bright for white ink; it carries an
+    // explicit accent_ink:"dark". Every other stage takes the default (light).
+    const byId = Object.fromEntries(DEMO_STAGES.map(s => [s.id, s]));
+    expect(byId['demo-qualificado'].accent_ink).toBe('dark');
+    ['demo-novo', 'demo-proposta', 'demo-negociacao'].forEach(id => {
+      expect(byId[id].accent_ink).toBeUndefined();
     });
   });
 
