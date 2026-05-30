@@ -5,14 +5,14 @@
     "ALGORYTHMO_SECTION_GESTAO": "Gestão",
     "ALGORYTHMO_SECTION_ESTRATEGIA": "Estratégia",
     "ALGORYTHMO_SECTION_INTELIGENCIA": "Inteligência",
-    "ALG_SECTOR_COMMERCIAL": "Commercial",
+    "ALG_SECTOR_COMMERCIAL": "Comercial",
     "ALG_SECTOR_MARKETING": "Marketing",
-    "ALG_SECTOR_OPERATIONS": "Operations",
-    "ALG_SECTOR_PROCUREMENT": "Procurement",
-    "ALG_SECTOR_HR": "HR",
-    "ALG_SECTOR_FACILITIES": "Facilities",
-    "ALG_SECTOR_FINANCE": "Finance",
-    "ALG_SECTOR_ADMINISTRATION": "Administration"
+    "ALG_SECTOR_OPERATIONS": "Operações",
+    "ALG_SECTOR_PROCUREMENT": "Compras",
+    "ALG_SECTOR_HR": "RH",
+    "ALG_SECTOR_FACILITIES": "Instalações",
+    "ALG_SECTOR_FINANCE": "Financeiro",
+    "ALG_SECTOR_ADMINISTRATION": "Administração"
   },
   "ALGORYTHMO_ADMIN": {
     "READ_ONLY_NOTICE": "Você está visualizando como administrador. Para falar com o time, use a Inbox interna.",
@@ -39,12 +39,12 @@
         "MIC_ARIA": "Falar com o agente por voz"
       },
       "FINANCE": {
-        "HEADING": "Finance",
+        "HEADING": "Financeiro",
         "AGENT_CHAT_HEADING": "Fale com o agente do setor Finance",
         "OVERVIEW": {
           "TAB": "Visão Geral",
           "ARIA": "Visão geral consolidada do setor Finance",
-          "NAME": "Finance",
+          "NAME": "Financeiro",
           "TITLE": "Financeiro",
           "SUBTITLE": "Contas a pagar, receber, fluxo de caixa e margem — a saúde financeira da empresa em uma leitura.",
           "A_PAGAR_LABEL": "Contas a Pagar",
@@ -62,12 +62,12 @@
         }
       },
       "HR": {
-        "HEADING": "HR",
+        "HEADING": "RH",
         "AGENT_CHAT_HEADING": "Fale com o agente do setor HR",
         "OVERVIEW": {
           "TAB": "Visão Geral",
           "ARIA": "Visão geral consolidada do setor HR",
-          "NAME": "HR",
+          "NAME": "RH",
           "TITLE": "Recursos Humanos",
           "SUBTITLE": "Contratação, treinamento, cultura e produtividade — o capital humano da empresa em uma leitura.",
           "CONTRATACAO_LABEL": "Contratação",
@@ -149,7 +149,7 @@
         "OVERVIEW": {
           "TAB": "Visão Geral",
           "ARIA": "Visão geral consolidada do setor Commercial",
-          "NAME": "Commercial",
+          "NAME": "Comercial",
           "TITLE": "Comercial",
           "SUBTITLE": "Pipeline, conversão, receita e atendimento — o coração comercial da empresa.",
           "OPERATIONS_LABEL": "Operações",
@@ -174,7 +174,7 @@
           "NO_ARTICLES": "Nenhum artigo publicado nesta central de ajuda.",
           "VIEWS": "{count} visualizações",
           "UNCATEGORIZED": "Sem categoria",
-          "CRUMB_ROOT": "Commercial",
+          "CRUMB_ROOT": "Comercial",
           "CRUMB_CURRENT": "Atendimento",
           "TITLE": "Atendimento ao Cliente",
           "SUBTITLE": "Requisições, taxa de resolução, Reclame Aqui e visibilidade de problemas — o pós-venda em uma leitura.",
@@ -182,7 +182,7 @@
           "RECLAME_AQUI_COUNT": "{count} reclamações",
           "RECLAME_AQUI_LIST_ARIA": "Reclamações no Reclame Aqui",
           "ISSUES_HEADER": "Problemas em aberto",
-          "ISSUES_COUNT": "{count} issues",
+          "ISSUES_COUNT": "{count} problemas",
           "PRIORITY": "Prioridade",
           "RESPONSIBLE_AREA": "Área responsável",
           "STATUS": "Status",
@@ -191,12 +191,12 @@
         }
       },
       "OPERATIONS": {
-        "HEADING": "Operations",
+        "HEADING": "Operações",
         "AGENT_CHAT_HEADING": "Fale com o agente do setor Operations",
         "OVERVIEW": {
           "TAB": "Visão Geral",
           "ARIA": "Visão geral consolidada do setor Operations",
-          "NAME": "Operations",
+          "NAME": "Operações",
           "TITLE": "Operações",
           "SUBTITLE": "Estoque, reposição, logística e expedição em uma única leitura. O setor está estável; reposição puxa atenção.",
           "ESTOQUE_LABEL": "Estoque",
@@ -214,12 +214,12 @@
         }
       },
       "PROCUREMENT": {
-        "HEADING": "Procurement",
+        "HEADING": "Compras",
         "AGENT_CHAT_HEADING": "Fale com o agente do setor Procurement",
         "OVERVIEW": {
           "TAB": "Visão Geral",
           "ARIA": "Visão geral consolidada do setor Procurement",
-          "NAME": "Procurement",
+          "NAME": "Compras",
           "TITLE": "Compras",
           "SUBTITLE": "Fornecedores, reposição, CMV e giro — o abastecimento da operação sob controle.",
           "FORNECEDORES_LABEL": "Fornecedores",
@@ -233,12 +233,12 @@
         }
       },
       "ADMINISTRATION": {
-        "HEADING": "Administration",
+        "HEADING": "Administração",
         "AGENT_CHAT_HEADING": "Fale com o agente do setor Administration",
         "OVERVIEW": {
           "TAB": "Visão Geral",
           "ARIA": "Visão geral consolidada do setor Administration",
-          "NAME": "Administration",
+          "NAME": "Administração",
           "TITLE": "Administração",
           "SUBTITLE": "Estratégia, metas e indicadores — o painel de controle executivo da empresa.",
           "ESTRATEGIA_LABEL": "Estratégia",
@@ -250,13 +250,13 @@
         }
       },
       "FACILITIES": {
-        "HEADING": "Facilities",
+        "HEADING": "Instalações",
         "AGENT_CHAT_HEADING": "Fale com o agente do setor Facilities",
         "OVERVIEW": {
           "TAB": "Visão Geral",
           "ARIA": "Visão geral consolidada de gastos do setor Facilities",
-          "NAME": "Facilities",
-          "TITLE": "Facilities",
+          "NAME": "Instalações",
+          "TITLE": "Instalações",
           "SUBTITLE": "Aluguel, energia, limpeza e manutenção — o custo de manter a empresa funcionando.",
           "CATEGORIES_HEADER": "Categorias de gasto",
           "CATEGORIES_COUNT": "{count} categorias",
@@ -340,7 +340,7 @@
       "BODY": "Em construção — os dashboards de marketing com métricas reais chegam em breve."
     },
     "FACILITIES": {
-      "TITLE": "Facilities",
+      "TITLE": "Instalações",
       "BODY": "Em construção — os dashboards de facilities com métricas reais chegam em breve."
     },
     "C_LEVELS": {
