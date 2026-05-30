@@ -332,10 +332,7 @@ const isDragging = ref(false);
   background: var(--alg-bg-elevated);
   box-shadow: var(--alg-glass-highlight), var(--alg-elevation-2);
   overflow: hidden;
-  // R3 refinement ("cards se mexendo"): the knowledge cards float gently, like
-  // objects suspended in the aquário — a slow, staggered vertical drift, alive
-  // but calm. Was a near-invisible opacity breathe; now reads as a living brain.
-  animation: alg-aquario-float var(--alg-duration-ambient-slow)
+  animation: alg-aquario-breathe var(--alg-duration-ambient)
     var(--alg-ease-ambient) infinite;
   animation-delay: var(--alg-card-delay, 0s);
   transition:
@@ -349,11 +346,10 @@ const isDragging = ref(false);
     -webkit-backdrop-filter: var(--alg-glass-soft-filter);
   }
 
-  // Hover deepens border + elevation only — no transform, so it never fights the
-  // float animation (which owns transform).
   &:hover {
     border-color: var(--alg-glass-border-strong);
     box-shadow: var(--alg-glass-highlight), var(--alg-elevation-3);
+    transform: translateY(-1px);
   }
 
   &--tl {
@@ -473,18 +469,14 @@ const isDragging = ref(false);
   width: 100%;
 }
 
-// Staggered ambient float — a slow vertical drift (~6px) with a faint opacity
-// swell, so each card gently bobs like it's suspended in the aquário. Different
-// delays per card keep it organic (never a uniform march). Reduced motion stops
-// it entirely (the cards hold still at full opacity).
-@keyframes alg-aquario-float {
+// Staggered ambient breathe — presence through a faint elevation/opacity swell,
+// no directional travel. Reduced motion collapses the duration globally (1ms).
+@keyframes alg-aquario-breathe {
   0%,
   100% {
-    transform: translateY(0);
-    opacity: 0.95;
+    opacity: 0.92;
   }
   50% {
-    transform: translateY(-6px);
     opacity: 1;
   }
 }

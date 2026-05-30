@@ -373,12 +373,8 @@ const menuItems = computed(() => {
           ),
           activeOn: ['contacts_dashboard_index', 'contacts_edit'],
         },
-        {
-          name: 'Active',
-          label: t('SIDEBAR.ACTIVE'),
-          to: accountScopedRoute('contacts_dashboard_active'),
-          activeOn: ['contacts_dashboard_active'],
-        },
+        // algorythmo: B1 — removed "Ativo" sidebar tab. Contacts is a
+        // single unified list; no active/inactive split exposed to the user.
         {
           name: 'Segments',
           icon: 'i-lucide-group',
