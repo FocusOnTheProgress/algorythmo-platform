@@ -7,8 +7,13 @@
 // thin light rays connecting the orb to surrounding data surfaces.
 //
 // SACRED: this is the only object besides Planet Avatars where the Aurora
-// Gradient may appear. It renders the Aurora gradient and NOTHING from chrome.
-// Max one instance per session/screen — placing two is a ship-blocking bug.
+// Gradient may appear (on the SPHERE — the living core). It renders the Aurora
+// gradient and NOTHING from chrome. Max one instance per session/screen —
+// placing two is a ship-blocking bug.
+//
+// The conduits (the light TRAVELLING from the core to surrounding surfaces) can
+// be re-toned to ice via `beam="ice"` — the Brain hub's direction is cool
+// glacial light for the beams, while the sphere keeps its restrained chroma.
 //
 // Ambient (cycle 6s): chroma drift (gradient position breathes), conduit glow
 // ramp (staggered), halo pulse. `active` accelerates to a ~3s feel for live
@@ -53,6 +58,19 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  // Beam tone. The sphere itself always keeps the sacred Aurora chroma (it IS
+  // the living core). The conduits, however, read as LIGHT TRAVELLING from the
+  // core to each surrounding surface — and on the Brain hub the founder's
+  // direction is an ice palette for that travelling light (cool whites/blues),
+  // not the magenta band. `beam="ice"` re-tones only the conduits to the ice
+  // tokens; `beam="aurora"` (default) keeps the original magenta conduit, so
+  // existing callers (story / default) are untouched. This is a named, sanctioned
+  // extension of the conduit treatment, not a new home for the Aurora gradient.
+  beam: {
+    type: String,
+    default: 'aurora',
+    validator: v => ['aurora', 'ice'].includes(v),
+  },
   // Accessible label. Defaults to pt-BR; pass $t(...) from a consuming screen.
   ariaLabel: {
     type: String,
@@ -91,7 +109,10 @@ const rootStyle = computed(() => ({
 <template>
   <span
     class="alg-aurora-orb"
-    :class="{ 'alg-aurora-orb--active': active }"
+    :class="{
+      'alg-aurora-orb--active': active,
+      'alg-aurora-orb--beam-ice': beam === 'ice',
+    }"
     :style="rootStyle"
     role="img"
     :aria-label="ariaLabel"
@@ -255,6 +276,23 @@ const rootStyle = computed(() => ({
   animation: alg-aurora-conduit var(--alg-duration-ambient)
     var(--alg-ease-ambient) infinite;
   animation-delay: var(--alg-conduit-delay);
+}
+
+// Ice beam re-tone (Brain hub). Only the conduits change — the travelling light
+// reads as cool glacial white/blue (--alg-ice-*), the founder's direction for
+// the Brain. The bright band still peaks near the orb and dissolves before the
+// far end, so it CONNECTS the core to each card without slicing it. The glow
+// bloom shifts to ice too, so the beam never leaks magenta into the cards.
+.alg-aurora-orb--beam-ice .alg-aurora-orb__conduit {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklch, var(--alg-ice-2), transparent 55%) 0%,
+    var(--alg-ice-1) 26%,
+    color-mix(in oklch, var(--alg-ice-2), transparent 22%) 58%,
+    color-mix(in oklch, var(--alg-ice-3), transparent 72%) 80%,
+    transparent 93%
+  );
+  box-shadow: 0 0 8px 0 color-mix(in oklch, var(--alg-ice-2), transparent 60%);
 }
 
 // Active (processing): everything quickens to a ~3s feel + richer drift.

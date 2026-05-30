@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Brain hub — Stream D preview</title>
+    <style>
+      :root {
+        --alg-aurora-1: oklch(0.62 0.21 350);
+        --alg-aurora-2: oklch(0.58 0.24 12);
+        --alg-aurora-3: oklch(0.52 0.22 295);
+        --alg-aurora-grad: radial-gradient(
+          circle at 35% 30%,
+          var(--alg-aurora-1) 0%,
+          var(--alg-aurora-2) 40%,
+          var(--alg-aurora-3) 100%
+        );
+        --alg-aurora-halo: radial-gradient(
+          circle at 50% 50%,
+          color-mix(in oklch, var(--alg-aurora-2), transparent 75%) 0%,
+          transparent 70%
+        );
+        --alg-aurora-beam: linear-gradient(
+          to top,
+          color-mix(in oklch, var(--alg-aurora-1), transparent 45%) 0%,
+          color-mix(in oklch, var(--alg-aurora-2), transparent 80%) 45%,
+          transparent 100%
+        );
+        --alg-aurora-glow: 0 0 48px 6px
+            color-mix(in oklch, var(--alg-aurora-1), transparent 66%),
+          0 0 104px 26px color-mix(in oklch, var(--alg-aurora-3), transparent 82%);
+        --alg-ice-1: oklch(0.98 0.012 220);
+        --alg-ice-2: oklch(0.86 0.075 225);
+        --alg-ice-3: oklch(0.66 0.11 235);
+
+        --bg: oklch(0.16 0.006 265);
+        --elev: rgba(20, 20, 22, 0.55);
+        --border: rgba(255, 255, 255, 0.08);
+        --border-strong: rgba(255, 255, 255, 0.16);
+        --fg1: rgba(255, 255, 255, 0.92);
+        --fg2: rgba(255, 255, 255, 0.62);
+        --fg3: rgba(255, 255, 255, 0.42);
+        --fg4: rgba(255, 255, 255, 0.26);
+        --highlight: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+        --elev2: 0 6px 18px -8px rgba(0, 0, 0, 0.5);
+        --elev3: 0 16px 40px -12px rgba(0, 0, 0, 0.6);
+        --info: oklch(0.745 0.14 235);
+        --success: oklch(0.77 0.155 152);
+        --warning: oklch(0.82 0.155 85);
+        --font: 'Inter', system-ui, sans-serif;
+        --mono: ui-monospace, monospace;
+      }
+      .light {
+        --bg: oklch(0.985 0.002 265);
+        --elev: rgba(255, 255, 255, 0.7);
+        --border: rgba(0, 0, 0, 0.08);
+        --border-strong: rgba(0, 0, 0, 0.16);
+        --fg1: rgba(15, 17, 21, 0.92);
+        --fg2: rgba(15, 17, 21, 0.62);
+        --fg3: rgba(15, 17, 21, 0.45);
+        --fg4: rgba(15, 17, 21, 0.3);
+        --highlight: inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+        --elev2: 0 6px 18px -10px rgba(0, 0, 0, 0.18);
+        --elev3: 0 16px 40px -14px rgba(0, 0, 0, 0.22);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--font);
+        background: #050507;
+      }
+      .frame {
+        background: var(--bg);
+        color: var(--fg1);
+        padding: 40px 48px 56px;
+      }
+      .watermark {
+        text-align: right;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--fg4);
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--fg3);
+        margin: 0 0 10px;
+      }
+      h1 {
+        font-size: 34px;
+        font-weight: 300;
+        letter-spacing: -0.03em;
+        margin: 0 0 10px;
+        max-width: 560px;
+      }
+      .subtitle {
+        font-size: 15px;
+        color: var(--fg2);
+        max-width: 560px;
+        margin: 0 0 40px;
+        line-height: 1.5;
+      }
+      .stage {
+        display: grid;
+        grid-template-columns: 1fr minmax(168px, 0.78fr) 1fr;
+        grid-template-rows: 1fr 1fr;
+        grid-template-areas: 'tl core tr' 'bl core br';
+        gap: 24px 32px;
+        max-width: 1120px;
+        margin: 0 auto;
+        align-items: stretch;
+      }
+      .core {
+        grid-area: core;
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .orb {
+        position: relative;
+        width: 132px;
+        height: 132px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        isolation: isolate;
+      }
+      .orb__halo {
+        position: absolute;
+        inset: -25%;
+        border-radius: 999px;
+        background: var(--alg-aurora-halo);
+        filter: blur(8px);
+        z-index: 1;
+      }
+      .orb__beam {
+        position: absolute;
+        left: 50%;
+        bottom: 45%;
+        width: 26%;
+        height: 130%;
+        transform: translateX(-50%);
+        background: var(--alg-aurora-beam);
+        filter: blur(6px);
+        border-radius: 999px;
+        opacity: 0.7;
+        z-index: 0;
+      }
+      .orb__sphere {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        height: 100%;
+        border-radius: 999px;
+        background: var(--alg-aurora-grad);
+        background-size: 160% 160%;
+        background-position: 35% 30%;
+        box-shadow: var(--alg-aurora-glow),
+          inset 0 4px 10px 0 rgba(255, 255, 255, 0.3),
+          inset -8px -11px 28px -6px rgba(0, 0, 0, 0.55);
+      }
+      .orb__sphere::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: radial-gradient(
+          circle at 30% 24%,
+          rgba(255, 255, 255, 0.62) 0%,
+          rgba(255, 255, 255, 0.13) 9%,
+          transparent 23%
+        );
+      }
+      .conduit {
+        position: absolute;
+        z-index: 0;
+        top: 50%;
+        left: 50%;
+        height: 2px;
+        transform-origin: left center;
+        background: linear-gradient(
+          90deg,
+          color-mix(in oklch, var(--alg-ice-2), transparent 55%) 0%,
+          var(--alg-ice-1) 26%,
+          color-mix(in oklch, var(--alg-ice-2), transparent 22%) 58%,
+          color-mix(in oklch, var(--alg-ice-3), transparent 72%) 80%,
+          transparent 93%
+        );
+        opacity: 0.78;
+        filter: blur(0.6px);
+        box-shadow: 0 0 8px 0 color-mix(in oklch, var(--alg-ice-2), transparent 60%);
+      }
+      .core-count {
+        margin-top: 20px;
+        font-size: 24px;
+        font-weight: 500;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+      }
+      .core-label {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--fg3);
+      }
+      .card {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 24px;
+        min-height: 188px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--elev);
+        box-shadow: var(--highlight), var(--elev2);
+        overflow: hidden;
+        transition: transform 0.24s, border-color 0.24s, box-shadow 0.24s;
+      }
+      .card:hover {
+        transform: translateY(-3px);
+        border-color: var(--border-strong);
+        box-shadow: var(--highlight), var(--elev3);
+      }
+      .card--tl { grid-area: tl; }
+      .card--tr { grid-area: tr; }
+      .card--bl { grid-area: bl; }
+      .card--br { grid-area: br; }
+      .card__glyph {
+        width: 20px;
+        height: 20px;
+        color: var(--fg3);
+      }
+      .card__count {
+        margin: 4px 0 0;
+        font-size: 34px;
+        font-weight: 500;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+      }
+      .card__title {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        font-size: 15px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        line-height: 1.25;
+      }
+      .card__suffix { color: var(--fg2); }
+      .card__body {
+        margin: 4px 0 0;
+        flex: 1;
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--fg3);
+        max-width: 32ch;
+      }
+      .card__dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 999px;
+      }
+      .toggle {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        z-index: 99;
+        font-family: var(--mono);
+        font-size: 11px;
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: #111;
+        color: #fff;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <button class="toggle" onclick="document.getElementById('f').classList.toggle('light')">toggle light</button>
+    <div class="frame" id="f">
+      <div class="watermark">Demonstration data</div>
+      <p class="eyebrow">Knowledge base · company brain</p>
+      <h1>The knowledge that moves your agents</h1>
+      <p class="subtitle">
+        Aurora holds your company's living memory and distributes context to
+        every agent in real time. Each layer below is a strand of knowledge the
+        core connects to.
+      </p>
+
+      <div class="stage">
+        <div class="core">
+          <div class="orb">
+            <span class="orb__halo"></span>
+            <span class="orb__beam"></span>
+            <span class="conduit" style="width:178px;transform:rotate(214deg)"></span>
+            <span class="conduit" style="width:178px;transform:rotate(326deg)"></span>
+            <span class="conduit" style="width:178px;transform:rotate(146deg)"></span>
+            <span class="conduit" style="width:178px;transform:rotate(34deg)"></span>
+            <span class="orb__sphere"></span>
+          </div>
+          <span class="core-count">839</span>
+          <span class="core-label">Living layers</span>
+        </div>
+
+        <article class="card card--tl">
+          <span class="card__glyph">▤</span>
+          <p class="card__count">192</p>
+          <h3 class="card__title"><span>Source</span><span class="card__suffix">Knowledge Layers</span></h3>
+          <p class="card__body">Knowledge layers absorbed from company documents, policies, catalogs and procedures fed into the base.</p>
+          <span class="card__dot" style="background:var(--info)"></span>
+        </article>
+
+        <article class="card card--tr">
+          <span class="card__glyph">▤</span>
+          <p class="card__count">322</p>
+          <h3 class="card__title"><span>Human</span><span class="card__suffix">Knowledge Layers</span></h3>
+          <p class="card__body">Knowledge layers generated from real conversations and the context teammates bring into the base.</p>
+          <span class="card__dot" style="background:var(--success)"></span>
+        </article>
+
+        <article class="card card--bl">
+          <span class="card__glyph">▤</span>
+          <p class="card__count">237</p>
+          <h3 class="card__title"><span>Auto</span><span class="card__suffix">Knowledge Layers</span></h3>
+          <p class="card__body">Knowledge layers created automatically from operational data and signals as the company runs.</p>
+          <span class="card__dot" style="background:var(--warning)"></span>
+        </article>
+
+        <article class="card card--br">
+          <span class="card__glyph">▤</span>
+          <p class="card__count">88</p>
+          <h3 class="card__title"><span>Agent Interaction</span><span class="card__suffix">Knowledge Layers</span></h3>
+          <p class="card__body">Knowledge layers produced through agent-to-agent interaction during operational flows.</p>
+          <span class="card__dot" style="background:var(--alg-ice-2)"></span>
+        </article>
+      </div>
+    </div>
+  </body>
+</html>

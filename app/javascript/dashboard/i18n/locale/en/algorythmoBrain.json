@@ -19,48 +19,33 @@
       "HUB": {
         "EYEBROW": "Knowledge base · company brain",
         "TITLE": "The knowledge that moves your agents",
-        "SUBTITLE": "Aurora holds your company's living memory and distributes context to every agent in real time. Below, a glimpse of what it knows right now.",
+        "SUBTITLE": "Aurora holds your company's living memory and distributes context to every agent in real time. Each layer below is a strand of knowledge the core connects to.",
         "ORB_ARIA": "Aurora — living core of company knowledge",
-        "STAGE_ARIA": "Knowledge connected to the Aurora core",
+        "STAGE_ARIA": "Knowledge layers connected to the Aurora core",
         "DEMO_WATERMARK": "Demonstration data",
+        "LAYER_SUFFIX": "Knowledge Layers",
         "LAYER_COUNT": "839",
         "LAYER_COUNT_LABEL": "Living layers",
         "CARDS": {
-          "DOC_MVM": {
-            "LABEL": "Document",
-            "TITLE": "MVM — Minimum Viable Memory",
-            "BODY": "Foundational doc absorbed: mission, voice and operating principles the agents inherit.",
-            "META": "Ingested 2 days ago"
+          "SOURCE": {
+            "COUNT": "192",
+            "KIND": "Source",
+            "BODY": "Knowledge layers absorbed from company documents, policies, catalogs and procedures fed into the base."
           },
-          "FACT_VOICE": {
-            "LABEL": "Fact",
-            "TITLE": "Brand voice",
-            "BODY": "Technical yet accessible, avoids jargon. Confirms stock before promising lead times.",
-            "META": "Learned from 1,247 conversations"
+          "HUMAN": {
+            "COUNT": "322",
+            "KIND": "Human",
+            "BODY": "Knowledge layers generated from real conversations and the context teammates bring into the base."
           },
-          "DECISION": {
-            "LABEL": "Decision",
-            "TITLE": "Dream cycle · May 27",
-            "BODY": "Consolidated 14 adjustments into 3 coherent rules — no contradictions left open.",
-            "META": "Consolidated automatically"
+          "AUTO": {
+            "COUNT": "237",
+            "KIND": "Auto",
+            "BODY": "Knowledge layers created automatically from operational data and signals as the company runs."
           },
-          "LEAD": {
-            "LABEL": "Lead",
-            "TITLE": "Maria Silva → Qualified",
-            "BODY": "Moved by João at 14:32. Brain attached full context and intent for the sales team.",
-            "META": "Updated 18 min ago"
-          },
-          "CATALOG": {
-            "LABEL": "Catalog",
-            "TITLE": "1,247 active SKUs",
-            "BODY": "Product catalog refreshed and indexed — prices, specs and availability are current.",
-            "META": "Synced today"
-          },
-          "SIGNAL": {
-            "LABEL": "Signal",
-            "TITLE": "Response time −63%",
-            "BODY": "Average first reply fell from 3h to 27 min after the Brain went live across channels.",
-            "META": "Last 30 days"
+          "AGENT": {
+            "COUNT": "88",
+            "KIND": "Agent Interaction",
+            "BODY": "Knowledge layers produced through agent-to-agent interaction during operational flows."
           }
         }
       },

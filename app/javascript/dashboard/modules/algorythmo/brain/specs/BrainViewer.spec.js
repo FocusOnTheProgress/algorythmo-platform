@@ -5,6 +5,15 @@
 // structure: no tab bar, the Aurora hub rendered, and the demo hub still shown
 // on an empty OR failed backend load (the CRM demo-board philosophy is kept).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Motion One is WAAPI-backed and not meaningful in jsdom; BrainViewer renders
+// BrainAquario, whose mount-time card reveal uses it — mock it so mounting is
+// inert here.
+vi.mock('motion', () => ({
+  animate: vi.fn(() => ({ finished: Promise.resolve() })),
+  stagger: vi.fn((each, opts) => ({ __stagger: each, ...opts })),
+}));
+
 import { mount, flushPromises } from '@vue/test-utils';
 import BrainViewer from '../BrainViewer.vue';
 import { brainService } from '../brain.service';
@@ -72,9 +81,9 @@ describe('BrainViewer — aquário (knowledge hub) content', () => {
     expect(wrapper.findAll('.alg-aurora-orb__sphere')).toHaveLength(1);
   });
 
-  it('renders the six living knowledge cards', async () => {
+  it('renders the four Knowledge Layer cards', async () => {
     const wrapper = await mountViewer();
-    expect(wrapper.findAll('.alg-aquario__card')).toHaveLength(6);
+    expect(wrapper.findAll('.alg-aquario__card')).toHaveLength(4);
   });
 
   it('renders the signature ingestion dropzone', async () => {
@@ -116,7 +125,7 @@ describe('BrainViewer — empty/failed backend still shows the demo hub', () => 
     // No "Could not load Brain" error alert — the demo hub renders instead.
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     expect(wrapper.find('.alg-aquario').exists()).toBe(true);
-    expect(wrapper.findAll('.alg-aquario__card')).toHaveLength(6);
+    expect(wrapper.findAll('.alg-aquario__card')).toHaveLength(4);
   });
 });
 
