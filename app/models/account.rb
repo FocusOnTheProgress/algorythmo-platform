@@ -114,7 +114,11 @@ class Account < ApplicationRecord
   MAX_LOGO_BYTE_SIZE = 15.megabytes
 
   has_one_attached :logo
-  validate :acceptable_logo, if: -> { attachment_changes.key?('logo') }
+  # Validate on every save (matches Avatarable). attach() on a persisted record
+  # saves the blob immediately, so there is no reliable pending-change signal to
+  # guard on; acceptable_logo returns early unless a logo is attached, so this is
+  # a no-op for logo-less accounts.
+  validate :acceptable_logo
 
   enum :locale, LANGUAGES_CONFIG.map { |key, val| [val[:iso_639_1_code], key] }.to_h, prefix: true
   enum :status, { active: 0, suspended: 1 }
