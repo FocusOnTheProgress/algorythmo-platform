@@ -1,10 +1,12 @@
 // algorythmo: Brain Aquário (knowledge hub) — unit spec.
 //
-// Round-4 rebuild (faithful to Ref design 2). The Aurora sphere is structurally
-// the HUB at the centre column of a grid, surrounded by the FOUR canonical
-// "Knowledge Layer" cards (Source / Human / Auto / Agent Interaction), each with
-// a count + a "<Kind> Knowledge Layers" title + a short description. Ice beams
-// reach from the orb to each card. A signature ingestion dropzone sits below.
+// Round-5 rebuild (aligned 1:1 to Ref design 2's density). The Aurora sphere is
+// the radiant HUB at the centre of a grid, surrounded by SIX "Knowledge Layer"
+// cards in the reference's scatter — three across the top (Source / Human / Agent
+// Interaction), two flanking the orb (Auto / Tool Interaction), and a totalizer
+// below (493 in use). Each layer-type card has a count + a "<Kind> Knowledge
+// Layers" title + a description; the totalizer is a single-line summary. Ice
+// beams reach from the orb to each card. A signature ingestion dropzone sits below.
 //
 // This spec asserts that structure — most importantly: AlgAuroraOrb is mounted
 // exactly once (max one Aurora per screen), fed ice-toned aimed beams that match
@@ -68,27 +70,28 @@ describe('BrainAquario (knowledge hub)', () => {
     );
   });
 
-  it('presents the four canonical Knowledge Layers, each with count, title and body', () => {
+  it('presents the reference scatter of six Knowledge Layer cards, each with count, kind and body', () => {
     const wrapper = mountAquario();
     const cards = wrapper.findAll('.alg-aquario__card');
-    // Source / Human / Auto / Agent Interaction — exactly four (Ref design 2).
-    expect(cards).toHaveLength(4);
+    // Ref design 2 density: 3 across the top, 2 flanking the orb, 1 totalizer.
+    expect(cards).toHaveLength(6);
     cards.forEach(card => {
       expect(card.find('.alg-aquario__card-count').text().trim()).toMatch(
         /^[\d.,]+$/
       );
       expect(card.find('.alg-aquario__card-kind').text().trim()).not.toBe('');
-      expect(card.find('.alg-aquario__card-suffix').text().trim()).not.toBe('');
       expect(card.find('.alg-aquario__card-body').text().trim()).not.toBe('');
     });
   });
 
-  it('labels every card as a "Knowledge Layers" layer', () => {
+  it('labels the five layer-type cards "Knowledge Layers" and includes the four canonical kinds', () => {
     const wrapper = mountAquario();
+    // Five layer-type cards carry the "<Kind> Knowledge Layers" suffix; the
+    // sixth is the totalizer (single-line title, no suffix).
     const suffixes = wrapper
       .findAll('.alg-aquario__card-suffix')
       .map(s => s.text().trim());
-    expect(suffixes).toHaveLength(4);
+    expect(suffixes).toHaveLength(5);
     suffixes.forEach(s => expect(s).toBe('Knowledge Layers'));
     // The four canonical kinds are present.
     const kinds = wrapper
@@ -97,6 +100,16 @@ describe('BrainAquario (knowledge hub)', () => {
     expect(kinds).toEqual(
       expect.arrayContaining(['Source', 'Human', 'Auto', 'Agent Interaction'])
     );
+  });
+
+  it('includes the totalizer card (493 in use) with a single-line title', () => {
+    const wrapper = mountAquario();
+    const total = wrapper.find('.alg-aquario__card--total');
+    expect(total.exists()).toBe(true);
+    expect(total.find('.alg-aquario__card-count').text().trim()).toBe('493');
+    // The totalizer is a summary, not a "<Kind> Knowledge Layers" card.
+    expect(total.find('.alg-aquario__card-suffix').exists()).toBe(false);
+    expect(total.find('.alg-aquario__card-kind').text().trim()).not.toBe('');
   });
 
   it('contains NO lead / CRM data anywhere in the Brain', () => {
@@ -132,7 +145,7 @@ describe('BrainAquario (knowledge hub)', () => {
   it('marks the cards as reveal targets for the motion system', () => {
     const wrapper = mountAquario();
     // The cards must be wired to animate in (entrance/stagger via useAlgMotion).
-    expect(wrapper.findAll('[data-alg-card]')).toHaveLength(4);
+    expect(wrapper.findAll('[data-alg-card]')).toHaveLength(6);
   });
 
   it('mounts the signature ingestion dropzone below the stage', () => {

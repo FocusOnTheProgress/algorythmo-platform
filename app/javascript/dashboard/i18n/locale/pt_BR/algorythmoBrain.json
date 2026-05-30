@@ -46,6 +46,17 @@
             "COUNT": "88",
             "KIND": "Agent Interaction",
             "BODY": "Camadas de conhecimento geradas através de interações com outros agentes durante fluxos de operação."
+          },
+          "TOOL": {
+            "COUNT": "211",
+            "KIND": "Tool Interaction",
+            "BODY": "Camadas de conhecimento reunidas quando os agentes acionam ferramentas e integrações para concluir tarefas operacionais."
+          },
+          "TOTAL": {
+            "COUNT": "493",
+            "KIND": "In Use",
+            "TITLE": "Knowledge Layers em uso",
+            "BODY": "Camadas vivas que os agentes estão utilizando agora em cada fluxo em operação."
           }
         }
       },

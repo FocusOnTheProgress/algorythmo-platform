@@ -81,9 +81,9 @@ describe('BrainViewer — aquário (knowledge hub) content', () => {
     expect(wrapper.findAll('.alg-aurora-orb__sphere')).toHaveLength(1);
   });
 
-  it('renders the four Knowledge Layer cards', async () => {
+  it('renders the six Knowledge Layer cards (reference scatter)', async () => {
     const wrapper = await mountViewer();
-    expect(wrapper.findAll('.alg-aquario__card')).toHaveLength(4);
+    expect(wrapper.findAll('.alg-aquario__card')).toHaveLength(6);
   });
 
   it('renders the signature ingestion dropzone', async () => {
@@ -125,7 +125,7 @@ describe('BrainViewer — empty/failed backend still shows the demo hub', () => 
     // No "Could not load Brain" error alert — the demo hub renders instead.
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     expect(wrapper.find('.alg-aquario').exists()).toBe(true);
-    expect(wrapper.findAll('.alg-aquario__card')).toHaveLength(4);
+    expect(wrapper.findAll('.alg-aquario__card')).toHaveLength(6);
   });
 });
 

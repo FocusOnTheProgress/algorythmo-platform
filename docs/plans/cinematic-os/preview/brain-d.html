@@ -108,11 +108,14 @@
       }
       .stage {
         display: grid;
-        grid-template-columns: 1fr minmax(168px, 0.78fr) 1fr;
-        grid-template-rows: 1fr 1fr;
-        grid-template-areas: 'tl core tr' 'bl core br';
-        gap: 24px 32px;
-        max-width: 1120px;
+        grid-template-columns: 1fr minmax(150px, 0.74fr) 1fr;
+        grid-template-rows: auto minmax(150px, auto) auto;
+        grid-template-areas:
+          'source human agent'
+          'auto   core  tool'
+          '.      total .';
+        gap: 20px 24px;
+        max-width: 1180px;
         margin: 0 auto;
         align-items: stretch;
       }
@@ -220,8 +223,8 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
-        padding: 24px;
-        min-height: 188px;
+        padding: 20px;
+        min-height: 150px;
         border: 1px solid var(--border);
         border-radius: 16px;
         background: var(--elev);
@@ -234,10 +237,19 @@
         border-color: var(--border-strong);
         box-shadow: var(--highlight), var(--elev3);
       }
-      .card--tl { grid-area: tl; }
-      .card--tr { grid-area: tr; }
-      .card--bl { grid-area: bl; }
-      .card--br { grid-area: br; }
+      .card--source { grid-area: source; }
+      .card--human { grid-area: human; }
+      .card--agent { grid-area: agent; }
+      .card--auto { grid-area: auto; }
+      .card--tool { grid-area: tool; }
+      .card--total {
+        grid-area: total;
+        align-self: center;
+        max-width: 360px;
+        width: 100%;
+        margin: 0 auto;
+        min-height: 0;
+      }
       .card__glyph {
         width: 20px;
         height: 20px;
@@ -307,17 +319,19 @@
           <div class="orb">
             <span class="orb__halo"></span>
             <span class="orb__beam"></span>
-            <span class="conduit" style="width:178px;transform:rotate(214deg)"></span>
-            <span class="conduit" style="width:178px;transform:rotate(326deg)"></span>
-            <span class="conduit" style="width:178px;transform:rotate(146deg)"></span>
-            <span class="conduit" style="width:178px;transform:rotate(34deg)"></span>
+            <span class="conduit" style="width:186px;transform:rotate(216deg)"></span>
+            <span class="conduit" style="width:150px;transform:rotate(270deg)"></span>
+            <span class="conduit" style="width:186px;transform:rotate(324deg)"></span>
+            <span class="conduit" style="width:158px;transform:rotate(180deg)"></span>
+            <span class="conduit" style="width:158px;transform:rotate(0deg)"></span>
+            <span class="conduit" style="width:150px;transform:rotate(90deg)"></span>
             <span class="orb__sphere"></span>
           </div>
           <span class="core-count">839</span>
           <span class="core-label">Living layers</span>
         </div>
 
-        <article class="card card--tl">
+        <article class="card card--source">
           <span class="card__glyph">▤</span>
           <p class="card__count">192</p>
           <h3 class="card__title"><span>Source</span><span class="card__suffix">Knowledge Layers</span></h3>
@@ -325,7 +339,7 @@
           <span class="card__dot" style="background:var(--info)"></span>
         </article>
 
-        <article class="card card--tr">
+        <article class="card card--human">
           <span class="card__glyph">▤</span>
           <p class="card__count">322</p>
           <h3 class="card__title"><span>Human</span><span class="card__suffix">Knowledge Layers</span></h3>
@@ -333,7 +347,15 @@
           <span class="card__dot" style="background:var(--success)"></span>
         </article>
 
-        <article class="card card--bl">
+        <article class="card card--agent">
+          <span class="card__glyph">▤</span>
+          <p class="card__count">88</p>
+          <h3 class="card__title"><span>Agent Interaction</span><span class="card__suffix">Knowledge Layers</span></h3>
+          <p class="card__body">Knowledge layers produced through agent-to-agent interaction during operational flows.</p>
+          <span class="card__dot" style="background:var(--alg-ice-2)"></span>
+        </article>
+
+        <article class="card card--auto">
           <span class="card__glyph">▤</span>
           <p class="card__count">237</p>
           <h3 class="card__title"><span>Auto</span><span class="card__suffix">Knowledge Layers</span></h3>
@@ -341,12 +363,20 @@
           <span class="card__dot" style="background:var(--warning)"></span>
         </article>
 
-        <article class="card card--br">
+        <article class="card card--tool">
           <span class="card__glyph">▤</span>
-          <p class="card__count">88</p>
-          <h3 class="card__title"><span>Agent Interaction</span><span class="card__suffix">Knowledge Layers</span></h3>
-          <p class="card__body">Knowledge layers produced through agent-to-agent interaction during operational flows.</p>
-          <span class="card__dot" style="background:var(--alg-ice-2)"></span>
+          <p class="card__count">211</p>
+          <h3 class="card__title"><span>Tool Interaction</span><span class="card__suffix">Knowledge Layers</span></h3>
+          <p class="card__body">Knowledge layers gathered as agents call tools and integrations to complete operational tasks.</p>
+          <span class="card__dot" style="background:var(--alg-ice-3)"></span>
+        </article>
+
+        <article class="card card--total">
+          <span class="card__glyph">▤</span>
+          <p class="card__count">493</p>
+          <h3 class="card__title"><span>Knowledge Layers in use</span></h3>
+          <p class="card__body">Living layers the agents are actively drawing on right now across every running flow.</p>
+          <span class="card__dot" style="background:var(--fg3)"></span>
         </article>
       </div>
     </div>

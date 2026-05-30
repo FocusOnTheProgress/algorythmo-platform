@@ -46,6 +46,17 @@
             "COUNT": "88",
             "KIND": "Agent Interaction",
             "BODY": "Knowledge layers produced through agent-to-agent interaction during operational flows."
+          },
+          "TOOL": {
+            "COUNT": "211",
+            "KIND": "Tool Interaction",
+            "BODY": "Knowledge layers gathered as agents call tools and integrations to complete operational tasks."
+          },
+          "TOTAL": {
+            "COUNT": "493",
+            "KIND": "In Use",
+            "TITLE": "Knowledge Layers in use",
+            "BODY": "Living layers the agents are actively drawing on right now across every running flow."
           }
         }
       },
