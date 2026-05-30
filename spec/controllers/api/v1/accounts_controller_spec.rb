@@ -333,6 +333,70 @@ RSpec.describe 'Accounts API', type: :request do
         json_response = response.parsed_body
         expect(json_response['message']).to eq('Name is too long (maximum is 255 characters)')
       end
+
+      it 'uploads a brand logo and exposes logo_url' do
+        expect(account.logo.attached?).to be(false)
+        file = fixture_file_upload(Rails.root.join('spec/assets/avatar.png'), 'image/png')
+
+        patch "/api/v1/accounts/#{account.id}",
+              params: { logo: file },
+              headers: admin.create_new_auth_token
+
+        expect(response).to have_http_status(:success)
+        expect(account.reload.logo).to be_attached
+        expect(response.parsed_body['logo_url']).to be_present
+      end
+
+      it 'rejects a logo with an unsupported content type' do
+        file = fixture_file_upload(Rails.root.join('spec/assets/sample.pdf'), 'application/pdf')
+
+        patch "/api/v1/accounts/#{account.id}",
+              params: { logo: file },
+              headers: admin.create_new_auth_token
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(account.reload.logo).not_to be_attached
+      end
+    end
+  end
+
+  describe 'DELETE /api/v1/accounts/{account.id}/logo' do
+    let(:account) { create(:account) }
+    let(:agent) { create(:user, account: account, role: :agent) }
+    let(:admin) { create(:user, account: account, role: :administrator) }
+
+    context 'when it is an unauthenticated user' do
+      it 'returns unauthorized' do
+        delete "/api/v1/accounts/#{account.id}/logo"
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is a non-admin user' do
+      it 'returns unauthorized' do
+        delete "/api/v1/accounts/#{account.id}/logo",
+               headers: agent.create_new_auth_token
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an administrator' do
+      before do
+        account.logo.attach(io: Rails.root.join('spec/assets/avatar.png').open, filename: 'avatar.png', content_type: 'image/png')
+      end
+
+      it 'removes the brand logo' do
+        expect(account.logo).to be_attached
+
+        delete "/api/v1/accounts/#{account.id}/logo",
+               headers: admin.create_new_auth_token,
+               as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(account.reload.logo).not_to be_attached
+        expect(response.parsed_body['logo_url']).to eq('')
+      end
     end
   end
 

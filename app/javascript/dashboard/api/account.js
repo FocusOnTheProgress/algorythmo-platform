@@ -25,6 +25,12 @@ class AccountAPI extends ApiClient {
     return axios.post(`${this.apiVersion}/accounts`, data);
   }
 
+  // algorythmo: client logo removal — hits the member route the backend
+  // exposes via `delete :logo` (DELETE /api/v1/accounts/:id/logo).
+  deleteLogo() {
+    return axios.delete(`${this.baseUrl()}/logo`);
+  }
+
   async getCacheKeys() {
     const response = await axios.get(
       `/api/v1/accounts/${this.accountIdFromRoute}/cache_keys`

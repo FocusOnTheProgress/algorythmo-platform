@@ -55,7 +55,7 @@ class Api::V1::AccountsController < Api::BaseController
   end
 
   def update
-    @account.assign_attributes(account_params.slice(:name, :locale, :domain, :support_email))
+    @account.assign_attributes(account_params.slice(:name, :locale, :domain, :support_email, :logo))
     @account.custom_attributes.merge!(custom_attributes_params)
     @account.settings.merge!(settings_params)
     @account.custom_attributes.delete('onboarding_step') if @account.custom_attributes['onboarding_step'] == 'account_details'
@@ -69,7 +69,24 @@ class Api::V1::AccountsController < Api::BaseController
     head :ok
   end
 
+  def logo
+    # purge (not attachment.destroy!) removes the blob + stored file too, so a
+    # logo removal/replacement never leaves an orphaned Active Storage blob.
+    @account.logo.purge if @account.logo.attached?
+    render 'api/v1/accounts/update', format: :json
+  end
+
   private
+
+  # The base `check_authorization` infers the Pundit query from the action name,
+  # so the `logo` member action would look for a non-existent `AccountPolicy#logo?`.
+  # Removing the brand logo is an account-settings mutation, so gate it behind the
+  # same `update?` policy (administrators only) used for editing the account.
+  def check_authorization(model = nil)
+    return authorize(@account, :update?) if action_name == 'logo'
+
+    super
+  end
 
   def enqueue_branding_enrichment
     email = account_params[:email].presence || @user&.email
@@ -107,7 +124,7 @@ class Api::V1::AccountsController < Api::BaseController
   end
 
   def account_params
-    params.permit(:account_name, :email, :name, :password, :locale, :domain, :support_email, :user_full_name)
+    params.permit(:account_name, :email, :name, :password, :locale, :domain, :support_email, :user_full_name, :logo)
   end
 
   def custom_attributes_params

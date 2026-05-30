@@ -103,6 +103,47 @@ describe('#actions', () => {
         [types.default.SET_ACCOUNT_UI_FLAG, { isUpdating: false }],
       ]);
     });
+
+    // algorythmo: client logo upload — when a File is present the payload must
+    // go as multipart/FormData, not JSON, so ActiveStorage receives the file.
+    it('sends a FormData payload when a logo File is present', async () => {
+      axios.patch.mockResolvedValue({ data: { id: 1, name: 'John' } });
+      const logo = new File(['x'], 'logo.png', { type: 'image/png' });
+      await actions.update({ commit, getters }, { name: 'John', logo });
+      const sentPayload = axios.patch.mock.calls[0][1];
+      expect(sentPayload).toBeInstanceOf(FormData);
+      expect(sentPayload.get('name')).toBe('John');
+      expect(sentPayload.get('logo')).toBe(logo);
+    });
+
+    it('sends a plain JSON object when no logo File is present', async () => {
+      axios.patch.mockResolvedValue({ data: { id: 1, name: 'John' } });
+      await actions.update({ commit, getters }, { name: 'John' });
+      const sentPayload = axios.patch.mock.calls[0][1];
+      expect(sentPayload).not.toBeInstanceOf(FormData);
+      expect(sentPayload).toEqual({ name: 'John' });
+    });
+  });
+
+  describe('#removeLogo', () => {
+    it('commits the refreshed account on success', async () => {
+      axios.delete.mockResolvedValue({ data: { id: 1, logo_url: null } });
+      await actions.removeLogo({ commit });
+      expect(commit.mock.calls).toEqual([
+        [types.default.SET_ACCOUNT_UI_FLAG, { isUpdating: true }],
+        [types.default.EDIT_ACCOUNT, { id: 1, logo_url: null }],
+        [types.default.SET_ACCOUNT_UI_FLAG, { isUpdating: false }],
+      ]);
+    });
+
+    it('clears the updating flag and rethrows on error', async () => {
+      axios.delete.mockRejectedValue({ message: 'Incorrect header' });
+      await expect(actions.removeLogo({ commit })).rejects.toThrow(Error);
+      expect(commit.mock.calls).toEqual([
+        [types.default.SET_ACCOUNT_UI_FLAG, { isUpdating: true }],
+        [types.default.SET_ACCOUNT_UI_FLAG, { isUpdating: false }],
+      ]);
+    });
   });
 
   describe('#create', () => {

@@ -23,6 +23,8 @@
 #
 
 class Account < ApplicationRecord
+  include Rails.application.routes.url_helpers
+
   # used for single column multi flags
   include FlagShihTzu
   include Reportable
@@ -103,6 +105,17 @@ class Account < ApplicationRecord
 
   has_one_attached :contacts_export
 
+  # Per-account brand logo uploaded by an administrator from account settings.
+  # This is a real Active Storage attachment and is distinct from the
+  # `custom_attributes['logo']` URL string populated by onboarding enrichment.
+  # Active Storage tables already exist (see Avatarable), so NO migration is
+  # required for this attachment.
+  ALLOWED_LOGO_CONTENT_TYPES = %w[image/jpeg image/png image/webp image/svg+xml].freeze
+  MAX_LOGO_BYTE_SIZE = 15.megabytes
+
+  has_one_attached :logo
+  validate :acceptable_logo, if: -> { logo.changed? }
+
   enum :locale, LANGUAGES_CONFIG.map { |key, val| [val[:iso_639_1_code], key] }.to_h, prefix: true
   enum :status, { active: 0, suspended: 1 }
 
@@ -175,7 +188,26 @@ class Account < ApplicationRecord
     clear_unread_conversation_counts_cache
   end
 
+  # URL for the uploaded brand logo attachment. Mirrors Avatarable#avatar_url:
+  # serve a resized representation when the blob is representable (raster
+  # images), otherwise fall back to the original blob (e.g. SVG). Returns an
+  # empty string when no logo is attached.
+  def logo_url
+    return '' unless logo.attached?
+    return url_for(logo.representation(resize_to_limit: [512, 512])) if logo.representable?
+
+    url_for(logo)
+  end
+
   private
+
+  def acceptable_logo
+    return unless logo.attached?
+
+    errors.add(:logo, 'is too big') if logo.byte_size > MAX_LOGO_BYTE_SIZE
+
+    errors.add(:logo, 'filetype not supported') unless ALLOWED_LOGO_CONTENT_TYPES.include?(logo.content_type)
+  end
 
   def notify_creation
     Rails.configuration.dispatcher.dispatch(ACCOUNT_CREATED, Time.zone.now, account: self)
