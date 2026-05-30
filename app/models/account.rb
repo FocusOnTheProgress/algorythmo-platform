@@ -114,7 +114,7 @@ class Account < ApplicationRecord
   MAX_LOGO_BYTE_SIZE = 15.megabytes
 
   has_one_attached :logo
-  validate :acceptable_logo, if: -> { logo.changed? }
+  validate :acceptable_logo, if: -> { attachment_changes.key?('logo') }
 
   enum :locale, LANGUAGES_CONFIG.map { |key, val| [val[:iso_639_1_code], key] }.to_h, prefix: true
   enum :status, { active: 0, suspended: 1 }

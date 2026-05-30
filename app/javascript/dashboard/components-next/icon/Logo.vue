@@ -23,9 +23,9 @@ const logoSource = computed(() => {
     :src="logoSource"
     class="object-contain"
   />
-  <!-- No logo set (and no installation logo): a neutral placeholder, never the
-       Chatwoot mark. Mirrors the i-lucide-image glyph used in the settings
-       preview so the brand slot never collapses to an empty gap. -->
+  <!-- No logo set (and no installation logo): a neutral placeholder. Mirrors
+       the i-lucide-image glyph used in the settings preview so the brand slot
+       never collapses to an empty gap. -->
   <span
     v-else
     v-bind="attrs"
