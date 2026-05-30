@@ -22,22 +22,21 @@
     "SECTORS": {
       "WATERMARK": "Demonstration data",
       "CHART_ERROR": "Chart unavailable",
-      "JUMP_TO_CHAT": "Jump to the {name} sector agent chat",
       "TABLIST_ARIA": "{name} sector sections",
       "CRUMB_ROOT": "Management",
       "SUBAREAS_HEADER": "Sub-areas",
       "SUBAREAS_COUNT": "{count} areas",
-      "AGENT_CTA": "Talk to the agent",
       "AGENT": {
         "ARIA_LABEL": "Sector agent panel",
         "FORM_ARIA": "Send message to agent",
         "INPUT_ARIA": "Message for the agent",
         "NAME_SUFFIX": "· agent",
         "STATUS_OFFLINE": "offline",
-        "EMPTY": "Soon this agent will operate with real data from your company.",
+        "OPENING": "I'm the {name} agent — your specialist for this sector. Ask me anything, and soon I'll act on your company's real data.",
         "PLACEHOLDER": "Type your question…",
         "HINT": "⌘⏎ to send",
-        "SEND_ARIA": "Send message"
+        "SEND_ARIA": "Send message",
+        "MIC_ARIA": "Speak to the agent"
       },
       "FINANCE": {
         "HEADING": "Finance",

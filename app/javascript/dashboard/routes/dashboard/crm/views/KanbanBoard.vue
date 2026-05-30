@@ -208,9 +208,6 @@ const announceText = ref('');
 const searchQuery = ref('');
 const drawerOpen = ref(false);
 const drawerLead = ref(null);
-const pipelineConfigPath = computed(
-  () => `/app/accounts/${accountId.value}/crm/pipeline`
-);
 
 const drag = useDragLead({
   onMove: async ({ leadId, fromStageId, toStageId }) => {
@@ -490,7 +487,6 @@ async function handleConfirmMove({ leadId, stage }) {
       :summary="summaryForHeader"
       :loading="metricsLoadingForHeader"
       :error="metricsErrorForHeader"
-      :pipeline-config-path="pipelineConfigPath"
     />
 
     <KanbanEmptyState v-if="showGlobalEmpty" />

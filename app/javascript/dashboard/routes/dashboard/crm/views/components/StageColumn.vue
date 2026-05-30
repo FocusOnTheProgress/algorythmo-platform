@@ -16,6 +16,7 @@
 //   so the layout stays stable across the loading → hydrated transition.
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 import LeadCard from './LeadCard.vue';
 
 const props = defineProps({
@@ -29,11 +30,18 @@ const props = defineProps({
   // summary, even though only a sampled subset of cards is rendered below.
   // Real configured pipelines pass null and fall back to leads.length.
   displayCount: { type: Number, default: null },
+  // Route the per-column gear links to. This is now the ONLY "configure
+  // pipeline" entry point in the CRM (the global header text-link was removed
+  // in the round-3 redesign). When null the column derives the path from the
+  // current route's accountId; if there's no accountId (e.g. an isolated unit
+  // test with a bare router) the gear is hidden rather than linking nowhere.
+  pipelineConfigPath: { type: [String, Object], default: null },
 });
 
 const emit = defineEmits([
   'open-lead',
   'open-menu',
+  'addLead',
   'drag-start',
   'drag-enter',
   'drag-over',
@@ -43,6 +51,16 @@ const emit = defineEmits([
 ]);
 
 const { t } = useI18n();
+const route = useRoute();
+
+// The gear's destination. Prefer an explicit prop; otherwise build the CRM
+// pipeline-config path from the current account. Null → the gear hides (no
+// dead links in tests / accountless contexts).
+const resolvedConfigPath = computed(() => {
+  if (props.pipelineConfigPath) return props.pipelineConfigPath;
+  const accountId = route?.params?.accountId;
+  return accountId ? `/app/accounts/${accountId}/crm/pipeline` : null;
+});
 
 const showColumnEmpty = computed(
   () => props.leads.length === 0 && props.boardHasAnyLead
@@ -133,6 +151,22 @@ const metricsAriaLabel = computed(() => {
     rate: conversionFormatted.value,
   });
 });
+
+// Per-column header actions (round-3): a gear that is the sole entry to the
+// pipeline-config screen, and an add button. The add button is a demo-friendly
+// affordance — it emits 'add-lead'; the parent decides what (if anything) the
+// gesture does (a no-op tooltip in demo, a real create flow later).
+const configAriaLabel = computed(() =>
+  t('ALGORYTHMO_CRM.KANBAN.CONFIGURE_STAGE_ARIA', { stage: props.stage.name })
+);
+
+const addAriaLabel = computed(() =>
+  t('ALGORYTHMO_CRM.KANBAN.ADD_LEAD_TO_STAGE_ARIA', { stage: props.stage.name })
+);
+
+function handleAddLead() {
+  emit('addLead', { stageId: props.stage.id, stageName: props.stage.name });
+}
 </script>
 
 <template>
@@ -163,6 +197,57 @@ const metricsAriaLabel = computed(() => {
         >
           {{ headerCount }}
         </span>
+
+        <div class="alg-stage-column__actions">
+          <router-link
+            v-if="resolvedConfigPath"
+            class="alg-stage-column__action"
+            data-testid="pipeline-config-link"
+            :to="resolvedConfigPath"
+            :aria-label="configAriaLabel"
+            :title="configAriaLabel"
+            @click.stop
+          >
+            <svg
+              aria-hidden="true"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9.4l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 6.6V6a2 2 0 1 1 4 0v.09c.7.27 1.27.84 1.51 1.51"
+              />
+            </svg>
+          </router-link>
+          <button
+            type="button"
+            class="alg-stage-column__action"
+            data-testid="stage-add-lead"
+            :aria-label="addAriaLabel"
+            :title="addAriaLabel"
+            @click="handleAddLead"
+          >
+            <svg
+              aria-hidden="true"
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+        </div>
       </div>
       <span
         class="alg-stage-column__metrics"
@@ -275,7 +360,6 @@ const metricsAriaLabel = computed(() => {
 .alg-stage-column__header-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 0.5rem;
 }
 
@@ -306,6 +390,57 @@ const metricsAriaLabel = computed(() => {
 
 .alg-stage-column--accented .alg-stage-column__count {
   background-color: var(--alg-stage-accent-tint);
+}
+
+// Header action cluster — gear (config) + add. Ghost buttons that surface on
+// column hover/focus so the header reads clean at rest, like Linear's board.
+.alg-stage-column__actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  opacity: 0;
+  transition: opacity var(--alg-duration-fast, 180ms) var(--alg-ease-cinematic);
+}
+
+.alg-stage-column:hover .alg-stage-column__actions,
+.alg-stage-column:focus-within .alg-stage-column__actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .alg-stage-column__actions {
+    opacity: 1;
+  }
+}
+
+.alg-stage-column__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--alg-radius-sm, 8px);
+  background-color: transparent;
+  color: var(--alg-fg-tertiary);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color var(--alg-duration-fast, 180ms) var(--alg-ease-cinematic),
+    color var(--alg-duration-fast, 180ms) var(--alg-ease-cinematic);
+
+  &:hover {
+    background-color: var(--alg-bg-tint-med);
+    color: var(--alg-fg-primary);
+  }
+
+  &:focus-visible {
+    outline: none;
+    opacity: 1;
+    box-shadow: var(--alg-ring-focus);
+  }
 }
 
 .alg-stage-column__metrics {

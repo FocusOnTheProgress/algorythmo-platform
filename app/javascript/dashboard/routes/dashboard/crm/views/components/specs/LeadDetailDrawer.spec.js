@@ -22,6 +22,8 @@ vi.mock('dashboard/components-next/algorythmo/AlgDrawer.vue', () => ({
       'rootDataset',
     ],
     emits: ['update:open', 'close'],
+    // Renders both the default slot (body) and the named "footer" slot so the
+    // round-3 "Ver conversa" CTA (which lives in the footer) is testable here.
     template: `
       <div
         v-if="open"
@@ -39,9 +41,17 @@ vi.mock('dashboard/components-next/algorythmo/AlgDrawer.vue', () => ({
           @click="$emit('update:open', false); $emit('close')"
         />
         <slot />
+        <div data-testid="alg-drawer-footer-stub"><slot name="footer" /></div>
       </div>
     `,
   },
+}));
+
+// Router mock — the drawer's "Ver conversa" CTA calls router.push. We capture
+// the call to assert the route name + params without a real router.
+const routerPush = vi.fn();
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push: routerPush }),
 }));
 
 // Stub AlgAvatar to a deterministic shell so we can assert props without
@@ -156,6 +166,7 @@ function mountDrawer(props = {}) {
 describe('LeadDetailDrawer (CONTRACT_M1B §7 v1.1.0)', () => {
   beforeEach(() => {
     resetStageHistory();
+    routerPush.mockReset();
   });
 
   describe('lifecycle', () => {
@@ -481,6 +492,169 @@ describe('LeadDetailDrawer (CONTRACT_M1B §7 v1.1.0)', () => {
       expect(
         wrapper.find('[data-testid="drawer-stage-history-truncated"]').exists()
       ).toBe(false);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Round-3 — full lead profile
+  // -------------------------------------------------------------------------
+  describe('IDENTITY + profile blocks (round-3)', () => {
+    it('renders company · role under the name when present', () => {
+      const wrapper = mountDrawer({
+        lead: baseLead({ company: 'Nimbus Co.', role: 'Gerente' }),
+      });
+      const meta = wrapper.find('[data-testid="drawer-identity-meta"]');
+      expect(meta.exists()).toBe(true);
+      expect(meta.text()).toContain('Gerente');
+      expect(meta.text()).toContain('Nimbus Co.');
+    });
+
+    it('renders RESUMO when summary is present and omits it otherwise', () => {
+      const withSummary = mountDrawer({
+        lead: baseLead({ summary: 'Cliente quente, fechar este mês.' }),
+      });
+      expect(
+        withSummary.find('[data-testid="drawer-summary-text"]').text()
+      ).toBe('Cliente quente, fechar este mês.');
+
+      const without = mountDrawer({ lead: baseLead() });
+      expect(
+        without.find('[data-testid="drawer-summary-block"]').exists()
+      ).toBe(false);
+    });
+
+    it('renders the QUALIFICAÇÃO pairs when provided', () => {
+      const wrapper = mountDrawer({
+        lead: baseLead({
+          qualification: [
+            { label: 'Orçamento', value: 'Aprovado' },
+            { label: 'Prazo', value: 'Este mês' },
+          ],
+        }),
+      });
+      const block = wrapper.find('[data-testid="drawer-qualification-block"]');
+      expect(block.exists()).toBe(true);
+      expect(block.text()).toContain('Orçamento');
+      expect(block.text()).toContain('Aprovado');
+      expect(block.text()).toContain('Prazo');
+    });
+
+    it('renders SOCIAL links with target=_blank + rel noopener', () => {
+      const wrapper = mountDrawer({
+        lead: baseLead({
+          social: [
+            {
+              platform: 'instagram',
+              handle: '@maria',
+              url: 'https://instagram.com/maria',
+            },
+          ],
+        }),
+      });
+      const links = wrapper.find('[data-testid="drawer-social-links"]');
+      expect(links.exists()).toBe(true);
+      const anchor = links.find('a');
+      expect(anchor.attributes('href')).toBe('https://instagram.com/maria');
+      expect(anchor.attributes('target')).toBe('_blank');
+      expect(anchor.attributes('rel')).toContain('noopener');
+    });
+
+    it('omits the SOCIAL block when there are no social links', () => {
+      const wrapper = mountDrawer({ lead: baseLead({ social: [] }) });
+      expect(wrapper.find('[data-testid="drawer-social-block"]').exists()).toBe(
+        false
+      );
+    });
+  });
+
+  describe('CANAIS block (multi-channel, round-3)', () => {
+    it('lists every reachable channel from lead.channels[]', () => {
+      const wrapper = mountDrawer({
+        lead: baseLead({
+          channels: [
+            { origin: 'whatsapp', handle: '+55 11 90000-0000' },
+            { origin: 'email', handle: 'maria@example.com' },
+          ],
+        }),
+      });
+      const rows = wrapper
+        .find('[data-testid="drawer-channels"]')
+        .findAll('.alg-lead-drawer__channel-row');
+      expect(rows).toHaveLength(2);
+      expect(rows[0].text()).toContain('WhatsApp');
+      expect(rows[0].text()).toContain('+55 11 90000-0000');
+      // pt_BR label for the email channel is "E-mail".
+      expect(rows[1].text()).toContain('E-mail');
+    });
+
+    it('falls back to a single channel derived from channel_origin', () => {
+      // baseLead has channel_origin but no channels[] — the CANAIS block must
+      // still show the inbound channel (keeps the legacy drawer-channel-origin
+      // contract intact).
+      const wrapper = mountDrawer();
+      const origin = wrapper.find('[data-testid="drawer-channel-origin"]');
+      expect(origin.exists()).toBe(true);
+      expect(origin.text()).toBe('WhatsApp');
+      expect(origin.attributes('data-channel')).toBe('whatsapp');
+    });
+  });
+
+  describe('ATIVIDADE — inline demo timeline (round-3)', () => {
+    it('renders lead.timeline directly and ignores the fetched history', () => {
+      // Even with the composable in an error state, an inline timeline wins and
+      // the network error block must not show.
+      stageHistoryState.error.value = 'boom';
+      const wrapper = mountDrawer({
+        lead: baseLead({
+          timeline: [
+            {
+              id: 't1',
+              from_stage_id: null,
+              from_stage_name: null,
+              from_stage_kind: null,
+              to_stage_id: 1,
+              to_stage_name: 'Novo',
+              to_stage_kind: 'open',
+              actor_type: 'system',
+              actor_summary: null,
+              changed_at: '2026-05-24T10:00:00Z',
+            },
+          ],
+        }),
+      });
+      const list = wrapper.find('[data-testid="drawer-stage-history-list"]');
+      expect(list.exists()).toBe(true);
+      expect(
+        wrapper.find('[data-testid="drawer-stage-history-error"]').exists()
+      ).toBe(false);
+      expect(
+        wrapper.find('[data-testid="drawer-stage-history-item"]').text()
+      ).toContain('Algorythmo criou em Novo');
+    });
+  });
+
+  describe('Ver conversa CTA (round-3)', () => {
+    it('routes to the inbox conversation with accountId + conversation_id', async () => {
+      const wrapper = mountDrawer({
+        lead: baseLead({ conversation_id: 90123 }),
+        accountId: '7',
+      });
+      const cta = wrapper.find('[data-testid="drawer-open-conversation"]');
+      expect(cta.exists()).toBe(true);
+      expect(cta.attributes('disabled')).toBeUndefined();
+      await cta.trigger('click');
+      expect(routerPush).toHaveBeenCalledWith({
+        name: 'inbox_conversation',
+        params: { accountId: '7', conversation_id: 90123 },
+      });
+    });
+
+    it('disables the CTA and does not route when conversation_id is absent', async () => {
+      const wrapper = mountDrawer({ lead: baseLead() });
+      const cta = wrapper.find('[data-testid="drawer-open-conversation"]');
+      expect(cta.attributes('disabled')).toBeDefined();
+      await cta.trigger('click');
+      expect(routerPush).not.toHaveBeenCalled();
     });
   });
 });

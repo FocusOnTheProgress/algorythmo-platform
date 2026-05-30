@@ -22,10 +22,31 @@ const props = defineProps({
     default: 180,
   },
   // Number of conduits radiating from the orb (0-6). DESIGN.md caps at 6.
+  // This is the symmetric, count-based default (story / general use). For a hub
+  // where each ray must reach a SPECIFIC surrounding card, pass `aimedConduits`
+  // instead — irregular, hand-aimed rays that connect, never slice (see below).
   conduits: {
     type: Number,
     default: 0,
     validator: v => v >= 0 && v <= 6,
+  },
+  // Explicit, hand-aimed conduits — overrides `conduits` when non-empty.
+  // Each entry aims one ray at a specific card: { angle:Number(deg),
+  // length:Number(px from the orb centre), delay?:Number(s) }. Unlike the
+  // symmetric default, these radiate at irregular angles and fade to transparent
+  // before the card edge, so each beam CONNECTS to a card rather than piercing
+  // it. (Round-2 fix: symmetric clock rays sliced through the cards.)
+  aimedConduits: {
+    type: Array,
+    default: () => [],
+    validator: list =>
+      list.every(
+        c =>
+          c &&
+          typeof c.angle === 'number' &&
+          typeof c.length === 'number' &&
+          c.length > 0
+      ),
   },
   // Processing state — accelerates chroma drift + conduit ramp.
   active: {
@@ -41,10 +62,22 @@ const props = defineProps({
 
 const uid = useId();
 
+// Aimed conduits take precedence: each ray gets an explicit length so it stops
+// (fading to transparent) just shy of its card. Falls back to the symmetric
+// count-based layout so existing callers (story, default) keep working.
 const conduitLines = computed(() => {
+  if (props.aimedConduits.length > 0) {
+    return props.aimedConduits.map((c, i) => ({
+      angle: c.angle,
+      length: `${c.length}px`,
+      delay: `${(typeof c.delay === 'number' ? c.delay : i * 0.2).toFixed(2)}s`,
+    }));
+  }
   const n = Math.min(6, Math.max(0, props.conduits));
   return Array.from({ length: n }, (_, i) => ({
     angle: (i / n) * 360,
+    // Symmetric default keeps its original full-bleed length (160% of the box).
+    length: '160%',
     delay: `${(i * 0.4).toFixed(2)}s`,
   }));
 });
@@ -74,6 +107,7 @@ const rootStyle = computed(() => ({
       aria-hidden="true"
       :style="{
         '--alg-conduit-angle': `${conduit.angle}deg`,
+        '--alg-conduit-length': conduit.length,
         '--alg-conduit-delay': conduit.delay,
       }"
     />
@@ -106,9 +140,14 @@ const rootStyle = computed(() => ({
   // Oversize the paint so the drift has room to move without showing edges.
   background-size: 160% 160%;
   background-position: 35% 30%;
+  // Depth = OUTER luminance (the orb is a lit object floating in space) kept
+  // WITH directional inset shadows (top-left highlight, bottom-right core
+  // shadow). Round-2 defect A: inset-only shadows read flat — the outer glow
+  // gives it volume and seats it on the canvas instead of a sticker on glass.
   box-shadow:
-    inset 0 2px 6px 0 rgba(255, 255, 255, 0.25),
-    inset 0 -8px 18px -6px rgba(0, 0, 0, 0.45);
+    var(--alg-aurora-glow),
+    inset 0 3px 8px 0 rgba(255, 255, 255, 0.28),
+    inset -6px -8px 22px -6px rgba(0, 0, 0, 0.5);
   animation: alg-aurora-chroma var(--alg-duration-ambient)
     var(--alg-ease-ambient) infinite;
 }
@@ -143,18 +182,34 @@ const rootStyle = computed(() => ({
 }
 
 // --- Conduits ----------------------------------------------------------------
-// Each conduit is a thin gradient line anchored at the orb centre, rotated to
-// its angle. The gradient fades transparent → magenta → transparent.
+// Each conduit is a thin gradient line anchored at the orb centre (left center),
+// rotated to its angle and given an explicit length. The gradient leaves the
+// orb soft, brightens mid-run, then fades to transparent BEFORE the far end —
+// so a hand-aimed ray reaches its card and dissolves into it (connects), never
+// slicing across it. (Round-2 defect B: symmetric full-bleed rays sliced cards.)
 .alg-aurora-orb__conduit {
   position: absolute;
   z-index: 0;
   top: 50%;
   left: 50%;
-  width: 160%;
-  height: 2px;
-  transform-origin: 0 50%;
+  width: var(--alg-conduit-length, 160%);
+  height: 1.5px;
+  transform-origin: left center;
   transform: rotate(var(--alg-conduit-angle));
-  background: var(--alg-aurora-conduit);
+  // Fade-to-transparent pulled EARLY: the bright band peaks near the orb (~28%)
+  // and the mid band has fully dissolved by ~72% of the ray length — so the lit
+  // portion of the beam lives in the GAP between the orb and the card, and the
+  // beam is already transparent by the time it could reach (or overshoot) a card
+  // edge. Combined with the orb sitting below the cards in the stage, an
+  // overshoot reads as faint light under glass, never a bright line on the face.
+  // (Round-2 defect B: a bright band terminated inside the card at wide widths.)
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklch, var(--alg-aurora-1), transparent 55%) 0%,
+    color-mix(in oklch, var(--alg-aurora-1), transparent 25%) 28%,
+    color-mix(in oklch, var(--alg-aurora-2), transparent 65%) 52%,
+    transparent 72%
+  );
   opacity: 0.45;
   animation: alg-aurora-conduit var(--alg-duration-ambient)
     var(--alg-ease-ambient) infinite;

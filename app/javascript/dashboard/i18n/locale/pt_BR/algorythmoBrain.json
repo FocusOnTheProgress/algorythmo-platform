@@ -3,13 +3,6 @@
     "SIDEBAR": {
       "BRAIN": "Brain"
     },
-    "TABS": {
-      "VIEWER": "Aquário",
-      "AJUSTES": "Ajustes",
-      "HISTORICO": "Histórico",
-      "CONFIG": "Config",
-      "COMING_SOON": "Em breve"
-    },
     "VIEWER": {
       "HEADING": "Brain Algorythmo",
       "SUBHEADING": "O que o Brain sabe sobre sua empresa",
@@ -22,68 +15,61 @@
       "TIMELINE_UNAVAILABLE": "Histórico indisponível no momento."
     },
     "AQUARIO": {
-      "ARIA_LABEL": "Aquário do Brain — visão organizada da inteligência da empresa",
+      "ARIA_LABEL": "Central de conhecimento do Brain — o núcleo vivo da inteligência da empresa",
       "HUB": {
-        "EYEBROW": "Base de conhecimento · aquário da empresa",
+        "EYEBROW": "Base de conhecimento · cérebro da empresa",
         "TITLE": "O conhecimento que move seus agentes",
-        "SUBTITLE": "839 camadas vivas na base da sua empresa. A Aurora distribui contexto para cada superfície de dado em tempo real.",
+        "SUBTITLE": "A Aurora guarda a memória viva da sua empresa e distribui contexto para cada agente em tempo real. Abaixo, um retrato do que ela sabe agora.",
         "ORB_ARIA": "Aurora — núcleo vivo de conhecimento da empresa",
-        "STAGE_ARIA": "Camadas de conhecimento ao redor da Aurora",
+        "STAGE_ARIA": "Conhecimento conectado ao núcleo Aurora",
         "DEMO_WATERMARK": "Dados de demonstração",
-        "LAYERS": {
-          "SOURCE_LABEL": "Camadas Fonte",
-          "SOURCE_VALUE": "192",
-          "SOURCE_DESC": "Conhecimento absorvido de documentos, políticas e catálogos da empresa.",
-          "HUMAN_LABEL": "Camadas Humanas",
-          "HUMAN_VALUE": "322",
-          "HUMAN_DESC": "Geradas em conversas e contextos reais com seus clientes.",
-          "AUTO_LABEL": "Camadas Automáticas",
-          "AUTO_VALUE": "237",
-          "AUTO_DESC": "Criadas automaticamente a partir de dados e sinais operacionais.",
-          "AGENT_LABEL": "Camadas de Agentes",
-          "AGENT_VALUE": "88",
-          "AGENT_DESC": "Resultado da interação entre agentes durante os fluxos de operação."
+        "LAYER_COUNT": "839",
+        "LAYER_COUNT_LABEL": "Camadas vivas",
+        "CARDS": {
+          "DOC_MVM": {
+            "LABEL": "Documento",
+            "TITLE": "MVM — Memória Mínima Viável",
+            "BODY": "Documento fundador absorvido: missão, tom de voz e princípios que os agentes herdam.",
+            "META": "Ingerido há 2 dias"
+          },
+          "FACT_VOICE": {
+            "LABEL": "Fato",
+            "TITLE": "Tom de voz da marca",
+            "BODY": "Técnico mas acessível, evita jargão. Confirma estoque antes de prometer prazos.",
+            "META": "Aprendido em 1.247 conversas"
+          },
+          "DECISION": {
+            "LABEL": "Decisão",
+            "TITLE": "Dream cycle · 27/mai",
+            "BODY": "Consolidou 14 ajustes em 3 regras coerentes — sem contradições em aberto.",
+            "META": "Consolidado automaticamente"
+          },
+          "LEAD": {
+            "LABEL": "Lead",
+            "TITLE": "Maria Silva → Qualificado",
+            "BODY": "Movida por João às 14:32. O Brain anexou contexto e intenção completos para o time comercial.",
+            "META": "Atualizado há 18 min"
+          },
+          "CATALOG": {
+            "LABEL": "Catálogo",
+            "TITLE": "1.247 SKUs ativos",
+            "BODY": "Catálogo de produtos atualizado e indexado — preços, especificações e disponibilidade em dia.",
+            "META": "Sincronizado hoje"
+          },
+          "SIGNAL": {
+            "LABEL": "Sinal",
+            "TITLE": "Tempo de resposta −63%",
+            "BODY": "A primeira resposta caiu de 3h para 27 min depois que o Brain entrou em todos os canais.",
+            "META": "Últimos 30 dias"
+          }
         }
       },
-      "COLUMNS": {
-        "CONVERSAS": "Conversas processadas",
-        "FATOS": "Fatos da empresa",
-        "LEADS": "Leads recentes",
-        "AJUSTES": "Ajustes registrados",
-        "DOCUMENTOS": "Documentos absorvidos",
-        "DECISOES": "Decisões consolidadas"
-      },
-      "SPECIMENS": {
-        "CONVERSAS_1": "1.247 conversas analisadas nos últimos 30 dias.",
-        "CONVERSAS_2": "Brain identificou 89 leads qualificados sem intervenção humana.",
-        "CONVERSAS_3": "Tempo médio de resposta caiu de 3h para 27 min depois do Brain ativo.",
-        "FATOS_1": "Linguagem da marca: técnica mas acessível, evita jargão.",
-        "FATOS_2": "Política de devolução: 30 dias, sem custo de frete pro cliente.",
-        "FATOS_3": "Horário de atendimento: seg-sex 9h-18h, sáb 9h-13h (BR).",
-        "LEADS_1": "Maria Silva movida para Qualificado por João às 14:32.",
-        "LEADS_2": "Carlos Pereira atribuído ao time comercial às 13:18.",
-        "AJUSTES_1": "Tom de voz refinado: respostas técnicas ficam mais concisas.",
-        "AJUSTES_2": "Nova regra: não prometer prazos antes de confirmar estoque.",
-        "DOCUMENTOS_1": "Política de garantia v2.3 absorvida há 2 dias.",
-        "DOCUMENTOS_2": "Catálogo de produtos atualizado — 1.247 SKUs ativos.",
-        "DECISOES_1": "Dream cycle de 27/mai consolidou 14 ajustes em 3 regras coerentes.",
-        "DECISOES_2": "Snapshot semanal: tom da marca permanece estável."
+      "DROPZONE": {
+        "ARIA_LABEL": "Anexar documentos da empresa para alimentar o Brain",
+        "TITLE": "Anexar documentos da empresa",
+        "HINT": "Arraste arquivos aqui. O Brain absorve e indexa automaticamente.",
+        "FORMATS": "PDF · DOCX · TXT · MD"
       }
-    },
-    "EMPTY_STATE": {
-      "ARIA_LABEL": "Primeiros passos com o Brain",
-      "STEP_1_TITLE": "Cole sua primeira instrução",
-      "STEP_1_DESC": "Descreva sua empresa, produto, tom de voz e o que o Brain precisa saber.",
-      "STEP_2_TITLE": "O Brain processa em background",
-      "STEP_2_DESC": "Ingestion + dream cycle rodam automaticamente toda noite.",
-      "STEP_3_TITLE": "Pergunte no Cursor ou Claude Code",
-      "STEP_3_DESC": "Conecte via MCP stdio. O Brain responde com contexto real da empresa.",
-      "FOOTER": "Day-1: founder dogfooding. M3.5 abre para cliente externo."
-    },
-    "TIMELINE": {
-      "TYPE_ADJUSTMENT": "ajuste",
-      "TYPE_DREAM_CYCLE": "dream cycle",
-      "TYPE_SNAPSHOT": "snapshot"
     }
   }
 }

@@ -1,12 +1,30 @@
-// algorythmo: M8a — BrainViewer + Aquário unit spec
+// algorythmo: BrainViewer — Aquarium-only landing spec (round-3 rebuild).
+//
+// The Brain landing IS the Aurora knowledge hub. The disabled Ajustes / Histórico
+// / Config tab bar was removed (Aquarium-only), so this spec asserts the new
+// structure: no tab bar, the Aurora hub rendered, and the demo hub still shown
+// on an empty OR failed backend load (the CRM demo-board philosophy is kept).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import BrainViewer from '../BrainViewer.vue';
 import { brainService } from '../brain.service';
 
+// Shared, reactive account-id ref. BrainViewer's `accountId` IS this ref, so a
+// test can mutate it to drive the watch(accountId, …) reload path. Using a real
+// ref (not a plain { value } object) also stops Vue warning that the watch
+// source is invalid on every mount. Built inside vi.hoisted — which runs above
+// the (also-hoisted) vi.mock factory — and pulls `ref` from vue there, since a
+// top-level `import { ref }` would still be in the TDZ when the factory closes
+// over the ref.
+const { accountIdRef } = vi.hoisted(() => {
+  // eslint-disable-next-line global-require
+  const { ref } = require('vue');
+  return { accountIdRef: ref(1) };
+});
+
 // Mock the composable that reads account ID from the Vuex store.
 vi.mock('dashboard/composables/store', () => ({
-  useMapGetter: vi.fn(() => ({ value: 1 })),
+  useMapGetter: vi.fn(() => accountIdRef),
 }));
 
 // Mock brain service to avoid actual HTTP calls in unit tests.
@@ -22,22 +40,10 @@ const FIXTURE_TRUTH = {
   content: '---\ntitle: Test\n---\n\nBody content here.',
 };
 
-const FIXTURE_TIMELINE = {
-  events: [
-    {
-      id: 'e1',
-      type: 'adjustment',
-      timestamp: '2026-05-26T06:00:00Z',
-      title: 'Ajuste inicial',
-      preview: 'Contexto base colado.',
-      actor: 'founder',
-    },
-  ],
-};
-
 beforeEach(() => {
+  vi.clearAllMocks();
+  accountIdRef.value = 1;
   brainService.fetchCompiledTruth.mockResolvedValue(FIXTURE_TRUTH);
-  brainService.fetchTimeline.mockResolvedValue(FIXTURE_TIMELINE);
 });
 
 async function mountViewer() {
@@ -46,42 +52,11 @@ async function mountViewer() {
   return wrapper;
 }
 
-describe('BrainViewer — tab bar', () => {
-  it('renders 4 tabs', async () => {
+describe('BrainViewer — Aquarium-only (no tab bar)', () => {
+  it('renders no role="tab" elements (the disabled tab bar was removed)', async () => {
     const wrapper = await mountViewer();
-    const tabs = wrapper.findAll('[role="tab"]');
-    expect(tabs).toHaveLength(4);
-  });
-
-  it('first tab is active by default', async () => {
-    const wrapper = await mountViewer();
-    const active = wrapper
-      .findAll('[role="tab"]')
-      .find(t => t.attributes('aria-selected') === 'true');
-    expect(active).toBeDefined();
-    expect(active.text().trim().length).toBeGreaterThan(0);
-  });
-
-  it('non-active tabs have aria-disabled="true"', async () => {
-    const wrapper = await mountViewer();
-    const disabledTabs = wrapper
-      .findAll('[role="tab"]')
-      .filter(t => t.attributes('aria-disabled') === 'true');
-    expect(disabledTabs).toHaveLength(3);
-  });
-
-  it('disabled tabs render the "em breve" / "Coming soon" badge', async () => {
-    const wrapper = await mountViewer();
-    const soonBadges = wrapper.findAll('.alg-brain-tabs__soon');
-    expect(soonBadges).toHaveLength(3);
-  });
-
-  it('disabled tabs have tabindex="-1"', async () => {
-    const wrapper = await mountViewer();
-    const disabled = wrapper
-      .findAll('[role="tab"]')
-      .filter(t => t.attributes('tabindex') === '-1');
-    expect(disabled).toHaveLength(3);
+    expect(wrapper.findAll('[role="tab"]')).toHaveLength(0);
+    expect(wrapper.find('.alg-brain-tabs').exists()).toBe(false);
   });
 });
 
@@ -91,15 +66,20 @@ describe('BrainViewer — aquário (knowledge hub) content', () => {
     expect(wrapper.find('.alg-aquario').exists()).toBe(true);
   });
 
-  it('renders the Aurora orb core within the viewer', async () => {
-    // The living Aurora sphere is the centrepiece of the knowledge hub.
+  it('renders exactly one Aurora orb core within the viewer', async () => {
+    // The living Aurora sphere is the centrepiece — max one per screen.
     const wrapper = await mountViewer();
     expect(wrapper.findAll('.alg-aurora-orb__sphere')).toHaveLength(1);
   });
 
-  it('renders the four knowledge-layer glass tiles', async () => {
+  it('renders the six living knowledge cards', async () => {
     const wrapper = await mountViewer();
-    expect(wrapper.findAll('.alg-glass-tile')).toHaveLength(4);
+    expect(wrapper.findAll('.alg-aquario__card')).toHaveLength(6);
+  });
+
+  it('renders the signature ingestion dropzone', async () => {
+    const wrapper = await mountViewer();
+    expect(wrapper.find('.alg-brain-dropzone').exists()).toBe(true);
   });
 
   it('shows the editorial header (eyebrow + title)', async () => {
@@ -131,12 +111,55 @@ describe('BrainViewer — empty/failed backend still shows the demo hub', () => 
 
   it('renders the Aurora hub (not an error screen) when the service throws', async () => {
     brainService.fetchCompiledTruth.mockRejectedValue(new Error('network'));
-    brainService.fetchTimeline.mockRejectedValue(new Error('network'));
     const wrapper = mount(BrainViewer);
     await flushPromises();
     // No "Could not load Brain" error alert — the demo hub renders instead.
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     expect(wrapper.find('.alg-aquario').exists()).toBe(true);
-    expect(wrapper.findAll('.alg-glass-tile')).toHaveLength(4);
+    expect(wrapper.findAll('.alg-aquario__card')).toHaveLength(6);
+  });
+});
+
+describe('BrainViewer — account-id reactivity (watch reload path)', () => {
+  // accountId is a real ref, so watch(accountId, …) is a valid source. Mutating
+  // it must drive a fresh compiled-truth fetch — the reload path the round-2
+  // mock (a plain { value } object) silently never exercised.
+
+  it('does not gate the hub on a fetch and reloads when the account id changes', async () => {
+    const wrapper = mount(BrainViewer);
+    await flushPromises();
+    // Mounted with id=1 → one fetch on mount, and the hub renders regardless.
+    expect(wrapper.find('.alg-aquario').exists()).toBe(true);
+    expect(brainService.fetchCompiledTruth).toHaveBeenCalledWith(1);
+
+    // Isolate the watcher-driven call: forget the mount fetch, then drive the
+    // ref so the watch(accountId, …) reload path is the only thing under test.
+    brainService.fetchCompiledTruth.mockClear();
+    accountIdRef.value = 7;
+    await flushPromises();
+    // The watcher fired and refetched for the NEW account id (the reload path
+    // the round-2 plain-object mock could never exercise).
+    expect(brainService.fetchCompiledTruth).toHaveBeenCalledWith(7);
+    expect(brainService.fetchCompiledTruth).toHaveBeenLastCalledWith(7);
+    // And the hub is still up after the reload.
+    expect(wrapper.find('.alg-aquario').exists()).toBe(true);
+
+    wrapper.unmount();
+  });
+
+  it('renders the hub with NO account id and never gets stuck loading', async () => {
+    // Tenant where the account id is not hydrated at mount: loadBrain never runs,
+    // isLoading stays false, the Aquário renders immediately (no forever spinner).
+    accountIdRef.value = null;
+    brainService.fetchCompiledTruth.mockClear();
+    const wrapper = mount(BrainViewer);
+    await flushPromises();
+    expect(wrapper.find('.alg-aquario').exists()).toBe(true);
+    expect(wrapper.findAll('.alg-aurora-orb__sphere')).toHaveLength(1);
+    // No spinner, and no fetch was attempted without an account id.
+    expect(wrapper.find('.alg-brain-loading').exists()).toBe(false);
+    expect(brainService.fetchCompiledTruth).not.toHaveBeenCalled();
+
+    wrapper.unmount();
   });
 });

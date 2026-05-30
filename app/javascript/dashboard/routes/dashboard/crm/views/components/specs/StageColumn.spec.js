@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
+import { createRouter, createMemoryHistory } from 'vue-router';
 import StageColumn from '../StageColumn.vue';
 import algorythmoCrm from 'dashboard/i18n/locale/pt_BR/algorythmoCrm.json';
 
@@ -9,6 +10,12 @@ const i18n = createI18n({
   legacy: false,
   locale: 'pt_BR',
   messages: { pt_BR: algorythmoCrm },
+});
+
+// router-link (per-column gear) needs a router instance even in memory mode.
+const router = createRouter({
+  history: createMemoryHistory(),
+  routes: [{ path: '/:path(.*)*', component: { template: '<div />' } }],
 });
 
 const stage = (overrides = {}) => ({
@@ -41,7 +48,7 @@ const mountColumn = (props = {}) =>
       boardHasAnyLead: false,
       ...props,
     },
-    global: { plugins: [i18n] },
+    global: { plugins: [i18n, router] },
   });
 
 describe('StageColumn (CONTRACT_M1B §2)', () => {
@@ -116,6 +123,37 @@ describe('StageColumn (CONTRACT_M1B §2)', () => {
     const dropEvents = wrapper.emitted('drop');
     expect(dropEvents).toBeTruthy();
     expect(dropEvents[0][1]).toEqual({ stageId: 7, stageName: 'Qualificado' });
+  });
+
+  // Round-3 — per-column header actions (gear is the sole pipeline-config entry)
+  describe('header actions (round-3)', () => {
+    it('renders the gear config link to pipelineConfigPath when provided', () => {
+      const wrapper = mountColumn({
+        pipelineConfigPath: '/app/accounts/9/crm/pipeline',
+      });
+      const link = wrapper.find('[data-testid="pipeline-config-link"]');
+      expect(link.exists()).toBe(true);
+      expect(link.attributes('href')).toBe('/app/accounts/9/crm/pipeline');
+      expect(link.attributes('aria-label')).toContain('Qualificado');
+    });
+
+    it('hides the gear when no pipelineConfigPath is provided (e.g. demo)', () => {
+      const wrapper = mountColumn();
+      expect(
+        wrapper.find('[data-testid="pipeline-config-link"]').exists()
+      ).toBe(false);
+    });
+
+    it('emits addLead with the stage payload when the + button is clicked', async () => {
+      const wrapper = mountColumn();
+      await wrapper.find('[data-testid="stage-add-lead"]').trigger('click');
+      const events = wrapper.emitted('addLead');
+      expect(events).toBeTruthy();
+      expect(events[0][0]).toEqual({
+        stageId: 7,
+        stageName: 'Qualificado',
+      });
+    });
   });
 
   // v1.2.0 — observability chip (M1-D)

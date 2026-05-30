@@ -1,24 +1,32 @@
 <script setup>
 // algorythmo: feature-gate algorythmo_crm
-// CONTRACT_M1B §7 (v1.1.0) — LeadDetailDrawer.
+// CONTRACT_M1B §7 (v1.2.0) — LeadDetailDrawer.
 //
-// Wraps AlgDrawer with the lead-specific anatomy:
-//   header (sticky)  — title (lead name) + close
+// Cinematic OS round-3: the drawer is now a full lead profile, not a thin
+// contact card. Wraps AlgDrawer with:
+//   header (sticky)  — title (lead name) + close   [AlgDrawer]
+//   IDENTITY         — avatar + name + company · role (drawer body intro)
+//   RESUMO           — one-paragraph qualification narrative (lead.summary)
+//   QUALIFICAÇÃO     — structured {label,value} signals (lead.qualification[])
 //   CONTATO          — email, phone
-//   CANAL            — channel origin (translated label)
+//   CANAIS           — every reachable channel (lead.channels[]) + origin label
+//   SOCIAL           — external profile links (lead.social[])
 //   DONO             — owner avatar + name OR available placeholder
-//   ATIVIDADE        — stage_history timeline (lazy-fetched, 5 states)
+//   ATIVIDADE        — timeline. Demo leads carry an inline `timeline`; live
+//                      leads lazy-fetch stage_history (5 states).
+//   footer           — "Ver conversa" → routes to the inbox conversation.
 //
-// Why lazy fetch instead of preloading: the timeline is the only block that
-// requires a network roundtrip; everything else is already in `lead`. Fetching
-// on drawer open means the kanban list page stays cheap (N leads × no
-// extra requests) and the drawer cost is paid on intent, not on render.
+// Timeline source of truth: a demo lead ships its own `timeline` (no backend),
+// so when present we render it directly and skip the network loading/error/
+// empty states. Live leads (no inline timeline) keep the lazy-fetch behaviour
+// exactly as before — the stageHistory composable drives the block.
 //
-// Truncated branch: when the backend caps at 100 entries (visual-spec §4.8)
-// the footer hints that older history exists past the window. No pagination
-// in M1-C; deeper history lives in M3 analytics.
+// Why lazy fetch for live leads: the timeline is the only block that requires a
+// network roundtrip; everything else is already in `lead`. Fetching on drawer
+// open keeps the kanban list page cheap and pays the drawer cost on intent.
 import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import AlgDrawer from 'dashboard/components-next/algorythmo/AlgDrawer.vue';
 import AlgAvatar from 'dashboard/components-next/algorythmo/AlgAvatar.vue';
 import { useStageHistory } from 'dashboard/composables/algorythmo/useStageHistory.js';
@@ -49,11 +57,12 @@ const props = defineProps({
 const emit = defineEmits(['update:open', 'close']);
 
 const { t } = useI18n();
+const router = useRouter();
 
 const stageHistory = useStageHistory(props.accountId);
 
 const SYSTEM_MONOGRAM = 'A'; // Algorythmo brand mark — visual, not copy.
-const META_SEPARATOR = '\u00B7';
+const META_SEPARATOR = '·';
 
 const CHANNEL_LABEL_KEYS = Object.freeze({
   whatsapp: 'WHATSAPP',
@@ -67,6 +76,22 @@ const CHANNEL_LABEL_KEYS = Object.freeze({
   web_widget: 'WIDGET',
 });
 
+// Inline channel glyphs — same path data as the card, so the drawer's channel
+// list reads with the identical iconography (founder: no emoji in chrome).
+const CHANNEL_ICON_PATHS = Object.freeze({
+  whatsapp:
+    '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  email:
+    '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/>',
+  instagram:
+    '<rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/>',
+  tiktok: '<path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>',
+  linkedin:
+    '<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>',
+  generic:
+    '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+});
+
 function normalizeChannelKey(origin) {
   return String(origin ?? '')
     .toLowerCase()
@@ -74,12 +99,21 @@ function normalizeChannelKey(origin) {
     .replace(/[-\s]/g, '');
 }
 
-const channelLabel = computed(() => {
-  if (!props.lead?.channel_origin) return '';
-  const key = normalizeChannelKey(props.lead.channel_origin);
+function channelLabelFor(origin) {
+  if (!origin) return '';
+  const key = normalizeChannelKey(origin);
   const labelKey = CHANNEL_LABEL_KEYS[key] ?? 'UNKNOWN';
   return t(`ALGORYTHMO_CRM.LEAD_CARD.CHANNEL_LABEL.${labelKey}`);
-});
+}
+
+function channelIconFor(origin) {
+  const key = normalizeChannelKey(origin);
+  return CHANNEL_ICON_PATHS[key] ?? CHANNEL_ICON_PATHS.generic;
+}
+
+const channelLabel = computed(() =>
+  channelLabelFor(props.lead?.channel_origin)
+);
 
 const drawerTitle = computed(
   () => props.lead?.name || t('ALGORYTHMO_CRM.DRAWER.TITLE_FALLBACK')
@@ -93,8 +127,57 @@ const rootDataset = computed(() => {
   return out;
 });
 
-const contact = computed(() => props.lead?.contact ?? null);
+// -----------------------------------------------------------------------
+// Identity + profile (demo-enriched, optional)
+// -----------------------------------------------------------------------
 
+const leadName = computed(() => props.lead?.name ?? '');
+const company = computed(() => props.lead?.company ?? null);
+const role = computed(() => props.lead?.role ?? null);
+const summary = computed(() => props.lead?.summary ?? null);
+
+const qualification = computed(() =>
+  Array.isArray(props.lead?.qualification) ? props.lead.qualification : []
+);
+const hasQualification = computed(() => qualification.value.length > 0);
+
+// Reachable channels. Falls back to a single entry derived from channel_origin
+// so live leads (no `channels` array) still show their inbound channel.
+const channels = computed(() => {
+  if (Array.isArray(props.lead?.channels) && props.lead.channels.length) {
+    return props.lead.channels.map(c => ({
+      origin: c.origin,
+      handle: c.handle ?? '',
+      label: channelLabelFor(c.origin),
+      icon: channelIconFor(c.origin),
+    }));
+  }
+  if (props.lead?.channel_origin) {
+    return [
+      {
+        origin: props.lead.channel_origin,
+        handle: '',
+        label: channelLabel.value,
+        icon: channelIconFor(props.lead.channel_origin),
+      },
+    ];
+  }
+  return [];
+});
+
+const social = computed(() =>
+  Array.isArray(props.lead?.social)
+    ? props.lead.social.map(s => ({
+        platform: s.platform,
+        handle: s.handle,
+        url: s.url,
+        icon: channelIconFor(s.platform),
+      }))
+    : []
+);
+const hasSocial = computed(() => social.value.length > 0);
+
+const contact = computed(() => props.lead?.contact ?? null);
 const contactEmail = computed(() => contact.value?.email ?? null);
 const contactPhone = computed(
   () => contact.value?.phone_number ?? contact.value?.phone ?? null
@@ -118,13 +201,51 @@ const ownerAriaLabel = computed(() =>
 );
 
 // -----------------------------------------------------------------------
-// Stage history derived state
+// "Ver conversa" CTA
 // -----------------------------------------------------------------------
 
-const isLoading = computed(() => stageHistory.loading.value);
-const fetchError = computed(() => stageHistory.error.value);
-const entries = computed(() => stageHistory.entries.value);
-const truncated = computed(() => stageHistory.truncated.value);
+const conversationId = computed(() => props.lead?.conversation_id ?? null);
+const hasConversation = computed(() => conversationId.value != null);
+
+function openConversation() {
+  if (!hasConversation.value) return;
+  router.push({
+    name: 'inbox_conversation',
+    params: {
+      accountId: props.accountId,
+      conversation_id: conversationId.value,
+    },
+  });
+}
+
+// -----------------------------------------------------------------------
+// Timeline — inline (demo) takes precedence over lazy-fetched (live)
+// -----------------------------------------------------------------------
+
+const inlineTimeline = computed(() =>
+  Array.isArray(props.lead?.timeline) && props.lead.timeline.length
+    ? props.lead.timeline
+    : null
+);
+const usesInlineTimeline = computed(() => inlineTimeline.value !== null);
+
+const isLoading = computed(
+  () => !usesInlineTimeline.value && stageHistory.loading.value
+);
+const fetchError = computed(() =>
+  usesInlineTimeline.value ? null : stageHistory.error.value
+);
+const fetchedEntries = computed(() => stageHistory.entries.value);
+const truncated = computed(() =>
+  usesInlineTimeline.value ? false : stageHistory.truncated.value
+);
+
+// The entries the template renders: the inline demo timeline when present,
+// otherwise the lazily-fetched stage history.
+const entries = computed(() =>
+  usesInlineTimeline.value ? inlineTimeline.value : fetchedEntries.value
+);
+
 const isEmpty = computed(
   () => !isLoading.value && !fetchError.value && entries.value.length === 0
 );
@@ -134,6 +255,8 @@ const hasEntries = computed(
 
 // -----------------------------------------------------------------------
 // Lifecycle — load when drawer opens with a lead, reset when closed.
+// (Kept unconditional so live leads fetch; demo leads ignore the result and
+// render their inline timeline instead.)
 // -----------------------------------------------------------------------
 
 watch(
@@ -244,6 +367,72 @@ function handleRetry() {
       data-testid="lead-detail-drawer-body"
       :data-lead-id="lead.id"
     >
+      <!-- IDENTITY — avatar + name + company · role -->
+      <section
+        class="alg-lead-drawer__identity"
+        data-testid="drawer-identity-block"
+      >
+        <div class="alg-lead-drawer__identity-avatar">
+          <AlgAvatar src="" :name="leadName || '—'" size="lg" />
+        </div>
+        <div class="alg-lead-drawer__identity-text">
+          <p
+            class="alg-lead-drawer__identity-name"
+            data-testid="drawer-identity-name"
+          >
+            {{ leadName }}
+          </p>
+          <p
+            v-if="company || role"
+            class="alg-lead-drawer__identity-meta"
+            data-testid="drawer-identity-meta"
+          >
+            <span v-if="role">{{ role }}</span>
+            <span
+              v-if="role && company"
+              class="alg-lead-drawer__dot"
+              aria-hidden="true"
+              >{{ META_SEPARATOR }}</span
+            >
+            <span v-if="company" class="alg-lead-drawer__identity-company">{{
+              company
+            }}</span>
+          </p>
+        </div>
+      </section>
+
+      <!-- RESUMO -->
+      <section
+        v-if="summary"
+        class="alg-lead-drawer__block"
+        data-testid="drawer-summary-block"
+      >
+        <h3 class="alg-lead-drawer__block-label">
+          {{ t('ALGORYTHMO_CRM.DRAWER.BLOCK_LABEL.SUMMARY') }}
+        </h3>
+        <p class="alg-lead-drawer__summary" data-testid="drawer-summary-text">
+          {{ summary }}
+        </p>
+      </section>
+
+      <!-- QUALIFICAÇÃO -->
+      <section
+        v-if="hasQualification"
+        class="alg-lead-drawer__block"
+        data-testid="drawer-qualification-block"
+      >
+        <h3 class="alg-lead-drawer__block-label">
+          {{ t('ALGORYTHMO_CRM.DRAWER.BLOCK_LABEL.QUALIFICATION') }}
+        </h3>
+        <dl class="alg-lead-drawer__pairs">
+          <template v-for="(q, i) in qualification" :key="i">
+            <dt class="alg-lead-drawer__pair-label">{{ q.label }}</dt>
+            <dd class="alg-lead-drawer__pair-value">{{ q.value }}</dd>
+          </template>
+        </dl>
+      </section>
+
+      <!-- CONTATO -->
       <section
         class="alg-lead-drawer__block"
         data-testid="drawer-contact-block"
@@ -282,19 +471,79 @@ function handleRetry() {
         </dl>
       </section>
 
+      <!-- CANAIS -->
       <section class="alg-lead-drawer__block">
         <h3 class="alg-lead-drawer__block-label">
           {{ t('ALGORYTHMO_CRM.DRAWER.BLOCK_LABEL.CHANNEL') }}
         </h3>
-        <p
-          class="alg-lead-drawer__channel"
-          data-testid="drawer-channel-origin"
-          :data-channel="lead.channel_origin"
-        >
-          {{ channelLabel }}
-        </p>
+        <ul class="alg-lead-drawer__channels" data-testid="drawer-channels">
+          <li
+            v-for="(c, i) in channels"
+            :key="i"
+            class="alg-lead-drawer__channel-row"
+            :data-channel="c.origin"
+            :data-testid="i === 0 ? 'drawer-channel-origin' : undefined"
+          >
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <svg
+              class="alg-lead-drawer__channel-icon"
+              aria-hidden="true"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              v-html="c.icon"
+            />
+            <span class="alg-lead-drawer__channel-name">{{ c.label }}</span>
+            <span v-if="c.handle" class="alg-lead-drawer__channel-handle">{{
+              c.handle
+            }}</span>
+          </li>
+        </ul>
       </section>
 
+      <!-- SOCIAL -->
+      <section
+        v-if="hasSocial"
+        class="alg-lead-drawer__block"
+        data-testid="drawer-social-block"
+      >
+        <h3 class="alg-lead-drawer__block-label">
+          {{ t('ALGORYTHMO_CRM.DRAWER.BLOCK_LABEL.SOCIAL') }}
+        </h3>
+        <ul class="alg-lead-drawer__social" data-testid="drawer-social-links">
+          <li v-for="(s, i) in social" :key="i">
+            <a
+              class="alg-lead-drawer__social-link"
+              :href="s.url"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <!-- eslint-disable-next-line vue/no-v-html -->
+              <svg
+                class="alg-lead-drawer__channel-icon"
+                aria-hidden="true"
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                v-html="s.icon"
+              />
+              <span>{{ s.handle }}</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+
+      <!-- DONO -->
       <section class="alg-lead-drawer__block" data-testid="drawer-owner-block">
         <h3 class="alg-lead-drawer__block-label">
           {{ t('ALGORYTHMO_CRM.DRAWER.BLOCK_LABEL.OWNER') }}
@@ -346,6 +595,7 @@ function handleRetry() {
         </div>
       </section>
 
+      <!-- ATIVIDADE -->
       <section
         class="alg-lead-drawer__block"
         data-testid="drawer-stage-history-block"
@@ -462,6 +712,34 @@ function handleRetry() {
         </p>
       </section>
     </div>
+
+    <template #footer>
+      <button
+        type="button"
+        class="alg-lead-drawer__cta"
+        data-testid="drawer-open-conversation"
+        :disabled="!hasConversation"
+        :aria-disabled="!hasConversation"
+        @click="openConversation"
+      >
+        <svg
+          aria-hidden="true"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"
+          />
+        </svg>
+        {{ t('ALGORYTHMO_CRM.DRAWER.OPEN_CONVERSATION') }}
+      </button>
+    </template>
   </AlgDrawer>
 </template>
 
@@ -471,8 +749,57 @@ function handleRetry() {
   flex-direction: column;
   gap: 1.5rem;
   padding: 0.5rem 0;
+  color: var(--alg-fg-primary);
 }
 
+// IDENTITY ------------------------------------------------------------------
+.alg-lead-drawer__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--alg-border);
+}
+
+.alg-lead-drawer__identity-avatar {
+  flex: 0 0 auto;
+}
+
+.alg-lead-drawer__identity-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1875rem;
+}
+
+.alg-lead-drawer__identity-name {
+  margin: 0;
+  font-size: var(--alg-text-lg, 1.0625rem);
+  font-weight: var(--alg-weight-semibold, 600);
+  letter-spacing: var(--alg-tracking-snug, -0.014em);
+  color: var(--alg-fg-primary);
+  line-height: 1.25;
+}
+
+.alg-lead-drawer__identity-meta {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--alg-fg-tertiary);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.alg-lead-drawer__identity-company {
+  color: var(--alg-fg-secondary);
+}
+
+.alg-lead-drawer__dot {
+  color: var(--alg-fg-quaternary);
+}
+
+// BLOCKS --------------------------------------------------------------------
 .alg-lead-drawer__block {
   display: flex;
   flex-direction: column;
@@ -481,44 +808,109 @@ function handleRetry() {
 
 .alg-lead-drawer__block-label {
   margin: 0;
-  font-size: 0.6875rem;
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-2xs, 0.6875rem);
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--alg-text-tertiary, #6b7280);
+  color: var(--alg-fg-tertiary);
+}
+
+.alg-lead-drawer__summary {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--alg-fg-secondary);
 }
 
 .alg-lead-drawer__pairs {
   display: grid;
-  grid-template-columns: 5rem 1fr;
-  gap: 0.5rem 0.75rem;
+  grid-template-columns: minmax(5.5rem, auto) 1fr;
+  gap: 0.5rem 0.875rem;
   margin: 0;
 }
 
 .alg-lead-drawer__pair-label {
-  font-size: 0.75rem;
-  color: var(--alg-text-tertiary, #6b7280);
+  font-size: 0.8125rem;
+  color: var(--alg-fg-tertiary);
   margin: 0;
 }
 
 .alg-lead-drawer__pair-value {
   margin: 0;
   font-size: 0.875rem;
-  color: var(--alg-text-primary, #111827);
-  word-break: break-all;
+  color: var(--alg-fg-primary);
+  word-break: break-word;
 
   &.is-missing em {
-    color: var(--alg-text-muted, #9ca3af);
+    color: var(--alg-fg-tertiary);
     font-style: italic;
   }
 }
 
-.alg-lead-drawer__channel {
+// CANAIS --------------------------------------------------------------------
+.alg-lead-drawer__channels,
+.alg-lead-drawer__social {
+  list-style: none;
   margin: 0;
-  font-size: 0.875rem;
-  color: var(--alg-text-primary, #111827);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
+.alg-lead-drawer__channel-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--alg-fg-primary);
+}
+
+.alg-lead-drawer__channel-icon {
+  flex: 0 0 auto;
+  width: 0.8125rem;
+  height: 0.8125rem;
+  color: var(--alg-fg-tertiary);
+}
+
+.alg-lead-drawer__channel-name {
+  color: var(--alg-fg-secondary);
+}
+
+.alg-lead-drawer__channel-handle {
+  margin-left: auto;
+  font-family: var(--alg-font-mono);
+  font-size: 0.8125rem;
+  color: var(--alg-fg-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+// SOCIAL --------------------------------------------------------------------
+.alg-lead-drawer__social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--alg-text-brand);
+  text-decoration: none;
+  border-radius: var(--alg-radius-sm, 8px);
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--alg-ring-focus);
+  }
+
+  .alg-lead-drawer__channel-icon {
+    color: var(--alg-text-brand);
+  }
+}
+
+// DONO ----------------------------------------------------------------------
 .alg-lead-drawer__owner {
   display: flex;
   align-items: center;
@@ -532,13 +924,13 @@ function handleRetry() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 9999px;
+  border-radius: var(--alg-radius-pill, 9999px);
   overflow: hidden;
 
   &--unassigned {
-    background-color: var(--alg-bg-raised-hover, #f3f4f6);
-    border: 1px dashed var(--alg-border-strong, #9ca3af);
-    color: var(--alg-text-tertiary, #6b7280);
+    background-color: var(--alg-bg-tint-low);
+    border: 1px dashed var(--alg-border-strong);
+    color: var(--alg-fg-tertiary);
   }
 }
 
@@ -551,28 +943,25 @@ function handleRetry() {
 .alg-lead-drawer__owner-name {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--alg-text-primary, #111827);
+  color: var(--alg-fg-primary);
 
   &[data-owner-state='unassigned'] {
-    color: var(--alg-text-tertiary, #6b7280);
+    color: var(--alg-fg-tertiary);
     font-weight: 500;
   }
 }
 
 .alg-lead-drawer__owner-hint {
-  font-size: 0.75rem;
-  color: var(--alg-text-tertiary, #6b7280);
+  font-size: 0.8125rem;
+  color: var(--alg-fg-tertiary);
 }
 
-// ---------------------------------------------------------------------------
-// History timeline
-// ---------------------------------------------------------------------------
-
+// ATIVIDADE — timeline ------------------------------------------------------
 .alg-lead-drawer__history-list {
   list-style: none;
   margin: 0;
   padding: 0 0 0 0.5rem;
-  border-left: 1px solid var(--alg-border, #e5e7eb);
+  border-left: 1px solid var(--alg-border);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -592,20 +981,20 @@ function handleRetry() {
   top: 0.375rem;
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 9999px;
-  box-shadow: 0 0 0 3px var(--alg-bg-raised, #ffffff);
+  border-radius: var(--alg-radius-pill, 9999px);
+  box-shadow: 0 0 0 3px var(--alg-bg-raised);
 
   &.is-node-success {
-    background-color: var(--alg-color-success, #10b981);
+    background-color: var(--alg-color-success);
   }
   &.is-node-danger {
-    background-color: var(--alg-color-danger, #ef4444);
+    background-color: var(--alg-color-danger);
   }
   &.is-node-info {
-    background-color: var(--alg-color-info, #3b82f6);
+    background-color: var(--alg-color-info);
   }
   &.is-node-neutral {
-    background-color: var(--alg-color-neutral-7, #6b7280);
+    background-color: var(--alg-fg-tertiary);
   }
 }
 
@@ -617,11 +1006,8 @@ function handleRetry() {
   width: 1.25rem;
   height: 1.25rem;
   border-radius: 0.25rem;
-  background-color: var(
-    --alg-color-brand-primary-subtle,
-    rgba(20, 184, 166, 0.18)
-  );
-  color: var(--alg-color-brand-primary, #14b8a6);
+  background-color: var(--alg-color-brand-primary-subtle);
+  color: var(--alg-color-brand-primary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -637,40 +1023,37 @@ function handleRetry() {
 .alg-lead-drawer__history-primary {
   margin: 0;
   font-size: 0.875rem;
-  color: var(--alg-text-primary, #111827);
+  color: var(--alg-fg-primary);
   font-weight: 500;
 }
 
 .alg-lead-drawer__history-secondary {
   margin: 0.125rem 0 0;
-  font-size: 0.75rem;
-  color: var(--alg-text-tertiary, #6b7280);
+  font-size: 0.8125rem;
+  color: var(--alg-fg-tertiary);
 }
 
 .alg-lead-drawer__history-sep {
   margin: 0 0.25rem;
-  color: var(--alg-text-muted, #9ca3af);
+  color: var(--alg-fg-quaternary);
 }
 
 .alg-lead-drawer__history-empty,
 .alg-lead-drawer__history-truncated {
   margin: 0;
   padding: 1rem 0;
-  font-size: 0.75rem;
-  color: var(--alg-text-tertiary, #6b7280);
+  font-size: 0.8125rem;
+  color: var(--alg-fg-tertiary);
   text-align: center;
 }
 
 .alg-lead-drawer__history-truncated {
   padding-top: 0.75rem;
-  border-top: 1px dashed var(--alg-border, #e5e7eb);
+  border-top: 1px dashed var(--alg-border);
   margin-top: 0.75rem;
 }
 
-// ---------------------------------------------------------------------------
-// Loading skeleton
-// ---------------------------------------------------------------------------
-
+// Loading skeleton ----------------------------------------------------------
 .alg-lead-drawer__history-loading {
   display: flex;
   flex-direction: column;
@@ -687,7 +1070,7 @@ function handleRetry() {
 
 .alg-lead-drawer__skeleton-node,
 .alg-lead-drawer__skeleton-line {
-  background-color: var(--alg-bg-raised-hover, #f3f4f6);
+  background-color: var(--alg-bg-raised-hover);
   border-radius: 0.25rem;
   animation: alg-skel-pulse 1.2s ease-in-out infinite;
 }
@@ -695,7 +1078,7 @@ function handleRetry() {
 .alg-lead-drawer__skeleton-node {
   width: 1.25rem;
   height: 1.25rem;
-  border-radius: 9999px;
+  border-radius: var(--alg-radius-pill, 9999px);
 }
 
 .alg-lead-drawer__skeleton-line {
@@ -720,10 +1103,7 @@ function handleRetry() {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Error state
-// ---------------------------------------------------------------------------
-
+// Error state ---------------------------------------------------------------
 .alg-lead-drawer__history-error {
   display: flex;
   flex-direction: column;
@@ -736,7 +1116,7 @@ function handleRetry() {
 .alg-lead-drawer__error-text {
   margin: 0;
   font-size: 0.875rem;
-  color: var(--alg-text-secondary, #374151);
+  color: var(--alg-fg-secondary);
 }
 
 .alg-lead-drawer__retry {
@@ -744,7 +1124,7 @@ function handleRetry() {
   border: none;
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
-  color: var(--alg-color-brand-primary, #14b8a6);
+  color: var(--alg-text-brand);
   cursor: pointer;
   border-radius: 0.25rem;
 
@@ -755,6 +1135,45 @@ function handleRetry() {
   &:focus-visible {
     outline: none;
     box-shadow: var(--alg-ring-focus);
+  }
+}
+
+// "Ver conversa" CTA --------------------------------------------------------
+.alg-lead-drawer__cta {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--alg-border-strong);
+  border-radius: var(--alg-radius-md, 12px);
+  background-color: var(--alg-bg-tint-med);
+  color: var(--alg-fg-primary);
+  font-size: var(--alg-text-sm, 0.875rem);
+  font-weight: var(--alg-weight-medium, 500);
+  cursor: pointer;
+  transition:
+    background-color var(--alg-duration-base, 240ms) var(--alg-ease-cinematic),
+    border-color var(--alg-duration-base, 240ms) var(--alg-ease-cinematic);
+
+  svg {
+    color: var(--alg-color-brand-primary);
+  }
+
+  &:hover:not(:disabled) {
+    background-color: var(--alg-bg-tint-high);
+    border-color: var(--alg-border-hover);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--alg-ring-focus);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 }
 </style>

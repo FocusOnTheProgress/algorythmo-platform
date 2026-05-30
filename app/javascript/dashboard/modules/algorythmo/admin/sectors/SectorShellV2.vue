@@ -1,19 +1,36 @@
 <script setup>
-// algorythmo: Cinematic OS v2 — sector shell (plan 0007, M2-b).
-// Single source of truth for the sector page pattern: dense data Overview
-// (default tab) + operational sub-tabs + a full-width agent chat anchored at
-// the page foot. Replaces the single-view SectorDashboard (now @deprecated).
+// algorythmo: Cinematic OS v3 — sector shell (plan 0009, RODADA 3, F-B).
+// Single source of truth for the sector page pattern. The sector's specialist
+// agent is no longer a footer afterthought: it is a SOLID, FIXED HERO band at
+// the TOP of every sector — the orchestrator that speaks for the sector. Below
+// it sits the dense data Overview (default tab) + operational sub-tabs.
+//
+// Layout (top → bottom):
+//   1. <header>           — sector title
+//   2. HERO (sticky)      — Aurora-bordered agent band: planet identity +
+//                           heading + typed opening line + composer. Solid
+//                           (opaque elevated bg), never floating glass.
+//   3. ARIA tablist       — Overview + operational sub-tabs
+//   4. tab panels         — the dense data central + deep sub-views
 //
 // Three named slots feed the shell:
 //   #overview     — the dense data central (responsive grid of anchors)
 //   #subtab-<id>  — one slot per non-overview tab (deep view of that item)
-//   #agentChat    — the agent conversation surface (SectorAgentChat or peer)
+//   #agentChat    — the agent conversation surface (SectorAgentChat or peer),
+//                   rendered INSIDE the hero band under the heading
 //
-// The agent chat sits at the bottom in full width (NOT a 360px right rail —
-// that was the M6.0 pattern). A jump-to-chat affordance in the header scrolls
-// the chat into view. Tabs are native ARIA tabs with full keyboard support.
+// The hero is a SANCTIONED Aurora signature surface (the intelligence speaks
+// here): AlgAuroraBorder frames it, AlgPlanetAvatar gives it a per-sector
+// identity, AlgTypewriter (inside SectorAgentChat) voices its opening line.
+// No AlgAuroraOrb here — the orb belongs to Brain (max one per screen).
+//
+// Tabs are native ARIA tabs with full keyboard support.
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import {
+  AlgAuroraBorder,
+  AlgPlanetAvatar,
+} from 'dashboard/components-next/algorythmo';
 
 const props = defineProps({
   // i18n key for the sector title shown in the header.
@@ -22,14 +39,15 @@ const props = defineProps({
     required: true,
   },
   // i18n key for the agent chat heading. Resolves to
-  // "Fale com o agente do setor {nome}" (D4).
+  // "Fale com o agente do setor {nome}" (D4) and labels the hero band.
   chatHeadingKey: {
     type: String,
     required: true,
   },
-  // CSS modifier class on .alg-planet for the sector agent avatar in the
-  // jump-to-chat button (e.g. 'alg-planet--operations'). If omitted the
-  // button renders without a planet avatar.
+  // Per-sector planet seed for the hero agent avatar (AlgPlanetAvatar). The
+  // legacy CSS-class form (e.g. 'alg-planet--operations') is accepted and used
+  // verbatim as a deterministic seed, so each sector keeps a stable, distinct
+  // planet across sessions. If omitted the hero renders without a planet.
   planetClass: {
     type: String,
     default: null,
@@ -66,7 +84,6 @@ const { t } = useI18n();
 const activeTabId = ref(props.tabs[0].id);
 const isOverviewActive = computed(() => activeTabId.value === props.tabs[0].id);
 
-const chatAnchor = ref(null);
 // One ref per tab button so keyboard nav can move focus, not just selection.
 const tabButtons = ref([]);
 
@@ -117,57 +134,43 @@ function onTabKeydown(event, index) {
       break;
   }
 }
-
-function jumpToChat() {
-  // Respect prefers-reduced-motion for the programmatic scroll — the CSS
-  // transitions are already gated, but scrollIntoView behavior is JS-only.
-  const reducedMotion = window.matchMedia(
-    '(prefers-reduced-motion: reduce)'
-  ).matches;
-  chatAnchor.value?.scrollIntoView({
-    behavior: reducedMotion ? 'auto' : 'smooth',
-    block: 'start',
-  });
-}
 </script>
 
 <template>
   <div class="alg-shell">
     <header class="alg-shell__header">
       <h1 class="alg-shell__title">{{ t(titleKey) }}</h1>
-      <button
-        type="button"
-        class="alg-agent-anchor"
-        :aria-label="
-          t('ALGORYTHMO_ADMIN.SECTORS.JUMP_TO_CHAT', { name: t(titleKey) })
-        "
-        @click="jumpToChat"
-      >
-        <span
+    </header>
+
+    <!-- HERO: the sector's specialist orchestrator. Sticky + opaque so the
+         scrolling data grid never bleeds through. Aurora Border marks it as a
+         sanctioned surface where the intelligence speaks. -->
+    <AlgAuroraBorder
+      as="section"
+      class="alg-shell__chat"
+      radius="var(--alg-radius-2xl)"
+      intensity="normal"
+      glow
+      elevation="var(--alg-elevation-2)"
+      aria-labelledby="alg-shell-chat-heading"
+    >
+      <div class="alg-shell__hero">
+        <AlgPlanetAvatar
           v-if="planetClass"
-          class="alg-planet alg-planet--sm"
-          :class="planetClass"
+          class="alg-shell__hero-planet"
+          :seed="planetClass"
+          :name="t(titleKey)"
+          size="lg"
           aria-hidden="true"
         />
-        <span class="alg-agent-anchor__label">{{
-          t('ALGORYTHMO_ADMIN.SECTORS.AGENT_CTA')
-        }}</span>
-        <svg
-          class="alg-agent-anchor__arrow"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-      </button>
-    </header>
+        <div class="alg-shell__hero-body">
+          <h2 id="alg-shell-chat-heading" class="alg-shell__chat-heading">
+            {{ t(chatHeadingKey) }}
+          </h2>
+          <slot name="agentChat" />
+        </div>
+      </div>
+    </AlgAuroraBorder>
 
     <div
       class="alg-shell__tablist"
@@ -218,14 +221,5 @@ function jumpToChat() {
         <slot :name="`subtab-${tab.id}`" />
       </section>
     </template>
-
-    <section
-      ref="chatAnchor"
-      class="alg-shell__chat"
-      :aria-label="t(chatHeadingKey)"
-    >
-      <h2 class="alg-shell__chat-heading">{{ t(chatHeadingKey) }}</h2>
-      <slot name="agentChat" />
-    </section>
   </div>
 </template>

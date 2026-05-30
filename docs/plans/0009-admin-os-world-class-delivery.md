@@ -100,3 +100,48 @@ Fontes Geist self-host · library de planetas SVG · hero photography. Interim p
 
 ## 5. Bloqueador aberto
 - **Acesso ao ambiente vivo** (URL + login admin, ou confirmação de uso do ambiente publicado). Necessário pra QA baseline + G6 (fazer aparecer/deploy). Build não bloqueia; verificação e make-visible sim.
+
+---
+
+# RODADA 3 — lista do founder (2026-05-29)
+
+**Status:** PLANO SALVO, execução NÃO iniciada (leva de agentes cancelada — nenhum código alterado). Round 2 segue no ar e não-aprovado. Esta é a 3ª leva de correções, ainda mirando o padrão world-class.
+
+## R3.0 Decisões de produto já fechadas com o founder
+1. **Logo do cliente:** construir a funcionalidade de upload da logo nas configurações da conta (é feature enterprise do Chatwoot — reaproveitar se existir, senão criar; **exceção autorizada ao frontend-only**, pode tocar backend). Fallback = SEM logo, **nunca** Chatwoot.
+2. **Voz do agente:** só INTERFACE agora (ícone microfone, visual). Voz real fica para quando configurarmos os agentes.
+3. **CRM na sidebar:** mover para logo ABAIXO de "Conversations".
+
+## R3.1 Checklist priorizado (ondas por dependência) — espelha o task tracker da sessão
+
+**Gate de design (interno, antes do build em massa):** travar a direção visual dos 3 padrões NOVOS — agente na hero, aquário do Brain, painel do lead — contra as referências (`referências front end design/`: REF CRM + Ref design 2). Validar com designer + adversarial ANTES de replicar nos 8 setores (foi onde a rodada 2 reprovou).
+
+**Onda 1 — fundações que tocam tudo:**
+- **F-A** Purgar logo Chatwoot do topo + upload de logo do cliente (Account Settings).
+- **F-B** Agente sai do rodapé/flutuante → vai pra HERO de cada setor (espaço sólido/fixo, secretário-especialista orquestrador; mic/voz só visual; Typewriter + Aurora Border). Remover o botão "rolar pro final". *(muda a decisão da rodada 2 que pôs o agente no rodapé.)*
+- **F-C** Migrar Commercial pro padrão de setor: desdobramento DENTRO da página (não sub-abas na sidebar), mesmas fontes/UI, corrigir o active-state (hoje não marca como selecionado), purgar Chatwoot, ADICIONAR agente, REMOVER Bot/Labels/Inbox.
+- **F-D** Brain aquário world-class: esfera azul→magenta com PROFUNDIDADE e luz controlada, feixes CONECTANDO os cards ao redor (cerne que conecta, não corta), cards animados (cérebro vivo) com docs recentes/relevantes (ex: MVM), 2ª dobra = dropzone "anexar documentos da empresa" com Borda Brilhante Animada; remover history/config/settings (só Aquarium). **Item explicitamente reprovado na rodada 2.**
+
+**Onda 2 — CRM:**
+- **CRM-1/4/5** Card = estrutura IDÊNTICA à REF (nome destaque, avatar, pill de canal c/ ícone real, chip data + chip tempo-na-etapa); cabeçalho colorido por coluna + corpo diferenciado do fundo; "configure pipeline" escondido atrás de ícone de engrenagem (canto sup. direito).
+- **CRM-2/3** Clicar no card abre PAINEL do lead (perfil: nome/empresa/cargo/canais/redes/resumo/qualificação/timeline — dados de demo; o agente de nutrição vem depois) + botão "Ver conversa" (redirect).
+- **CRM-6** CRM abaixo de Conversations + ícone melhor (funil/pipeline).
+
+**Onda 3 — polish + global:**
+- **P-1** Varredura de bugs nos 7 setores: fontes fora de proporção, texto sobre texto, números soltos em cores divergentes, desalinhamento.
+- **P-2** Remover a barra de busca da sidebar.
+- **P-3** Help Center deixa de ser setor top-level (vive só como Customer Support no Commercial; sem settings/locales/categories/articles).
+- **P-4** Distribuir efeitos premium (Aurora Border / glow / typewriter) por mais superfícies, equilibrado.
+
+**Onda 4 — verificação + tradução:**
+- **QA** em browser real (contra as referências) + **adversarial** (caçar o que faltou) com evidência por item.
+- **T-1** Traduzir toda a plataforma para PT-BR (por último, com todas as strings novas já existindo).
+
+## R3.2 Aprendizados de ambiente desta sessão (CRÍTICO p/ a execução)
+1. **Subagentes em background/worktree NÃO conseguem Write/Edit aqui** — os 4 agentes da wave 1 só leram (análise excelente), mas todos foram bloqueados de escrever. Modelo viável: agentes como ANALISTAS paralelos + orquestrador (árvore principal, que TEM Write) aplica os diffs. OU rodar via dynamic-workflows (ver abaixo).
+2. **Worktrees nascem de `origin/<default>` ('fresh'), não do HEAD local** → ficam 19 commits atrás (um agente viu estado antigo do CRM). Corrigido: `worktree.baseRef: "head"` adicionado ao settings global (vale na próxima sessão).
+3. **`enableWorkflows: true`** adicionado ao settings global → habilita `/effort ultracode` (dynamic workflows). Requer **reiniciar o Claude Code** pra carregar; com Opus 4.8 (xhigh-capable) o ultracode passa a funcionar. Sob workflows + auto mode os agentes podem ganhar permissão de escrita.
+
+## R3.3 Dois caminhos pra retomar (decidir no início da próxima sessão)
+- **A) Rápido/confiável:** orquestrador aplica as mudanças direto da árvore principal, onda por onda, com QA em browser real entre as ondas. Não precisa reiniciar.
+- **B) Ultracode (pedido do founder):** reiniciar → `/effort ultracode` → re-orquestrar como dynamic-workflow com agentes paralelos capazes de escrever. Validar primeiro se o write dos subagentes funciona sob workflow; se não, cair pro plano A.

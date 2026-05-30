@@ -130,39 +130,37 @@ describe('SectorShellV2', () => {
     expect(tabs[1].attributes('tabindex')).toBe('-1');
   });
 
-  it('uses smooth scroll when prefers-reduced-motion is not set', async () => {
-    // jsdom does not implement scrollIntoView or matchMedia; stub both.
-    const scrollSpy = vi.fn();
-    wrapper.find('.alg-shell__chat').element.scrollIntoView = scrollSpy;
-    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }));
-    await wrapper.find('.alg-agent-anchor').trigger('click');
-    expect(scrollSpy).toHaveBeenCalledWith({
-      behavior: 'smooth',
-      block: 'start',
-    });
-    vi.unstubAllGlobals();
+  it('renders the agent hero ABOVE the tablist (top, not foot)', () => {
+    // F-B: the agent band is a fixed hero at the TOP. Assert DOM order — the
+    // chat band must precede the tablist so it renders above the dense KPI grid.
+    const html = wrapper.html();
+    const chatIndex = html.indexOf('alg-shell__chat');
+    const tablistIndex = html.indexOf('role="tablist"');
+    expect(chatIndex).toBeGreaterThan(-1);
+    expect(tablistIndex).toBeGreaterThan(-1);
+    expect(chatIndex).toBeLessThan(tablistIndex);
   });
 
-  it('uses instant scroll when prefers-reduced-motion: reduce is set', async () => {
-    const scrollSpy = vi.fn();
-    wrapper.find('.alg-shell__chat').element.scrollIntoView = scrollSpy;
-    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));
-    await wrapper.find('.alg-agent-anchor').trigger('click');
-    expect(scrollSpy).toHaveBeenCalledWith({
-      behavior: 'auto',
-      block: 'start',
+  it('renders the hero planet avatar when planetClass is provided', () => {
+    const withPlanet = mount(SectorShellV2, {
+      props: {
+        titleKey: 'SECTOR.OPERACOES.TITLE',
+        chatHeadingKey: 'SECTOR.OPERACOES.AGENT_CHAT_HEADING',
+        tabs: TABS,
+        planetClass: 'alg-planet--operations',
+      },
+      slots: {
+        overview: '<div class="test-overview">overview body</div>',
+        agentChat: '<div class="test-chat">chat body</div>',
+      },
+      global: {},
     });
-    vi.unstubAllGlobals();
+    expect(withPlanet.find('.alg-shell__hero-planet').exists()).toBe(true);
   });
 
-  it('labels the jump-to-chat button with the resolved sector name', () => {
-    // Assert on the full resolved string, not a substring of the raw key.
-    // A missing locale key would produce the raw key as the label; this
-    // assertion catches that regression (S1 class of bug).
-    const label = wrapper.find('.alg-agent-anchor').attributes('aria-label');
-    expect(label).toBe(
-      'ALGORYTHMO_ADMIN.SECTORS.JUMP_TO_CHAT [name=SECTOR.OPERACOES.TITLE]'
-    );
+  it('omits the hero planet avatar when planetClass is absent', () => {
+    // The shared story mounts without planetClass; the hero must stay null-safe.
+    expect(wrapper.find('.alg-shell__hero-planet').exists()).toBe(false);
   });
 
   describe('tabs prop validator', () => {

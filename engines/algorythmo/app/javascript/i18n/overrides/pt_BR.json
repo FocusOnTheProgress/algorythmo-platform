@@ -22,22 +22,21 @@
     "SECTORS": {
       "WATERMARK": "Dados de demonstração",
       "CHART_ERROR": "Gráfico indisponível",
-      "JUMP_TO_CHAT": "Pular pro chat com o agente do setor {name}",
       "TABLIST_ARIA": "Seções do setor {name}",
       "CRUMB_ROOT": "Gestão",
       "SUBAREAS_HEADER": "Sub-áreas",
       "SUBAREAS_COUNT": "{count} áreas",
-      "AGENT_CTA": "Falar com o agente",
       "AGENT": {
         "ARIA_LABEL": "Painel do agente do setor",
         "FORM_ARIA": "Enviar mensagem ao agente",
         "INPUT_ARIA": "Mensagem para o agente",
         "NAME_SUFFIX": "· agente",
         "STATUS_OFFLINE": "offline",
-        "EMPTY": "Em breve este agente vai operar com dados reais da sua empresa.",
+        "OPENING": "Sou o agente de {name} — seu especialista neste setor. Pode me perguntar o que quiser; em breve eu atuo com os dados reais da sua empresa.",
         "PLACEHOLDER": "Escreva sua pergunta…",
         "HINT": "⌘⏎ para enviar",
-        "SEND_ARIA": "Enviar mensagem"
+        "SEND_ARIA": "Enviar mensagem",
+        "MIC_ARIA": "Falar com o agente por voz"
       },
       "FINANCE": {
         "HEADING": "Finance",
