@@ -1,6 +1,6 @@
-// algorythmo: M5 placeholder route — C-Levels (Estratégia block)
+// algorythmo: Stream E route — C-Levels "Sala de Conselho IA" (Estratégia block)
 import { frontendURL } from 'dashboard/helper/URLHelper';
-import CLevelsPlaceholder from './CLevelsPlaceholder.vue';
+import CLevelsBoardroom from './CLevelsBoardroom.vue';
 
 export default {
   routes: [
@@ -10,7 +10,7 @@ export default {
       meta: {
         permissions: ['administrator'],
       },
-      component: CLevelsPlaceholder,
+      component: CLevelsBoardroom,
     },
   ],
 };
