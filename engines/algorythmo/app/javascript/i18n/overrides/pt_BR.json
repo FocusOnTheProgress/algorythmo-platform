@@ -31,12 +31,10 @@
         "FORM_ARIA": "Enviar mensagem ao agente",
         "INPUT_ARIA": "Mensagem para o agente",
         "NAME_SUFFIX": "· agente",
-        "STATUS_OFFLINE": "offline",
         "OPENING": "Sou o agente de {name} — seu especialista neste setor. Pode me perguntar o que quiser; em breve eu atuo com os dados reais da sua empresa.",
         "PLACEHOLDER": "Escreva sua pergunta…",
         "HINT": "⌘⏎ para enviar",
-        "SEND_ARIA": "Enviar mensagem",
-        "MIC_ARIA": "Falar com o agente por voz"
+        "MIC_ARIA": "Enviar mensagem ou falar com o agente"
       },
       "FINANCE": {
         "HEADING": "Financeiro",

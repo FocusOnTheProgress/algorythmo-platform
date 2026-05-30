@@ -1300,33 +1300,28 @@
   min-width: 0;
 }
 
-.alg-agent__status {
-  display: inline-flex;
+// algorythmo: A7 — centred agent surface. The chat does NOT span the full hero
+// width; it lives in a measured column, centre-aligned, so the agent reads as a
+// focused command-room conversation, not a full-bleed strip. The opening line
+// and composer both centre within this column.
+.alg-agent--centered {
   align-items: center;
-  gap: var(--alg-space-1);
-  margin: 0;
-  font-family: var(--alg-font-mono);
-  font-size: 10px;
-  color: var(--alg-fg-tertiary);
-  letter-spacing: var(--alg-tracking-wide);
-}
-
-.alg-agent__status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--alg-fg-quaternary);
-}
-
-.alg-agent__status-label {
-  text-transform: uppercase;
-  letter-spacing: var(--alg-tracking-widest);
+  text-align: center;
+  width: 100%;
+  max-width: 42rem;
+  margin-inline: auto;
 }
 
 .alg-agent__messages {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  width: 100%;
+}
+
+// Centre the message column content within the centred variant.
+.alg-agent--centered .alg-agent__messages {
+  align-items: center;
 }
 
 .alg-agent__list {
@@ -1369,7 +1364,11 @@
   line-height: var(--alg-leading-relaxed);
   color: var(--alg-fg-primary);
   letter-spacing: var(--alg-tracking-snug);
-  max-width: 64ch;
+  max-width: 56ch;
+}
+
+.alg-agent--centered .alg-agent__opening {
+  text-align: center;
 }
 
 .alg-agent__form {
@@ -1377,6 +1376,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--alg-space-2);
+  width: 100%;
 }
 
 .alg-agent__input {
@@ -1385,7 +1385,8 @@
   background: var(--alg-bg-tint-low);
   border: 1px solid var(--alg-border-hover);
   border-radius: var(--alg-radius-md);
-  padding: var(--alg-space-3) 5rem var(--alg-space-3) var(--alg-space-4);
+  // Right padding clears the enlarged mic in the corner.
+  padding: var(--alg-space-3) 3.75rem var(--alg-space-3) var(--alg-space-4);
   font-family: var(--alg-font-sans);
   font-size: var(--alg-text-sm);
   line-height: var(--alg-leading-normal);
@@ -1405,38 +1406,38 @@
   }
 }
 
-// Action cluster pinned to the right edge of the input (mic + send).
-.alg-agent__actions {
+// algorythmo: A7 — the single composer affordance: an ENLARGED microphone in the
+// bottom-right corner of the input. 44px touch target (Apple HIG / WCAG 2.5.5),
+// a quiet hairline that warms to brand on hover — the "speak to the agent"
+// gesture as the focal control, not a tiny twin-button cluster.
+.alg-agent__mic {
   position: absolute;
-  top: var(--alg-space-2);
   right: var(--alg-space-2);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--alg-space-1);
-}
-
-// Shared composer-action button shape (mic + send). Mixin (not @extend) to
-// match the codebase convention (@include alg-glass …).
-@mixin alg-agent-action {
+  bottom: var(--alg-space-2);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  background: transparent;
+  width: 44px;
+  height: 44px;
+  background: var(--alg-bg-tint-low);
   border: 1px solid var(--alg-border-hover);
-  border-radius: var(--alg-radius-sm);
+  border-radius: var(--alg-radius-md);
   color: var(--alg-fg-secondary);
   cursor: pointer;
   transition:
     border-color var(--alg-duration-fast) var(--alg-ease-cinematic),
     color var(--alg-duration-fast) var(--alg-ease-cinematic),
-    background-color var(--alg-duration-fast) var(--alg-ease-cinematic);
+    background-color var(--alg-duration-fast) var(--alg-ease-cinematic),
+    transform var(--alg-duration-instant) var(--alg-ease-cinematic);
 
-  &:hover:not(:disabled) {
+  &:hover {
     color: var(--alg-fg-primary);
-    border-color: var(--alg-border-strong);
+    border-color: var(--alg-color-brand-primary);
     background: var(--alg-bg-tint-med);
+  }
+
+  &:active {
+    transform: scale(0.96);
   }
 
   &:focus-visible {
@@ -1445,32 +1446,13 @@
   }
 }
 
-.alg-agent__mic {
-  @include alg-agent-action;
-}
-
 .alg-agent__mic-icon {
   display: block;
 }
 
-.alg-agent__send {
-  @include alg-agent-action;
-  color: var(--alg-fg-primary);
-
-  &:disabled {
-    color: var(--alg-fg-quaternary);
-    border-color: var(--alg-border);
-    cursor: not-allowed;
-  }
-}
-
-.alg-agent__send-icon {
-  display: block;
-  transform: translateX(-1px);
-}
-
 .alg-agent__hint {
   display: block;
+  text-align: center;
   font-family: var(--alg-font-mono);
   font-size: 10px;
   color: var(--alg-fg-tertiary);
@@ -1606,41 +1588,45 @@
   }
 }
 
-// Inner layout: planet identity (left) + agent body (heading + voice +
-// composer). Compact band, not a full-screen splash.
+// algorythmo: A7 — CENTERED hero. The agent is the centre of gravity of the
+// band: planet identity stacked above a centre-aligned heading + voice +
+// composer, all in a measured centred column. The chat no longer spans the full
+// top edge-to-edge; it is focused and composed (Apple restraint, Ref 1/2).
 .alg-shell__hero {
   display: flex;
-  align-items: flex-start;
-  gap: var(--alg-space-5);
-  padding: var(--alg-space-5) var(--alg-space-6);
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--alg-space-4);
+  padding: var(--alg-space-6) var(--alg-space-6);
 
   @media (max-width: 768px) {
-    flex-direction: column;
     gap: var(--alg-space-4);
-    padding: var(--alg-space-4);
+    padding: var(--alg-space-5) var(--alg-space-4);
   }
 }
 
 .alg-shell__hero-planet {
-  margin-top: 2px;
   flex-shrink: 0;
 }
 
 .alg-shell__hero-body {
   display: flex;
   flex-direction: column;
-  gap: var(--alg-space-3);
+  align-items: center;
+  gap: var(--alg-space-4);
   min-width: 0;
-  flex: 1;
+  width: 100%;
 }
 
 .alg-shell__chat-heading {
   font-family: var(--alg-font-display);
-  font-size: var(--alg-text-md);
+  font-size: var(--alg-text-lg);
   font-weight: var(--alg-weight-medium);
-  letter-spacing: var(--alg-tracking-snug);
+  letter-spacing: var(--alg-tracking-tight);
   color: var(--alg-fg-primary);
   margin: 0;
+  max-width: 36ch;
 }
 
 @media (prefers-reduced-motion: reduce) {

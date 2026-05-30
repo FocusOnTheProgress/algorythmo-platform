@@ -69,4 +69,26 @@ describe('setColorTheme', () => {
       'color-scheme: dark;'
     );
   });
+
+  // algorythmo: A4 — the toggle must drive BOTH systems. Light sets
+  // data-theme='white' (Cinematic OS paper variant); dark/auto sets
+  // data-theme='dark' so the white tokens are released. Without this, the
+  // Algorythmo surfaces never followed the toggle (white mode was broken).
+  it("should set data-theme='white' on <html> when light is chosen", () => {
+    LocalStorage.get.mockReturnValue('light');
+    setColorTheme();
+    expect(document.documentElement.getAttribute('data-theme')).toBe('white');
+  });
+
+  it("should set data-theme='dark' on <html> when dark is chosen", () => {
+    LocalStorage.get.mockReturnValue('dark');
+    setColorTheme();
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+  });
+
+  it("should set data-theme='dark' on <html> when auto resolves to dark", () => {
+    LocalStorage.get.mockReturnValue('auto');
+    setColorTheme();
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+  });
 });

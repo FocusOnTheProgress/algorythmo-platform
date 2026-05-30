@@ -225,28 +225,69 @@
     transparent 100%
   );
 
+  // algorythmo: ICE palette — the Aurora Border (§6.6) is re-toned from the
+  // magenta/violet Orb gradient to a COOL ice register (cold whites + glacial
+  // blues). The border marks "where the living intelligence speaks/ingests", and
+  // an icy comet reads cleaner and more premium against the deep-black canvas
+  // than warm magenta on chrome-adjacent surfaces. The magenta --alg-aurora-*
+  // stays the Orb's identity; ICE is the border's. (Founder direction, A5.)
+  --alg-ice-1: oklch(0.98 0.012 220);   // near-white, faint cool cast — arc peak
+  --alg-ice-2: oklch(0.86 0.075 225);   // glacial blue-white — arc body
+  --alg-ice-3: oklch(0.66 0.110 235);   // deep cold blue — arc tail / ring base
+
   // algorythmo: aurora-glow — outer luminance giving the Aurora Orb its volume
-  // (a lit object, not a flat disc) and the soft halo behind sanctioned
-  // signature surfaces (§6.6). Two layers: tight magenta core + wide violet
-  // ambient. Sacred: Aurora Orb + §6.6 signature surfaces only — never chrome.
+  // (a lit object, not a flat disc). Magenta — the Orb keeps its warm identity.
+  // Sacred: Aurora Orb only.
   --alg-aurora-glow:
     0 0 48px 6px color-mix(in oklch, var(--alg-aurora-1), transparent 66%),
     0 0 104px 26px color-mix(in oklch, var(--alg-aurora-3), transparent 82%);
 
-  // algorythmo: aurora-border — conic sweep for AlgAuroraBorder (§6.6). A dim
-  // violet ring with ONE bright magenta arc (~32% of the perimeter) that drifts
-  // slowly — a comet, never a full rainbow ring. Rotated via --alg-aurora-angle
-  // (registered + animated in the component). Sacred: §6.6 signature surfaces.
+  // algorythmo: aurora-border glow — the §6.6 border's soft outer halo, in ICE.
+  // Cool, tight, low — luminance behind the framed surface, never a magenta tint.
+  // Deliberately restrained so the TRAVELLING ARC on the hairline reads as the
+  // event, not the static halo behind it (the round-2 "glow behind" defect).
+  --alg-aurora-border-glow:
+    0 0 24px 0 color-mix(in oklch, var(--alg-ice-2), transparent 80%),
+    0 0 64px 8px color-mix(in oklch, var(--alg-ice-3), transparent 90%);
+
+  // algorythmo: aurora-border — the conic sweep for AlgAuroraBorder (§6.6).
+  //
+  // A5 ROOT CAUSE (beam not moving): this token is `conic-gradient(from <angle>)`
+  // where <angle> was meant to animate via the registered --alg-aurora-angle
+  // custom property. In practice the property registration (@property) lives in
+  // the component's *scoped* <style>; Vue's scoped-style transform does not
+  // reliably preserve a global @property at-rule, so the browser treated
+  // --alg-aurora-angle as an UNregistered (unanimatable) custom property. The
+  // keyframe 0deg→360deg then jumped discretely, and since a conic gradient is
+  // periodic (0deg and 360deg paint the IDENTICAL image) the arc never appeared
+  // to travel — it read as a static ring + the glow-behind.
+  //
+  // Fix: the gradient no longer references an animated angle at all. It is a
+  // FIXED-orientation conic (a dim ice ring with ONE bright arc occupying ~26%
+  // of the perimeter). The component physically `transform: rotate()`s the layer
+  // that carries it — a transform animation is bulletproof, WAAPI/GPU-driven,
+  // and needs no @property. The bright arc visibly TRAVELS the perimeter.
   --alg-aurora-border: conic-gradient(
-    from var(--alg-aurora-angle, 0deg),
+    from 0deg,
     transparent 0%,
-    color-mix(in oklch, var(--alg-aurora-3), transparent 55%) 14%,
-    color-mix(in oklch, var(--alg-aurora-2), transparent 25%) 26%,
-    var(--alg-aurora-1) 32%,
-    color-mix(in oklch, var(--alg-aurora-2), transparent 25%) 38%,
-    color-mix(in oklch, var(--alg-aurora-3), transparent 55%) 50%,
-    transparent 70%,
+    transparent 8%,
+    color-mix(in oklch, var(--alg-ice-3), transparent 55%) 13%,
+    var(--alg-ice-2) 18%,
+    var(--alg-ice-1) 21%,
+    var(--alg-ice-1) 23%,
+    var(--alg-ice-2) 26%,
+    color-mix(in oklch, var(--alg-ice-3), transparent 55%) 31%,
+    transparent 38%,
     transparent 100%
+  );
+
+  // Dim ice ring painted UNDER the travelling arc so the frame stays present
+  // (alive through colour) even where the arc isn't — and so reduced-motion
+  // parking still reads as a border, not a gap.
+  --alg-aurora-border-base: conic-gradient(
+    from 0deg,
+    color-mix(in oklch, var(--alg-ice-3), transparent 86%) 0%,
+    color-mix(in oklch, var(--alg-ice-3), transparent 80%) 100%
   );
 
   // ---------------------------------------------------------------------------
