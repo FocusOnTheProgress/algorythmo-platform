@@ -5,7 +5,8 @@ import { useMapGetter } from 'dashboard/composables/store';
 import { useI18n } from 'vue-i18n';
 import ButtonNext from 'next/button/Button.vue';
 import Icon from 'next/icon/Icon.vue';
-import Logo from 'next/icon/Logo.vue';
+// algorythmo: A1 — always-rendering inline brand mark (the collapsed trigger).
+import AlgBrandMark from 'dashboard/components-next/algorythmo/AlgBrandMark.vue';
 
 import {
   DropdownContainer,
@@ -56,12 +57,12 @@ const emitNewAccount = () => {
       <!-- Collapsed view: Logo trigger -->
       <button
         v-if="isCollapsed"
-        class="grid flex-shrink-0 place-content-center p-2 rounded-lg cursor-pointer hover:bg-n-alpha-1"
+        class="grid flex-shrink-0 place-content-center p-2 rounded-lg cursor-pointer text-n-brand hover:bg-n-alpha-1"
         :class="{ 'bg-n-alpha-1': isOpen }"
         :title="currentAccount.name"
         @click="toggle"
       >
-        <Logo class="size-7" />
+        <AlgBrandMark class="size-6" decorative />
       </button>
       <!-- Expanded view: Account name trigger -->
       <button

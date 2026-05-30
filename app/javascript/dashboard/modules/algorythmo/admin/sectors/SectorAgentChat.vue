@@ -40,29 +40,26 @@ function submit() {
   draft.value = '';
 }
 
-const canSubmit = computed(() => draft.value.trim().length > 0);
-
+// Enter submits (Shift+Enter inserts a newline). Cmd/Ctrl+Enter also submits so
+// muscle memory from other composers still works.
 function onKeydown(event) {
-  const isCmdEnter = event.key === 'Enter' && (event.metaKey || event.ctrlKey);
-  if (isCmdEnter) {
-    event.preventDefault();
-    submit();
-  }
+  if (event.key !== 'Enter') return;
+  if (event.shiftKey) return; // newline
+  event.preventDefault();
+  submit();
 }
 </script>
 
 <template>
+  <!-- algorythmo: A7 — the agent surface is CENTERED (not full-span) and its
+       information is centre-aligned: the typed opening line and the composer
+       live in a measured column. Clutter removed (the OFFLINE status row, the
+       twin send/"+" affordance). The single bottom-corner affordance is an
+       ENLARGED microphone — the command-room "speak to the agent" gesture. -->
   <div
-    class="alg-agent"
+    class="alg-agent alg-agent--centered"
     :aria-label="t('ALGORYTHMO_ADMIN.SECTORS.AGENT.ARIA_LABEL')"
   >
-    <p class="alg-agent__status">
-      <span class="alg-agent__status-dot" aria-hidden="true" />
-      <span class="alg-agent__status-label">{{
-        t('ALGORYTHMO_ADMIN.SECTORS.AGENT.STATUS_OFFLINE')
-      }}</span>
-    </p>
-
     <div class="alg-agent__messages">
       <ul v-if="messages.length" class="alg-agent__list">
         <li
@@ -93,76 +90,54 @@ function onKeydown(event) {
         rows="1"
         :placeholder="t('ALGORYTHMO_ADMIN.SECTORS.AGENT.PLACEHOLDER')"
         :aria-label="t('ALGORYTHMO_ADMIN.SECTORS.AGENT.INPUT_ARIA')"
-        aria-keyshortcuts="Meta+Enter Control+Enter"
+        aria-keyshortcuts="Enter Meta+Enter Control+Enter"
         aria-describedby="alg-agent-hint"
         @keydown="onKeydown"
       />
-      <div class="alg-agent__actions">
-        <!-- Voice affordance — VISUAL ONLY. No getUserMedia / MediaRecorder;
-             real capture ships with the live transport. -->
-        <button
-          type="button"
-          class="alg-agent__mic"
-          :aria-label="t('ALGORYTHMO_ADMIN.SECTORS.AGENT.MIC_ARIA')"
+      <!-- The single composer affordance: an ENLARGED microphone in the bottom
+           corner. Submitting a typed draft sends it (Enter / the mic acts as the
+           submit control); with no draft it is the voice gesture. VISUAL ONLY —
+           no getUserMedia / MediaRecorder until the live transport. -->
+      <button
+        type="submit"
+        class="alg-agent__mic"
+        :aria-label="t('ALGORYTHMO_ADMIN.SECTORS.AGENT.MIC_ARIA')"
+      >
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          class="alg-agent__mic-icon"
         >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            class="alg-agent__mic-icon"
-          >
-            <rect
-              x="9"
-              y="3"
-              width="6"
-              height="11"
-              rx="3"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-            />
-            <path
-              d="M6 11a6 6 0 0 0 12 0"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-            />
-            <line
-              x1="12"
-              y1="17"
-              x2="12"
-              y2="21"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-            />
-          </svg>
-        </button>
-        <button
-          type="submit"
-          class="alg-agent__send"
-          :disabled="!canSubmit"
-          :aria-label="t('ALGORYTHMO_ADMIN.SECTORS.AGENT.SEND_ARIA')"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            aria-hidden="true"
-            class="alg-agent__send-icon"
-          >
-            <path
-              d="M1.5 7 L12.5 1.5 L7 12.5 L6 8 L1.5 7 Z"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.25"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-      </div>
+          <rect
+            x="9"
+            y="3"
+            width="6"
+            height="11"
+            rx="3"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+          />
+          <path
+            d="M6 11a6 6 0 0 0 12 0"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+          <line
+            x1="12"
+            y1="17"
+            x2="12"
+            y2="21"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
       <span id="alg-agent-hint" class="alg-agent__hint">
         {{ t('ALGORYTHMO_ADMIN.SECTORS.AGENT.HINT') }}
       </span>
