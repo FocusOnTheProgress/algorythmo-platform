@@ -407,7 +407,17 @@
     "UPDATE_CHATWOOT": "An update {latestChatwootVersion} for Algorythmo OS is available. Please update your instance.",
     "PAYMENT_PENDING": "Your payment is pending. Please update your payment information to continue using Algorythmo OS",
     "UPGRADE": "Upgrade to continue using Algorythmo OS",
-    "LIMITS_UPGRADE": "Your account has exceeded the usage limits, please upgrade your plan to continue using Algorythmo OS"
+    "LIMITS_UPGRADE": "Your account has exceeded the usage limits, please upgrade your plan to continue using Algorythmo OS",
+    "ACCOUNT_LOGO": {
+      "LABEL": "Logo",
+      "HELP": "Your company logo appears in the sidebar and account switcher. Use a square PNG or SVG; transparent backgrounds look best.",
+      "UPLOAD": "Upload logo",
+      "REPLACE": "Replace logo",
+      "REMOVE": "Remove",
+      "PREVIEW_ALT": "Account logo preview",
+      "REMOVE_SUCCESS": "Logo removed.",
+      "REMOVE_ERROR": "Could not remove the logo. Please try again."
+    }
   },
   "HELP_CENTER": {
     "CREATE_PORTAL_DIALOG": {

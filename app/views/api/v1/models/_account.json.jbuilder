@@ -21,6 +21,9 @@ if resource.custom_attributes.present?
   end
 end
 json.domain @account.domain
+# Uploaded brand logo (Active Storage attachment), distinct from the
+# `custom_attributes.logo` URL string populated by onboarding enrichment.
+json.logo_url @account.logo_url
 json.features @account.enabled_features
 json.algorythmo_cut_flags @account.all_algorythmo_cut_flags
 json.id @account.id

@@ -12,6 +12,19 @@ const findRecordById = ($state, id) =>
 
 const TRIAL_PERIOD_DAYS = 15;
 
+// algorythmo: serialize an account update as multipart so a logo File survives
+// the wire. Skip null/undefined so we never blank out fields the user didn't
+// touch; the File is appended as-is for ActiveStorage to attach.
+const buildAccountFormData = updateObj => {
+  const formData = new FormData();
+  Object.keys(updateObj).forEach(key => {
+    const value = updateObj[key];
+    if (value === null || value === undefined) return;
+    formData.append(key, value);
+  });
+  return formData;
+};
+
 const state = {
   records: [],
   uiFlags: {
@@ -100,7 +113,26 @@ export const actions = {
     }
 
     try {
-      const response = await AccountAPI.update('', updateObj);
+      // algorythmo: when the client uploads a logo, the payload carries a File,
+      // which JSON can't serialize — switch to multipart/FormData (same pattern
+      // used for avatar uploads). axios sets the multipart content-type from the
+      // FormData body automatically. A plain object payload still goes as JSON.
+      const payload =
+        updateObj.logo instanceof File
+          ? buildAccountFormData(updateObj)
+          : updateObj;
+      const response = await AccountAPI.update('', payload);
+      commit(types.default.EDIT_ACCOUNT, response.data);
+      commit(types.default.SET_ACCOUNT_UI_FLAG, { isUpdating: false });
+    } catch (error) {
+      commit(types.default.SET_ACCOUNT_UI_FLAG, { isUpdating: false });
+      throw new Error(error);
+    }
+  },
+  removeLogo: async ({ commit }) => {
+    commit(types.default.SET_ACCOUNT_UI_FLAG, { isUpdating: true });
+    try {
+      const response = await AccountAPI.deleteLogo();
       commit(types.default.EDIT_ACCOUNT, response.data);
       commit(types.default.SET_ACCOUNT_UI_FLAG, { isUpdating: false });
     } catch (error) {

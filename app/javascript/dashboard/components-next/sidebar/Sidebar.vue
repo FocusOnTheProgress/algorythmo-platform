@@ -3,7 +3,6 @@ import { h, ref, computed, onMounted, watch } from 'vue';
 import { provideSidebarContext, useSidebarResize } from './provider';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useAdmin } from 'dashboard/composables/useAdmin';
-import { useKbd } from 'dashboard/composables/utils/useKbd';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
@@ -44,7 +43,6 @@ const { accountScopedRoute, isOnChatwootCloud } = useAccount();
 // algorythmo: M5 — gate Admin OS section headers so agents don't see orphans
 const { isAdmin } = useAdmin();
 const store = useStore();
-const searchShortcut = useKbd([`$mod`, 'k']);
 const { t } = useI18n();
 
 const isACustomBrandedInstance = useMapGetter(
@@ -342,45 +340,11 @@ const closeMobileSidebar = () => {
   emit('closeMobileSidebar');
 };
 
-// algorythmo: M2-c — D10: Label and Inbox report tabs are hidden from the
-// Commercial sidebar via algorythmo_cut_reports_labels / _reports_inbox
-// (cut ACTIVE = hidden). Routes stay live and URL-reachable; only the sidebar
-// entries drop. Default OFF = visible, per memory project_cut_flag_convention.
-const newReportRoutes = () => [
-  {
-    name: 'Reports Agent',
-    label: t('SIDEBAR.REPORTS_AGENT'),
-    to: accountScopedRoute('agent_reports_index'),
-    activeOn: ['agent_reports_show'],
-  },
-  ...(algorythmoCutHidden.value.reports_labels
-    ? []
-    : [
-        {
-          name: 'Reports Label',
-          label: t('SIDEBAR.REPORTS_LABEL'),
-          to: accountScopedRoute('label_reports_index'),
-        },
-      ]),
-  ...(algorythmoCutHidden.value.reports_inbox
-    ? []
-    : [
-        {
-          name: 'Reports Inbox',
-          label: t('SIDEBAR.REPORTS_INBOX'),
-          to: accountScopedRoute('inbox_reports_index'),
-          activeOn: ['inbox_reports_show'],
-        },
-      ]),
-  {
-    name: 'Reports Team',
-    label: t('SIDEBAR.REPORTS_TEAM'),
-    to: accountScopedRoute('team_reports_index'),
-    activeOn: ['team_reports_show'],
-  },
-];
-
-const reportRoutes = computed(() => newReportRoutes());
+// algorythmo: rodada 3 — F-C: the Commercial sector was flattened into a single
+// flat sidebar entry (the report sub-areas now live as in-page SectorShellV2
+// tabs), so the newReportRoutes()/reportRoutes helpers that fed the old
+// expandable Commercial group were removed. The underlying report routes
+// (agent/label/inbox/team) stay registered and URL-reachable.
 
 // algorythmo: M5 sidebar restructure
 // menuItems arranged into 4 blocks: Operacional (no header) / GESTÃO / ESTRATÉGIA / INTELIGÊNCIA.
@@ -390,19 +354,8 @@ const reportRoutes = computed(() => newReportRoutes());
 const menuItems = computed(() => {
   return [
     // ── OPERACIONAL block (no section header) ────────────────────────────────
-    // algorythmo: M5 sidebar restructure — Operacional block: CRM, Contacts, Companies, Conversations
-    // algorythmo: feature-gate algorythmo_crm
-    ...(hasAlgorythmoCrm.value
-      ? [
-          {
-            name: 'AlgorythmoCrm',
-            icon: 'i-lucide-kanban',
-            label: t('ALGORYTHMO_CRM.SIDEBAR.CRM'),
-            activeOn: ['algorythmo_crm_kanban'],
-            to: accountScopedRoute('algorythmo_crm_kanban'),
-          },
-        ]
-      : []),
+    // algorythmo: M5 sidebar restructure — Operacional block: Contacts, Companies, Conversations, CRM
+    // algorythmo: rodada 3 — CRM-6: CRM entry MOVED below Conversation (was head of block).
     {
       name: 'Contacts',
       label: t('SIDEBAR.CONTACTS'),
@@ -586,6 +539,23 @@ const menuItems = computed(() => {
       ],
     },
 
+    // algorythmo: rodada 3 — CRM-6: CRM lives directly below Conversation, as a
+    // pipeline/funnel surface for the operational team. Icon is a funnel glyph
+    // (i-lucide-filter) to read as "pipeline", not a generic kanban board.
+    // Gate (hasAlgorythmoCrm) and route are unchanged.
+    // algorythmo: feature-gate algorythmo_crm
+    ...(hasAlgorythmoCrm.value
+      ? [
+          {
+            name: 'AlgorythmoCrm',
+            icon: 'i-lucide-filter',
+            label: t('ALGORYTHMO_CRM.SIDEBAR.CRM'),
+            activeOn: ['algorythmo_crm_kanban'],
+            to: accountScopedRoute('algorythmo_crm_kanban'),
+          },
+        ]
+      : []),
+
     // ── GESTÃO / MANAGEMENT block ─────────────────────────────────────────────
     // algorythmo: M2-a — D1 order: Commercial / Marketing / Operations / Procurement
     //             / HR / Facilities / Finance / Administration.
@@ -606,59 +576,24 @@ const menuItems = computed(() => {
 
     // ── 1. Commercial (was "Relatórios Comerciais") ───────────────────────────
     // algorythmo: M2-a — D1: Commercial is 1st in Management. D10: cut-flag gates entire sector.
-    // D11: label now uses SIDEBAR.ALG_SECTOR_COMMERCIAL ("Commercial") for sidebar only;
-    //      old SIDEBAR.RELATORIOS_COMERCIAIS key preserved in i18n as alias.
+    // algorythmo: rodada 3 — F-C: FLATTENED. The Commercial sector is now a single
+    // flat entry that lands on the in-page Commercial shell (commercial_reports),
+    // where the former sub-areas (Overview / Conversation / Agents / Teams / SLA /
+    // CSAT / Customer Support) already live as SectorShellV2 tabs. Flattening folds
+    // those duplicate sidebar children into the page, gives the entry the active
+    // (white inverse-tab) fill that the other flat sectors have, and drops the
+    // Bot / Labels / Inbox sidebar leaves (their routes stay live). The legacy
+    // Commercial Overview alias key is preserved in the i18n overrides; the
+    // sidebar label uses the standard sector key like its sibling sectors.
     ...(algorythmoCutHidden.value.sector_commercial
       ? []
       : [
           {
-            name: 'Reports',
-            label: t('SIDEBAR.ALG_SECTOR_COMMERCIAL'),
+            name: 'Commercial',
             icon: 'i-lucide-chart-spline',
-            children: [
-              // algorythmo: M6.1-b — "Visão Comercial" first child (D13, plan 0006).
-              ...(algorythmoCutHidden.value.reports_commercial
-                ? []
-                : [
-                    {
-                      name: 'Commercial Reports',
-                      label: t('SIDEBAR.RELATORIOS_COMERCIAIS_VISAO'),
-                      to: accountScopedRoute('commercial_reports'),
-                      activeOn: ['commercial_reports'],
-                    },
-                  ]),
-              {
-                name: 'Report Overview',
-                label: t('SIDEBAR.REPORTS_OVERVIEW'),
-                to: accountScopedRoute('account_overview_reports'),
-              },
-              {
-                name: 'Report Conversation',
-                label: t('SIDEBAR.REPORTS_CONVERSATION'),
-                to: accountScopedRoute('conversation_reports'),
-              },
-              ...reportRoutes.value,
-              {
-                name: 'Reports CSAT',
-                label: t('SIDEBAR.CSAT'),
-                to: accountScopedRoute('csat_reports'),
-              },
-              {
-                name: 'Reports SLA',
-                label: t('SIDEBAR.REPORTS_SLA'),
-                to: accountScopedRoute('sla_reports'),
-              },
-              // algorythmo: feature-gate algorythmo_cut_reports_bot
-              ...(algorythmoCutHidden.value.reports_bot
-                ? []
-                : [
-                    {
-                      name: 'Reports Bot',
-                      label: t('SIDEBAR.REPORTS_BOT'),
-                      to: accountScopedRoute('bot_reports'),
-                    },
-                  ]),
-            ],
+            label: t('SIDEBAR.ALG_SECTOR_COMMERCIAL'),
+            activeOn: ['commercial_reports'],
+            to: accountScopedRoute('commercial_reports'),
           },
         ]),
 
@@ -827,62 +762,11 @@ const menuItems = computed(() => {
     },
 
     // ── Remaining upstream surfaces ───────────────────────────────────────────
-    // algorythmo: M2-a — D7: Help Center top-level entry hidden by default via
-    // `algorythmo_cut_help_center_top_level` (cut ACTIVE = hidden).
-    // Routes remain live; content will be exposed as Commercial > Customer Support in M2-c.
-    // Legacy `algorythmo_cut_help_center` flag also honoured for backward compat.
-    ...(algorythmoCutHidden.value.help_center ||
-    algorythmoCutHidden.value.help_center_top_level
-      ? []
-      : [
-          {
-            name: 'Portals',
-            label: t('SIDEBAR.HELP_CENTER.TITLE'),
-            icon: 'i-lucide-library-big',
-            children: [
-              {
-                name: 'Articles',
-                label: t('SIDEBAR.HELP_CENTER.ARTICLES'),
-                activeOn: [
-                  'portals_articles_index',
-                  'portals_articles_new',
-                  'portals_articles_edit',
-                ],
-                to: accountScopedRoute('portals_index', {
-                  navigationPath: 'portals_articles_index',
-                }),
-              },
-              {
-                name: 'Categories',
-                label: t('SIDEBAR.HELP_CENTER.CATEGORIES'),
-                activeOn: [
-                  'portals_categories_index',
-                  'portals_categories_articles_index',
-                  'portals_categories_articles_edit',
-                ],
-                to: accountScopedRoute('portals_index', {
-                  navigationPath: 'portals_categories_index',
-                }),
-              },
-              {
-                name: 'Locales',
-                label: t('SIDEBAR.HELP_CENTER.LOCALES'),
-                activeOn: ['portals_locales_index'],
-                to: accountScopedRoute('portals_index', {
-                  navigationPath: 'portals_locales_index',
-                }),
-              },
-              {
-                name: 'Settings',
-                label: t('SIDEBAR.HELP_CENTER.SETTINGS'),
-                activeOn: ['portals_settings_index'],
-                to: accountScopedRoute('portals_index', {
-                  navigationPath: 'portals_settings_index',
-                }),
-              },
-            ],
-          },
-        ]),
+    // algorythmo: rodada 3 — P-3: the top-level Help Center ("Portals") sidebar
+    // block was hard-deleted. Help Center content is surfaced as the Customer
+    // Support tab inside the Commercial sector. The route-level
+    // `algorythmo_cut_help_center` flag and helpcenter.routes.js are intentionally
+    // left untouched — Customer Support depends on those routes staying alive.
     // algorythmo: feature-gate algorythmo_show_captain
     // Captain section only rendered when algorythmo_show_captain flag is true.
     // Default: false — PME clients never see Captain UI.
@@ -1210,33 +1094,15 @@ const menuItems = computed(() => {
           />
         </template>
       </div>
+      <!-- algorythmo: rodada 3 — P-2: top-level search entry removed from the
+           sidebar chrome. The /search route stays registered (reachable via
+           keyboard / deep-link); only the visible pill/icon is dropped. The
+           flex wrapper is kept so the ComposeConversation (pen) button keeps
+           its layout. -->
       <div
         class="flex gap-2"
         :class="isEffectivelyCollapsed ? 'flex-col items-center' : 'px-2'"
       >
-        <RouterLink
-          v-if="!isEffectivelyCollapsed"
-          :to="{ name: 'search' }"
-          class="flex gap-2 items-center px-2 py-1 w-full h-7 rounded-lg outline outline-1 outline-n-weak bg-n-button-color transition-all duration-100 ease-out"
-        >
-          <span class="flex-shrink-0 i-lucide-search size-4 text-n-slate-10" />
-          <span class="flex-grow text-start text-n-slate-10">
-            {{ t('COMBOBOX.SEARCH_PLACEHOLDER') }}
-          </span>
-          <span
-            class="hidden tracking-wide pointer-events-none select-none text-n-slate-10"
-          >
-            {{ searchShortcut }}
-          </span>
-        </RouterLink>
-        <RouterLink
-          v-else
-          :to="{ name: 'search' }"
-          class="flex items-center justify-center size-8 rounded-lg outline outline-1 outline-n-weak bg-n-button-color transition-all duration-100 ease-out hover:bg-n-alpha-2 dark:hover:bg-n-slate-9/30"
-          :title="t('COMBOBOX.SEARCH_PLACEHOLDER')"
-        >
-          <span class="i-lucide-search size-4 text-n-slate-11" />
-        </RouterLink>
         <ComposeConversation align="start">
           <template #trigger="{ isOpen }">
             <Button

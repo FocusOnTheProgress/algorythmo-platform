@@ -10,6 +10,7 @@ describe('#accountAPI', () => {
     expect(accountAPI).toHaveProperty('update');
     expect(accountAPI).toHaveProperty('delete');
     expect(accountAPI).toHaveProperty('createAccount');
+    expect(accountAPI).toHaveProperty('deleteLogo');
   });
 
   describe('API calls', () => {
@@ -36,6 +37,12 @@ describe('#accountAPI', () => {
       expect(axiosMock.post).toHaveBeenCalledWith('/api/v1/accounts', {
         name: 'Chatwoot',
       });
+    });
+
+    // algorythmo: client logo removal hits the account member `logo` route.
+    it('#deleteLogo', () => {
+      accountAPI.deleteLogo();
+      expect(axiosMock.delete).toHaveBeenCalledWith('/api/v1/logo');
     });
   });
 });

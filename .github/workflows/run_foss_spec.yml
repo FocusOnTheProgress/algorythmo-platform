@@ -119,6 +119,8 @@ jobs:
             app/javascript/dashboard/modules/algorythmo/brain/specs/BrainAquario.spec.js \
             app/javascript/dashboard/modules/algorythmo/brain/specs/BrainViewer.spec.js \
             app/javascript/dashboard/components/widgets/conversation/specs/OnboardingViewPurge.spec.js \
+            app/javascript/dashboard/store/modules/specs/account/actions.spec.js \
+            app/javascript/dashboard/api/specs/account.spec.js \
             --no-coverage
 
   # algorythmo: rspec scoped to Algorythmo engine + Captain feature-gate.
@@ -183,6 +185,8 @@ jobs:
           bundle exec rspec \
             engines/algorythmo/spec \
             spec/models/concerns/algorythmo/feature_flag_bits_spec.rb \
+            spec/models/account_spec.rb \
+            spec/controllers/api/v1/accounts_controller_spec.rb \
             enterprise/spec/listeners/captain_listener_spec.rb \
             enterprise/spec/controllers/api/v1/accounts/captain/feature_gate_spec.rb \
             --profile=10 \

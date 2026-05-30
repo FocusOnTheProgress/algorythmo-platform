@@ -333,6 +333,73 @@ RSpec.describe Account do
     end
   end
 
+  describe 'logo attachment' do
+    let(:account) { create(:account) }
+
+    def attach_logo(filename: 'avatar.png', content_type: 'image/png')
+      account.logo.attach(
+        io: Rails.root.join('spec/assets/avatar.png').open,
+        filename: filename,
+        content_type: content_type
+      )
+    end
+
+    it 'has one attached logo' do
+      expect(account.logo).to be_an_instance_of(ActiveStorage::Attached::One)
+    end
+
+    it 'attaches a valid image logo' do
+      attach_logo
+      expect(account).to be_valid
+      expect(account.logo).to be_attached
+    end
+
+    describe '#logo_url' do
+      it 'returns an empty string when no logo is attached' do
+        expect(account.logo_url).to eq('')
+      end
+
+      it 'returns a url when a representable logo is attached' do
+        attach_logo
+        account.save!
+        expect(account.logo_url).to be_present
+        expect(account.logo_url).to be_a(String)
+      end
+    end
+
+    describe 'validations' do
+      it 'rejects an unsupported content type' do
+        # Active Storage re-identifies content_type from the file bytes (identify:
+        # true), so passing content_type to attach won't stick for a real PNG.
+        # Stub the detected type, mirroring the byte-size cap test below.
+        attach_logo
+        allow(account.logo).to receive(:content_type).and_return('application/pdf')
+        expect(account).not_to be_valid
+        expect(account.errors[:logo]).to include('filetype not supported')
+      end
+
+      it 'accepts svg logos' do
+        attach_logo(filename: 'logo.svg', content_type: 'image/svg+xml')
+        expect(account).to be_valid
+      end
+
+      it 'rejects a logo larger than the byte-size cap' do
+        attach_logo
+        allow(account.logo).to receive(:byte_size).and_return(described_class::MAX_LOGO_BYTE_SIZE + 1)
+        expect(account).not_to be_valid
+        expect(account.errors[:logo]).to include('is too big')
+      end
+
+      it 'does not run logo validations when the logo is unchanged' do
+        attach_logo
+        account.save!
+        # reload so logo.changed? is false on the next validation pass
+        account.reload
+        expect(account).to be_valid
+      end
+    end
+  end
+
   describe 'captain_preferences' do
     let(:account) { create(:account) }
 

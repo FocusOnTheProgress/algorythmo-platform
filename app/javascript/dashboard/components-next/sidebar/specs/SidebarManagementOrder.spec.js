@@ -16,7 +16,7 @@ const source = fs.readFileSync(SIDEBAR_PATH, 'utf8');
 // Extract position of each Management sector entry by looking for its
 // unique `name:` identifier inside the menuItems computed.
 const sectorNames = [
-  'Reports', // 1. Commercial (was Reports block)
+  'Commercial', // 1. Commercial (rodada 3 F-C: flattened, internal name now 'Commercial')
   'AdminMarketing', // 2. Marketing
   'AdminOperacao', // 3. Operations
   'AdminCompras', // 4. Procurement
@@ -29,7 +29,7 @@ const sectorNames = [
 describe('Sidebar Management block order (D1)', () => {
   it('Management sectors appear in the source in D1 order', () => {
     const positions = sectorNames.map(name => {
-      // Match `name: 'AdminMarketing'` or `name: 'Reports'` inside menuItems
+      // Match `name: 'AdminMarketing'` or `name: 'Commercial'` inside menuItems
       const idx = source.indexOf(`name: '${name}'`);
       expect(idx).toBeGreaterThan(-1); // sector entry must exist
       return { name, idx };
@@ -53,10 +53,18 @@ describe('Sidebar Management block order (D1)', () => {
     expect(cutFlagIdx).toBeLessThan(facilitiesIdx);
   });
 
-  it('legacy Relatórios Comerciais i18n key is preserved as alias', () => {
-    // Old key SIDEBAR.RELATORIOS_COMERCIAIS must still appear in the source
-    // to preserve backward compat for consumers outside the sidebar.
-    expect(source).toContain('SIDEBAR.RELATORIOS_COMERCIAIS_VISAO');
+  it('Commercial sector is a single FLAT entry (rodada 3 F-C)', () => {
+    // After the F-C flatten the Commercial sector is a single flat item — like
+    // its sibling sectors — that lands on the in-page Commercial shell. It must
+    // carry the English sector label key, route to commercial_reports, and no
+    // longer be an expandable group. The old deep-link child key
+    // SIDEBAR.RELATORIOS_COMERCIAIS_VISAO is retired from the sidebar source
+    // (still preserved as an i18n alias in the overrides for backward compat).
+    const commercialIdx = source.indexOf("name: 'Commercial'");
+    expect(commercialIdx).toBeGreaterThan(-1);
+    expect(source).toContain('SIDEBAR.ALG_SECTOR_COMMERCIAL');
+    expect(source).toContain("accountScopedRoute('commercial_reports')");
+    expect(source).not.toContain('SIDEBAR.RELATORIOS_COMERCIAIS_VISAO');
   });
 
   it('new English sector label keys are used in sidebar', () => {

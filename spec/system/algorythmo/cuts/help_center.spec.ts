@@ -17,11 +17,15 @@ const ROUTE = '/app/accounts/1/portals';
 const SIDEBAR_LABEL = /help center|portals/i;
 const HEADING = /help center|portals|articles|knowledge/i;
 
-test.describe('help_center — flag off: surface restored', () => {
-  test('sidebar shows Help Center + portals route loads', async ({ page }) => {
+test.describe('help_center — flag off: portals route restored', () => {
+  // RODADA 3 P-3: Help Center is no longer a top-level sidebar entry — it lives
+  // only as Customer Support inside Commercial, so the sidebar link was removed
+  // for good (not flag-gated). The route-level help_center flag still controls
+  // whether the underlying portals routes are reachable (Customer Support data
+  // depends on them), so we assert the route, not the sidebar.
+  test('portals route loads when the flag is off', async ({ page }) => {
     await withFlag(page, 'help_center', false, async () => {
       await expectSurfaceVisible(page, 'help_center', {
-        sidebarLabel: SIDEBAR_LABEL,
         routePath: ROUTE,
         pageHeadingRegex: HEADING,
       });

@@ -11,6 +11,7 @@ import WithLabel from 'v3/components/Form/WithLabel.vue';
 import NextInput from 'next/input/Input.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
+import Icon from 'dashboard/components-next/icon/Icon.vue';
 import AccountId from './components/AccountId.vue';
 import BuildInfo from './components/BuildInfo.vue';
 import AccountDelete from './components/AccountDelete.vue';
@@ -21,6 +22,7 @@ export default {
   components: {
     BaseSettingsHeader,
     NextButton,
+    Icon,
     AccountId,
     BuildInfo,
     AccountDelete,
@@ -45,6 +47,8 @@ export default {
       domain: '',
       supportEmail: '',
       features: {},
+      logoFile: null,
+      logoPreview: '',
     };
   },
   validations: {
@@ -93,9 +97,17 @@ export default {
     currentAccount() {
       return this.getAccount(this.accountId) || {};
     },
+    // Locally-selected file (object URL) wins so the user sees their pick
+    // before saving; otherwise show the logo persisted on the account.
+    displayedLogo() {
+      return this.logoPreview || this.currentAccount.logo_url || '';
+    },
   },
   mounted() {
     this.initializeAccount();
+  },
+  beforeUnmount() {
+    this.clearLogoPreviewUrl();
   },
   methods: {
     async initializeAccount() {
@@ -125,12 +137,20 @@ export default {
         return;
       }
       try {
-        await this.$store.dispatch('accounts/update', {
+        const payload = {
           locale: this.locale,
           name: this.name,
           domain: this.domain,
           support_email: this.supportEmail,
-        });
+        };
+        // Only attach the logo when the user picked a new file; the store
+        // switches to multipart automatically when a File is present.
+        if (this.logoFile) {
+          payload.logo = this.logoFile;
+        }
+        await this.$store.dispatch('accounts/update', payload);
+        // Clear the local selection — the saved account now carries logo_url.
+        this.clearLogoSelection();
         // If user locale is set, update the locale with user locale
         const updatedLocale = this.uiSettings?.locale || this.locale;
         if (updatedLocale) {
@@ -139,7 +159,50 @@ export default {
         this.getAccount(this.id).locale = this.locale;
         useAlert(this.$t('GENERAL_SETTINGS.UPDATE.SUCCESS'));
       } catch (error) {
-        useAlert(this.$t('GENERAL_SETTINGS.UPDATE.ERROR'));
+        // Surface the backend validation reason (e.g. logo filetype/size) when
+        // present, instead of a generic error the user can't act on.
+        useAlert(
+          error?.response?.data?.message ||
+            this.$t('GENERAL_SETTINGS.UPDATE.ERROR')
+        );
+      }
+    },
+
+    onLogoSelect(event) {
+      const file = event.target?.files?.[0];
+      if (!file) return;
+      // Revoke any previous object URL before creating a new one.
+      this.clearLogoPreviewUrl();
+      this.logoFile = file;
+      this.logoPreview = URL.createObjectURL(file);
+    },
+
+    clearLogoPreviewUrl() {
+      if (this.logoPreview) {
+        URL.revokeObjectURL(this.logoPreview);
+      }
+    },
+
+    clearLogoSelection() {
+      this.clearLogoPreviewUrl();
+      this.logoFile = null;
+      this.logoPreview = '';
+      if (this.$refs.logoInput) {
+        this.$refs.logoInput.value = '';
+      }
+    },
+
+    async removeLogo() {
+      // If the unsaved local pick is showing, just drop it without a request.
+      if (this.logoFile) {
+        this.clearLogoSelection();
+        return;
+      }
+      try {
+        await this.$store.dispatch('accounts/removeLogo');
+        useAlert(this.$t('GENERAL_SETTINGS.ACCOUNT_LOGO.REMOVE_SUCCESS'));
+      } catch (error) {
+        useAlert(this.$t('GENERAL_SETTINGS.ACCOUNT_LOGO.REMOVE_ERROR'));
       }
     },
   },
@@ -160,6 +223,59 @@ export default {
           class="grid gap-4"
           @submit.prevent="updateAccount"
         >
+          <WithLabel
+            name="account-logo"
+            :label="$t('GENERAL_SETTINGS.ACCOUNT_LOGO.LABEL')"
+          >
+            <div class="flex items-center gap-4">
+              <div
+                class="flex items-center justify-center overflow-hidden rounded-lg size-16 shrink-0 bg-n-slate-3 border border-n-weak"
+              >
+                <img
+                  v-if="displayedLogo"
+                  :src="displayedLogo"
+                  :alt="$t('GENERAL_SETTINGS.ACCOUNT_LOGO.PREVIEW_ALT')"
+                  class="object-contain size-full"
+                />
+                <Icon
+                  v-else
+                  icon="i-lucide-image"
+                  class="size-6 text-n-slate-10"
+                />
+              </div>
+              <div class="flex items-center gap-2">
+                <NextButton
+                  faded
+                  slate
+                  type="button"
+                  :label="
+                    displayedLogo
+                      ? $t('GENERAL_SETTINGS.ACCOUNT_LOGO.REPLACE')
+                      : $t('GENERAL_SETTINGS.ACCOUNT_LOGO.UPLOAD')
+                  "
+                  @click="$refs.logoInput.click()"
+                />
+                <NextButton
+                  v-if="displayedLogo"
+                  ghost
+                  ruby
+                  type="button"
+                  :label="$t('GENERAL_SETTINGS.ACCOUNT_LOGO.REMOVE')"
+                  @click="removeLogo"
+                />
+              </div>
+              <input
+                ref="logoInput"
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                class="hidden"
+                @change="onLogoSelect"
+              />
+            </div>
+            <template #help>
+              {{ $t('GENERAL_SETTINGS.ACCOUNT_LOGO.HELP') }}
+            </template>
+          </WithLabel>
           <WithLabel
             name="account-name"
             :has-error="v$.name.$error"
