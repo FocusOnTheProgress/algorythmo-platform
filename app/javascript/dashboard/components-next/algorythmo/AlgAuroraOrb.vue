@@ -140,16 +140,48 @@ const rootStyle = computed(() => ({
   // Oversize the paint so the drift has room to move without showing edges.
   background-size: 160% 160%;
   background-position: 35% 30%;
-  // Depth = OUTER luminance (the orb is a lit object floating in space) kept
-  // WITH directional inset shadows (top-left highlight, bottom-right core
-  // shadow). Round-2 defect A: inset-only shadows read flat — the outer glow
-  // gives it volume and seats it on the canvas instead of a sticker on glass.
+  // Depth: the outer glow seats it on the canvas; directional inset shadows
+  // model the curvature (top-left rim light, bottom-right core shadow). The
+  // ::before specular glint + ::after shadow terminator (below) turn the flat
+  // disc into a real lit 3D sphere. (R3 refinement: "esfera mais 3D".)
   box-shadow:
     var(--alg-aurora-glow),
-    inset 0 3px 8px 0 rgba(255, 255, 255, 0.28),
-    inset -6px -8px 22px -6px rgba(0, 0, 0, 0.5);
+    inset 0 4px 10px 0 rgba(255, 255, 255, 0.3),
+    inset -8px -11px 28px -6px rgba(0, 0, 0, 0.55);
   animation: alg-aurora-chroma var(--alg-duration-ambient)
     var(--alg-ease-ambient) infinite;
+}
+
+// Specular glint — the fixed highlight where the light hits (top-left). A tight
+// bright spot that reads the sphere as a lit object, not a flat disc. Fixed
+// while the chroma drifts underneath, like a real light source.
+.alg-aurora-orb__sphere::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 30% 24%,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 255, 255, 0.13) 9%,
+    transparent 23%
+  );
+  pointer-events: none;
+}
+
+// Shadow terminator — the sphere falling into shadow opposite the glint
+// (bottom-right). Completes the volume.
+.alg-aurora-orb__sphere::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 74% 82%,
+    rgba(6, 0, 12, 0.55) 0%,
+    transparent 56%
+  );
+  pointer-events: none;
 }
 
 // --- Halo --------------------------------------------------------------------
@@ -193,7 +225,7 @@ const rootStyle = computed(() => ({
   top: 50%;
   left: 50%;
   width: var(--alg-conduit-length, 160%);
-  height: 1.5px;
+  height: 2px;
   transform-origin: left center;
   transform: rotate(var(--alg-conduit-angle));
   // Fade-to-transparent pulled EARLY: the bright band peaks near the orb (~28%)
@@ -203,14 +235,23 @@ const rootStyle = computed(() => ({
   // edge. Combined with the orb sitting below the cards in the stage, an
   // overshoot reads as faint light under glass, never a bright line on the face.
   // (Round-2 defect B: a bright band terminated inside the card at wide widths.)
+  // R3 refinement ("feixes mais visíveis"): brighter band that reaches further
+  // toward the card (peaks full magenta ~30%, fades by ~93%), a soft blur + a
+  // low aurora bloom so it reads as a beam of connecting light — not a hairline.
+  // It still dissolves before the far end and renders BELOW the cards in the
+  // stage, so an overshoot is light under glass, never a line on the card face.
   background: linear-gradient(
     90deg,
-    color-mix(in oklch, var(--alg-aurora-1), transparent 55%) 0%,
-    color-mix(in oklch, var(--alg-aurora-1), transparent 25%) 28%,
-    color-mix(in oklch, var(--alg-aurora-2), transparent 65%) 52%,
-    transparent 72%
+    color-mix(in oklch, var(--alg-aurora-1), transparent 45%) 0%,
+    var(--alg-aurora-1) 30%,
+    color-mix(in oklch, var(--alg-aurora-2), transparent 28%) 62%,
+    color-mix(in oklch, var(--alg-aurora-2), transparent 78%) 82%,
+    transparent 93%
   );
-  opacity: 0.45;
+  opacity: 0.78;
+  filter: blur(0.6px);
+  box-shadow: 0 0 7px 0
+    color-mix(in oklch, var(--alg-aurora-1), transparent 58%);
   animation: alg-aurora-conduit var(--alg-duration-ambient)
     var(--alg-ease-ambient) infinite;
   animation-delay: var(--alg-conduit-delay);
@@ -261,10 +302,10 @@ const rootStyle = computed(() => ({
 @keyframes alg-aurora-conduit {
   0%,
   100% {
-    opacity: 0.45;
+    opacity: 0.6;
   }
   50% {
-    opacity: 0.85;
+    opacity: 0.92;
   }
 }
 
@@ -279,7 +320,7 @@ const rootStyle = computed(() => ({
     animation: none;
   }
   .alg-aurora-orb__conduit {
-    opacity: 0.65;
+    opacity: 0.8;
   }
 }
 </style>
