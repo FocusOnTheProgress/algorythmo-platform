@@ -369,7 +369,11 @@ RSpec.describe Account do
 
     describe 'validations' do
       it 'rejects an unsupported content type' do
-        attach_logo(filename: 'logo.pdf', content_type: 'application/pdf')
+        # Active Storage re-identifies content_type from the file bytes (identify:
+        # true), so passing content_type to attach won't stick for a real PNG.
+        # Stub the detected type, mirroring the byte-size cap test below.
+        attach_logo
+        allow(account.logo).to receive(:content_type).and_return('application/pdf')
         expect(account).not_to be_valid
         expect(account.errors[:logo]).to include('filetype not supported')
       end
