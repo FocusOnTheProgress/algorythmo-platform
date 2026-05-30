@@ -268,16 +268,21 @@ describe('M6.1-b — Sidebar.vue', () => {
     src = fs.readFileSync(sidebarPath, 'utf8');
   });
 
-  it("references i18n key 'SIDEBAR.RELATORIOS_COMERCIAIS_VISAO'", () => {
-    expect(src).toContain('SIDEBAR.RELATORIOS_COMERCIAIS_VISAO');
+  // algorythmo: rodada 3 — F-C flattened the Commercial sector. It is no longer
+  // an expandable group whose first child carried SIDEBAR.RELATORIOS_COMERCIAIS_VISAO
+  // and the reports_commercial child cut-flag. It is now a single flat entry — like
+  // the other sector items — labelled SIDEBAR.ALG_SECTOR_COMMERCIAL, gated by the
+  // whole-sector cut-flag sector_commercial, routing to commercial_reports.
+  it("uses the flat sector label key 'SIDEBAR.ALG_SECTOR_COMMERCIAL'", () => {
+    expect(src).toContain('SIDEBAR.ALG_SECTOR_COMMERCIAL');
   });
 
-  it("references route name 'commercial_reports' in sidebar children", () => {
+  it("references route name 'commercial_reports' in the Commercial entry", () => {
     expect(src).toContain("'commercial_reports'");
   });
 
-  it('gates entry behind reports_commercial cut-flag', () => {
-    expect(src).toContain('algorythmoCutHidden.value.reports_commercial');
+  it('gates the Commercial entry behind the sector_commercial cut-flag', () => {
+    expect(src).toContain('algorythmoCutHidden.value.sector_commercial');
   });
 
   it("declares activeOn including 'commercial_reports' (matches sister entries)", () => {
