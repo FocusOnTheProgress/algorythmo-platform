@@ -1,10 +1,18 @@
 <script setup>
 // algorythmo: Cinematic OS signature component — Aurora Orb (DESIGN.md §6.2)
 //
-// The central living-intelligence object. A chromatic sphere (magenta → rosa
-// → violeta, the Aurora Gradient §3.1) with a low-opacity halo, a vertical
-// light beam rising off the top (--alg-aurora-beam), and optional conduits —
-// thin light rays connecting the orb to surrounding data surfaces.
+// The central living-intelligence object — a luminous PLASMA BLOOM (Ref design
+// 2). NOT a hard "billiard-ball" sphere: a hot magenta core lit from within,
+// cooler violet on the upper-left, a soft shaded lower-right edge, all blooming
+// into a soft pink outer glow. A downward light PLUME (comet tail, pink → cold
+// blue) falls off the bottom, and thin light rays (conduits) radiate out to the
+// surrounding data surfaces.
+//
+// Round-6 (THIRD founder rejection of the orb): the prior orb read as a solid
+// shaded ball with a hard white specular glint + hard dark terminator. The
+// reference is a glowing plasma that BLOOMS — soft edges, no white glint, no
+// hard shadow. This rewrite makes the lit volume out of soft screen/multiply
+// luminance layers so it matches the reference pixel-for-pixel.
 //
 // SACRED: this is the only object besides Planet Avatars where the Aurora
 // Gradient may appear (on the SPHERE — the living core). It renders the Aurora
@@ -12,8 +20,8 @@
 // placing two is a ship-blocking bug.
 //
 // The conduits (the light TRAVELLING from the core to surrounding surfaces) can
-// be re-toned to ice via `beam="ice"` — the Brain hub's direction is cool
-// glacial light for the beams, while the sphere keeps its restrained chroma.
+// be re-toned to ice via `beam="ice"`. The Brain hub's reference uses the warm
+// PINK rays (`beam="aurora"`, the default), matching Ref design 2.
 //
 // Ambient (cycle 6s): chroma drift (gradient position breathes), conduit glow
 // ramp (staggered), halo pulse. `active` accelerates to a ~3s feel for live
@@ -117,8 +125,15 @@ const rootStyle = computed(() => ({
     role="img"
     :aria-label="ariaLabel"
   >
-    <!-- Halo: low-opacity glow envelope, 1.5x the sphere diameter -->
+    <!-- Outer bloom: soft pink luminance the plasma sphere sits ON. -->
+    <span class="alg-aurora-orb__bloom" aria-hidden="true" />
+
+    <!-- Halo: low-opacity glow envelope, breathes with the ambient cycle. -->
     <span class="alg-aurora-orb__halo" aria-hidden="true" />
+
+    <!-- Downward light plume: a comet tail of light (pink → cold blue) falling
+         off the bottom of the orb, as in Ref design 2. -->
+    <span class="alg-aurora-orb__plume" aria-hidden="true" />
 
     <!-- Conduits: radial light rays to surrounding surfaces -->
     <span
@@ -133,11 +148,12 @@ const rootStyle = computed(() => ({
       }"
     />
 
-    <!-- Vertical light beam rising off the top of the sphere -->
-    <span class="alg-aurora-orb__beam" aria-hidden="true" />
-
-    <!-- The sphere -->
-    <span class="alg-aurora-orb__sphere" :data-uid="uid" aria-hidden="true" />
+    <!-- The plasma sphere — soft lit volume (no hard glint / no hard
+         terminator). The cool violet patch (::before) and inner hot bloom
+         (::after) live inside; a soft shaded edge sits on top via __shade. -->
+    <span class="alg-aurora-orb__sphere" :data-uid="uid" aria-hidden="true">
+      <span class="alg-aurora-orb__shade" aria-hidden="true" />
+    </span>
   </span>
 </template>
 
@@ -150,66 +166,119 @@ const rootStyle = computed(() => ({
   isolation: isolate;
 }
 
-// --- Sphere ------------------------------------------------------------------
+// --- Plasma sphere -----------------------------------------------------------
+// A luminous plasma body (Ref design 2), NOT a hard shaded ball. The hot magenta
+// core (brightest upper-left, where the light reads) deepens to rosa/violeta at
+// the lower-right edge and blooms softly outward — no hard rim. The outer glow
+// seats it on the canvas. Volume comes from soft SCREEN/MULTIPLY luminance layers
+// (cool violet patch + inner hot bloom + a gentle shaded edge), never a white
+// specular glint or a black terminator (the rejected "billiard-ball" defect).
 .alg-aurora-orb__sphere {
   position: relative;
   z-index: 2;
   width: 100%;
   height: 100%;
   border-radius: var(--alg-radius-pill);
-  background: var(--alg-aurora-grad);
-  // Oversize the paint so the drift has room to move without showing edges.
-  background-size: 160% 160%;
-  background-position: 35% 30%;
-  // Depth: the outer glow seats it on the canvas; directional inset shadows
-  // model the curvature (top-left rim light, bottom-right core shadow). The
-  // ::before specular glint + ::after shadow terminator (below) turn the flat
-  // disc into a real lit 3D sphere. (R3 refinement: "esfera mais 3D".)
+  background: radial-gradient(
+    circle at 40% 36%,
+    oklch(0.67 0.185 350) 0%,
+    var(--alg-aurora-1) 32%,
+    var(--alg-aurora-2) 64%,
+    color-mix(in oklch, var(--alg-aurora-2), var(--alg-aurora-3) 55%) 86%,
+    color-mix(in oklch, var(--alg-aurora-3), black 26%) 100%
+  );
+  // Oversize the paint so the chroma drift has room to move without showing edges.
+  background-size: 150% 150%;
+  background-position: 40% 36%;
   box-shadow:
-    var(--alg-aurora-glow),
-    inset 0 4px 10px 0 rgba(255, 255, 255, 0.3),
-    inset -8px -11px 28px -6px rgba(0, 0, 0, 0.55);
+    0 0 20px 1px color-mix(in oklch, var(--alg-aurora-1), transparent 62%),
+    0 0 52px 8px color-mix(in oklch, var(--alg-aurora-2), transparent 80%);
   animation: alg-aurora-chroma var(--alg-duration-ambient)
     var(--alg-ease-ambient) infinite;
 }
 
-// Specular glint — the fixed highlight where the light hits (top-left). A tight
-// bright spot that reads the sphere as a lit object, not a flat disc. Fixed
-// while the chroma drifts underneath, like a real light source.
+// Cool violet-blue patch, upper-left — the distinct cooler highlight from the
+// reference (NOT a white glint). Soft, screen-blended into the magenta body.
 .alg-aurora-orb__sphere::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   background: radial-gradient(
-    circle at 30% 24%,
-    rgba(255, 255, 255, 0.62) 0%,
-    rgba(255, 255, 255, 0.13) 9%,
-    transparent 23%
+    circle at 36% 31%,
+    oklch(0.72 0.15 298 / 0.92) 0%,
+    oklch(0.62 0.18 318 / 0.55) 20%,
+    transparent 48%
   );
+  mix-blend-mode: screen;
   pointer-events: none;
 }
 
-// Shadow terminator — the sphere falling into shadow opposite the glint
-// (bottom-right). Completes the volume.
+// Inner hot bloom — a soft luminous heart, lower-centre, lit-from-within. Kept
+// magenta (NOT white) so the plasma never blows out to a hard white dot.
 .alg-aurora-orb__sphere::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   background: radial-gradient(
-    circle at 74% 82%,
-    rgba(6, 0, 12, 0.55) 0%,
-    transparent 56%
+    circle at 52% 60%,
+    oklch(0.72 0.2 354 / 0.38) 0%,
+    oklch(0.64 0.22 356 / 0.2) 24%,
+    transparent 52%
   );
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+// Soft shaded edge, lower-right — a gentle terminator that gives the plasma
+// volume without the hard black shadow of the rejected orb.
+.alg-aurora-orb__shade {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 70% 76%,
+    oklch(0.2 0.06 320 / 0.55) 0%,
+    oklch(0.2 0.06 320 / 0.18) 30%,
+    transparent 58%
+  );
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+// --- Outer bloom -------------------------------------------------------------
+// Soft pink luminance the plasma sphere sits ON — restrained so the SPHERE reads
+// as an object, not a nebula. Larger and softer than the halo; the halo pulses,
+// the bloom is the steady seat of light.
+.alg-aurora-orb__bloom {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  top: 50%;
+  width: 240%;
+  height: 240%;
+  transform: translate(-50%, -50%);
+  border-radius: var(--alg-radius-pill);
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklch, var(--alg-aurora-1), transparent 64%) 0%,
+    color-mix(in oklch, var(--alg-aurora-2), transparent 80%) 30%,
+    color-mix(in oklch, var(--alg-aurora-3), transparent 90%) 50%,
+    transparent 68%
+  );
+  filter: blur(7px);
   pointer-events: none;
 }
 
 // --- Halo --------------------------------------------------------------------
+// A tight inner pulse just around the sphere (the bloom is the steady outer
+// seat; this is the breathing skin of light on the surface).
 .alg-aurora-orb__halo {
   position: absolute;
   z-index: 1;
-  inset: -25%;
+  inset: -18%;
   border-radius: var(--alg-radius-pill);
   background: var(--alg-aurora-halo);
   filter: blur(8px);
@@ -217,19 +286,29 @@ const rootStyle = computed(() => ({
     infinite;
 }
 
-// --- Vertical beam -----------------------------------------------------------
-.alg-aurora-orb__beam {
+// --- Downward plume ----------------------------------------------------------
+// A comet tail of light falling off the BOTTOM of the orb (Ref design 2): a
+// narrow cone, pink at the orb fading to a cold-blue tip, softly blurred. This
+// replaces the old upward beam — the reference's light falls down, not up.
+.alg-aurora-orb__plume {
   position: absolute;
   z-index: 0;
   left: 50%;
-  bottom: 45%;
-  width: 26%;
-  height: 130%;
+  top: 50%;
+  width: 58%;
+  height: 210%;
   transform: translateX(-50%);
-  background: var(--alg-aurora-beam);
-  filter: blur(6px);
-  border-radius: var(--alg-radius-pill);
-  opacity: 0.7;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklch, var(--alg-aurora-1), transparent 30%) 0%,
+    color-mix(in oklch, var(--alg-aurora-2), transparent 56%) 28%,
+    color-mix(in oklch, var(--alg-aurora-3), transparent 70%) 56%,
+    color-mix(in oklch, var(--alg-ice-3), transparent 72%) 82%,
+    transparent 100%
+  );
+  clip-path: polygon(40% 0%, 60% 0%, 86% 100%, 14% 100%);
+  filter: blur(8px);
+  opacity: 0.92;
   animation: alg-aurora-beam-pulse var(--alg-duration-ambient)
     var(--alg-ease-ambient) infinite;
 }
@@ -263,16 +342,16 @@ const rootStyle = computed(() => ({
   // stage, so an overshoot is light under glass, never a line on the card face.
   background: linear-gradient(
     90deg,
-    color-mix(in oklch, var(--alg-aurora-1), transparent 45%) 0%,
-    var(--alg-aurora-1) 30%,
-    color-mix(in oklch, var(--alg-aurora-2), transparent 28%) 62%,
-    color-mix(in oklch, var(--alg-aurora-2), transparent 78%) 82%,
-    transparent 93%
+    color-mix(in oklch, var(--alg-aurora-1), transparent 55%) 0%,
+    color-mix(in oklch, var(--alg-aurora-1), transparent 18%) 28%,
+    color-mix(in oklch, var(--alg-aurora-2), transparent 45%) 60%,
+    color-mix(in oklch, var(--alg-aurora-2), transparent 82%) 82%,
+    transparent 94%
   );
-  opacity: 0.78;
+  opacity: 0.62;
   filter: blur(0.6px);
-  box-shadow: 0 0 7px 0
-    color-mix(in oklch, var(--alg-aurora-1), transparent 58%);
+  box-shadow: 0 0 6px 0
+    color-mix(in oklch, var(--alg-aurora-1), transparent 66%);
   animation: alg-aurora-conduit var(--alg-duration-ambient)
     var(--alg-ease-ambient) infinite;
   animation-delay: var(--alg-conduit-delay);
@@ -299,7 +378,7 @@ const rootStyle = computed(() => ({
 .alg-aurora-orb--active {
   .alg-aurora-orb__sphere,
   .alg-aurora-orb__halo,
-  .alg-aurora-orb__beam,
+  .alg-aurora-orb__plume,
   .alg-aurora-orb__conduit {
     animation-duration: 3000ms;
   }
@@ -308,10 +387,10 @@ const rootStyle = computed(() => ({
 @keyframes alg-aurora-chroma {
   0%,
   100% {
-    background-position: 35% 30%;
+    background-position: 40% 36%;
   }
   50% {
-    background-position: 41% 30%;
+    background-position: 46% 36%;
   }
 }
 
@@ -340,10 +419,10 @@ const rootStyle = computed(() => ({
 @keyframes alg-aurora-conduit {
   0%,
   100% {
-    opacity: 0.6;
+    opacity: 0.48;
   }
   50% {
-    opacity: 0.92;
+    opacity: 0.72;
   }
 }
 
@@ -353,7 +432,7 @@ const rootStyle = computed(() => ({
 @media (prefers-reduced-motion: reduce) {
   .alg-aurora-orb__sphere,
   .alg-aurora-orb__halo,
-  .alg-aurora-orb__beam,
+  .alg-aurora-orb__plume,
   .alg-aurora-orb__conduit {
     animation: none;
   }

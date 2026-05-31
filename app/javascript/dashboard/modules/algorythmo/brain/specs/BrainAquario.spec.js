@@ -1,17 +1,21 @@
 // algorythmo: Brain Aquário (knowledge hub) — unit spec.
 //
-// Round-5 rebuild (aligned 1:1 to Ref design 2's density). The Aurora sphere is
-// the radiant HUB at the centre of a grid, surrounded by SIX "Knowledge Layer"
-// cards in the reference's scatter — three across the top (Source / Human / Agent
-// Interaction), two flanking the orb (Auto / Tool Interaction), and a totalizer
-// below (493 in use). Each layer-type card has a count + a "<Kind> Knowledge
-// Layers" title + a description; the totalizer is a single-line summary. Ice
-// beams reach from the orb to each card. A signature ingestion dropzone sits below.
+// Round-6 (THIRD founder rejection) — PIXEL-FAITHFUL to Ref design 2. The plasma
+// orb is the radiant HUB at the centre of a grid, surrounded by SIX "Knowledge
+// Layer" cards in the reference's scatter — three across the top (Source / Human /
+// Agent Interaction), two flanking the orb (Auto / Tool Interaction), and a
+// totalizer below (493 in use). Each layer-type card has a count + a "<Kind>
+// Knowledge Layers" title + a description; the totalizer is a single-line summary.
+// PINK rays reach from the orb to each card.
+//
+// Round-6 deltas the spec now enforces: the page is ONE clean canvas — NO
+// editorial header and NO ingestion dropzone (the "black split panel" the founder
+// rejected), and the orb's rays are PINK (beam defaults to "aurora"), not ice.
 //
 // This spec asserts that structure — most importantly: AlgAuroraOrb is mounted
-// exactly once (max one Aurora per screen), fed ice-toned aimed beams that match
-// the cards (no symmetric clock rays), the cards carry Knowledge-Layer content,
-// and — critically — NO lead/CRM data leaks into the Brain.
+// exactly once (max one Aurora per screen), fed aimed rays that match the cards
+// (no symmetric clock rays), the cards carry Knowledge-Layer content, and —
+// critically — NO lead/CRM data leaks into the Brain.
 //
 // Motion One is WAAPI-backed and not meaningful in jsdom; we mock it so the
 // component's mount-time card reveal (useAlgMotion) doesn't touch a real WAAPI.
@@ -24,7 +28,6 @@ vi.mock('motion', () => ({
 
 import { mount } from '@vue/test-utils';
 import BrainAquario from '../BrainAquario.vue';
-import BrainDropzone from '../BrainDropzone.vue';
 import { AlgAuroraOrb } from 'dashboard/components-next/algorythmo';
 
 function mountAquario() {
@@ -47,10 +50,11 @@ describe('BrainAquario (knowledge hub)', () => {
     expect(wrapper.findAll('.alg-aurora-orb__sphere')).toHaveLength(1);
   });
 
-  it('drives the orb with the ice beam tone (Brain hub direction)', () => {
+  it('drives the orb with the pink aurora rays (Ref design 2)', () => {
     const wrapper = mountAquario();
     const orb = wrapper.findComponent(AlgAuroraOrb);
-    expect(orb.props('beam')).toBe('ice');
+    // The reference rays are warm pink, not ice — the orb keeps its default tone.
+    expect(orb.props('beam')).toBe('aurora');
   });
 
   it('feeds the orb hand-aimed beams, one per surrounding card', () => {
@@ -127,30 +131,26 @@ describe('BrainAquario (knowledge hub)', () => {
     ].forEach(token => expect(text).not.toContain(token));
   });
 
-  it('surfaces a single coherent living-layer count in the core', () => {
+  it('is a single clean canvas — NO editorial header (Ref design 2 has none)', () => {
     const wrapper = mountAquario();
-    const count = wrapper.find('.alg-aquario__core-count');
-    expect(count.exists()).toBe(true);
-    expect(count.text().trim()).toMatch(/^[\d.,]+$/);
-    expect(wrapper.find('.alg-aquario__core-label').text().trim()).not.toBe('');
+    // The reference is just the orb + cards on the dark; the header chrome is gone.
+    expect(wrapper.find('.alg-aquario__head').exists()).toBe(false);
+    expect(wrapper.find('.alg-aquario__eyebrow').exists()).toBe(false);
+    expect(wrapper.find('.alg-aquario__title').exists()).toBe(false);
+    expect(wrapper.find('.alg-aquario__core-count').exists()).toBe(false);
   });
 
-  it('renders the editorial header (eyebrow + title + subtitle)', () => {
+  it('has NO ingestion dropzone — the "black split panel" was removed', () => {
     const wrapper = mountAquario();
-    expect(wrapper.find('.alg-aquario__eyebrow').text().trim()).not.toBe('');
-    expect(wrapper.find('.alg-aquario__title').text().trim()).not.toBe('');
-    expect(wrapper.find('.alg-aquario__subtitle').text().trim()).not.toBe('');
+    // The dropzone was a second fold that split the page; the reference has none.
+    expect(wrapper.find('.alg-brain-dropzone').exists()).toBe(false);
+    expect(wrapper.find('.alg-aquario__dropzone').exists()).toBe(false);
   });
 
   it('marks the cards as reveal targets for the motion system', () => {
     const wrapper = mountAquario();
     // The cards must be wired to animate in (entrance/stagger via useAlgMotion).
     expect(wrapper.findAll('[data-alg-card]')).toHaveLength(6);
-  });
-
-  it('mounts the signature ingestion dropzone below the stage', () => {
-    const wrapper = mountAquario();
-    expect(wrapper.findComponent(BrainDropzone).exists()).toBe(true);
   });
 
   it('marks the demo data with the demonstration watermark', () => {
