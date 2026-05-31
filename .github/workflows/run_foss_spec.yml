@@ -72,8 +72,10 @@ jobs:
         run: |
           TZ=UTC pnpm exec vitest run \
             engines/algorythmo/app/javascript \
+            engines/algorythmo/app/assets/stylesheets/specs \
             app/javascript/dashboard/composables/specs/useAlgorythmoFeatureGate.spec.js \
             app/javascript/dashboard/composables/algorythmo/specs/useAlgMotion.spec.js \
+            app/javascript/dashboard/composables/algorythmo/specs/useAlgChartTheme.spec.js \
             app/javascript/dashboard/helper/specs/routeHelpers_algorythmo.spec.js \
             app/javascript/dashboard/helper/specs/themeHelper.spec.js \
             app/javascript/dashboard/i18n/i18n_overlay.spec.js \

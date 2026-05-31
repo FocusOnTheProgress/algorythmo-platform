@@ -40,6 +40,17 @@
         "TITLE": "Configurações gerais",
         "NOTE": ""
       },
+      "APPEARANCE_SECTION": {
+        "TITLE": "Aparência",
+        "NOTE": "Escolha como o sistema operacional aparece. Claro é o registro editorial em papel; Escuro é a sala de comando.",
+        "LABEL": "Tema",
+        "HELP": "Automático segue o seu dispositivo. Esta preferência é salva neste navegador.",
+        "OPTIONS": {
+          "light": "Claro",
+          "dark": "Escuro",
+          "auto": "Automático"
+        }
+      },
       "ACCOUNT_ID": {
         "TITLE": "ID da Conta",
         "NOTE": "Este ID é necessário se você está construindo uma integração baseada em API"

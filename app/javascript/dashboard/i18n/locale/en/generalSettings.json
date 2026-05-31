@@ -40,6 +40,17 @@
         "TITLE": "General settings",
         "NOTE": ""
       },
+      "APPEARANCE_SECTION": {
+        "TITLE": "Appearance",
+        "NOTE": "Choose how the operating system looks. Light is the editorial paper register; Dark is the command room.",
+        "LABEL": "Theme",
+        "HELP": "Auto follows your device. This preference is saved on this browser.",
+        "OPTIONS": {
+          "light": "Light",
+          "dark": "Dark",
+          "auto": "Auto"
+        }
+      },
       "ACCOUNT_ID": {
         "TITLE": "Account ID",
         "NOTE": "This ID is required if you are building an API based integration"
