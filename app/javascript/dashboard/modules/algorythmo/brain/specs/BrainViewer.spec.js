@@ -86,17 +86,17 @@ describe('BrainViewer — aquário (knowledge hub) content', () => {
     expect(wrapper.findAll('.alg-aquario__card')).toHaveLength(6);
   });
 
-  it('renders the signature ingestion dropzone', async () => {
+  it('has NO ingestion dropzone (the "black split panel" was removed)', async () => {
+    // Round-6: the dropzone split the page into a second dark panel; the
+    // reference (Ref design 2) is one clean canvas, so it is gone.
     const wrapper = await mountViewer();
-    expect(wrapper.find('.alg-brain-dropzone').exists()).toBe(true);
+    expect(wrapper.find('.alg-brain-dropzone').exists()).toBe(false);
   });
 
-  it('shows the editorial header (eyebrow + title)', async () => {
+  it('has NO editorial header (Ref design 2 is a header-less canvas)', async () => {
     const wrapper = await mountViewer();
-    expect(wrapper.find('.alg-aquario__eyebrow').exists()).toBe(true);
-    expect(
-      wrapper.find('.alg-aquario__title').text().trim().length
-    ).toBeGreaterThan(0);
+    expect(wrapper.find('.alg-aquario__eyebrow').exists()).toBe(false);
+    expect(wrapper.find('.alg-aquario__title').exists()).toBe(false);
   });
 });
 

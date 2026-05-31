@@ -1,37 +1,39 @@
 <script setup>
 // algorythmo: Brain "Aquário" — the company's knowledge hub (Cinematic OS).
 //
-// Faithful to Ref design 2: a central LIVING SPHERE (AlgAuroraOrb) acting as the
-// radiant hub, with ice light beams reaching out to a SCATTER of Knowledge Layer
-// cards arranged around it — three across the top, two flanking the sphere at
-// mid-height, and a totalizer below. Each card carries a count + a "<Kind>
-// Knowledge Layers" title + a short description, exactly the content in the
-// reference. The beams travel from the core to each card (light out of the
-// living core, never a line slicing the card).
+// PIXEL-FAITHFUL to Ref design 2 (THIRD founder rejection — the page must be
+// IDENTICAL to the reference, only the written content differs). A single, clean,
+// full-bleed dark canvas: the central plasma orb (AlgAuroraOrb) as the radiant
+// hub, PINK light rays reaching out to a SCATTER of Knowledge Layer cards — three
+// across the top, two flanking the sphere at mid-height, and a totalizer below.
+// Each card carries a count + a "<Kind> Knowledge Layers" title + a short
+// description, exactly the reference content.
 //
-// Round-5: composition aligned 1:1 to the reference's density and radial scatter
-// (founder direction — "copie a imagem de referência"). The deliberate 4-corner
-// simplification of round-4 is replaced by the reference's six-card wall. We do
-// NOT reproduce the screenshot's accidental bottom crop: this is a complete,
-// balanced composition. Everything else from round-4 is kept — zero lead data,
-// ice beams, entrance/stagger via the shared motion system, hover, light mode.
+// Round-6 deltas vs the rejected round-5:
+//   • The editorial header (eyebrow/title/subtitle) is GONE — the reference has
+//     no header. The page is just the orb + cards on the dark canvas.
+//   • The ingestion dropzone is GONE — it was the "black split panel" the founder
+//     called out. The Brain is now ONE clean page, nothing below the stage.
+//   • The rays are PINK (beam="aurora"), matching the reference — not ice.
+//   • The stage is vertically centred and fills the viewport (no scroll split).
+// Kept: zero lead data, six-card scatter, entrance/stagger via the shared motion
+// system, hover, light mode.
 //
 // Frontend-only / demo for now (M3+ data plugs in once the Brain backend is
-// stable). The Aurora gradient appears ONLY on the orb sphere (sacred); the
-// beams are ice; everything else is glass / fg-opacity / hairline tokens. The
-// demo watermark keeps the illustrative nature honest (same convention as
-// sectors).
+// stable). The Aurora gradient appears ONLY on the orb sphere (sacred);
+// everything else is glass / fg-opacity / hairline tokens.
 import { computed, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { AlgAuroraOrb } from 'dashboard/components-next/algorythmo';
 import { useAlgMotion } from 'dashboard/composables/algorythmo/useAlgMotion';
-import BrainDropzone from './BrainDropzone.vue';
 
 const { t } = useI18n();
 
 // Six Knowledge Layer cards in the reference's radial scatter. `pos` maps each
-// card to its grid cell; `conduit` is the ice beam aimed from the core at that
-// card — CSS rotate convention (0°=right, 90°=down, 180°=left, 270°=up). Lengths
+// card to its grid cell; `conduit` is the PINK ray aimed from the core at that
+// card — CSS rotate convention (0°=right, 90°=down, 180°=left, 270°=up). Angles
+// mirror Ref design 2: three rays fan UP/OUT to the top cards, two reach the
+// flanking cards, and the totalizer's downward ray rides under the plume. Lengths
 // are tuned per direction so the light fades before the card edge (connects,
 // never slices). `kind` tints the meta dot. `total` flags the summary card (493
 // "in use"), which renders a single title instead of the kind+suffix split.
@@ -40,7 +42,7 @@ const cards = computed(() => [
     id: 'source',
     pos: 'source',
     kind: 'source',
-    conduit: { angle: 216, length: 186, delay: 0 },
+    conduit: { angle: 214, length: 200, delay: 0 },
     count: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.SOURCE.COUNT'),
     kindLabel: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.SOURCE.KIND'),
     body: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.SOURCE.BODY'),
@@ -49,7 +51,7 @@ const cards = computed(() => [
     id: 'human',
     pos: 'human',
     kind: 'human',
-    conduit: { angle: 270, length: 150, delay: 0.45 },
+    conduit: { angle: 270, length: 168, delay: 0.45 },
     count: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.HUMAN.COUNT'),
     kindLabel: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.HUMAN.KIND'),
     body: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.HUMAN.BODY'),
@@ -58,7 +60,7 @@ const cards = computed(() => [
     id: 'agent',
     pos: 'agent',
     kind: 'agent',
-    conduit: { angle: 324, length: 186, delay: 0.2 },
+    conduit: { angle: 326, length: 200, delay: 0.2 },
     count: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.AGENT.COUNT'),
     kindLabel: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.AGENT.KIND'),
     body: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.AGENT.BODY'),
@@ -67,7 +69,7 @@ const cards = computed(() => [
     id: 'auto',
     pos: 'auto',
     kind: 'auto',
-    conduit: { angle: 180, length: 158, delay: 0.9 },
+    conduit: { angle: 180, length: 196, delay: 0.9 },
     count: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.AUTO.COUNT'),
     kindLabel: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.AUTO.KIND'),
     body: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.AUTO.BODY'),
@@ -76,7 +78,7 @@ const cards = computed(() => [
     id: 'tool',
     pos: 'tool',
     kind: 'tool',
-    conduit: { angle: 0, length: 158, delay: 0.65 },
+    conduit: { angle: 0, length: 196, delay: 0.65 },
     count: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.TOOL.COUNT'),
     kindLabel: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.TOOL.KIND'),
     body: t('ALGORYTHMO_BRAIN.AQUARIO.HUB.CARDS.TOOL.BODY'),
@@ -98,13 +100,8 @@ const layerSuffix = computed(() =>
   t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYER_SUFFIX')
 );
 
-// Aimed ice beams handed to the orb, matched 1:1 to the card positions above.
+// Aimed pink rays handed to the orb, matched 1:1 to the card positions above.
 const aimedConduits = computed(() => cards.value.map(c => c.conduit));
-
-// Single coherent layer count, seated under the orb.
-const layerCount = computed(() =>
-  t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYER_COUNT')
-);
 
 // ── Card entrance/stagger — the founder's non-negotiable ──────────────────────
 // Cards must VISIBLY animate in (the prior round had none). They start hidden
@@ -124,9 +121,6 @@ onMounted(() => {
     duration: 0.52,
   });
 });
-
-// Dropzone hover state — demo only (no upload backend yet).
-const isDragging = ref(false);
 </script>
 
 <template>
@@ -138,42 +132,23 @@ const isDragging = ref(false);
       {{ t('ALGORYTHMO_BRAIN.AQUARIO.HUB.DEMO_WATERMARK') }}
     </span>
 
-    <!-- editorial header -->
-    <header class="alg-aquario__head">
-      <p class="alg-aquario__eyebrow">
-        {{ t('ALGORYTHMO_BRAIN.AQUARIO.HUB.EYEBROW') }}
-      </p>
-      <h1 class="alg-aquario__title">
-        {{ t('ALGORYTHMO_BRAIN.AQUARIO.HUB.TITLE') }}
-      </h1>
-      <p class="alg-aquario__subtitle">
-        {{ t('ALGORYTHMO_BRAIN.AQUARIO.HUB.SUBTITLE') }}
-      </p>
-    </header>
-
-    <!-- The living core as the radiant hub: orb in the centre cell, six knowledge
-         -layer cards scattered around it (3 top, 2 flanking, 1 below), ice beams
-         reaching each. -->
+    <!-- The living core as the radiant hub: the plasma orb in the centre cell,
+         six knowledge-layer cards scattered around it (3 top, 2 flanking, 1
+         below), pink rays reaching each — exactly Ref design 2. No header, no
+         second fold: one clean canvas. -->
     <div
       ref="stage"
       class="alg-aquario__stage"
       role="group"
       :aria-label="t('ALGORYTHMO_BRAIN.AQUARIO.HUB.STAGE_ARIA')"
     >
-      <!-- centre cell: the Aurora core, beams radiating to every card -->
+      <!-- centre cell: the Aurora core, pink rays radiating to every card -->
       <div class="alg-aquario__core">
         <AlgAuroraOrb
-          :size="128"
-          beam="ice"
+          :size="92"
           :aimed-conduits="aimedConduits"
           :aria-label="t('ALGORYTHMO_BRAIN.AQUARIO.HUB.ORB_ARIA')"
         />
-        <span class="alg-aquario__core-count" aria-hidden="true">
-          {{ layerCount }}
-        </span>
-        <span class="alg-aquario__core-label">
-          {{ t('ALGORYTHMO_BRAIN.AQUARIO.HUB.LAYER_COUNT_LABEL') }}
-        </span>
       </div>
 
       <!-- knowledge-layer cards (glass, never aurora) -->
@@ -209,29 +184,28 @@ const isDragging = ref(false);
         />
       </article>
     </div>
-
-    <!-- 2nd fold: signature ingestion dropzone (borda brilhante animada) -->
-    <BrainDropzone
-      v-model:dragging="isDragging"
-      class="alg-aquario__dropzone"
-    />
   </section>
 </template>
 
 <style scoped lang="scss">
+// One clean, full-bleed dark canvas (Ref design 2). The stage is vertically and
+// horizontally centred in the viewport — orb in the middle, cards scattered
+// around. No header, no second fold: nothing but the hub on the dark.
 .alg-aquario {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--alg-space-8);
-  padding: var(--alg-space-2) 0 var(--alg-space-8);
-  overflow-y: auto;
+  align-items: center;
+  justify-content: center;
   min-height: 0;
   flex: 1;
+  padding: var(--alg-space-6) 0;
+  overflow-y: auto;
   isolation: isolate;
 }
 
 // "Dados de demonstração" — honest signal, mono uppercase, quaternary, top-right.
+// Whisper-quiet so the canvas reads identical to the reference.
 .alg-aquario__watermark {
   position: absolute;
   top: 0;
@@ -242,42 +216,8 @@ const isDragging = ref(false);
   letter-spacing: var(--alg-tracking-widest);
   text-transform: uppercase;
   color: var(--alg-fg-quaternary);
+  opacity: 0.5;
   pointer-events: none;
-}
-
-// ── Editorial header ─────────────────────────────────────────────────────────
-.alg-aquario__head {
-  display: flex;
-  flex-direction: column;
-  gap: var(--alg-space-2);
-  max-width: 560px;
-}
-
-.alg-aquario__eyebrow {
-  margin: 0;
-  font-family: var(--alg-font-mono);
-  font-size: var(--alg-text-2xs);
-  font-weight: var(--alg-weight-medium);
-  letter-spacing: var(--alg-tracking-widest);
-  text-transform: uppercase;
-  color: var(--alg-fg-tertiary);
-}
-
-.alg-aquario__title {
-  margin: 0;
-  font-family: var(--alg-font-display);
-  font-size: var(--alg-text-3xl);
-  font-weight: var(--alg-weight-light);
-  letter-spacing: var(--alg-tracking-tightest);
-  line-height: var(--alg-leading-tight);
-  color: var(--alg-fg-primary);
-}
-
-.alg-aquario__subtitle {
-  margin: 0;
-  font-size: var(--alg-text-md);
-  line-height: var(--alg-leading-normal);
-  color: var(--alg-fg-secondary);
 }
 
 // ── Hub stage ────────────────────────────────────────────────────────────────
@@ -285,12 +225,11 @@ const isDragging = ref(false);
 // the centre cell; the six cards sit around it — three across the top, two
 // flanking the sphere at mid-height (Auto left, Tool right), and the totalizer
 // centred below. The orb is therefore STRUCTURALLY the hub (a real grid cell),
-// the radiant centre every beam leaves from — not an absolute disc floating over
-// a wall of numbers (the prior "ball loose in the middle" defect).
+// the radiant centre every ray leaves from.
 .alg-aquario__stage {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr minmax(150px, 0.74fr) 1fr;
+  grid-template-columns: 1fr minmax(140px, 0.62fr) 1fr;
   grid-template-rows: auto minmax(150px, auto) auto;
   // Reference scatter: three cards across the top, the orb flanked by Auto/Tool
   // at mid-height, the totalizer centred below.
@@ -306,38 +245,16 @@ const isDragging = ref(false);
 }
 
 // Centre cell — the living core. The orb sits dead centre, the radiant point
-// every beam leaves from. z-index 1 seats the core (and the orb's beams, which
-// live inside it) BELOW the cards (z-index 2): an overshooting beam paints UNDER
-// the glass (light beneath the surface), never a line on the card face.
+// every ray leaves from. z-index 1 seats the core (and the orb's rays + plume,
+// which live inside it) BELOW the cards (z-index 2): an overshooting ray paints
+// UNDER the glass (light beneath the surface), never a line on the card face.
 .alg-aquario__core {
   grid-area: core;
   position: relative;
   z-index: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--alg-space-2);
-}
-
-.alg-aquario__core-count {
-  margin-top: var(--alg-space-4);
-  font-family: var(--alg-font-display);
-  font-size: var(--alg-text-2xl);
-  font-weight: var(--alg-weight-medium);
-  letter-spacing: var(--alg-tracking-tightest);
-  line-height: var(--alg-leading-tight);
-  color: var(--alg-fg-primary);
-  font-variant-numeric: tabular-nums;
-}
-
-.alg-aquario__core-label {
-  font-family: var(--alg-font-mono);
-  font-size: var(--alg-text-2xs);
-  letter-spacing: var(--alg-tracking-widest);
-  text-transform: uppercase;
-  color: var(--alg-fg-tertiary);
-  text-align: center;
 }
 
 // ── Knowledge-layer cards ────────────────────────────────────────────────────
@@ -437,9 +354,10 @@ const isDragging = ref(false);
   border-radius: inherit;
 }
 
-// Ice edge-light: a soft cool glow on the card's edge facing the orb — the spot
-// the beam lands. Faint at rest, brightens on hover. Each card points its glow
-// back toward the centre (the source of the light).
+// Pink edge-light: a soft warm glow on the card's edge facing the orb — the spot
+// the ray lands. Faint at rest, brightens on hover. Each card points its glow
+// back toward the centre (the source of the light), matching the reference's
+// warm rays. Very low at rest so the cards read as clean glass.
 .alg-aquario__card-beamlight {
   position: absolute;
   z-index: 0;
@@ -448,11 +366,11 @@ const isDragging = ref(false);
   border-radius: var(--alg-radius-pill);
   background: radial-gradient(
     circle,
-    color-mix(in oklch, var(--alg-ice-2), transparent 80%) 0%,
+    color-mix(in oklch, var(--alg-aurora-1), transparent 84%) 0%,
     transparent 70%
   );
   filter: blur(14px);
-  opacity: 0.5;
+  opacity: 0.4;
   pointer-events: none;
   transition: opacity var(--alg-duration-slow) var(--alg-ease-cinematic);
 }
@@ -572,17 +490,10 @@ const isDragging = ref(false);
   }
 }
 
-// ── 2nd fold dropzone ────────────────────────────────────────────────────────
-.alg-aquario__dropzone {
-  max-width: 1180px;
-  width: 100%;
-  margin: 0 auto;
-}
-
 // ── Responsive ───────────────────────────────────────────────────────────────
 // Below the hub breakpoint the orb can't be a centre cell without crushing the
 // cards. Collapse to a single column: orb on top (inline), cards stacked. The
-// beams stop being meaningful at this width, but the orb keeps its depth + beam,
+// rays stop being meaningful at this width, but the orb keeps its depth + plume,
 // so it still reads as the living core.
 @media (max-width: 980px) {
   .alg-aquario__stage {

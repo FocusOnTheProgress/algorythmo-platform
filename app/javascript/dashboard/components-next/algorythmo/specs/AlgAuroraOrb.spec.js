@@ -3,11 +3,13 @@ import { mount } from '@vue/test-utils';
 import AlgAuroraOrb from '../AlgAuroraOrb.vue';
 
 describe('AlgAuroraOrb', () => {
-  it('renders the sphere, halo and beam', () => {
+  it('renders the plasma sphere, bloom, halo and downward plume', () => {
     const wrapper = mount(AlgAuroraOrb);
     expect(wrapper.find('.alg-aurora-orb__sphere').exists()).toBe(true);
+    expect(wrapper.find('.alg-aurora-orb__bloom').exists()).toBe(true);
     expect(wrapper.find('.alg-aurora-orb__halo').exists()).toBe(true);
-    expect(wrapper.find('.alg-aurora-orb__beam').exists()).toBe(true);
+    // The light now falls DOWN as a comet plume (Ref design 2), not up as a beam.
+    expect(wrapper.find('.alg-aurora-orb__plume').exists()).toBe(true);
   });
 
   it('renders no conduits by default', () => {
