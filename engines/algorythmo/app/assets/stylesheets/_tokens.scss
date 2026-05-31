@@ -147,6 +147,20 @@
     0.36
   ); // watermarks, decorative-only, non-operable meta
 
+  // algorythmo: MONOCHROME ICON TIERS (founder Brief v3, Stream C). Icons are
+  // monochromatic white in opacity tiers — NEVER coloured, NEVER filled. This
+  // kills the orange/green icon "carnival". Verbatim founder values
+  // (rgba(250,250,250, 1 / .72 / .48 / .28)): 250 (not 255) so the brightest
+  // glyph is a hair under pure white, matching the typography "never #FFF" rule.
+  //   icon-1  primary glyph (active / emphasised)
+  //   icon-2  default glyph (KPI tile leading icon, list affordances)
+  //   icon-3  muted glyph (metadata, secondary affordances)
+  //   icon-4  faint glyph (decorative, watermark-adjacent)
+  --alg-icon-1: rgba(250, 250, 250, 1);
+  --alg-icon-2: rgba(250, 250, 250, 0.72);
+  --alg-icon-3: rgba(250, 250, 250, 0.48);
+  --alg-icon-4: rgba(250, 250, 250, 0.28);
+
   // Inverse (rare — used only on bright accent fills if/when they exist)
   --alg-fg-inverse: var(--alg-black-1);
 
@@ -901,5 +915,28 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  // algorythmo: AURORA BEAM is an EXPLICIT EXCEPTION to the kill-switch above.
+  // -------------------------------------------------------------------------
+  // The travelling ICE arc is the SIGNATURE of every agent surface and the
+  // founder requires it to MOVE (LIVE review, repeated: "o feixe não se mexe").
+  // It was silently frozen on every machine with OS "animation effects off"
+  // (common on Windows — the founder's review machine) by TWO compounding
+  // overrides: the ambient duration tokens collapse to 1ms (above) AND the
+  // universal `*` rule forces `animation-iteration-count: 1` (runs once, dies).
+  // A prior `_components.scss` override tried to slow it to 28s but lost to the
+  // `!important` universal rule. We restore the beam here, in the SAME media
+  // block + cascade layer so this rule wins the `!important` tie by source
+  // order. A slow 24s ambient hue drift on a hairline is NOT the parallax /
+  // translational motion `prefers-reduced-motion` exists to suppress (WCAG
+  // 2.3.3) — it is a calm, non-distracting glow. We honour the intent by
+  // SLOWING it, not by killing the product's signature.
+  .alg-aurora-border__beam,
+  .alg-aurora-border__beam::before {
+    animation-name: alg-aurora-border-travel !important;
+    animation-duration: 24s !important;
+    animation-timing-function: linear !important;
+    animation-iteration-count: infinite !important;
   }
 }

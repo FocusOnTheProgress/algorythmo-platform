@@ -1,15 +1,17 @@
 <script setup>
 // algorythmo: Cinematic OS v3 — sector shell (plan 0009, RODADA 3, F-B).
 // Single source of truth for the sector page pattern. The sector's specialist
-// agent is no longer a footer afterthought: it is a SOLID, FIXED HERO band at
-// the TOP of every sector — the orchestrator that speaks for the sector. Below
-// it sits the dense data Overview (default tab) + operational sub-tabs.
+// agent is no longer a footer afterthought: it is a SOLID HERO band at the TOP
+// of every sector — the orchestrator that speaks for the sector. Below it sits
+// the dense data Overview (default tab) + operational sub-tabs.
 //
 // Layout (top → bottom):
 //   1. <header>           — sector title
-//   2. HERO (sticky)      — Aurora-bordered agent band: planet identity +
+//   2. HERO (in-flow)     — Aurora-bordered agent band: planet identity +
 //                           heading + typed opening line + composer. Solid
-//                           (opaque elevated bg), never floating glass.
+//                           (opaque elevated bg), never floating glass. It is
+//                           IN-FLOW (not sticky) so it never covers the data
+//                           grid as the page scrolls (Brief v3, Stream C #1).
 //   3. ARIA tablist       — Overview + operational sub-tabs
 //   4. tab panels         — the dense data central + deep sub-views
 //
@@ -153,9 +155,10 @@ function onTabKeydown(event, index) {
       <h1 class="alg-shell__title">{{ t(titleKey) }}</h1>
     </header>
 
-    <!-- HERO: the sector's specialist orchestrator. Sticky + opaque so the
-         scrolling data grid never bleeds through. Aurora Border marks it as a
-         sanctioned surface where the intelligence speaks. -->
+    <!-- HERO: the sector's specialist orchestrator. In-flow + opaque so it
+         scrolls away with the page and never covers the data grid below.
+         Aurora Border marks it as a sanctioned surface where the intelligence
+         speaks. -->
     <AlgAuroraBorder
       as="section"
       class="alg-shell__chat"

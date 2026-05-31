@@ -138,36 +138,41 @@
 // bright ICE segment. Animating --alg-aurora-angle rotates the gradient so that
 // bright segment sweeps the ENTIRE perimeter — no transform, no oversize, no
 // uncovered corner. Opacity is the intensity dial; the arc stays bright.
-.alg-aurora-border__beam {
-  // Per-sector ICE tint (founder decision 2026-05-31): the beam is an ICY,
-  // LIGHT version of each sector's hue — not pure white, not saturated. The
-  // hue is set per sector on .alg-shell--<sector> (see SECTOR ACCENTS below);
-  // it falls back to a neutral ice-blue (225) on non-sector surfaces (Brain
-  // dropzone). High L + low-moderate C = "frozen, tinted glass", never neon.
-  --alg-beam-h: var(--alg-sector-hue, 225);
-  --alg-beam-c: var(--alg-sector-chroma, 0.085);
+// The single bright ICE arc, shared by BOTH the crisp ring layer and the
+// blurred glow copy behind it. WHITE / ICE register, UNIVERSAL — founder Brief
+// v3, Stream C: "o feixe de luz da borda dos agentes deve ser branco." The beam
+// carries NO sector hue. Very high L + near-zero chroma + faint cool cast = a
+// frozen white comet, never coloured, never neon. One bright ~30° arc that
+// traverses the WHOLE perimeter (not one side, not the whole border lit).
+// `--alg-beam-h` is a faint cool cast only; chroma is so low the hue reads as
+// white. The bright span sits 11%→32% of the conic sweep; everything else is
+// transparent so a SINGLE arc travels.
+.alg-aurora-border__beam,
+.alg-aurora-border__beam::before {
+  --alg-beam-h: 225;
+  --alg-beam-c: 0.012;
+  content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   padding: var(--alg-border-thickness, 1px);
-  opacity: var(--alg-border-opacity, 1);
   background: conic-gradient(
     from var(--alg-aurora-angle) at 50% 50%,
     transparent 0%,
     transparent 6%,
-    oklch(0.7 var(--alg-beam-c) var(--alg-beam-h) / 0.55) 11%,
-    oklch(0.88 var(--alg-beam-c) var(--alg-beam-h)) 15%,
-    oklch(0.95 calc(var(--alg-beam-c) * 0.6) var(--alg-beam-h)) 18%,
-    oklch(0.99 calc(var(--alg-beam-c) * 0.35) var(--alg-beam-h)) 20%,
-    oklch(0.995 calc(var(--alg-beam-c) * 0.25) var(--alg-beam-h)) 21%,
-    oklch(0.99 calc(var(--alg-beam-c) * 0.35) var(--alg-beam-h)) 22%,
-    oklch(0.95 calc(var(--alg-beam-c) * 0.6) var(--alg-beam-h)) 24%,
-    oklch(0.88 var(--alg-beam-c) var(--alg-beam-h)) 27%,
-    oklch(0.7 var(--alg-beam-c) var(--alg-beam-h) / 0.55) 32%,
+    oklch(0.78 var(--alg-beam-c) var(--alg-beam-h) / 0.4) 11%,
+    oklch(0.9 var(--alg-beam-c) var(--alg-beam-h)) 15%,
+    oklch(0.96 calc(var(--alg-beam-c) * 0.6) var(--alg-beam-h)) 18%,
+    oklch(0.99 calc(var(--alg-beam-c) * 0.3) var(--alg-beam-h)) 20%,
+    oklch(1 0 0) 21%,
+    oklch(0.99 calc(var(--alg-beam-c) * 0.3) var(--alg-beam-h)) 22%,
+    oklch(0.96 calc(var(--alg-beam-c) * 0.6) var(--alg-beam-h)) 24%,
+    oklch(0.9 var(--alg-beam-c) var(--alg-beam-h)) 27%,
+    oklch(0.78 var(--alg-beam-c) var(--alg-beam-h) / 0.4) 32%,
     transparent 38%,
     transparent 100%
   );
-  // Same hairline mask as the frame — only the ring paints, never the centre.
+  // Hairline mask — only the ring paints, never the centre (content untinted).
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -177,8 +182,29 @@
     linear-gradient(#fff 0 0);
   mask-composite: exclude;
   will-change: --alg-aurora-angle;
+  // Layer 2 (middle / the gradient): the crisp travelling arc on the hairline.
   animation: alg-aurora-border-travel var(--alg-duration-ambient-slow) linear
     infinite;
+}
+
+.alg-aurora-border__beam {
+  opacity: var(--alg-border-opacity, 1);
+}
+
+// Layer 3 (behind / glow): a BLURRED COPY of the same arc, sat just outside the
+// ring, giving the illuminated neon spread that follows the comet. It shares the
+// exact gradient + animation (via the selector list above) so its bright arc
+// stays locked to the crisp one, then blurs + bleeds slightly past the edge.
+// drop-shadow blur is used (not `filter: blur`) so the glow hugs the masked ring
+// shape rather than a rectangle. z-index keeps it under the crisp arc.
+.alg-aurora-border__beam::before {
+  z-index: -1;
+  // Bleed the glow a touch outside the hairline so it reads as spread, not a
+  // second ring. Negative inset enlarges the blurred copy.
+  inset: -2px;
+  padding: calc(var(--alg-border-thickness, 1px) + 2px);
+  opacity: calc(var(--alg-border-opacity, 1) * 0.85);
+  filter: blur(6px);
 }
 
 .alg-aurora-border__content {
@@ -188,34 +214,32 @@
   border-radius: inherit;
 }
 
-// Processing: the arc quickens to the orb's ~6s breath.
-.alg-aurora-border--active .alg-aurora-border__beam {
+// Processing: the arc quickens to the orb's ~6s breath. Both the crisp arc and
+// its blurred glow copy (::before) quicken together so they stay locked.
+.alg-aurora-border--active .alg-aurora-border__beam,
+.alg-aurora-border--active .alg-aurora-border__beam::before {
   animation-duration: var(--alg-duration-ambient);
 }
 
-// Reduced motion: the travelling beam is the SIGNATURE of this surface and the
-// founder requires it to move (LIVE review, repeated: "o feixe não se mexe").
-// A prior build froze it here with `animation: none`, so anyone whose OS has
-// "reduce motion" / "animation effects off" (common on Windows) saw a dead
-// border — the exact bug reported. We honour the accessibility intent by
-// SLOWING the drift to a calm, non-distracting ~28s loop rather than killing
-// it: a slow ambient gradient is not the rapid/parallax motion reduce-motion
-// targets, and the beam stays alive.
-@media (prefers-reduced-motion: reduce) {
-  .alg-aurora-border__beam {
-    animation-duration: 28s;
-  }
-}
+// NOTE: reduced-motion handling for this beam lives in _tokens.scss, INSIDE the
+// same `@media (prefers-reduced-motion: reduce)` block as the global
+// `* { animation-iteration-count: 1 !important }` kill-switch — that is the only
+// place an override can win the `!important` tie and keep the beam moving. A
+// prior `animation-duration: 28s` rule here was DEAD CODE: it was out-ranked by
+// that universal `!important` rule, which is exactly why the founder kept seeing
+// a frozen beam. Do not re-add a reduced-motion rule here; it cannot win.
 
 // =============================================================================
-// SECTOR ACCENTS — each of the 8 management sectors owns ONE distinct hue.
+// SECTOR ACCENTS — each of the 8 management sectors owns ONE distinct hue,
+// applied at a SINGLE strategic point (founder Brief v3, Stream C).
 // -----------------------------------------------------------------------------
 // Set on the sector shell root (.alg-shell--<sector>, wired in SectorShellV2 from
-// the per-sector planet-class). The hue drives BOTH the ice-tinted Aurora beam
-// (--alg-sector-hue, consumed by .alg-aurora-border__beam above) AND the
-// sector's coloured figures (.alg-sector-ink). Hues are spread around the wheel
-// so NO two sectors repeat — the prior build reused a couple of accents, which
-// the founder flagged. Founder decision 2026-05-31.
+// the per-sector planet-class). The hue now marks ONLY the active/selected state
+// (the active sub-tab accent, .alg-shell__tab--active below) — it does NOT tint
+// the Aurora beam (that is WHITE/ICE, universal) and does NOT colour icons (those
+// are monochrome white tiers). This kills the "carnival": one controlled colour +
+// white beam + monochrome icons + dark canvas per sector. Hues are spread around
+// the wheel so NO two sectors repeat. Founder Brief v3, 2026-05-31.
 // =============================================================================
 .alg-shell--commercial     { --alg-sector-hue: 160; } // emerald
 .alg-shell--marketing      { --alg-sector-hue: 65; }  // amber
@@ -226,20 +250,23 @@
 .alg-shell--finance        { --alg-sector-hue: 120; } // chartreuse / growth
 .alg-shell--administration { --alg-sector-hue: 275; } // indigo
 
-// Sector-coloured figure (KPI value / accent detail): the sector hue rendered as
-// a readable, vivid-but-not-neon ink against the dark canvas. Apply to the
-// numbers/details that should carry the sector identity.
+// Sector-coloured accent ink — RESERVED for the single strategic colour point
+// (the active/selected state). It is NO LONGER applied to KPI values or scattered
+// figures (founder Brief v3: one colour, one point — not numbers everywhere). The
+// data reads white on dark; colour appears only where selection needs perception.
 .alg-sector-ink {
   color: oklch(0.82 0.13 var(--alg-sector-hue, 225));
 }
 
-// Inside a sector shell, the KPI tile's leading glyph carries the SECTOR colour
-// (it was a flat neutral grey, identical across every sector — the "repetition"
-// the founder flagged). Scoped to `[class*='alg-shell--']` so KPI tiles used
-// off a sector page keep their neutral ink. The directional delta pills stay
-// SEMANTIC (up=green / down=red) — that meaning is not a sector accent.
+// ICONS ARE MONOCHROME (founder Brief v3, Stream C): the KPI tile's leading glyph
+// is white in an opacity tier, NEVER the sector colour. The prior per-sector hue
+// override here was the orange/green icon "carnival" the founder rejected — it is
+// removed. Inside a sector shell the glyph is forced to --alg-icon-2 so it stays
+// monochrome regardless of any inherited colour. Off a sector page the tile keeps
+// its own neutral default (.alg-kpi-tile__icon). Delta pills stay SEMANTIC
+// (up=green / down=red) — meaning, not a sector accent.
 [class*='alg-shell--'] .alg-kpi-tile__icon {
-  color: oklch(0.8 0.12 var(--alg-sector-hue, 225));
+  color: var(--alg-icon-2);
 }
 
 // =============================================================================
@@ -1847,6 +1874,17 @@
   }
 }
 
+// SECTOR ACCENT — the ONE strategic colour point (founder Brief v3, Stream C):
+// the active sub-tab carries the sector hue as a hairline underline marker, so
+// the selected state is where "pontos de luz só onde há necessidade de
+// percepção". Scoped to inside a sector shell so off-sector tablists stay
+// neutral; the hue is the per-sector --alg-sector-hue set on .alg-shell--<id>.
+// This is the only sector colour besides the identity orb — beam + icons stay
+// white/monochrome.
+[class*='alg-shell--'] .alg-shell__tab--active {
+  box-shadow: inset 0 -2px 0 0 oklch(0.78 0.14 var(--alg-sector-hue, 225));
+}
+
 .alg-shell__panel {
   display: flex;
   flex-direction: column;
@@ -1859,32 +1897,32 @@
   }
 }
 
-// HERO band — the sector's specialist orchestrator pinned to the top.
+// HERO band — the sector's specialist orchestrator at the TOP of the sector.
 // `.alg-shell__chat` is the AlgAuroraBorder root (it carries the Aurora frame +
-// optional glow). We make it SOLID and STICKY: an opaque elevated surface so
-// the scrolling KPI grid below never bleeds through, sticky to top:0 so it
-// stays present as the data central scrolls. position:sticky (NOT fixed) keeps
-// it inside the centered, max-width column. Order-1 so it sits above the
-// tablist; the heading retains .alg-shell__chat-heading for a11y + the 8
-// *Dashboard specs.
+// glow). It IN-FLOW (NOT sticky) — founder Brief v3, Stream C #1 complaint.
+//
+// WHY NOT STICKY: the prior build pinned this band `position: sticky; top: 0`
+// inside the `.alg-shell` scroll container. Because the hero is tall (planet +
+// heading + composer), pinning it to the top of the viewport made it
+// PERMANENTLY OCCLUDE the KPI grid that scrolls underneath it — the data was
+// hidden behind an opaque panel at every scroll position. That is the "the chat
+// covers the data" bug. The fix: the band flows in the document and scrolls away
+// with the page, so once the user scrolls past the agent the data central owns
+// the full viewport. The band must NEVER cover content — it coexists.
+//
+// It stays a SOLID opaque elevated surface (Brief: cards are solid, not glass)
+// and keeps the Aurora frame + glow for depth-by-light. Solidity no longer
+// matters for occlusion (nothing is pinned over content) but holds the ruler.
 .alg-shell__chat {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  // Opaque elevated background — solid, not floating glass. The KPI grid must
-  // never show through.
+  // In-flow, no sticky, no stacking context that could trap content beneath it.
+  position: relative;
+  // Opaque elevated background — solid, not floating glass.
   background: var(--alg-bg-elevated);
   border-radius: var(--alg-radius-2xl);
   // No box-shadow here: AlgAuroraBorder composes the band's elevation + aurora
   // glow inline via its `elevation` prop (`var(--alg-elevation-2)`, passed from
   // SectorShellV2). Declaring elevation here would lose to the component's
   // inline style and re-introduce the round-2 flat-slab defect.
-
-  @media (max-width: 768px) {
-    // On narrow screens the sticky band would eat too much height; let it scroll
-    // with the page.
-    position: static;
-  }
 }
 
 // algorythmo: A7 — CENTERED hero. The agent is the centre of gravity of the
@@ -2587,7 +2625,8 @@
 }
 
 .alg-kpi-tile__icon {
-  color: var(--alg-fg-tertiary);
+  // Monochrome white tier — never coloured, never filled (founder Brief v3).
+  color: var(--alg-icon-2);
   display: inline-flex;
   flex-shrink: 0;
 }
