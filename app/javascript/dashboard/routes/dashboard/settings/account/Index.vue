@@ -17,6 +17,7 @@ import BuildInfo from './components/BuildInfo.vue';
 import AccountDelete from './components/AccountDelete.vue';
 import AudioTranscription from './components/AudioTranscription.vue';
 import SectionLayout from './components/SectionLayout.vue';
+import AlgThemeControl from 'dashboard/components-next/algorythmo/AlgThemeControl.vue';
 
 export default {
   components: {
@@ -30,6 +31,7 @@ export default {
     SectionLayout,
     WithLabel,
     NextInput,
+    AlgThemeControl,
   },
   setup() {
     const { updateUISettings, uiSettings } = useUISettings();
@@ -349,6 +351,23 @@ export default {
             </NextButton>
           </div>
         </form>
+      </SectionLayout>
+
+      <SectionLayout
+        v-if="!uiFlags.isFetchingItem"
+        with-border
+        :title="$t('GENERAL_SETTINGS.FORM.APPEARANCE_SECTION.TITLE')"
+        :description="$t('GENERAL_SETTINGS.FORM.APPEARANCE_SECTION.NOTE')"
+      >
+        <WithLabel
+          name="appearance-theme"
+          :label="$t('GENERAL_SETTINGS.FORM.APPEARANCE_SECTION.LABEL')"
+        >
+          <AlgThemeControl />
+          <template #help>
+            {{ $t('GENERAL_SETTINGS.FORM.APPEARANCE_SECTION.HELP') }}
+          </template>
+        </WithLabel>
       </SectionLayout>
 
       <woot-loading-state v-if="uiFlags.isFetchingItem" />

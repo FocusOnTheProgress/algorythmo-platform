@@ -7,6 +7,7 @@
 import { defineAsyncComponent, h, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAccount } from 'dashboard/composables/useAccount';
+import { useAlgChartTheme } from 'dashboard/composables/algorythmo/useAlgChartTheme';
 
 const props = defineProps({
   // One descriptor from mocks/sectors/commercial-subtabs.js.
@@ -18,6 +19,8 @@ const props = defineProps({
 
 const { t } = useI18n();
 const { accountScopedRoute } = useAccount();
+// algorythmo: Stream E — theme-reactive chart colours (ink on paper, white on dark).
+const { lineColor, fillColor } = useAlgChartTheme();
 
 const ChartLoading = () =>
   h('div', {
@@ -47,8 +50,8 @@ const collection = computed(() => ({
   datasets: [
     {
       data: props.view.chartData,
-      borderColor: 'rgba(255, 255, 255, 0.72)',
-      backgroundColor: 'rgba(255, 255, 255, 0.06)',
+      borderColor: lineColor.value,
+      backgroundColor: fillColor.value,
       borderWidth: 1.5,
       tension: 0.35,
       fill: true,

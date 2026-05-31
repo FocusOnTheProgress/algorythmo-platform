@@ -160,19 +160,25 @@
   inset: 0;
   border-radius: inherit;
   padding: var(--alg-border-thickness, 1px);
+  // algorythmo: lightness ladder lifted to --alg-beam-l-* tokens (Stream E, plan
+  // 0011) so the comet FLIPS white→ink under [data-theme='white']. Dark register
+  // values are unchanged (peak 1 → edge 0.78, faint cool cast) so the approved
+  // white comet is byte-for-byte identical; paper supplies the ink ladder.
   background: conic-gradient(
     from var(--alg-aurora-angle) at 50% 50%,
     transparent 0%,
     transparent 6%,
-    oklch(0.78 var(--alg-beam-c) var(--alg-beam-h) / 0.4) 11%,
-    oklch(0.9 var(--alg-beam-c) var(--alg-beam-h)) 15%,
-    oklch(0.96 calc(var(--alg-beam-c) * 0.6) var(--alg-beam-h)) 18%,
-    oklch(0.99 calc(var(--alg-beam-c) * 0.3) var(--alg-beam-h)) 20%,
-    oklch(1 0 0) 21%,
-    oklch(0.99 calc(var(--alg-beam-c) * 0.3) var(--alg-beam-h)) 22%,
-    oklch(0.96 calc(var(--alg-beam-c) * 0.6) var(--alg-beam-h)) 24%,
-    oklch(0.9 var(--alg-beam-c) var(--alg-beam-h)) 27%,
-    oklch(0.78 var(--alg-beam-c) var(--alg-beam-h) / 0.4) 32%,
+    oklch(var(--alg-beam-l-edge) var(--alg-beam-c) var(--alg-beam-h) / var(--alg-beam-edge-alpha))
+      11%,
+    oklch(var(--alg-beam-l-3) var(--alg-beam-c) var(--alg-beam-h)) 15%,
+    oklch(var(--alg-beam-l-2) calc(var(--alg-beam-c) * 0.6) var(--alg-beam-h)) 18%,
+    oklch(var(--alg-beam-l-1) calc(var(--alg-beam-c) * 0.3) var(--alg-beam-h)) 20%,
+    oklch(var(--alg-beam-l-peak) 0 var(--alg-beam-h)) 21%,
+    oklch(var(--alg-beam-l-1) calc(var(--alg-beam-c) * 0.3) var(--alg-beam-h)) 22%,
+    oklch(var(--alg-beam-l-2) calc(var(--alg-beam-c) * 0.6) var(--alg-beam-h)) 24%,
+    oklch(var(--alg-beam-l-3) var(--alg-beam-c) var(--alg-beam-h)) 27%,
+    oklch(var(--alg-beam-l-edge) var(--alg-beam-c) var(--alg-beam-h) / var(--alg-beam-edge-alpha))
+      32%,
     transparent 38%,
     transparent 100%
   );
