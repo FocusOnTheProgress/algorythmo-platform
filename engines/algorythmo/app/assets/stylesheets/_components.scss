@@ -143,17 +143,20 @@
   inset: 0;
   border-radius: inherit;
   padding: var(--alg-border-thickness, 1px);
-  opacity: var(--alg-border-opacity, 0.9);
+  opacity: var(--alg-border-opacity, 1);
   background: conic-gradient(
     from var(--alg-aurora-angle) at 50% 50%,
     transparent 0%,
-    transparent 8%,
-    color-mix(in oklch, var(--alg-ice-3), transparent 55%) 13%,
-    var(--alg-ice-2) 18%,
-    var(--alg-ice-1) 21%,
-    var(--alg-ice-1) 23%,
-    var(--alg-ice-2) 26%,
-    color-mix(in oklch, var(--alg-ice-3), transparent 55%) 31%,
+    transparent 6%,
+    color-mix(in oklch, var(--alg-ice-3), transparent 45%) 11%,
+    var(--alg-ice-2) 15%,
+    var(--alg-ice-1) 18%,
+    oklch(0.98 0.025 220) 20%,
+    oklch(0.99 0.02 220) 21%,
+    oklch(0.98 0.025 220) 22%,
+    var(--alg-ice-1) 24%,
+    var(--alg-ice-2) 27%,
+    color-mix(in oklch, var(--alg-ice-3), transparent 45%) 32%,
     transparent 38%,
     transparent 100%
   );

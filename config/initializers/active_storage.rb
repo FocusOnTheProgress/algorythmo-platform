@@ -10,7 +10,18 @@ Rails.application.config.active_storage.content_types_allowed_inline += %w[
   audio/x-m4a
   audio/wav
   audio/x-wav
+  image/svg+xml
 ]
+
+# algorythmo: the workspace brand logo is uploaded as SVG. Rails ships SVG in
+# `content_types_to_serve_as_binary` (a hardening default — SVG can embed
+# scripts), which forces Content-Disposition: attachment + application/octet-stream,
+# so the sidebar <img src> can't render it (naturalWidth 0). Only an account
+# admin can upload the brand logo (trusted origin), and the logo is consumed via
+# <img>, which does not execute embedded SVG script — so serving it inline as
+# image/svg+xml is safe here. Remove it from the serve-as-binary list so the
+# allowlist-inline above takes effect.
+Rails.application.config.active_storage.content_types_to_serve_as_binary.delete('image/svg+xml')
 
 module ActiveStorageDirectUploadMetadataFilter
   INTERNAL_METADATA_KEYS = %w[identified analyzed composed].freeze
