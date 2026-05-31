@@ -30,7 +30,7 @@ vi.mock('dashboard/store', () => ({
   },
 }));
 
-vi.mock('../helper/routeHelpers', () => ({
+vi.mock('../../helper/routeHelpers', () => ({
   validateLoggedInRoutes: vi.fn(() => null),
   isRouteBlockedByAlgorythmoGate: vi.fn(() => false),
 }));
@@ -39,7 +39,7 @@ vi.mock('v3/helpers/RouteHelper', () => ({
   isOnOnboardingView: vi.fn(() => false),
 }));
 
-vi.mock('../helper/AnalyticsHelper', () => ({
+vi.mock('../../helper/AnalyticsHelper', () => ({
   default: { page: vi.fn() },
 }));
 
@@ -167,7 +167,9 @@ describe('Stream D — bare-entry landing wiring', () => {
       account_id: 1,
     };
 
-    const { validateLoggedInRoutes } = await import('../helper/routeHelpers');
+    const { validateLoggedInRoutes } = await import(
+      '../../helper/routeHelpers'
+    );
     validateLoggedInRoutes.mockReturnValue(null);
 
     const next = vi.fn();
