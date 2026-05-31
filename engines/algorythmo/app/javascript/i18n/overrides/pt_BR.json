@@ -1,4 +1,12 @@
 {
+  "CONTACTS_LAYOUT": {
+    "EMPTY_STATE": {
+      "HERO_HEADLINE": "Seus contatos aparecerão aqui.",
+      "HERO_SUBTITLE": "Importe um arquivo CSV ou aguarde o primeiro contato chegar por um canal conectado.",
+      "HERO_ADD_ARIA": "Importar contatos",
+      "HERO_IMPORT_LINK": "Importar lista de contatos CSV"
+    }
+  },
   "SIDEBAR": {
     "RELATORIOS_COMERCIAIS": "Relatórios Comerciais",
     "RELATORIOS_COMERCIAIS_VISAO": "Visão Comercial",

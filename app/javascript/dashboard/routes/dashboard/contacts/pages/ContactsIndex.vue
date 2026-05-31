@@ -402,10 +402,6 @@ const handleSort = async ({ sort, order }) => {
     : fetchContacts());
 };
 
-const createContact = async contact => {
-  await store.dispatch('contacts/create', contact);
-};
-
 watch(hasSelection, value => {
   if (!value) {
     bulkDeleteDialogRef.value?.close?.();
@@ -516,14 +512,9 @@ onMounted(async () => {
           @assign-labels="assignLabels"
           @delete-selected="openBulkDeleteDialog"
         />
-        <ContactEmptyState
-          v-if="showEmptyStateLayout"
-          class="pt-14"
-          :title="t('CONTACTS_LAYOUT.EMPTY_STATE.TITLE')"
-          :subtitle="t('CONTACTS_LAYOUT.EMPTY_STATE.SUBTITLE')"
-          :button-label="t('CONTACTS_LAYOUT.EMPTY_STATE.BUTTON_LABEL')"
-          @create="createContact"
-        />
+        <!-- algorythmo: stream-b — Hero-band empty state (plan 0011).
+             Props/events removed; the component is now self-contained. -->
+        <ContactEmptyState v-if="showEmptyStateLayout" />
 
         <div
           v-else-if="showEmptyText"

@@ -308,21 +308,20 @@ const menuItems = computed(() => {
     // ── OPERACIONAL block (no section header) ────────────────────────────────
     // algorythmo: M5 sidebar restructure — Operacional block: Contacts, Companies, Conversations, CRM
     // algorythmo: rodada 3 — CRM-6: CRM entry MOVED below Conversation (was head of block).
+    // algorythmo: stream-b — D1: "All Contacts" sub-tab removed (plan 0011). Clicking
+    // "Contacts" in the sidebar now lands directly on contacts_dashboard_index.
+    // Segments and Tagged With sub-groups remain for navigation within saved views.
     {
       name: 'Contacts',
       label: t('SIDEBAR.CONTACTS'),
       icon: 'i-lucide-contact',
+      to: accountScopedRoute(
+        'contacts_dashboard_index',
+        {},
+        { page: 1, search: undefined }
+      ),
+      activeOn: ['contacts_dashboard_index', 'contacts_edit'],
       children: [
-        {
-          name: 'All Contacts',
-          label: t('SIDEBAR.ALL_CONTACTS'),
-          to: accountScopedRoute(
-            'contacts_dashboard_index',
-            {},
-            { page: 1, search: undefined }
-          ),
-          activeOn: ['contacts_dashboard_index', 'contacts_edit'],
-        },
         // algorythmo: B1 — removed "Ativo" sidebar tab. Contacts is a
         // single unified list; no active/inactive split exposed to the user.
         {
