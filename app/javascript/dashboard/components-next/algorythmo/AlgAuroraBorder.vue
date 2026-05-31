@@ -7,22 +7,25 @@
 // agent hero and the Brain knowledge dropzone. Sanctioned only on signature/
 // identity surfaces — never on operational chrome.
 //
-// A5 ROOT CAUSE + FIX (why the beam never moved):
-//   The previous build painted `--alg-aurora-border` = `conic-gradient(from
-//   var(--alg-aurora-angle))` and animated the custom property 0deg→360deg via
-//   an `@property` registered in THIS scoped <style>. Vue's scoped-style pass
-//   doesn't reliably preserve a global `@property` at-rule, so the browser saw
-//   --alg-aurora-angle as an UNregistered custom property → the keyframe jumped
-//   discretely instead of interpolating, and because a conic gradient is
-//   periodic (0deg and 360deg are the SAME image) the arc never appeared to
-//   move. Result: a static ring + glow-behind — exactly the reported defect.
+// ROOT CAUSE + FIX (why the beam never ran the WHOLE border) — founder LIVE
+// review. The canonical "comet" is an animated conic-gradient whose single
+// bright stop rotates 0deg→360deg, so the bright arc traverses the COMPLETE
+// perimeter. That needs the angle to be an *animatable* custom property, which
+// only works when registered via `@property`. A prior build registered it inside
+// THIS component's SCOPED <style>; Vue's scoped-style transform does not preserve
+// a global @property at-rule, so the browser treated the angle as unregistered
+// (non-interpolable) → the keyframe jumped discretely and, since a conic gradient
+// is periodic (0deg == 360deg), the arc never moved. A later "rotate an oversized
+// square layer" workaround swept a square, not the rounded-rect ring, so it read
+// as "only one side lights up".
 //
-//   Fix: stop relying on @property entirely. The arc lives in a fixed-orientation
-//   conic gradient on a dedicated `__beam` layer, and that whole layer is rotated
-//   with `transform: rotate()` — a GPU/WAAPI transform animation that is
-//   bulletproof and needs no custom-property registration. A dim ice ring sits
-//   under it so the frame is always present. Reduced motion parks the rotation;
-//   the border stays, alive through colour (DESIGN.md §3.7).
+// FIX: the @property registration + the conic-ring styles now live in the GLOBAL
+// engine stylesheet (engines/algorythmo/.../_components.scss, emitted once on
+// :root via _woot.scss — never scoped). This component is now presentational: it
+// renders the .alg-aurora-border structure and sets the per-instance CSS vars.
+// The bright ICE arc visibly runs the entire perimeter, continuously. ICE tone
+// only, hairline thickness, content never tinted (masked), reduced-motion parks
+// the arc. See DESIGN.md §6.6 / §3.7.
 import { computed } from 'vue';
 
 const props = defineProps({
@@ -98,82 +101,12 @@ const rootStyle = computed(() => ({
   </component>
 </template>
 
-<style lang="scss" scoped>
-.alg-aurora-border {
-  position: relative;
-  border-radius: var(--alg-border-radius);
-  isolation: isolate;
-}
-
-// The frame: clips both the dim base ring and the rotating beam to the perimeter
-// hairline via a mask (content stays clean). It carries the masking + the dim
-// ice base ring; the bright travelling arc lives on the child __beam at full
-// strength (so the arc is the event, not a dimmed-down whole-ring tint).
-.alg-aurora-border__frame {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  display: block;
-  border-radius: inherit;
-  padding: var(--alg-border-thickness);
-  overflow: hidden;
-  // Dim ice base ring — present everywhere the arc isn't. Already low-alpha in
-  // the token, so no extra opacity multiply is needed here (which would also
-  // dim the bright arc below).
-  background: var(--alg-aurora-border-base);
-  pointer-events: none;
-  // Cut the centre out so only the hairline perimeter paints.
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-}
-
-// The travelling arc. An oversized conic layer (so the rotated corners never
-// expose an uncovered edge) physically rotates — the bright ice arc sweeps the
-// perimeter. transform animation is GPU-driven and needs no @property. Opacity
-// is the intensity dial (subtle vs normal); the arc stays bright, never washed.
-.alg-aurora-border__beam {
-  position: absolute;
-  // Oversize past the box so rotation never reveals a bare corner.
-  inset: -50%;
-  border-radius: inherit;
-  background: var(--alg-aurora-border);
-  opacity: var(--alg-border-opacity);
-  transform-origin: center;
-  will-change: transform;
-  animation: alg-aurora-border-sweep var(--alg-duration-ambient-slow) linear
-    infinite;
-}
-
-.alg-aurora-border__content {
-  position: relative;
-  z-index: 1;
-  display: block;
-  border-radius: inherit;
-}
-
-// Processing: the arc quickens to the orb's 6s breath.
-.alg-aurora-border--active .alg-aurora-border__beam {
-  animation-duration: var(--alg-duration-ambient);
-}
-
-@keyframes alg-aurora-border-sweep {
-  to {
-    transform: rotate(1turn);
-  }
-}
-
-// Reduced motion: park the arc. The base ice ring + a frozen arc keep the border
-// present, alive through colour, with no directional movement (DESIGN.md §3.7).
-@media (prefers-reduced-motion: reduce) {
-  .alg-aurora-border__beam {
-    animation: none;
-    transform: rotate(-32deg);
-  }
-}
-</style>
+<!--
+  No scoped <style> by design. The .alg-aurora-border ring (including the
+  globally-registered @property --alg-aurora-angle that makes the conic sweep
+  animatable) lives in the GLOBAL engine stylesheet
+  engines/algorythmo/app/assets/stylesheets/_components.scss — a scoped block
+  here would re-scope those class names and break the global cascade match, and
+  Vue scoped styles cannot host a working global @property (the original bug).
+  This component only renders structure + sets per-instance CSS vars above.
+-->
