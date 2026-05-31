@@ -5,7 +5,7 @@
 //   • Subtraction first: no ghost cards, no "Add contact" filled button.
 //   • 8pt grid: pt-24 (96px) small, pt-32 (128px) large.
 //   • Typography: weight 300/400, white in 4 opacity tiers — never pure #FFF.
-//   • The "+" is an icon (i-lucide-plus, size-5, text-n-slate-9) — subtle, NOT a button shape.
+//   • The import icon (i-lucide-upload, size-5, text-n-slate-9) opens import — icon matches action.
 //   • Import link is a text affordance, not a primary CTA.
 //   • Entrance via useAlgMotion (cinematic curve, reduced-motion respected).
 import { ref, onMounted } from 'vue';
@@ -83,7 +83,7 @@ onMounted(() => {
         :aria-label="t('CONTACTS_LAYOUT.EMPTY_STATE.HERO_ADD_ARIA')"
         @click="openImport"
       >
-        <span class="i-lucide-plus size-5" aria-hidden="true" />
+        <span class="i-lucide-upload size-5" aria-hidden="true" />
       </button>
 
       <!-- Import text link -->

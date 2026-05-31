@@ -7,22 +7,11 @@ import ContactEmptyState from './ContactEmptyState.vue';
     title="Components/Contacts/EmptyState"
     :layout="{ type: 'grid', width: '900px' }"
   >
-    <!-- Default Story -->
+    <!-- algorythmo: stream-b — Hero-band empty state (plan 0011).
+         Self-contained component: no props, no events.
+         All copy lives in i18n; import is wired internally. -->
     <Variant title="Default">
-      <ContactEmptyState
-        title="No contacts found"
-        subtitle="Create your first contact to get started"
-        button-label="Add Contact"
-      />
-    </Variant>
-
-    <!-- Without Button -->
-    <Variant title="Without Button">
-      <ContactEmptyState
-        title="No contacts"
-        subtitle="These are your current contacts"
-        :show-button="false"
-      />
+      <ContactEmptyState />
     </Variant>
   </Story>
 </template>

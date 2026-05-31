@@ -173,6 +173,10 @@ const handleCollapsedClick = () => {
   if (hasChildren.value && hasAccessibleChildren.value) {
     const firstItem = accessibleItems.value[0];
     router.push(firstItem.to);
+  } else if (props.to) {
+    // algorythmo: stream-b — when all children are sub-group headers (no direct
+    // to), fall back to the parent route (e.g. contacts_dashboard_index).
+    router.push(props.to);
   }
 };
 
@@ -185,6 +189,16 @@ const toggleTrigger = () => {
     // if not already expanded, navigate to the first child
     const firstItem = accessibleItems.value[0];
     router.push(firstItem.to);
+  } else if (
+    // algorythmo: stream-b — group has a parent-level to but no direct
+    // navigable children (all children are sub-group headers like Segments /
+    // Tagged With). Clicking the header should navigate to the parent route.
+    !hasAccessibleChildren.value &&
+    props.to &&
+    !isExpanded.value &&
+    !hasActiveChild.value
+  ) {
+    router.push(props.to);
   }
   setExpandedItem(props.name);
 };
@@ -217,7 +231,7 @@ watch(
 <!-- eslint-disable-next-line vue/no-root-v-if -->
 <template>
   <Policy
-    v-if="!hasChildren || hasAccessibleChildren"
+    v-if="!hasChildren || hasAccessibleChildren || !!to"
     :permissions="resolvePermissions(to)"
     :feature-flag="resolveFeatureFlag(to)"
     as="li"
