@@ -16,6 +16,7 @@ import { useInbox } from 'dashboard/composables/useInbox';
 import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'vue-i18n';
 import { copyTextToClipboard } from 'shared/helpers/clipboard';
+import { useReadOnlyView } from 'dashboard/composables/algorythmo/useReadOnlyView';
 
 const props = defineProps({
   chat: {
@@ -34,6 +35,10 @@ const route = useRoute();
 const conversationHeader = ref(null);
 const { width } = useElementSize(conversationHeader);
 const { isAWebWidgetInbox } = useInbox();
+// algorythmo: stream-a — in the "Operação ao vivo" aquarium, suppress the entire
+// header action block (call + resolve/assign/transcript/more). These actions can
+// mutate or message the customer; the CEO is here to watch, not to act.
+const { isReadOnly } = useReadOnlyView();
 
 const currentChat = computed(() => store.getters.getSelectedChat);
 const accountId = computed(() => store.getters.getCurrentAccountId);
@@ -164,6 +169,7 @@ const copyConversationId = async () => {
       </div>
     </div>
     <div
+      v-if="!isReadOnly"
       class="flex flex-row items-center justify-start xl:justify-end flex-shrink-0 gap-2 w-full xl:w-auto header-actions-wrap"
     >
       <SLACardLabel

@@ -7,6 +7,7 @@ import {
 } from 'dashboard/composables/store';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useUISettings } from 'dashboard/composables/useUISettings';
+import { useReadOnlyView } from 'dashboard/composables/algorythmo/useReadOnlyView';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 import AccordionItem from 'dashboard/components/Accordion/AccordionItem.vue';
@@ -42,6 +43,11 @@ const {
   conversationSidebarItemsOrder,
   toggleSidebarUIState,
 } = useUISettings();
+
+// algorythmo: stream-a — in the "Operação ao vivo" aquarium, hide the Macros
+// panel. A macro can carry send_message / send_email_transcript actions, so it is
+// a path to message the customer — it must not be reachable in read-only mode.
+const { isReadOnly } = useReadOnlyView();
 
 const dragging = ref(false);
 const conversationSidebarItems = ref([]);
@@ -239,7 +245,7 @@ onMounted(() => {
             </AccordionItem>
           </div>
           <woot-feature-toggle
-            v-else-if="element.name === 'macros'"
+            v-else-if="element.name === 'macros' && !isReadOnly"
             feature-key="macros"
           >
             <AccordionItem

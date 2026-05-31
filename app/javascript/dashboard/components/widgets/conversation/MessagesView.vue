@@ -47,6 +47,15 @@ export default {
     ResizableEditorWrapper,
   },
   mixins: [inboxMixin],
+  props: {
+    // algorythmo: stream-a — read-only aquarium mode ("Operação ao vivo").
+    // When true, the reply box section is not rendered so the CEO cannot
+    // send messages while watching the live commercial operation.
+    isReadOnly: {
+      type: Boolean,
+      default: false,
+    },
+  },
   setup() {
     const conversationPanelRef = ref(null);
     const resizableEditorWrapperRef = ref(null);
@@ -510,7 +519,19 @@ export default {
         />
       </template>
     </MessageList>
-    <div class="flex relative flex-col bg-n-surface-1">
+    <!-- algorythmo: stream-a — in "Operação ao vivo" read-only mode the reply box
+         is replaced by a quiet notice. The CEO watches the live operation as an
+         aquarium; sending messages from this view is intentionally blocked. -->
+    <div
+      v-if="isReadOnly"
+      class="alg-readonly-notice"
+      role="status"
+      aria-live="polite"
+      data-testid="readonly-notice"
+    >
+      {{ $t('ALGORYTHMO_ADMIN.READ_ONLY_NOTICE') }}
+    </div>
+    <div v-else class="flex relative flex-col bg-n-surface-1">
       <div
         v-if="isAnyoneTyping"
         class="absolute flex items-center w-full h-0 -top-7"
@@ -535,3 +556,21 @@ export default {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* algorythmo: stream-a — read-only notice in the reply-box slot. Mirrors the
+   M9 admin read-only chrome (quiet, muted, ~56px) for visual consistency. */
+.alg-readonly-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 0 1rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  color: var(--n-slate-11, rgb(113 113 122));
+  background-color: var(--n-surface-1, transparent);
+  border-top: 1px solid var(--n-weak, rgba(0, 0, 0, 0.08));
+}
+</style>

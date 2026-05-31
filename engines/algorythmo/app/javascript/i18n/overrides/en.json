@@ -12,7 +12,11 @@
     "ALG_SECTOR_HR": "HR",
     "ALG_SECTOR_FACILITIES": "Facilities",
     "ALG_SECTOR_FINANCE": "Finance",
-    "ALG_SECTOR_ADMINISTRATION": "Administration"
+    "ALG_SECTOR_ADMINISTRATION": "Administration",
+    "ALG_CONV_OPERACAO_AO_VIVO": "Live Operation",
+    "ALG_CONV_CAIXA_DE_ENTRADA": "Inbox",
+    "COLLAPSE_SIDEBAR": "Collapse sidebar",
+    "EXPAND_SIDEBAR": "Expand sidebar"
   },
   "ALGORYTHMO_ADMIN": {
     "READ_ONLY_NOTICE": "You're viewing as an administrator. To message the team, use the internal Inbox.",

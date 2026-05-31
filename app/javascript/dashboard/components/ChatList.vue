@@ -20,6 +20,7 @@ import ConversationResolveAttributesModal from 'dashboard/components-next/Conver
 
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useAlert } from 'dashboard/composables';
+import { useReadOnlyView } from 'dashboard/composables/algorythmo/useReadOnlyView';
 import { useBulkActions } from 'dashboard/composables/chatlist/useBulkActions';
 import { useFilter } from 'shared/composables/useFilter';
 import { useTrack } from 'dashboard/composables';
@@ -123,6 +124,10 @@ const {
   onAssignLabels,
   onRemoveLabels,
 } = useBulkActions();
+
+// algorythmo: stream-a — "Operação ao vivo" read-only aquarium.
+// Suppress the bulk-action surface so the CEO cannot bulk resolve/snooze/assign.
+const { isReadOnly } = useReadOnlyView();
 
 const {
   initializeStatusAndAssigneeFilterToModal,
@@ -922,6 +927,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       {{ $t('CHAT_LIST.LIST.404') }}
     </p>
     <ConversationBulkActions
+      v-if="!isReadOnly"
       :conversations="selectedConversations"
       :all-conversations-selected="allConversationsSelected"
       :selected-inboxes="uniqueInboxes"
