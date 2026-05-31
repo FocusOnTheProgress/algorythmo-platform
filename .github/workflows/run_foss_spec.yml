@@ -115,7 +115,7 @@ jobs:
             app/javascript/dashboard/modules/algorythmo/admin/facilities/specs/FacilitiesControlePane.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/facilities/specs/facilities-overview-contract.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/c-levels/specs/CLevelsBoardroom.spec.js \
-            app/javascript/dashboard/modules/algorythmo/admin/inicio/specs/InicioScreen.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/inicio/specs/InicioScreen.spec.js \n            app/javascript/dashboard/routes/specs/stream-d-bare-entry.spec.js \
             app/javascript/dashboard/components-next/sidebar/specs/ChannelLeaf.spec.js \
             app/javascript/dashboard/components-next/sidebar/specs/SidebarChevron.spec.js \
             app/javascript/dashboard/components-next/sidebar/specs/SidebarCollapseNoLeak.spec.js \

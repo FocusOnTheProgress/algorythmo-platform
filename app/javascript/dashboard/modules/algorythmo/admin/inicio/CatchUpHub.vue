@@ -59,6 +59,7 @@ function follow(item) {
           tier="soft"
           interactive
           as="button"
+          type="button"
           :class="`alg-inicio-catchup__card alg-inicio-catchup__card--${item.tone}`"
           @click="follow(item)"
         >

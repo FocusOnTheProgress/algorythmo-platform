@@ -33,9 +33,9 @@
       "CATCH_UP": {
         "TITLE": "Enquanto você estava fora",
         "SUBTITLE": "O que avançou na empresa desde a sua última visita.",
-        "PROJECTS_ADVANCED": "Sua equipe avançou em {count} projetos desde ontem.",
-        "APPROVAL_PENDING": "Você tem {count} aprovação pendente na Sala de Conselho.",
-        "LEADS_WAITING": "{count} novos leads aguardam uma primeira resposta."
+        "PROJECTS_ADVANCED": "Sua equipe avancou em 1 projeto desde ontem. | Sua equipe avancou em {count} projetos desde ontem.",
+        "APPROVAL_PENDING": "Voce tem 1 aprovacao pendente na Sala de Conselho. | Voce tem {count} aprovacoes pendentes na Sala de Conselho.",
+        "LEADS_WAITING": "1 novo lead aguarda uma primeira resposta. | {count} novos leads aguardam uma primeira resposta."
       },
       "ACTIONS": {
         "ARIA": "Ações sugeridas",

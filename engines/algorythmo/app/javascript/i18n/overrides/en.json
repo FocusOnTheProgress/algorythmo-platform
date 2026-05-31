@@ -33,9 +33,9 @@
       "CATCH_UP": {
         "TITLE": "While you were away",
         "SUBTITLE": "What moved across the company since your last visit.",
-        "PROJECTS_ADVANCED": "Your team advanced {count} projects since yesterday.",
-        "APPROVAL_PENDING": "You have {count} approval pending in the boardroom.",
-        "LEADS_WAITING": "{count} new leads are waiting for a first reply."
+        "PROJECTS_ADVANCED": "Your team advanced 1 project since yesterday. | Your team advanced {count} projects since yesterday.",
+        "APPROVAL_PENDING": "You have 1 approval pending in the boardroom. | You have {count} approvals pending in the boardroom.",
+        "LEADS_WAITING": "1 new lead is waiting for a first reply. | {count} new leads are waiting for a first reply."
       },
       "ACTIONS": {
         "ARIA": "Suggested next actions",

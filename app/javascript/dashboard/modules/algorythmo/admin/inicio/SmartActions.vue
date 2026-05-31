@@ -1,15 +1,26 @@
 <script setup>
-// algorythmo: Stream D — Início Smart Actions (contextual next-best-actions).
+// algorythmo: Stream D — Inicio Smart Actions (contextual next-best-actions).
 //
-// Only the 2–3 things the user most likely does next, chosen by a simple
+// Only the 2-3 things the user most likely does next, chosen by a simple
 // time-of-day heuristic (the OS-ranked list replaces it later). One emphasised
 // (solid) action leads; the rest are ghost. No glass on buttons — the ruler
-// keeps buttons solid/ghost (DESIGN.md §5.1).
+// keeps buttons solid/ghost (DESIGN.md 5.1).
+//
+// Actions are role-filtered: admin-only destinations are never offered to
+// agents or custom_roles.
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useStore } from 'dashboard/composables/store';
 import { smartActionsForHour } from './inicio.demo.js';
+
+const props = defineProps({
+  // The viewer's role — drives which actions are offered.
+  role: {
+    type: String,
+    default: 'agent',
+  },
+});
 
 const { t } = useI18n();
 const router = useRouter();
@@ -17,8 +28,11 @@ const store = useStore();
 
 const accountId = computed(() => store.getters.getCurrentAccountId);
 
-// Resolved against local time at render. Always 2–3 items, first one primary.
-const actions = computed(() => smartActionsForHour(new Date().getHours()));
+// Resolved against local time at render, filtered by role.
+// Always 2-3 items, first one primary.
+const actions = computed(() =>
+  smartActionsForHour(new Date().getHours(), props.role)
+);
 
 function run(action) {
   if (!action?.routeName) return;
