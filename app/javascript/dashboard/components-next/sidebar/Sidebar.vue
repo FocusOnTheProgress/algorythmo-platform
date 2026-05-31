@@ -357,6 +357,16 @@ const closeMobileSidebar = () => {
 // skipped by SidebarGroup. All edits in this computed are marked algorythmo: M5.
 const menuItems = computed(() => {
   return [
+    // ── INÍCIO (default landing) ─────────────────────────────────────────────
+    // algorythmo: Stream D — "Início" is the first surface the user lands on.
+    // It stands alone at the very top (like a home), above the Operacional block.
+    {
+      name: 'AlgorythmoInicio',
+      icon: 'i-lucide-house',
+      label: t('SIDEBAR.ALG_INICIO'),
+      activeOn: ['algorythmo_admin_inicio'],
+      to: accountScopedRoute('algorythmo_admin_inicio'),
+    },
     // ── OPERACIONAL block (no section header) ────────────────────────────────
     // algorythmo: M5 sidebar restructure — Operacional block: Contacts, Companies, Conversations, CRM
     // algorythmo: rodada 3 — CRM-6: CRM entry MOVED below Conversation (was head of block).

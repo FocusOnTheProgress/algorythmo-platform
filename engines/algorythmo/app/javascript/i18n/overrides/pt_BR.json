@@ -1,5 +1,6 @@
 {
   "SIDEBAR": {
+    "ALG_INICIO": "Início",
     "RELATORIOS_COMERCIAIS": "Relatórios Comerciais",
     "RELATORIOS_COMERCIAIS_VISAO": "Visão Comercial",
     "ALGORYTHMO_SECTION_GESTAO": "Gestão",
@@ -16,6 +17,35 @@
   },
   "ALGORYTHMO_ADMIN": {
     "READ_ONLY_NOTICE": "Você está visualizando como administrador. Para falar com o time, use a Inbox interna.",
+    "INICIO": {
+      "EYEBROW": "Início",
+      "ORB_ARIA": "Algorythmo — a inteligência da plataforma",
+      "GREETING": {
+        "MORNING": "Bom dia, {name}. Aqui está o seu panorama hoje.",
+        "AFTERNOON": "Boa tarde, {name}. Aqui está o seu panorama hoje.",
+        "EVENING": "Boa noite, {name}. Aqui está o seu panorama hoje.",
+        "FALLBACK_NAME": "por aqui"
+      },
+      "SYNC": {
+        "SYNCING": "Sincronizando seus dados…",
+        "READY": "Tudo em dia"
+      },
+      "CATCH_UP": {
+        "TITLE": "Enquanto você estava fora",
+        "SUBTITLE": "O que avançou na empresa desde a sua última visita.",
+        "PROJECTS_ADVANCED": "Sua equipe avançou em {count} projetos desde ontem.",
+        "APPROVAL_PENDING": "Você tem {count} aprovação pendente na Sala de Conselho.",
+        "LEADS_WAITING": "{count} novos leads aguardam uma primeira resposta."
+      },
+      "ACTIONS": {
+        "ARIA": "Ações sugeridas",
+        "REVIEW_BOARD": "Revisar a Sala de Conselho",
+        "OPEN_PIPELINE": "Abrir o pipeline",
+        "ASK_BRAIN": "Perguntar ao Brain",
+        "CHECK_COMMERCIAL": "Ver o pulso comercial",
+        "WRAP_DAY": "Fechar o dia"
+      }
+    },
     "CONTACTS": {
       "IMPORT_CRM_NOTE": "Contatos importados ficam disponíveis na aba Contatos. Eles não viram leads do CRM automaticamente — entram no CRM quando começam uma conversa por um canal conectado."
     },
