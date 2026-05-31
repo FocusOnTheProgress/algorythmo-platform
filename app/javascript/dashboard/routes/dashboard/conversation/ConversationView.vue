@@ -52,6 +52,13 @@ export default {
       type: [String, Number],
       default: 0,
     },
+    // algorythmo: stream-a — "Operação ao vivo" read-only aquarium view.
+    // When true, the reply box is not rendered so the CEO cannot send messages
+    // while watching the live commercial operation.
+    isReadOnly: {
+      type: Boolean,
+      default: false,
+    },
   },
   setup() {
     const { uiSettings, updateUISettings } = useUISettings();
@@ -210,6 +217,7 @@ export default {
       v-if="showMessageView"
       :inbox-id="inboxId"
       :is-on-expanded-layout="isOnExpandedLayout"
+      :is-read-only="isReadOnly"
     >
       <SidepanelSwitch v-if="currentChat.id" />
     </ConversationBox>

@@ -10,7 +10,7 @@ import { useSidebarKeyboardShortcuts } from './useSidebarKeyboardShortcuts';
 import { vOnClickOutside } from '@vueuse/components';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { ALGORYTHMO_CUT_FLAG_NAMES } from 'dashboard/constants/algorythmoCutFlags';
-import { useWindowSize, useEventListener } from '@vueuse/core';
+import { useWindowSize } from '@vueuse/core';
 
 import SidebarGroup from './SidebarGroup.vue';
 // algorythmo: M5 sidebar restructure — section header component
@@ -52,8 +52,6 @@ const { t } = useI18n();
 const isACustomBrandedInstance = useMapGetter(
   'globalConfig/isACustomBrandedInstance'
 );
-const isRTL = useMapGetter('accounts/isRTL');
-
 const { width: windowWidth } = useWindowSize();
 const isMobile = computed(() => windowWidth.value < 768);
 
@@ -190,25 +188,18 @@ const setExpandedItem = name => {
   writeExpandedToStorage(currentUser.value?.id, expandedItem.value);
 };
 
-const {
-  sidebarWidth,
-  isCollapsed,
-  setSidebarWidth,
-  saveWidth,
-  snapToCollapsed,
-  snapToExpanded,
-  COLLAPSED_THRESHOLD,
-} = useSidebarResize();
+const { sidebarWidth, isCollapsed } = useSidebarResize();
 
 // On mobile, sidebar is always expanded (flyout mode)
 const isEffectivelyCollapsed = computed(
   () => !isMobile.value && isCollapsed.value
 );
 
-// Resize handle logic
+// algorythmo: stream-a — resize handle removed. The sidebar is binary:
+// collapsed (64px) or expanded (200px). No drag-to-resize affordance.
+// isResizing is kept as a permanent-false ref so child components that
+// consume it from context don't need to be updated.
 const isResizing = ref(false);
-const startX = ref(0);
-const startWidth = ref(0);
 
 provideSidebarContext({
   expandedItem,
@@ -217,56 +208,6 @@ provideSidebarContext({
   sidebarWidth,
   isResizing,
 });
-
-// Get clientX from mouse or touch event
-const getClientX = event =>
-  event.touches ? event.touches[0].clientX : event.clientX;
-
-const onResizeStart = event => {
-  isResizing.value = true;
-  startX.value = getClientX(event);
-  startWidth.value = sidebarWidth.value;
-  Object.assign(document.body.style, {
-    cursor: 'col-resize',
-    userSelect: 'none',
-  });
-  // Prevent default to avoid scrolling on touch
-  event.preventDefault();
-};
-
-const onResizeMove = event => {
-  if (!isResizing.value) return;
-
-  const delta = isRTL.value
-    ? startX.value - getClientX(event)
-    : getClientX(event) - startX.value;
-  setSidebarWidth(startWidth.value + delta);
-};
-
-const onResizeEnd = () => {
-  if (!isResizing.value) return;
-
-  isResizing.value = false;
-  Object.assign(document.body.style, { cursor: '', userSelect: '' });
-
-  // Snap to collapsed state if below threshold
-  if (sidebarWidth.value < COLLAPSED_THRESHOLD) {
-    snapToCollapsed();
-  } else {
-    saveWidth();
-  }
-};
-
-const onResizeHandleDoubleClick = () => {
-  if (isCollapsed.value) snapToExpanded();
-  else snapToCollapsed();
-};
-
-// Support both mouse and touch events
-useEventListener(document, 'mousemove', onResizeMove);
-useEventListener(document, 'mouseup', onResizeEnd);
-useEventListener(document, 'touchmove', onResizeMove, { passive: false });
-useEventListener(document, 'touchend', onResizeEnd);
 
 const inboxes = useMapGetter('inboxes/getInboxes');
 const labels = useMapGetter('labels/getLabelsOnSidebar');
@@ -436,44 +377,33 @@ const menuItems = computed(() => {
         },
       ],
     },
-    {
-      name: 'Inbox',
-      label: t('SIDEBAR.INBOX'),
-      icon: 'i-lucide-inbox',
-      to: accountScopedRoute('inbox_view'),
-      activeOn: ['inbox_view', 'inbox_view_conversation'],
-      getterKeys: {
-        count: 'notifications/getUnreadCount',
-      },
-    },
+    // algorythmo: stream-a — "Caixa de entrada" (CEO personal inbox) is removed
+    // from the top level and re-surfaced as a child inside Conversas below.
     {
       name: 'Conversation',
       label: t('SIDEBAR.CONVERSATIONS'),
       icon: 'i-lucide-message-circle',
       children: [
+        // algorythmo: stream-a — "Operação ao vivo": read-only aquarium where the
+        // CEO watches the live commercial operation without a reply box.
+        // Routes to the dedicated alg_operacao_ao_vivo route which renders
+        // ConversationView with isReadOnly=true (no ReplyBox mounted).
         {
-          name: 'All',
-          label: t('SIDEBAR.ALL_CONVERSATIONS'),
-          activeOn: ['inbox_conversation'],
-          to: accountScopedRoute('home'),
+          name: 'OperacaoAoVivo',
+          label: t('SIDEBAR.ALG_CONV_OPERACAO_AO_VIVO'),
+          activeOn: ['alg_operacao_ao_vivo_conversation'],
+          to: accountScopedRoute('alg_operacao_ao_vivo'),
         },
+        // algorythmo: stream-a — "Caixa de entrada": CEO personal inbox, moved
+        // from the top-level sidebar. Notification badge preserved via getterKeys.
         {
-          name: 'Mentions',
-          label: t('SIDEBAR.MENTIONED_CONVERSATIONS'),
-          activeOn: ['conversation_through_mentions'],
-          to: accountScopedRoute('conversation_mentions'),
-        },
-        {
-          name: 'Participating',
-          label: t('SIDEBAR.PARTICIPATING_CONVERSATIONS'),
-          activeOn: ['conversation_through_participating'],
-          to: accountScopedRoute('conversation_participating'),
-        },
-        {
-          name: 'Unattended',
-          activeOn: ['conversation_through_unattended'],
-          label: t('SIDEBAR.UNATTENDED_CONVERSATIONS'),
-          to: accountScopedRoute('conversation_unattended'),
+          name: 'CaixaDeEntrada',
+          label: t('SIDEBAR.ALG_CONV_CAIXA_DE_ENTRADA'),
+          activeOn: ['inbox_view', 'inbox_view_conversation'],
+          to: accountScopedRoute('inbox_view'),
+          getterKeys: {
+            count: 'notifications/getUnreadCount',
+          },
         },
         {
           name: 'Folders',
@@ -1055,13 +985,11 @@ const menuItems = computed(() => {
         ],
       },
     ]"
-    class="alg-sidebar bg-n-background flex flex-col text-sm pb-px fixed top-0 ltr:left-0 rtl:right-0 h-full z-40 w-[200px] md:w-auto md:relative md:flex-shrink-0 md:ltr:translate-x-0 md:rtl:translate-x-0 ltr:border-r rtl:border-l border-n-weak"
+    class="alg-sidebar bg-n-background flex flex-col text-sm pb-px fixed top-0 ltr:left-0 rtl:right-0 h-full z-40 w-[200px] md:w-auto md:relative md:flex-shrink-0 md:ltr:translate-x-0 md:rtl:translate-x-0 ltr:border-r rtl:border-l border-n-weak transition-transform duration-200 ease-out"
     :class="[
       {
         'shadow-lg md:shadow-none': isMobileSidebarOpen,
         'ltr:-translate-x-full rtl:translate-x-full': !isMobileSidebarOpen,
-        'transition-transform duration-200 ease-out md:transition-[width]':
-          !isResizing,
       },
     ]"
     :style="isMobile ? undefined : { width: `${sidebarWidth}px` }"
@@ -1149,17 +1077,5 @@ const menuItems = computed(() => {
         />
       </div>
     </section>
-    <!-- Resize Handle (desktop only) -->
-    <div
-      class="hidden md:block absolute top-0 h-full w-1 cursor-col-resize z-40 ltr:right-0 rtl:left-0 group"
-      @mousedown="onResizeStart"
-      @touchstart="onResizeStart"
-      @dblclick="onResizeHandleDoubleClick"
-    >
-      <div
-        class="absolute top-0 h-full w-px ltr:right-0 rtl:left-0 bg-transparent group-hover:bg-n-brand transition-colors"
-        :class="{ 'bg-n-brand': isResizing }"
-      />
-    </div>
   </aside>
 </template>

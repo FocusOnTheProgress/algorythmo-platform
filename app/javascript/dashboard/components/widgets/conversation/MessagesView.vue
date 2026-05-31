@@ -47,6 +47,15 @@ export default {
     ResizableEditorWrapper,
   },
   mixins: [inboxMixin],
+  props: {
+    // algorythmo: stream-a — read-only aquarium mode ("Operação ao vivo").
+    // When true, the reply box section is not rendered so the CEO cannot
+    // send messages while watching the live commercial operation.
+    isReadOnly: {
+      type: Boolean,
+      default: false,
+    },
+  },
   setup() {
     const conversationPanelRef = ref(null);
     const resizableEditorWrapperRef = ref(null);
@@ -510,7 +519,10 @@ export default {
         />
       </template>
     </MessageList>
-    <div class="flex relative flex-col bg-n-surface-1">
+    <!-- algorythmo: stream-a — reply box is suppressed in "Operação ao vivo"
+         read-only mode. The CEO watches the live operation as an aquarium;
+         sending messages from this view is intentionally blocked. -->
+    <div v-if="!isReadOnly" class="flex relative flex-col bg-n-surface-1">
       <div
         v-if="isAnyoneTyping"
         class="absolute flex items-center w-full h-0 -top-7"

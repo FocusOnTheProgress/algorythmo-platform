@@ -12,7 +12,9 @@
     "ALG_SECTOR_HR": "RH",
     "ALG_SECTOR_FACILITIES": "Instalações",
     "ALG_SECTOR_FINANCE": "Financeiro",
-    "ALG_SECTOR_ADMINISTRATION": "Administração"
+    "ALG_SECTOR_ADMINISTRATION": "Administração",
+    "ALG_CONV_OPERACAO_AO_VIVO": "Operação ao vivo",
+    "ALG_CONV_CAIXA_DE_ENTRADA": "Caixa de entrada"
   },
   "ALGORYTHMO_ADMIN": {
     "READ_ONLY_NOTICE": "Você está visualizando como administrador. Para falar com o time, use a Inbox interna.",
