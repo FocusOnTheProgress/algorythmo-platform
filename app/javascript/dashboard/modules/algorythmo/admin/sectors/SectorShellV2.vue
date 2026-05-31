@@ -81,6 +81,17 @@ const props = defineProps({
 
 const { t } = useI18n();
 
+// algorythmo: per-sector accent (founder decision 2026-05-31). Derive the sector
+// slug from the planet-class ('alg-planet--commercial' → 'commercial') and expose
+// it as a root class `alg-shell--<sector>`, which sets `--alg-sector-hue` (see
+// engines/.../\_components.scss → SECTOR ACCENTS). That hue tints the Aurora beam
+// for this sector and is available to descendants via var(--alg-sector-hue) for
+// the sector-coloured figures (.alg-sector-ink). One hue per sector, no repeats.
+const sectorClass = computed(() => {
+  const slug = props.planetClass?.replace('alg-planet--', '').trim();
+  return slug ? `alg-shell--${slug}` : null;
+});
+
 const activeTabId = ref(props.tabs[0].id);
 const isOverviewActive = computed(() => activeTabId.value === props.tabs[0].id);
 
@@ -137,7 +148,7 @@ function onTabKeydown(event, index) {
 </script>
 
 <template>
-  <div class="alg-shell">
+  <div class="alg-shell" :class="sectorClass">
     <header class="alg-shell__header">
       <h1 class="alg-shell__title">{{ t(titleKey) }}</h1>
     </header>
