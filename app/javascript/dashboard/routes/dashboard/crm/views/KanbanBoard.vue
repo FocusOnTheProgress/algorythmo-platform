@@ -15,9 +15,17 @@
 // allocation per snapshot instead of one per render. The channel glyph is NOT
 // part of the presenter: LeadCard derives its own inline-SVG channel icon from
 // channel_origin (founder: no emoji in chrome).
-import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import {
+  computed,
+  ref,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+} from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
+import { algStagger } from 'dashboard/composables/algorythmo/useAlgMotion.js';
 import {
   usePipelineStore,
   clearPipelineStoreForAccount,
@@ -40,6 +48,7 @@ import KanbanEmptyState from './components/KanbanEmptyState.vue';
 import MoveLeadModal from './components/MoveLeadModal.vue';
 import LeadCardMenu from './components/LeadCardMenu.vue';
 import LeadDetailDrawer from './components/LeadDetailDrawer.vue';
+import PipelineConfigPlaceholder from './PipelineConfigPlaceholder.vue';
 import {
   DEMO_STAGES,
   DEMO_SUMMARY,
@@ -209,6 +218,88 @@ const searchQuery = ref('');
 const drawerOpen = ref(false);
 const drawerLead = ref(null);
 
+// Pipeline-config reveal (C5). One paradigm, one behaviour: both the header gear
+// and every per-column gear open the SAME inline config overlay over the board.
+// No page navigation, no second config surface.
+//
+// The overlay declares role="dialog" + aria-modal, so it must behave like a
+// modal: focus moves into the panel on open, Tab/Shift+Tab are trapped inside
+// it, and focus returns to the trigger on close. Mirrors the AlgDrawer focus
+// contract (adversarial review #111).
+const configOpen = ref(false);
+const configPanelRef = ref(null);
+let configPreviousFocus = null;
+
+function focusablesIn(el) {
+  if (!el) return [];
+  return Array.from(
+    el.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+  );
+}
+
+function handleConfigKeydown(event) {
+  if (event.key !== 'Tab') return;
+  const focusables = focusablesIn(configPanelRef.value);
+  if (!focusables.length) return;
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+  if (event.shiftKey) {
+    if (document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    }
+  } else if (document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function openConfig() {
+  if (configOpen.value) return;
+  configPreviousFocus = document.activeElement;
+  configOpen.value = true;
+  // Move focus into the panel once the transition has mounted it.
+  nextTick(() => {
+    const focusables = focusablesIn(configPanelRef.value);
+    if (focusables.length) focusables[0].focus();
+  });
+}
+
+function closeConfig() {
+  if (!configOpen.value) return;
+  configOpen.value = false;
+  // Restore focus to whatever opened the overlay (header or per-column gear).
+  const target = configPreviousFocus;
+  configPreviousFocus = null;
+  nextTick(() => target?.focus?.());
+}
+
+function toggleConfig() {
+  if (configOpen.value) {
+    closeConfig();
+  } else {
+    openConfig();
+  }
+}
+
+// Card entrance choreography (shared motion system). When the board first
+// paints its cards we stagger them in — one curve, one reduced-motion contract.
+// Guarded so it runs once per first paint, not on every reactive change (a drag
+// or a search keystroke must not re-trigger the whole board fading in).
+const boardRef = ref(null);
+let cardsRevealed = false;
+function revealCards() {
+  if (cardsRevealed) return;
+  const root = boardRef.value;
+  if (!root) return;
+  const cards = root.querySelectorAll('[data-testid="lead-card"]');
+  if (!cards.length) return;
+  cardsRevealed = true;
+  algStagger(cards, { each: 0.035, y: 10 });
+}
+
 const drag = useDragLead({
   onMove: async ({ leadId, fromStageId, toStageId }) => {
     if (demoActive.value) {
@@ -249,7 +340,19 @@ const drag = useDragLead({
 const AGING_TICK_MS = 30_000;
 let agingTimer = null;
 
+// Esc closes the pipeline-config reveal (C5) — keyboard parity with the drawer.
+// Routes through closeConfig() so focus is restored to the trigger.
+function handleConfigEsc(event) {
+  if (event.key === 'Escape' && configOpen.value) {
+    closeConfig();
+  }
+}
+
 onMounted(async () => {
+  document.addEventListener('keydown', handleConfigEsc);
+  // Demo cards (the common founder path) are in the DOM on first paint — reveal
+  // them right away. Live cards reveal via the boardHasAnyLead watcher below.
+  nextTick(revealCards);
   await loadPipeline();
   await Promise.all(stages.value.map(s => fetchStage(s.id)));
   // Initial lead fetch settled — now a zero count is a real "empty account",
@@ -266,6 +369,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   if (agingTimer !== null) clearInterval(agingTimer);
   agingTimer = null;
+  document.removeEventListener('keydown', handleConfigEsc);
 });
 
 // Re-fetch when accountId changes. The store refs above re-bind to the new
@@ -291,6 +395,8 @@ watch(accountId, async (newId, oldId) => {
   // the new account's drawer.
   drawerOpen.value = false;
   drawerLead.value = null;
+  configOpen.value = false;
+  configPreviousFocus = null;
   if (oldId && oldId !== newId) {
     clearLeadStoreForAccount(oldId);
     clearPipelineStoreForAccount(oldId);
@@ -334,6 +440,12 @@ const presenterByStage = computed(() => {
 const boardHasAnyLead = computed(() =>
   Array.from(presenterByStage.value.values()).some(p => p.length > 0)
 );
+
+// Reveal live cards the first time the board actually has any (the demo path is
+// handled in onMounted). One-shot via the cardsRevealed guard inside.
+watch(boardHasAnyLead, has => {
+  if (has) nextTick(revealCards);
+});
 
 // Global empty state. Now that demo mode activates on ZERO real leads (even
 // when stages exist), this is effectively unreachable in the normal flow — the
@@ -487,12 +599,15 @@ async function handleConfirmMove({ leadId, stage }) {
       :summary="summaryForHeader"
       :loading="metricsLoadingForHeader"
       :error="metricsErrorForHeader"
+      :config-open="configOpen"
+      @toggle-config="toggleConfig"
     />
 
     <KanbanEmptyState v-if="showGlobalEmpty" />
 
     <div
       v-else
+      ref="boardRef"
       class="alg-kanban__board"
       data-testid="kanban-board"
       role="region"
@@ -515,6 +630,7 @@ async function handleConfirmMove({ leadId, stage }) {
         @drag-end="drag.end"
         @open-lead="handleOpenLead"
         @open-menu="handleOpenMenu"
+        @configure-stage="openConfig"
       />
     </div>
 
@@ -526,6 +642,34 @@ async function handleConfirmMove({ leadId, stage }) {
     >
       {{ announceText }}
     </div>
+
+    <!-- Pipeline-config reveal (C5) — overlay panel behind the header gear. -->
+    <transition name="alg-config-scrim">
+      <div
+        v-if="configOpen"
+        class="alg-kanban__config-scrim"
+        aria-hidden="true"
+        @click="closeConfig"
+      />
+    </transition>
+    <transition name="alg-config-panel">
+      <aside
+        v-if="configOpen"
+        ref="configPanelRef"
+        class="alg-kanban__config-panel"
+        data-testid="kanban-config-panel"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="t('ALGORYTHMO_CRM.PIPELINE_CONFIG.PLACEHOLDER_TITLE')"
+        @keydown="handleConfigKeydown"
+      >
+        <PipelineConfigPlaceholder
+          embedded
+          :stages="boardStages"
+          @close="closeConfig"
+        />
+      </aside>
+    </transition>
 
     <LeadCardMenu
       :open="menuOpen"
@@ -541,6 +685,7 @@ async function handleConfirmMove({ leadId, stage }) {
       :lead="drawerLead"
       :account-id="accountId"
       :now="now"
+      :demo-mode="demoActive"
       @close="handleDrawerClose"
     />
 
@@ -627,5 +772,58 @@ async function handleConfirmMove({ leadId, stage }) {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+// Pipeline-config reveal (C5) — scrim + right-docked panel over the board.
+.alg-kanban__config-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.alg-kanban__config-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  width: min(26rem, 100%);
+  display: flex;
+}
+
+.alg-kanban__config-panel > * {
+  width: 100%;
+}
+
+// Enter/exit — cinematic curve, slide from the right (mirrors the lead drawer).
+.alg-config-scrim-enter-active,
+.alg-config-scrim-leave-active {
+  transition: opacity var(--alg-duration-base, 240ms) var(--alg-ease-cinematic);
+}
+.alg-config-scrim-enter-from,
+.alg-config-scrim-leave-to {
+  opacity: 0;
+}
+
+.alg-config-panel-enter-active {
+  transition: transform var(--alg-duration-slow, 340ms)
+    var(--alg-ease-cinematic);
+}
+.alg-config-panel-leave-active {
+  transition: transform var(--alg-duration-base, 240ms)
+    var(--alg-ease-cinematic);
+}
+.alg-config-panel-enter-from,
+.alg-config-panel-leave-to {
+  transform: translateX(100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alg-config-panel-enter-active,
+  .alg-config-panel-leave-active {
+    transition: none;
+  }
 }
 </style>

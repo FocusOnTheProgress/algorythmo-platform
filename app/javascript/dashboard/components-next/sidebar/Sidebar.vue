@@ -12,7 +12,6 @@ import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { ALGORYTHMO_CUT_FLAG_NAMES } from 'dashboard/constants/algorythmoCutFlags';
 import { useWindowSize, useEventListener } from '@vueuse/core';
 
-import Button from 'dashboard/components-next/button/Button.vue';
 import SidebarGroup from './SidebarGroup.vue';
 // algorythmo: M5 sidebar restructure — section header component
 import SidebarSectionHeader from './SidebarSectionHeader.vue';
@@ -22,8 +21,11 @@ import SidebarChangelogButton from './SidebarChangelogButton.vue';
 import ChannelLeaf from './ChannelLeaf.vue';
 import ChannelIcon from 'next/icon/ChannelIcon.vue';
 import SidebarAccountSwitcher from './SidebarAccountSwitcher.vue';
-import Logo from 'next/icon/Logo.vue';
-import ComposeConversation from 'dashboard/components-next/NewConversation/ComposeConversation.vue';
+// algorythmo: A1 — use the always-rendering inline brand mark instead of
+// next/icon/Logo (which silently fell back to an i-lucide-image placeholder when
+// no account/installation logo was configured). A2 — the ComposeConversation
+// (pencil) trigger is removed from the sidebar chrome entirely.
+import AlgBrandMark from 'dashboard/components-next/algorythmo/AlgBrandMark.vue';
 
 const props = defineProps({
   isMobileSidebarOpen: {
@@ -371,12 +373,8 @@ const menuItems = computed(() => {
           ),
           activeOn: ['contacts_dashboard_index', 'contacts_edit'],
         },
-        {
-          name: 'Active',
-          label: t('SIDEBAR.ACTIVE'),
-          to: accountScopedRoute('contacts_dashboard_active'),
-          activeOn: ['contacts_dashboard_active'],
-        },
+        // algorythmo: B1 — removed "Ativo" sidebar tab. Contacts is a
+        // single unified list; no active/inactive split exposed to the user.
         {
           name: 'Segments',
           icon: 'i-lucide-group',
@@ -1084,42 +1082,21 @@ const menuItems = computed(() => {
           />
         </template>
         <template v-else>
-          <div class="grid flex-shrink-0 place-content-center size-6">
-            <Logo class="size-4" />
+          <div
+            class="grid flex-shrink-0 place-content-center size-7 rounded-[7px] bg-n-alpha-1 text-n-brand"
+          >
+            <AlgBrandMark class="size-4" decorative />
           </div>
-          <div class="flex-shrink-0 w-px h-3 bg-n-strong" />
           <SidebarAccountSwitcher
-            class="flex-grow -mx-1 min-w-0"
+            class="flex-grow min-w-0"
             @show-create-account-modal="emit('showCreateAccountModal')"
           />
         </template>
       </div>
-      <!-- algorythmo: rodada 3 — P-2: top-level search entry removed from the
-           sidebar chrome. The /search route stays registered (reachable via
-           keyboard / deep-link); only the visible pill/icon is dropped. The
-           flex wrapper is kept so the ComposeConversation (pen) button keeps
-           its layout. -->
-      <div
-        class="flex gap-2"
-        :class="isEffectivelyCollapsed ? 'flex-col items-center' : 'px-2'"
-      >
-        <ComposeConversation align="start">
-          <template #trigger="{ isOpen }">
-            <Button
-              icon="i-lucide-pen-line"
-              color="slate"
-              size="sm"
-              class="dark:hover:!bg-n-slate-9/30"
-              :class="[
-                isEffectivelyCollapsed
-                  ? '!size-8 !outline-n-weak !text-n-slate-11'
-                  : '!h-7 !outline-n-weak !text-n-slate-11',
-                { '!bg-n-alpha-2 dark:!bg-n-slate-9/30': isOpen },
-              ]"
-            />
-          </template>
-        </ComposeConversation>
-      </div>
+      <!-- algorythmo: A2 — the ComposeConversation (pencil/compose) trigger is
+           removed from the sidebar chrome. Conversations are created from the
+           inbox surfaces; the sidebar stays an editorial nav rail (Ref 1), no
+           floating compose affordance. P-2 already dropped the search pill. -->
     </section>
     <nav
       class="grid overflow-y-scroll flex-grow gap-2 pb-5 no-scrollbar min-w-0"

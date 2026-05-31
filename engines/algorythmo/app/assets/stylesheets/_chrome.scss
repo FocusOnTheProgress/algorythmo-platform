@@ -337,3 +337,113 @@ nav.secondary-menu::after {
   outline: none;
   box-shadow: var(--alg-ring-focus);
 }
+
+// -----------------------------------------------------------------------------
+// 7. WHITE MODEL CHROME — map the host Chatwoot chrome onto the paper scale
+// -----------------------------------------------------------------------------
+// algorythmo: A4 — White Model is opt-in via <html data-theme='white'> (set by
+// themeHelper.js when the user picks "light"). The _tokens.scss [data-theme=
+// 'white'] block already flips every --alg-* token to the paper variant. But the
+// HOST Chatwoot chrome (sidebar, conversations, settings) is painted from the
+// Radix RGB-triplet scale in _next-colors.scss, NOT from --alg-* tokens. With
+// the `.dark` class removed, that host scale falls back to Chatwoot's own LIGHT
+// defaults — including the Chatwoot brand blue (#2781F6) for links/focus.
+//
+// So white mode without this block was a two-tone mess: Algorythmo paper
+// surfaces + raw Chatwoot light chrome + Chatwoot blue. Here we remap the host
+// Radix/surface tokens to the warm paper scale and re-purge the brand blue to
+// the white-model brand teal (--alg-color-brand-primary, darkened for AA on
+// paper). This makes white mode a coherent, on-brand editorial surface.
+[data-theme='white'] {
+  // --- Structural slate → warm ink-on-paper (mirror of _next-colors light, but
+  // pulled to the Algorythmo paper temperature: near-white canvas, ink text). --
+  --slate-1: 250 250 248;
+  --slate-2: 247 247 244;
+  --slate-3: 240 240 237;
+  --slate-4: 233 233 229;
+  --slate-5: 226 226 221;
+  --slate-6: 217 217 211;
+  --slate-7: 202 202 196;
+  --slate-8: 168 168 162;
+  --slate-9: 124 124 118;
+  --slate-10: 108 108 102;
+  --slate-11: 78 78 74;
+  --slate-12: 22 22 24;
+
+  --gray-1: 250 250 248;
+  --gray-2: 247 247 244;
+  --gray-3: 240 240 237;
+  --gray-4: 233 233 229;
+  --gray-5: 226 226 221;
+  --gray-6: 217 217 211;
+  --gray-7: 202 202 196;
+  --gray-8: 168 168 162;
+  --gray-9: 124 124 118;
+  --gray-10: 108 108 102;
+  --gray-11: 78 78 74;
+  --gray-12: 22 22 24;
+
+  // --- BRAND PURGE on paper — Chatwoot blue → white-model brand teal ----------
+  // RGB render of --alg-color-brand-primary in white (oklch(0.520 0.140 195)) —
+  // darker than the dark-mode teal for ≥4.5:1 on paper.
+  --blue-1: 240 248 248;
+  --blue-2: 230 244 244;
+  --blue-3: 210 236 236;
+  --blue-4: 188 226 226;
+  --blue-5: 160 214 214;
+  --blue-6: 120 196 196;
+  --blue-7: 70 168 168;
+  --blue-8: 30 134 134;
+  --blue-9: 12 120 122;   // ← was Chatwoot blue. White-model brand teal.
+  --blue-10: 10 104 106;
+  --blue-11: 8 92 94;     // link / button text on paper
+  --blue-12: 6 60 62;
+  --text-blue: 8 92 94;
+  --solid-blue: 160 214 214;
+  --solid-blue-2: 230 244 244;
+  --border-blue-strong: 12 120 122;
+  --border-blue: 12, 120, 122, 0.5;
+
+  --iris-9: 12 120 122;
+  --iris-10: 10 104 106;
+  --iris-11: 8 92 94;
+
+  // --- Structural surfaces → paper scale --------------------------------------
+  --background-color: 247 247 244;     // app canvas ≈ paper --alg-black-2
+  --surface-1: 252 252 250;            // beneath shell
+  --surface-2: 255 255 255;            // raised card — pure white lifts off paper
+  --surface-active: 240 240 237;
+  --background-input-box: 12, 12, 14, 0.03;
+  --card-color: 255 255 255;
+  --solid-1: 252 252 250;
+  --solid-2: 247 247 244;
+  --solid-3: 240 240 237;
+  --solid-active: 233 233 229;
+
+  --border-strong: 12, 12, 14, 0.20;
+  --border-weak: 12, 12, 14, 0.08;
+  --border-container: 12, 12, 14, 0.06;
+
+  --overlay: 28, 28, 32, 0.42;
+  --button-color: 240 240 237;
+  --button-hover-color: 12, 12, 14, 0.06;
+  --label-background: 240 240 237;
+  --label-border: 12, 12, 14, 0.08;
+
+  --alpha-1: 247, 247, 244, 0.8;
+  --alpha-2: 12, 12, 14, 0.06;
+  --alpha-3: 255, 255, 255, 0.95;
+  --black-alpha-1: 0, 0, 0, 0.08;
+  --black-alpha-2: 0, 0, 0, 0.05;
+  --white-alpha: 12, 12, 14, 0.06;
+
+  --text-amber: 92 64 12;
+  --text-purple: 64 40 110;
+
+  // App canvas + primary rail to paper. The primary rail keeps its glass treat-
+  // ment (the white-model glass tokens are milk-white, low-blur — §8 of DESIGN).
+  body,
+  body.dark {
+    background-color: var(--alg-bg);
+  }
+}

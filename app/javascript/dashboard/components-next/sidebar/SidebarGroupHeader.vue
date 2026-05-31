@@ -34,16 +34,19 @@ const count = computed(() =>
     :to="!expandable && to ? to : undefined"
     :title="label"
     :class="{
-      // algorythmo: cinematic-os DELTA-0009 — active sidebar item = inverse-tab.
-      // Fill: white (--alg-fg-primary). Text: near-black (--alg-black-1).
-      // Radius: --alg-radius-md (12 px) — NOT pill (9999 px). Matches Ref 1.
-      // Tailwind arbitrary-value syntax reaches the design-system tokens without
-      // introducing a new CSS class or scoped style. shadow-sm adds elevation-1
-      // to sell the lifted-object look against the dark canvas.
+      // algorythmo: cinematic-os DELTA-0009 + A3 — active sidebar item = the
+      // inverse-elevation pill of Ref 1: a near-white fill with near-black text,
+      // radius --alg-radius-md (12 px, NOT pill), shadow-sm for the lifted-object
+      // look against the dark canvas. Tailwind arbitrary-value syntax reaches the
+      // design-system tokens directly. A3 keeps this exactly — it IS the premium
+      // tell — and only quiets the idle/hover register around it.
       '[background-color:var(--alg-fg-primary)] [color:var(--alg-black-1)] font-medium shadow-sm':
         isActive && !hasActiveChild,
       'text-n-slate-12 font-medium': hasActiveChild,
-      'text-n-slate-11 hover:bg-n-alpha-2': !isActive && !hasActiveChild,
+      // A3 — idle items read editorial-quiet (slate-11 at rest), warming to a
+      // faint translucent surface on hover. No Chatwoot blue, no heavy fill.
+      'text-n-slate-11 hover:bg-n-alpha-2 hover:text-n-slate-12 transition-colors duration-150':
+        !isActive && !hasActiveChild,
     }"
     :aria-expanded="expandable ? isExpanded : undefined"
     :aria-controls="expandable && name ? `sidebar-children-${name}` : undefined"

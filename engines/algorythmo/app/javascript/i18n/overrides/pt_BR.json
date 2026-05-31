@@ -31,12 +31,10 @@
         "FORM_ARIA": "Enviar mensagem ao agente",
         "INPUT_ARIA": "Mensagem para o agente",
         "NAME_SUFFIX": "· agente",
-        "STATUS_OFFLINE": "offline",
         "OPENING": "Sou o agente de {name} — seu especialista neste setor. Pode me perguntar o que quiser; em breve eu atuo com os dados reais da sua empresa.",
         "PLACEHOLDER": "Escreva sua pergunta…",
         "HINT": "⌘⏎ para enviar",
-        "SEND_ARIA": "Enviar mensagem",
-        "MIC_ARIA": "Falar com o agente por voz"
+        "MIC_ARIA": "Enviar mensagem ou falar com o agente"
       },
       "FINANCE": {
         "HEADING": "Financeiro",
@@ -344,9 +342,182 @@
       "BODY": "Em construção — os dashboards de facilities com métricas reais chegam em breve."
     },
     "C_LEVELS": {
-      "TITLE": "Mesa Executiva",
+      "TITLE": "Sala de Conselho IA",
+      "SUBTITLE": "Mesa executiva estratégica",
       "SIDEBAR_LABEL": "C-Levels",
-      "BODY": "Em construção — sessão de design dedicada virá em breve."
+      "BODY": "Em construção — sessão de design dedicada virá em breve.",
+      "COMMITTEE": {
+        "ARIA_PANEL": "O comitê executivo",
+        "EYEBROW": "O comitê",
+        "TITLE": "Diretoria",
+        "READING": "lendo os dados atuais",
+        "CALL": "Chamar",
+        "AT_TABLE": "Na mesa",
+        "CALL_ARIA": "Chamar {role} para a mesa",
+        "CFO": "Diretor Financeiro · CFO",
+        "CMO": "Diretor de Marketing · CMO",
+        "CTO": "Diretor de Tecnologia · CTO",
+        "COO": "Diretor de Operações · COO"
+      },
+      "OPENING": {
+        "ARIA": "Abrir uma nova rodada de conselho",
+        "EYEBROW": "Nova rodada",
+        "PROMPT": "Sobre qual desafio ou área do negócio quer propor melhorias hoje?",
+        "PLACEHOLDER": "Descreva o desafio em uma frase…",
+        "SUBMIT": "Levar à mesa",
+        "GOALS_LABEL": "Ou comece por um objetivo",
+        "ARIA_PROMPT": "Desafio para o conselho"
+      },
+      "GOALS": {
+        "REDUCE_CHURN": "Reduzir Churn",
+        "CUT_COSTS": "Cortar Custos Operacionais",
+        "RAISE_MARGIN": "Aumentar Margem"
+      },
+      "DEBATE": {
+        "ARIA_PANEL": "Debate do conselho",
+        "ROUND_EYEBROW": "Rodada em andamento",
+        "NEW_ROUND": "Nova rodada",
+        "PROPOSAL_TAG": "Proposta",
+        "NO_SEATS": "Nenhum diretor está na mesa. Chame ao menos um diretor no painel da esquerda para iniciar o debate.",
+        "APPROVED_NOTE": "Proposta aprovada — ordem de serviço gerada.",
+        "DISMISSED_NOTE": "Sugestão descartada.",
+        "CUT": {
+          "CTO_OPEN": "Nossos servidores estão superdimensionados para a carga atual. Recomendo cortar {figure} sem risco de degradação — temos 38% de capacidade ociosa.",
+          "CTO_ALT": "Alternativa mais conservadora: reduzir gradualmente, começando por {figure} no primeiro ciclo, e reavaliar antes do corte total.",
+          "CFO_VALIDATE": "Validado. Esse corte se traduz direto em {figure}, sem tocar em receita."
+        },
+        "CHURN": {
+          "COO_OPEN": "O churn está concentrado nos primeiros 30 dias. Proponho um fluxo de onboarding assistido para a faixa de {figure} — é onde perdemos mais cliente.",
+          "COO_ALT": "Alternativa: delegar o acompanhamento a um agente de retenção, cobrindo {figure} sem aumentar a carga do time.",
+          "CFO_VALIDATE": "Faz sentido. Reter esse grupo representa {figure} ao longo de 12 meses."
+        },
+        "MARGIN": {
+          "CMO_OPEN": "Há demanda reprimida que não estamos capturando. Proponho investir {figure} para acelerar a Previsão de Vendas no próximo trimestre.",
+          "CMO_ALT": "Alternativa sem desembolso de caixa: um ajuste de {figure} captura margem direto, sem campanha.",
+          "CFO_CHALLENGE": "Cuidado — isso gera um {figure} agora. A margem cai antes de subir; precisamos de fôlego de caixa.",
+          "CTO_SUPPORT": "Posso instrumentar a atribuição para medirmos o retorno em tempo real e cortar rápido se não converter."
+        }
+      },
+      "ACTIONS": {
+        "APPROVE": "Aprovar",
+        "ALTERNATIVE": "Pedir alternativa",
+        "DISMISS": "Descartar"
+      },
+      "PILL": {
+        "OPEN_ARIA": "Abrir relatório de origem de {figure}",
+        "INFRA_CUT": "R$ 45k em Infra",
+        "INFRA_CUT_SOFT": "R$ 22k em Infra",
+        "MARGIN_GAIN": "+1,2% de margem líquida",
+        "CHURN_RATE": "18% de churn em 30 dias",
+        "CHURN_AGENT": "12% de churn em 30 dias",
+        "LTV_GAIN": "+R$ 96k de LTV",
+        "PAID_TRAFFIC": "R$ 20k em tráfego pago",
+        "PRICING": "+3% de pricing",
+        "CASH_DIP": "−R$ 20k de caixa imediato"
+      },
+      "REPORT": {
+        "TITLE": "Relatório de origem",
+        "DEMO_BADGE": "Dados de demonstração",
+        "INFRA": "Relatório de Infraestrutura · Tecnologia",
+        "MARGIN": "Relatório de Margem · Financeiro",
+        "RETENTION": "Relatório de Retenção · Operações",
+        "MARKETING": "Relatório de Aquisição · Marketing",
+        "ROW_PERIOD": {
+          "LABEL": "Período",
+          "VALUE": "Últimos 90 dias"
+        },
+        "ROW_SOURCE": {
+          "LABEL": "Fonte",
+          "VALUE": "Dados consolidados do OS"
+        },
+        "ROW_METHOD": {
+          "LABEL": "Método",
+          "VALUE": "Média móvel · base operacional"
+        },
+        "NOTE": "Este é um relatório ilustrativo. Quando a camada de dados do OS estiver conectada, o número abre o relatório real que originou a recomendação."
+      },
+      "SIMULATOR": {
+        "ARIA_PANEL": "Simulador de impacto",
+        "EYEBROW": "O diferencial",
+        "TITLE": "Simulador de impacto",
+        "BASELINE_HINT": "Passe o cursor sobre uma proposta para projetar o impacto nos próximos meses.",
+        "PREVIEWING": "Projetando: {label}",
+        "FOOTNOTE": "Linha sólida = trajetória atual. Linha pontilhada = projeção da proposta selecionada. Descartar reverte ao cenário base.",
+        "FATURAMENTO": "Faturamento",
+        "MARGEM": "Margem",
+        "SATISFACAO": "Satisfação do Cliente",
+        "SOBRECARGA": "Sobrecarga da Equipe",
+        "ARIA_BASELINE": "{name}, valor atual {now}.",
+        "ARIA_PROJECTED": "{name}, valor atual {now}, projeção {projected}."
+      },
+      "WORK_ORDER": {
+        "TITLE": "Criar Ordem de Serviço",
+        "DEMO_BADGE": "Demonstração — nada é criado ainda",
+        "FROM": "Proposta de {role}",
+        "LEDE": "Revise a checklist que o conselho vai delegar às abas operacionais.",
+        "CONFIRM": "Confirmar e delegar",
+        "DONE_TITLE": "Ordem de serviço pronta",
+        "DONE_BODY": "Quando o OS estiver conectado, {count} tarefas seriam criadas nas abas operacionais correspondentes.",
+        "INFRA": {
+          "HEADING": "Reduzir infraestrutura ociosa",
+          "STEP_BRIEF": "Redimensionar servidores em −15%",
+          "DEST_BRIEF": "Operação",
+          "STEP_OWNER": "Atribuir ao time de Tecnologia",
+          "DEST_OWNER": "Operação",
+          "STEP_TRACK": "Acompanhar economia mensal",
+          "DEST_TRACK": "Financeiro"
+        },
+        "INFRA_SOFT": {
+          "HEADING": "Reduzir infraestrutura gradualmente",
+          "STEP_BRIEF": "Cortar primeiro ciclo em −8%",
+          "DEST_BRIEF": "Operação",
+          "STEP_OWNER": "Atribuir ao time de Tecnologia",
+          "DEST_OWNER": "Operação",
+          "STEP_TRACK": "Reavaliar antes do corte total",
+          "DEST_TRACK": "Financeiro"
+        },
+        "CHURN": {
+          "HEADING": "Onboarding assistido nos 30 dias",
+          "STEP_BRIEF": "Desenhar fluxo de boas-vindas",
+          "DEST_BRIEF": "Operação",
+          "STEP_OWNER": "Atribuir ao time de Customer Success",
+          "DEST_OWNER": "Operação",
+          "STEP_TRACK": "Medir churn da coorte",
+          "DEST_TRACK": "Comercial"
+        },
+        "CHURN_AGENT": {
+          "HEADING": "Agente de retenção automatizado",
+          "STEP_BRIEF": "Configurar agente de acompanhamento",
+          "DEST_BRIEF": "Operação",
+          "STEP_OWNER": "Validar roteiro com Customer Success",
+          "DEST_OWNER": "Operação",
+          "STEP_TRACK": "Medir churn da coorte",
+          "DEST_TRACK": "Comercial"
+        },
+        "PAID_TRAFFIC": {
+          "HEADING": "Investir em tráfego pago",
+          "STEP_BRIEF": "Briefing de campanha e orçamento",
+          "DEST_BRIEF": "Marketing",
+          "STEP_OWNER": "Atribuir ao time de Marketing",
+          "DEST_OWNER": "Marketing",
+          "STEP_TRACK": "Acompanhar caixa e previsão de vendas",
+          "DEST_TRACK": "Financeiro"
+        },
+        "PRICING": {
+          "HEADING": "Ajuste de pricing +3%",
+          "STEP_BRIEF": "Definir nova tabela de preços",
+          "DEST_BRIEF": "Comercial",
+          "STEP_OWNER": "Atribuir ao time Comercial",
+          "DEST_OWNER": "Comercial",
+          "STEP_TRACK": "Acompanhar margem e retenção",
+          "DEST_TRACK": "Financeiro"
+        }
+      },
+      "MODAL": {
+        "CLOSE": "Fechar",
+        "CANCEL": "Cancelar",
+        "DONE": "Concluir"
+      }
     },
     "MARKETPLACE": {
       "TITLE": "Marketplace",

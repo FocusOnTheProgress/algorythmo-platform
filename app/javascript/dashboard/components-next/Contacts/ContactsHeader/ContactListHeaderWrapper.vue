@@ -1,16 +1,24 @@
 <script setup>
+// algorythmo: B2 — contacts page is a single clean list + import icon.
+// All header affordances except import are removed (add, export, filter
+// button, sort menu, segments controls, compose-conversation).
+//
+// SEGMENTS / ACTIVE-FILTERS NOTE: ContactsListLayout renders
+// ContactsActiveFiltersPreview on the Segments route (and when filters are
+// deep-linked) and wires its @open-filter to `onToggleFilters` via template
+// ref.  That edit path must remain functional — the founder's cleanup was
+// scoped to the Contatos tab header, not to breaking the Segments feature.
+// So `onToggleFilters` is kept fully working; the ContactsFilter overlay is
+// mounted here and triggered programmatically.  No filter button is rendered
+// anywhere in the header — the only entry point is the preview pill.
 import { ref, computed, unref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
-import { useRouter } from 'vue-router';
 import { useAlert, useTrack } from 'dashboard/composables';
+import { useRouter } from 'vue-router';
 import { CONTACTS_EVENTS } from 'dashboard/helper/AnalyticsHelper/events';
 import filterQueryGenerator from 'dashboard/helper/filterQueryGenerator';
 import contactFilterItems from 'dashboard/routes/dashboard/contacts/contactFilterItems';
-import {
-  DuplicateContactException,
-  ExceptionWithMessage,
-} from 'shared/helpers/CustomErrors';
 import { generateValuesForEditCustomViews } from 'dashboard/helper/customViewsHelper';
 import countries from 'shared/constants/countries';
 import {
@@ -19,89 +27,30 @@ import {
 } from 'dashboard/composables/useTransformKeys';
 
 import ContactsHeader from 'dashboard/components-next/Contacts/ContactsHeader/ContactHeader.vue';
-import CreateNewContactDialog from 'dashboard/components-next/Contacts/ContactsForm/CreateNewContactDialog.vue';
-import ContactExportDialog from 'dashboard/components-next/Contacts/ContactsForm/ContactExportDialog.vue';
 import ContactImportDialog from 'dashboard/components-next/Contacts/ContactsForm/ContactImportDialog.vue';
 import CreateSegmentDialog from 'dashboard/components-next/Contacts/ContactsForm/CreateSegmentDialog.vue';
 import DeleteSegmentDialog from 'dashboard/components-next/Contacts/ContactsForm/DeleteSegmentDialog.vue';
 import ContactsFilter from 'dashboard/components-next/filter/ContactsFilter.vue';
 
 const props = defineProps({
-  showSearch: { type: Boolean, default: true },
-  searchValue: { type: String, default: '' },
-  activeSort: { type: String, default: 'last_activity_at' },
-  activeOrdering: { type: String, default: '' },
   headerTitle: { type: String, default: '' },
+  // segmentsId + activeSegment drive onToggleFilters for segment editing.
   segmentsId: { type: [String, Number], default: 0 },
   activeSegment: { type: Object, default: null },
   hasAppliedFilters: { type: Boolean, default: false },
-  isLabelView: { type: Boolean, default: false },
-  isActiveView: { type: Boolean, default: false },
 });
 
-const emit = defineEmits([
-  'update:sort',
-  'search',
-  'applyFilter',
-  'clearFilters',
-]);
+const emit = defineEmits(['applyFilter', 'clearFilters']);
 
 const { t } = useI18n();
 const store = useStore();
 const router = useRouter();
 
-const createNewContactDialogRef = ref(null);
-const contactExportDialogRef = ref(null);
+// ── import ────────────────────────────────────────────────────────────────
 const contactImportDialogRef = ref(null);
-const createSegmentDialogRef = ref(null);
-const deleteSegmentDialogRef = ref(null);
 
-const showFiltersModal = ref(false);
-const appliedFilter = ref([]);
-const segmentsQuery = ref({});
-
-const appliedFilters = useMapGetter('contacts/getAppliedContactFiltersV4');
-const contactAttributes = useMapGetter('attributes/getContactAttributes');
-const labels = useMapGetter('labels/getLabels');
-const hasActiveSegments = computed(
-  () => props.activeSegment && props.segmentsId !== 0
-);
-const activeSegmentName = computed(() => props.activeSegment?.name);
-
-const openCreateNewContactDialog = () => {
-  createNewContactDialogRef.value?.dialogRef.open();
-};
 const openContactImportDialog = () =>
   contactImportDialogRef.value?.dialogRef.open();
-const openContactExportDialog = () =>
-  contactExportDialogRef.value?.dialogRef.open();
-const openCreateSegmentDialog = () =>
-  createSegmentDialogRef.value?.dialogRef.open();
-const openDeleteSegmentDialog = () =>
-  deleteSegmentDialogRef.value?.dialogRef.open();
-
-const onCreate = async contact => {
-  try {
-    await store.dispatch('contacts/create', contact);
-    createNewContactDialogRef.value?.onSuccess();
-    useAlert(
-      t('CONTACTS_LAYOUT.HEADER.ACTIONS.CONTACT_CREATION.SUCCESS_MESSAGE')
-    );
-  } catch (error) {
-    const i18nPrefix = 'CONTACTS_LAYOUT.HEADER.ACTIONS.CONTACT_CREATION';
-    if (error instanceof DuplicateContactException) {
-      if (error.data.includes('email')) {
-        useAlert(t(`${i18nPrefix}.EMAIL_ADDRESS_DUPLICATE`));
-      } else if (error.data.includes('phone_number')) {
-        useAlert(t(`${i18nPrefix}.PHONE_NUMBER_DUPLICATE`));
-      }
-    } else if (error instanceof ExceptionWithMessage) {
-      useAlert(error.data);
-    } else {
-      useAlert(t(`${i18nPrefix}.ERROR_MESSAGE`));
-    }
-  }
-};
 
 const onImport = async file => {
   try {
@@ -120,104 +69,31 @@ const onImport = async file => {
   }
 };
 
-const onExport = async query => {
-  try {
-    await store.dispatch('contacts/export', query);
-    useAlert(
-      t('CONTACTS_LAYOUT.HEADER.ACTIONS.EXPORT_CONTACT.SUCCESS_MESSAGE')
-    );
-  } catch (error) {
-    useAlert(
-      error.message ||
-        t('CONTACTS_LAYOUT.HEADER.ACTIONS.EXPORT_CONTACT.ERROR_MESSAGE')
-    );
-  }
-};
+// ── filter modal (segments edit + deep-linked filters) ───────────────────
+// No button in the header triggers this — it is called only from
+// ContactsListLayout → ContactsActiveFiltersPreview → @open-filter.
+const createSegmentDialogRef = ref(null);
+const deleteSegmentDialogRef = ref(null);
 
-const onCreateSegment = async payload => {
-  try {
-    const payloadData = {
-      ...payload,
-      query: segmentsQuery.value,
-    };
-    const response = await store.dispatch('customViews/create', payloadData);
-    createSegmentDialogRef.value?.dialogRef.close();
-    useAlert(
-      t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.CREATE_SEGMENT.SUCCESS_MESSAGE')
-    );
-    const segmentId = response?.data?.id;
-    if (!segmentId) return;
-    // Navigate to the created segment
-    router.push({
-      name: 'contacts_dashboard_segments_index',
-      params: { segmentId },
-      query: { page: 1 },
-    });
-  } catch {
-    useAlert(
-      t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.CREATE_SEGMENT.ERROR_MESSAGE')
-    );
-  }
-};
+const showFiltersModal = ref(false);
+const appliedFilter = ref([]);
+const segmentsQuery = ref({});
 
-const onDeleteSegment = async payload => {
-  try {
-    await store.dispatch('customViews/delete', {
-      id: Number(props.segmentsId),
-      ...payload,
-    });
-    router.push({
-      name: 'contacts_dashboard_index',
-      query: {
-        page: 1,
-      },
-    });
-    deleteSegmentDialogRef.value?.dialogRef.close();
-    useAlert(
-      t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.DELETE_SEGMENT.SUCCESS_MESSAGE')
-    );
-  } catch (error) {
-    useAlert(
-      t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.DELETE_SEGMENT.ERROR_MESSAGE')
-    );
-  }
-};
+const appliedFilters = useMapGetter('contacts/getAppliedContactFiltersV4');
+const contactAttributes = useMapGetter('attributes/getContactAttributes');
+const labels = useMapGetter('labels/getLabels');
 
-const closeAdvanceFiltersModal = () => {
-  showFiltersModal.value = false;
-  appliedFilter.value = [];
-};
+const hasActiveSegments = computed(
+  () => props.activeSegment && props.segmentsId !== 0
+);
+const activeSegmentName = computed(() => props.activeSegment?.name);
 
-const clearFilters = async () => {
-  emit('clearFilters');
-};
-
-const onApplyFilter = async payload => {
-  payload = useSnakeCase(payload);
-  segmentsQuery.value = filterQueryGenerator(payload);
-  emit('applyFilter', filterQueryGenerator(payload));
-  showFiltersModal.value = false;
-};
-
-const onUpdateSegment = async (payload, segmentName) => {
-  payload = useSnakeCase(payload);
-  const payloadData = {
-    ...props.activeSegment,
-    name: segmentName,
-    query: filterQueryGenerator(payload),
-  };
-  await store.dispatch('customViews/update', payloadData);
-  closeAdvanceFiltersModal();
-};
-
-const setParamsForEditSegmentModal = () => {
-  return {
-    countries,
-    filterTypes: contactFilterItems,
-    allCustomAttributes: useSnakeCase(contactAttributes.value),
-    labels: labels.value || [],
-  };
-};
+const setParamsForEditSegmentModal = () => ({
+  countries,
+  filterTypes: contactFilterItems,
+  allCustomAttributes: useSnakeCase(contactAttributes.value),
+  labels: labels.value || [],
+});
 
 const initializeSegmentToFilterModal = segment => {
   const query = unref(segment)?.query?.payload;
@@ -245,6 +121,71 @@ const initializeSegmentToFilterModal = segment => {
   appliedFilter.value = [...appliedFilter.value, ...newFilters];
 };
 
+const closeAdvanceFiltersModal = () => {
+  showFiltersModal.value = false;
+  appliedFilter.value = [];
+};
+
+const onApplyFilter = async payload => {
+  payload = useSnakeCase(payload);
+  segmentsQuery.value = filterQueryGenerator(payload);
+  emit('applyFilter', filterQueryGenerator(payload));
+  showFiltersModal.value = false;
+};
+
+const onUpdateSegment = async (payload, segmentName) => {
+  payload = useSnakeCase(payload);
+  const payloadData = {
+    ...props.activeSegment,
+    name: segmentName,
+    query: filterQueryGenerator(payload),
+  };
+  await store.dispatch('customViews/update', payloadData);
+  closeAdvanceFiltersModal();
+};
+
+const onCreateSegment = async payload => {
+  try {
+    const payloadData = { ...payload, query: segmentsQuery.value };
+    const response = await store.dispatch('customViews/create', payloadData);
+    createSegmentDialogRef.value?.dialogRef.close();
+    useAlert(
+      t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.CREATE_SEGMENT.SUCCESS_MESSAGE')
+    );
+    const segmentId = response?.data?.id;
+    if (!segmentId) return;
+    router.push({
+      name: 'contacts_dashboard_segments_index',
+      params: { segmentId },
+      query: { page: 1 },
+    });
+  } catch {
+    useAlert(
+      t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.CREATE_SEGMENT.ERROR_MESSAGE')
+    );
+  }
+};
+
+const onDeleteSegment = async payload => {
+  try {
+    await store.dispatch('customViews/delete', {
+      id: Number(props.segmentsId),
+      ...payload,
+    });
+    router.push({ name: 'contacts_dashboard_index', query: { page: 1 } });
+    deleteSegmentDialogRef.value?.dialogRef.close();
+    useAlert(
+      t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.DELETE_SEGMENT.SUCCESS_MESSAGE')
+    );
+  } catch {
+    useAlert(
+      t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.DELETE_SEGMENT.ERROR_MESSAGE')
+    );
+  }
+};
+
+// Exposed so ContactsListLayout can invoke it via template ref from the
+// active-filters preview pill (Segments route + deep-linked filter state).
 const onToggleFilters = () => {
   appliedFilter.value = [];
   if (hasActiveSegments.value) {
@@ -265,52 +206,33 @@ const onToggleFilters = () => {
   showFiltersModal.value = true;
 };
 
-defineExpose({
-  onToggleFilters,
-});
+defineExpose({ onToggleFilters });
 </script>
 
 <template>
   <ContactsHeader
-    :show-search="showSearch"
-    :search-value="searchValue"
-    :active-sort="activeSort"
-    :active-ordering="activeOrdering"
     :header-title="headerTitle"
-    :is-segments-view="hasActiveSegments"
-    :is-label-view="isLabelView"
-    :is-active-view="isActiveView"
-    :has-active-filters="hasAppliedFilters"
-    :button-label="t('CONTACTS_LAYOUT.HEADER.MESSAGE_BUTTON')"
-    @search="emit('search', $event)"
-    @update:sort="emit('update:sort', $event)"
-    @add="openCreateNewContactDialog"
     @import="openContactImportDialog"
-    @export="openContactExportDialog"
-    @filter="onToggleFilters"
-    @create-segment="openCreateSegmentDialog"
-    @delete-segment="openDeleteSegmentDialog"
-  >
-    <template #filter>
-      <div
-        class="absolute mt-1 ltr:-right-52 rtl:-left-52 sm:ltr:right-0 sm:rtl:left-0 top-full"
-      >
-        <ContactsFilter
-          v-if="showFiltersModal"
-          v-model="appliedFilter"
-          :segment-name="activeSegmentName"
-          :is-segment-view="hasActiveSegments"
-          @apply-filter="onApplyFilter"
-          @update-segment="onUpdateSegment"
-          @close="closeAdvanceFiltersModal"
-          @clear-filters="clearFilters"
-        />
-      </div>
-    </template>
-  </ContactsHeader>
+  />
 
-  <CreateNewContactDialog ref="createNewContactDialogRef" @create="onCreate" />
-  <ContactExportDialog ref="contactExportDialogRef" @export="onExport" />
+  <!-- Filter overlay — no header button triggers this; entry point is the
+       active-filters preview pill rendered by ContactsListLayout. -->
+  <div
+    v-if="showFiltersModal"
+    class="fixed inset-0 z-50 flex items-start justify-center pt-20"
+    @click.self="closeAdvanceFiltersModal"
+  >
+    <ContactsFilter
+      v-model="appliedFilter"
+      :segment-name="activeSegmentName"
+      :is-segment-view="hasActiveSegments"
+      @apply-filter="onApplyFilter"
+      @update-segment="onUpdateSegment"
+      @close="closeAdvanceFiltersModal"
+      @clear-filters="emit('clearFilters')"
+    />
+  </div>
+
   <ContactImportDialog ref="contactImportDialogRef" @import="onImport" />
   <CreateSegmentDialog ref="createSegmentDialogRef" @create="onCreateSegment" />
   <DeleteSegmentDialog ref="deleteSegmentDialogRef" @delete="onDeleteSegment" />

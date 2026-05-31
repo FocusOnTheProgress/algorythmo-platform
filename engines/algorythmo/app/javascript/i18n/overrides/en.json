@@ -31,12 +31,10 @@
         "FORM_ARIA": "Send message to agent",
         "INPUT_ARIA": "Message for the agent",
         "NAME_SUFFIX": "· agent",
-        "STATUS_OFFLINE": "offline",
         "OPENING": "I'm the {name} agent — your specialist for this sector. Ask me anything, and soon I'll act on your company's real data.",
         "PLACEHOLDER": "Type your question…",
         "HINT": "⌘⏎ to send",
-        "SEND_ARIA": "Send message",
-        "MIC_ARIA": "Speak to the agent"
+        "MIC_ARIA": "Send message or speak to the agent"
       },
       "FINANCE": {
         "HEADING": "Finance",
@@ -344,9 +342,182 @@
       "BODY": "Under construction — facilities dashboards with real metrics coming soon."
     },
     "C_LEVELS": {
-      "TITLE": "Executive Board",
+      "TITLE": "AI Boardroom",
+      "SUBTITLE": "Strategic executive forum",
       "SIDEBAR_LABEL": "C-Levels",
-      "BODY": "Under construction — a dedicated design session is on the way."
+      "BODY": "Under construction — a dedicated design session is on the way.",
+      "COMMITTEE": {
+        "ARIA_PANEL": "The executive committee",
+        "EYEBROW": "The committee",
+        "TITLE": "Directors",
+        "READING": "reading the current data",
+        "CALL": "Call",
+        "AT_TABLE": "At table",
+        "CALL_ARIA": "Call {role} to the table",
+        "CFO": "Chief Financial Officer · CFO",
+        "CMO": "Chief Marketing Officer · CMO",
+        "CTO": "Chief Technology Officer · CTO",
+        "COO": "Chief Operating Officer · COO"
+      },
+      "OPENING": {
+        "ARIA": "Open a new board round",
+        "EYEBROW": "New round",
+        "PROMPT": "Which challenge or area of the business do you want to improve today?",
+        "PLACEHOLDER": "Describe the challenge in one sentence…",
+        "SUBMIT": "Take to the table",
+        "GOALS_LABEL": "Or start from a goal",
+        "ARIA_PROMPT": "Challenge for the board"
+      },
+      "GOALS": {
+        "REDUCE_CHURN": "Reduce Churn",
+        "CUT_COSTS": "Cut Operating Costs",
+        "RAISE_MARGIN": "Raise Margin"
+      },
+      "DEBATE": {
+        "ARIA_PANEL": "Board debate",
+        "ROUND_EYEBROW": "Round in progress",
+        "NEW_ROUND": "New round",
+        "PROPOSAL_TAG": "Proposal",
+        "NO_SEATS": "No director is at the table. Call at least one director in the left panel to start the debate.",
+        "APPROVED_NOTE": "Proposal approved — work order generated.",
+        "DISMISSED_NOTE": "Suggestion dismissed.",
+        "CUT": {
+          "CTO_OPEN": "Our servers are oversized for current load. I recommend cutting {figure} with no risk of degradation — we have 38% idle capacity.",
+          "CTO_ALT": "More conservative alternative: scale down gradually, starting with {figure} in the first cycle, then reassess before the full cut.",
+          "CFO_VALIDATE": "Validated. That cut translates directly into {figure}, without touching revenue."
+        },
+        "CHURN": {
+          "COO_OPEN": "Churn is concentrated in the first 30 days. I propose an assisted onboarding flow for the {figure} band — that's where we lose most customers.",
+          "COO_ALT": "Alternative: delegate follow-up to a retention agent, covering {figure} without adding to the team's load.",
+          "CFO_VALIDATE": "Makes sense. Retaining that group represents {figure} over 12 months."
+        },
+        "MARGIN": {
+          "CMO_OPEN": "There's pent-up demand we're not capturing. I propose investing {figure} to accelerate the Sales Forecast next quarter.",
+          "CMO_ALT": "Alternative with no cash outlay: a {figure} adjustment captures margin directly, no campaign.",
+          "CFO_CHALLENGE": "Careful — that creates a {figure} now. Margin dips before it rises; we need cash headroom.",
+          "CTO_SUPPORT": "I can instrument attribution so we measure the return in real time and cut fast if it doesn't convert."
+        }
+      },
+      "ACTIONS": {
+        "APPROVE": "Approve",
+        "ALTERNATIVE": "Ask for alternative",
+        "DISMISS": "Dismiss"
+      },
+      "PILL": {
+        "OPEN_ARIA": "Open source report for {figure}",
+        "INFRA_CUT": "R$ 45k in Infra",
+        "INFRA_CUT_SOFT": "R$ 22k in Infra",
+        "MARGIN_GAIN": "+1.2% net margin",
+        "CHURN_RATE": "18% 30-day churn",
+        "CHURN_AGENT": "12% 30-day churn",
+        "LTV_GAIN": "+R$ 96k LTV",
+        "PAID_TRAFFIC": "R$ 20k paid traffic",
+        "PRICING": "+3% pricing",
+        "CASH_DIP": "−R$ 20k immediate cash"
+      },
+      "REPORT": {
+        "TITLE": "Source report",
+        "DEMO_BADGE": "Demo data",
+        "INFRA": "Infrastructure Report · Technology",
+        "MARGIN": "Margin Report · Finance",
+        "RETENTION": "Retention Report · Operations",
+        "MARKETING": "Acquisition Report · Marketing",
+        "ROW_PERIOD": {
+          "LABEL": "Period",
+          "VALUE": "Last 90 days"
+        },
+        "ROW_SOURCE": {
+          "LABEL": "Source",
+          "VALUE": "Consolidated OS data"
+        },
+        "ROW_METHOD": {
+          "LABEL": "Method",
+          "VALUE": "Moving average · operational base"
+        },
+        "NOTE": "This is an illustrative report. Once the OS data layer is connected, the number opens the real report behind the recommendation."
+      },
+      "SIMULATOR": {
+        "ARIA_PANEL": "Impact simulator",
+        "EYEBROW": "The differentiator",
+        "TITLE": "Impact simulator",
+        "BASELINE_HINT": "Hover a proposal to project its impact over the coming months.",
+        "PREVIEWING": "Projecting: {label}",
+        "FOOTNOTE": "Solid line = current trajectory. Dotted line = projection of the selected proposal. Dismiss reverts to the baseline.",
+        "FATURAMENTO": "Revenue",
+        "MARGEM": "Margin",
+        "SATISFACAO": "Customer Satisfaction",
+        "SOBRECARGA": "Team Overload",
+        "ARIA_BASELINE": "{name}, current value {now}.",
+        "ARIA_PROJECTED": "{name}, current value {now}, projection {projected}."
+      },
+      "WORK_ORDER": {
+        "TITLE": "Create Work Order",
+        "DEMO_BADGE": "Demo — nothing is created yet",
+        "FROM": "Proposal from {role}",
+        "LEDE": "Review the checklist the board will delegate to the operational tabs.",
+        "CONFIRM": "Confirm and delegate",
+        "DONE_TITLE": "Work order ready",
+        "DONE_BODY": "Once the OS is connected, {count} tasks would be created in the matching operational tabs.",
+        "INFRA": {
+          "HEADING": "Reduce idle infrastructure",
+          "STEP_BRIEF": "Resize servers by −15%",
+          "DEST_BRIEF": "Operations",
+          "STEP_OWNER": "Assign to the Technology team",
+          "DEST_OWNER": "Operations",
+          "STEP_TRACK": "Track monthly savings",
+          "DEST_TRACK": "Finance"
+        },
+        "INFRA_SOFT": {
+          "HEADING": "Reduce infrastructure gradually",
+          "STEP_BRIEF": "Cut first cycle by −8%",
+          "DEST_BRIEF": "Operations",
+          "STEP_OWNER": "Assign to the Technology team",
+          "DEST_OWNER": "Operations",
+          "STEP_TRACK": "Reassess before full cut",
+          "DEST_TRACK": "Finance"
+        },
+        "CHURN": {
+          "HEADING": "Assisted 30-day onboarding",
+          "STEP_BRIEF": "Design the welcome flow",
+          "DEST_BRIEF": "Operations",
+          "STEP_OWNER": "Assign to the Customer Success team",
+          "DEST_OWNER": "Operations",
+          "STEP_TRACK": "Measure cohort churn",
+          "DEST_TRACK": "Commercial"
+        },
+        "CHURN_AGENT": {
+          "HEADING": "Automated retention agent",
+          "STEP_BRIEF": "Configure the follow-up agent",
+          "DEST_BRIEF": "Operations",
+          "STEP_OWNER": "Validate the script with Customer Success",
+          "DEST_OWNER": "Operations",
+          "STEP_TRACK": "Measure cohort churn",
+          "DEST_TRACK": "Commercial"
+        },
+        "PAID_TRAFFIC": {
+          "HEADING": "Invest in paid traffic",
+          "STEP_BRIEF": "Campaign brief and budget",
+          "DEST_BRIEF": "Marketing",
+          "STEP_OWNER": "Assign to the Marketing team",
+          "DEST_OWNER": "Marketing",
+          "STEP_TRACK": "Track cash and sales forecast",
+          "DEST_TRACK": "Finance"
+        },
+        "PRICING": {
+          "HEADING": "Pricing adjustment +3%",
+          "STEP_BRIEF": "Define the new price table",
+          "DEST_BRIEF": "Commercial",
+          "STEP_OWNER": "Assign to the Commercial team",
+          "DEST_OWNER": "Commercial",
+          "STEP_TRACK": "Track margin and retention",
+          "DEST_TRACK": "Finance"
+        }
+      },
+      "MODAL": {
+        "CLOSE": "Close",
+        "CANCEL": "Cancel",
+        "DONE": "Done"
+      }
     },
     "MARKETPLACE": {
       "TITLE": "Marketplace",

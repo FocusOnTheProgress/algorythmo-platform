@@ -166,7 +166,10 @@ export default {
         {
           path: 'commercial',
           name: 'commercial_reports',
-          meta,
+          // algorythmo: B3 — CommercialShell (SectorShellV2) fills the
+          // viewport identically to every other sector shell.  algFullscreen
+          // tells ReportsWrapper to skip its max-w-5xl centred column.
+          meta: { ...meta, algFullscreen: true },
           component: ReportsCommercialOverlay,
         },
         {

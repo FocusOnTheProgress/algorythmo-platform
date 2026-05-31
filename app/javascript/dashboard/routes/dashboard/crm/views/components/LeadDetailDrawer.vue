@@ -24,11 +24,13 @@
 // Why lazy fetch for live leads: the timeline is the only block that requires a
 // network roundtrip; everything else is already in `lead`. Fetching on drawer
 // open keeps the kanban list page cheap and pays the drawer cost on intent.
-import { computed, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import AlgDrawer from 'dashboard/components-next/algorythmo/AlgDrawer.vue';
 import AlgAvatar from 'dashboard/components-next/algorythmo/AlgAvatar.vue';
+import LeadChannelIcon from './LeadChannelIcon.vue';
+import { useAlgMotion } from 'dashboard/composables/algorythmo/useAlgMotion.js';
 import { useStageHistory } from 'dashboard/composables/algorythmo/useStageHistory.js';
 import {
   elapsedSince,
@@ -52,12 +54,25 @@ const props = defineProps({
     type: Number,
     default: () => Date.now(),
   },
+  // In demo mode the leads carry SYNTHETIC conversation_ids (90101…) that don't
+  // resolve to a real thread. The CTA then routes to the conversations list
+  // instead of opening a phantom not-found pane (adversarial review #111).
+  demoMode: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(['update:open', 'close']);
 
 const { t } = useI18n();
 const router = useRouter();
+
+// Drawer reveal choreography (shared motion system). When the drawer opens the
+// profile sections fade + lift in sequence — one curve, one reduced-motion
+// contract, never hand-rolled (DESIGN §3.7 / MOTION-SYSTEM A6).
+const bodyRef = ref(null);
+const { revealChildren } = useAlgMotion(bodyRef);
 
 const stageHistory = useStageHistory(props.accountId);
 
@@ -88,6 +103,9 @@ const CHANNEL_ICON_PATHS = Object.freeze({
   tiktok: '<path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>',
   linkedin:
     '<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>',
+  facebook:
+    '<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>',
+  web: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
   generic:
     '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
 });
@@ -177,6 +195,34 @@ const social = computed(() =>
 );
 const hasSocial = computed(() => social.value.length > 0);
 
+// -----------------------------------------------------------------------
+// Lead intelligence (future lead-nurturing agent — demo-enriched)
+// -----------------------------------------------------------------------
+// Shell for the data the future lead-nurturing agent will own: LinkedIn /
+// Instagram / Facebook research + conversation memory. We render the structure
+// now (clearly labelled, agent-attributed) and fill it with demo content; in
+// production the agent populates `lead.intelligence`. When it's absent the
+// block stays present but shows the pending/empty copy so the section never
+// silently disappears — the operator always sees where this will live.
+const intelligence = computed(() => props.lead?.intelligence ?? null);
+// Research findings keep only data (source name + text). The icon is rendered by
+// the allowlist-driven <LeadChannelIcon> from the source NAME — never raw SVG —
+// so future agent-supplied content can't inject markup (adversarial review #111).
+const research = computed(() =>
+  Array.isArray(intelligence.value?.research)
+    ? intelligence.value.research.map(r => ({
+        source: r.source,
+        text: r.text,
+      }))
+    : []
+);
+const memory = computed(() =>
+  Array.isArray(intelligence.value?.memory) ? intelligence.value.memory : []
+);
+const hasIntelligence = computed(
+  () => research.value.length > 0 || memory.value.length > 0
+);
+
 const contact = computed(() => props.lead?.contact ?? null);
 const contactEmail = computed(() => contact.value?.email ?? null);
 const contactPhone = computed(
@@ -201,21 +247,38 @@ const ownerAriaLabel = computed(() =>
 );
 
 // -----------------------------------------------------------------------
-// "Ver conversa" CTA
+// "Ver conversa" CTA (C3)
 // -----------------------------------------------------------------------
-
+// The action is ALWAYS available — it takes the operator to the lead's
+// conversation. For a LIVE lead carrying a concrete `conversation_id` we
+// deep-link straight to that thread. In DEMO mode the conversation_ids are
+// synthetic (90101…) and resolve to nothing, so the CTA routes to the
+// conversations list instead of opening a phantom not-found pane.
+//
+// TODO(lead-linkage): live leads do not yet carry the real conversation_id /
+// contact_id. Once the lead store hydrates the contact's primary conversation
+// (M2 — contact→conversation join), the live branch deep-links from that real
+// id; the demo branch goes away with the demo board.
 const conversationId = computed(() => props.lead?.conversation_id ?? null);
-const hasConversation = computed(() => conversationId.value != null);
+// Whether we can deep-link to a REAL thread: a concrete id AND not demo mode.
+const hasConversation = computed(
+  () => !props.demoMode && conversationId.value != null
+);
 
 function openConversation() {
-  if (!hasConversation.value) return;
-  router.push({
-    name: 'inbox_conversation',
-    params: {
-      accountId: props.accountId,
-      conversation_id: conversationId.value,
-    },
-  });
+  if (hasConversation.value) {
+    router.push({
+      name: 'inbox_conversation',
+      params: {
+        accountId: props.accountId,
+        conversation_id: conversationId.value,
+      },
+    });
+    return;
+  }
+  // Demo lead (synthetic id) or no concrete thread yet — land the operator on
+  // the conversations view so the action is never dead and never phantom.
+  router.push({ name: 'home', params: { accountId: props.accountId } });
 }
 
 // -----------------------------------------------------------------------
@@ -264,6 +327,11 @@ watch(
   ([open, leadId], [prevOpen]) => {
     if (open && leadId) {
       stageHistory.load(leadId);
+      // Stagger-reveal the profile sections once the drawer body is in the DOM.
+      // nextTick lets the teleported AlgDrawer mount the slotted content first.
+      nextTick(() => {
+        revealChildren('[data-alg-reveal]', { each: 0.045, y: 10 });
+      });
     } else if (prevOpen && !open) {
       stageHistory.reset();
     }
@@ -363,6 +431,7 @@ function handleRetry() {
   >
     <div
       v-if="lead"
+      ref="bodyRef"
       class="alg-lead-drawer"
       data-testid="lead-detail-drawer-body"
       :data-lead-id="lead.id"
@@ -370,6 +439,7 @@ function handleRetry() {
       <!-- IDENTITY — avatar + name + company · role -->
       <section
         class="alg-lead-drawer__identity"
+        data-alg-reveal
         data-testid="drawer-identity-block"
       >
         <div class="alg-lead-drawer__identity-avatar">
@@ -405,6 +475,7 @@ function handleRetry() {
       <section
         v-if="summary"
         class="alg-lead-drawer__block"
+        data-alg-reveal
         data-testid="drawer-summary-block"
       >
         <h3 class="alg-lead-drawer__block-label">
@@ -415,10 +486,86 @@ function handleRetry() {
         </p>
       </section>
 
+      <!-- INTELIGÊNCIA DO LEAD — future lead-nurturing agent (demo) -->
+      <section
+        class="alg-lead-drawer__block alg-lead-drawer__intel"
+        data-alg-reveal
+        data-testid="drawer-intelligence-block"
+      >
+        <div class="alg-lead-drawer__intel-head">
+          <h3 class="alg-lead-drawer__block-label">
+            {{ t('ALGORYTHMO_CRM.DRAWER.BLOCK_LABEL.INTELLIGENCE') }}
+          </h3>
+          <span class="alg-lead-drawer__intel-badge">
+            {{ t('ALGORYTHMO_CRM.DRAWER.INTELLIGENCE.PENDING_BADGE') }}
+          </span>
+        </div>
+        <p class="alg-lead-drawer__intel-caption">
+          {{ t('ALGORYTHMO_CRM.DRAWER.INTELLIGENCE.CAPTION') }}
+        </p>
+
+        <template v-if="hasIntelligence">
+          <div
+            v-if="research.length"
+            class="alg-lead-drawer__intel-group"
+            data-testid="drawer-intelligence-research"
+          >
+            <span class="alg-lead-drawer__intel-sublabel">
+              {{ t('ALGORYTHMO_CRM.DRAWER.INTELLIGENCE.RESEARCH_LABEL') }}
+            </span>
+            <ul class="alg-lead-drawer__intel-list">
+              <li
+                v-for="(r, i) in research"
+                :key="`r-${i}`"
+                class="alg-lead-drawer__intel-item"
+              >
+                <LeadChannelIcon
+                  class="alg-lead-drawer__channel-icon"
+                  :source="r.source"
+                  :size="13"
+                />
+                <span>{{ r.text }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div
+            v-if="memory.length"
+            class="alg-lead-drawer__intel-group"
+            data-testid="drawer-intelligence-memory"
+          >
+            <span class="alg-lead-drawer__intel-sublabel">
+              {{ t('ALGORYTHMO_CRM.DRAWER.INTELLIGENCE.MEMORY_LABEL') }}
+            </span>
+            <ul
+              class="alg-lead-drawer__intel-list alg-lead-drawer__intel-list--memory"
+            >
+              <li
+                v-for="(m, i) in memory"
+                :key="`m-${i}`"
+                class="alg-lead-drawer__intel-item"
+              >
+                <span class="alg-lead-drawer__intel-dot" aria-hidden="true" />
+                <span>{{ m }}</span>
+              </li>
+            </ul>
+          </div>
+        </template>
+
+        <p
+          v-else
+          class="alg-lead-drawer__intel-empty"
+          data-testid="drawer-intelligence-empty"
+        >
+          {{ t('ALGORYTHMO_CRM.DRAWER.INTELLIGENCE.EMPTY') }}
+        </p>
+      </section>
+
       <!-- QUALIFICAÇÃO -->
       <section
         v-if="hasQualification"
         class="alg-lead-drawer__block"
+        data-alg-reveal
         data-testid="drawer-qualification-block"
       >
         <h3 class="alg-lead-drawer__block-label">
@@ -435,6 +582,7 @@ function handleRetry() {
       <!-- CONTATO -->
       <section
         class="alg-lead-drawer__block"
+        data-alg-reveal
         data-testid="drawer-contact-block"
       >
         <h3 class="alg-lead-drawer__block-label">
@@ -472,7 +620,7 @@ function handleRetry() {
       </section>
 
       <!-- CANAIS -->
-      <section class="alg-lead-drawer__block">
+      <section class="alg-lead-drawer__block" data-alg-reveal>
         <h3 class="alg-lead-drawer__block-label">
           {{ t('ALGORYTHMO_CRM.DRAWER.BLOCK_LABEL.CHANNEL') }}
         </h3>
@@ -510,6 +658,7 @@ function handleRetry() {
       <section
         v-if="hasSocial"
         class="alg-lead-drawer__block"
+        data-alg-reveal
         data-testid="drawer-social-block"
       >
         <h3 class="alg-lead-drawer__block-label">
@@ -544,7 +693,11 @@ function handleRetry() {
       </section>
 
       <!-- DONO -->
-      <section class="alg-lead-drawer__block" data-testid="drawer-owner-block">
+      <section
+        class="alg-lead-drawer__block"
+        data-alg-reveal
+        data-testid="drawer-owner-block"
+      >
         <h3 class="alg-lead-drawer__block-label">
           {{ t('ALGORYTHMO_CRM.DRAWER.BLOCK_LABEL.OWNER') }}
         </h3>
@@ -598,6 +751,7 @@ function handleRetry() {
       <!-- ATIVIDADE -->
       <section
         class="alg-lead-drawer__block"
+        data-alg-reveal
         data-testid="drawer-stage-history-block"
       >
         <h3 class="alg-lead-drawer__block-label">
@@ -718,8 +872,7 @@ function handleRetry() {
         type="button"
         class="alg-lead-drawer__cta"
         data-testid="drawer-open-conversation"
-        :disabled="!hasConversation"
-        :aria-disabled="!hasConversation"
+        :data-has-conversation="hasConversation ? 'true' : 'false'"
         @click="openConversation"
       >
         <svg
@@ -821,6 +974,132 @@ function handleRetry() {
   font-size: 0.875rem;
   line-height: 1.55;
   color: var(--alg-fg-secondary);
+}
+
+// INTELIGÊNCIA DO LEAD — the marquee future surface. A contained panel marked
+// with the ICE register (cool hairline + faint glacial wash) signalling "this
+// is where the living intelligence speaks". No animated comet here — that stays
+// the orb/hero's; this is a quiet, premium agent shell. (DESIGN ice language.)
+.alg-lead-drawer__intel {
+  gap: 0.625rem;
+  padding: 0.875rem;
+  border-radius: var(--alg-radius-md, 12px);
+  background: linear-gradient(
+      135deg,
+      color-mix(
+        in oklch,
+        var(--alg-ice-3, oklch(0.66 0.11 235)) 6%,
+        transparent
+      ),
+      transparent 60%
+    ),
+    var(--alg-bg-tint-low);
+  border: 1px solid
+    color-mix(
+      in oklch,
+      var(--alg-ice-3, oklch(0.66 0.11 235)) 22%,
+      var(--alg-border)
+    );
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+.alg-lead-drawer__intel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.alg-lead-drawer__intel-badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--alg-radius-pill, 9999px);
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-2xs, 0.6875rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(
+    in oklch,
+    var(--alg-ice-2, oklch(0.86 0.075 225)) 90%,
+    white
+  );
+  background-color: color-mix(
+    in oklch,
+    var(--alg-ice-3, oklch(0.66 0.11 235)) 16%,
+    transparent
+  );
+  border: 1px solid
+    color-mix(in oklch, var(--alg-ice-3, oklch(0.66 0.11 235)) 30%, transparent);
+}
+
+.alg-lead-drawer__intel-caption {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--alg-fg-tertiary);
+}
+
+.alg-lead-drawer__intel-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-top: 0.25rem;
+}
+
+.alg-lead-drawer__intel-sublabel {
+  font-family: var(--alg-font-mono);
+  font-size: var(--alg-text-2xs, 0.6875rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--alg-fg-quaternary);
+}
+
+.alg-lead-drawer__intel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.alg-lead-drawer__intel-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--alg-fg-secondary);
+
+  .alg-lead-drawer__channel-icon {
+    margin-top: 0.125rem;
+    color: color-mix(
+      in oklch,
+      var(--alg-ice-2, oklch(0.86 0.075 225)) 80%,
+      white
+    );
+  }
+}
+
+.alg-lead-drawer__intel-dot {
+  flex: 0 0 auto;
+  width: 0.3125rem;
+  height: 0.3125rem;
+  margin-top: 0.4375rem;
+  border-radius: var(--alg-radius-pill, 9999px);
+  background-color: color-mix(
+    in oklch,
+    var(--alg-ice-2, oklch(0.86 0.075 225)) 70%,
+    transparent
+  );
+}
+
+.alg-lead-drawer__intel-empty {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--alg-fg-tertiary);
 }
 
 .alg-lead-drawer__pairs {
@@ -1161,7 +1440,7 @@ function handleRetry() {
     color: var(--alg-color-brand-primary);
   }
 
-  &:hover:not(:disabled) {
+  &:hover {
     background-color: var(--alg-bg-tint-high);
     border-color: var(--alg-border-hover);
   }
@@ -1169,11 +1448,6 @@ function handleRetry() {
   &:focus-visible {
     outline: none;
     box-shadow: var(--alg-ring-focus);
-  }
-
-  &:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
   }
 }
 </style>
