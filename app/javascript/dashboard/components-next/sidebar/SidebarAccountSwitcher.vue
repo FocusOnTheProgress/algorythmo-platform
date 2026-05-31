@@ -5,8 +5,10 @@ import { useMapGetter } from 'dashboard/composables/store';
 import { useI18n } from 'vue-i18n';
 import ButtonNext from 'next/button/Button.vue';
 import Icon from 'next/icon/Icon.vue';
-// algorythmo: A1 — always-rendering inline brand mark (the collapsed trigger).
-import AlgBrandMark from 'dashboard/components-next/algorythmo/AlgBrandMark.vue';
+// algorythmo: collapsed-sidebar brand trigger — renders the CONFIGURED logo the
+// founder uploads in settings (account.logo_url → account.logo → globalConfig
+// logoThumbnail), falling back to the inline AlgBrandMark only when none is set.
+import AlgBrandLogo from 'dashboard/components-next/algorythmo/AlgBrandLogo.vue';
 
 import {
   DropdownContainer,
@@ -62,7 +64,13 @@ const emitNewAccount = () => {
         :title="currentAccount.name"
         @click="toggle"
       >
-        <AlgBrandMark class="size-6" decorative />
+        <span class="grid overflow-hidden place-content-center size-6">
+          <AlgBrandLogo
+            class="size-6"
+            decorative
+            :label="currentAccount.name"
+          />
+        </span>
       </button>
       <!-- Expanded view: Account name trigger -->
       <button
