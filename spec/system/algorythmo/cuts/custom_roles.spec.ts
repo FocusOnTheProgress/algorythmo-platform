@@ -40,7 +40,7 @@ test.describe('custom_roles — flag off: surface restored', () => {
 });
 
 test.describe('custom_roles — flag on: hard block on direct nav', () => {
-  test('direct nav redirects to /dashboard, Settings nav hides Custom Roles', async ({
+  test('direct nav redirects to /inicio, Settings nav hides Custom Roles', async ({
     page,
   }) => {
     await withFlag(page, 'custom_roles', true, async () => {
@@ -48,6 +48,9 @@ test.describe('custom_roles — flag on: hard block on direct nav', () => {
         sidebarLabel: SIDEBAR_LABEL,
         routePath: ROUTE,
         sidebarContext: SETTINGS_CONTEXT,
+        // custom_roles is caught by the permission guard before the cut gate,
+        // so Stream D's defaultRedirectPage sends it to /inicio, not /dashboard.
+        blockedRedirectTo: 'inicio',
       });
     });
   });
