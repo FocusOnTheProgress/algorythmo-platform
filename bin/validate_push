@@ -61,7 +61,14 @@ fi
 echo ""
 echo "[2/5] ESLint (changed files vs origin/main)"
 if command -v pnpm >/dev/null 2>&1; then
-  CHANGED_JS=$(git diff --name-only --diff-filter=ACMR origin/main...HEAD -- '*.js' '*.vue' '*.ts' 2>/dev/null | grep -v '^node_modules/' || true)
+  # algorythmo: diff against the FORK's main (origin/algorythmo/main), NOT
+  # upstream origin/main. The upstream base pulled the entire fork delta (~171
+  # files) into the eslint arg list and overflowed the Windows command-line limit
+  # ("Linha de comando muito longa"), failing this gate on every multi-file push
+  # from Windows. Fall back to origin/main only if the fork ref is absent.
+  ESLINT_BASE=origin/algorythmo/main
+  git rev-parse --verify --quiet "$ESLINT_BASE" >/dev/null 2>&1 || ESLINT_BASE=origin/main
+  CHANGED_JS=$(git diff --name-only --diff-filter=ACMR "$ESLINT_BASE"...HEAD -- '*.js' '*.vue' '*.ts' 2>/dev/null | grep -v '^node_modules/' || true)
   if [ -z "$CHANGED_JS" ]; then
     echo "  SKIP nenhum .js/.vue/.ts modificado vs origin/main"
   elif echo "$CHANGED_JS" | xargs pnpm exec eslint >/tmp/algorythmo-eslint.log 2>&1; then
