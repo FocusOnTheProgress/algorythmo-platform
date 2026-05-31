@@ -52,7 +52,9 @@ describe('useAlgChartTheme', () => {
     document.documentElement.setAttribute('data-theme', 'white');
     // MutationObserver callbacks fire on a microtask.
     await flushPromises();
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise(resolve => {
+      setTimeout(resolve, 0);
+    });
     expect(wrapper.vm.lineColor).toBe('rgba(12, 12, 14, 0.72)');
     expect(wrapper.vm.fillColor).toBe('rgba(12, 12, 14, 0.06)');
   });
