@@ -147,11 +147,15 @@
 // `--alg-beam-h` is a faint cool cast only; chroma is so low the hue reads as
 // white. The bright span sits 11%→32% of the conic sweep; everything else is
 // transparent so a SINGLE arc travels.
+.alg-aurora-border__beam::before {
+  // Required to materialise the pseudo-element.
+  content: '';
+}
+
 .alg-aurora-border__beam,
 .alg-aurora-border__beam::before {
   --alg-beam-h: 225;
   --alg-beam-c: 0.012;
-  content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
@@ -216,6 +220,9 @@
 
 // Processing: the arc quickens to the orb's ~6s breath. Both the crisp arc and
 // its blurred glow copy (::before) quicken together so they stay locked.
+// NOTE: under prefers-reduced-motion the beam exception's 24s override (in
+// _tokens.scss) wins at !important, so this quicken cue is intentionally
+// invisible in that mode — calm motion takes priority. Conscious decision.
 .alg-aurora-border--active .alg-aurora-border__beam,
 .alg-aurora-border--active .alg-aurora-border__beam::before {
   animation-duration: var(--alg-duration-ambient);
@@ -2625,8 +2632,13 @@
 }
 
 .alg-kpi-tile__icon {
-  // Monochrome white tier — never coloured, never filled (founder Brief v3).
-  color: var(--alg-icon-2);
+  // Neutral default off a sector page. Inside a sector shell the scoped rule
+  // above ([class*='alg-shell--'] .alg-kpi-tile__icon) overrides this to
+  // --alg-icon-2 (monochrome white tier). That sector rule is the single source
+  // of truth for the monochrome treatment; this base stays at the neutral tier
+  // so any future non-sector KPI tile is not silently pulled into the icon-2
+  // register (founder Brief v3 invariant).
+  color: var(--alg-fg-tertiary);
   display: inline-flex;
   flex-shrink: 0;
 }
