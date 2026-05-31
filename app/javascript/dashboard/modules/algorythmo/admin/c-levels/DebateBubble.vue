@@ -116,14 +116,10 @@ const isProposal = computed(() => !!props.turn.proposal);
         class="alg-cl-action alg-cl-action--approve"
         @click="emit('approve')"
       >
-        <span class="alg-cl-action__glyph" aria-hidden="true">👍</span>
+        <span class="alg-cl-action__glyph" aria-hidden="true">{{ '👍' }}</span>
         {{ t('ALGORYTHMO_ADMIN.C_LEVELS.ACTIONS.APPROVE') }}
       </button>
-      <button
-        type="button"
-        class="alg-cl-action"
-        @click="emit('alternative')"
-      >
+      <button type="button" class="alg-cl-action" @click="emit('alternative')">
         <span class="alg-cl-action__glyph" aria-hidden="true">💬</span>
         {{ t('ALGORYTHMO_ADMIN.C_LEVELS.ACTIONS.ALTERNATIVE') }}
       </button>
@@ -137,7 +133,10 @@ const isProposal = computed(() => !!props.turn.proposal);
       </button>
     </footer>
 
-    <p v-else-if="status === 'approved'" class="alg-cl-bubble__resolved alg-cl-bubble__resolved--approved">
+    <p
+      v-else-if="status === 'approved'"
+      class="alg-cl-bubble__resolved alg-cl-bubble__resolved--approved"
+    >
       {{ t('ALGORYTHMO_ADMIN.C_LEVELS.DEBATE.APPROVED_NOTE') }}
     </p>
     <p v-else-if="status === 'dismissed'" class="alg-cl-bubble__resolved">

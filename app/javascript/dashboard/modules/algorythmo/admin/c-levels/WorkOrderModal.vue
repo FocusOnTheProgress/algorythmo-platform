@@ -109,9 +109,11 @@ function close() {
       <template v-if="!confirmed">
         <header class="alg-cl-wo__head">
           <p class="alg-cl-wo__source">
-            {{ t('ALGORYTHMO_ADMIN.C_LEVELS.WORK_ORDER.FROM', {
-              role: director ? t(director.roleKey) : ''
-            }) }}
+            {{
+              t('ALGORYTHMO_ADMIN.C_LEVELS.WORK_ORDER.FROM', {
+                role: director ? t(director.roleKey) : '',
+              })
+            }}
           </p>
           <h3 class="alg-cl-wo__heading">
             {{ t(`${proposal.workOrderKey}.HEADING`) }}
@@ -122,11 +124,7 @@ function close() {
         </header>
 
         <ul class="alg-cl-wo__list" role="list">
-          <li
-            v-for="item in checklist"
-            :key="item.id"
-            class="alg-cl-wo__item"
-          >
+          <li v-for="item in checklist" :key="item.id" class="alg-cl-wo__item">
             <button
               type="button"
               role="checkbox"
@@ -179,9 +177,11 @@ function close() {
           {{ t('ALGORYTHMO_ADMIN.C_LEVELS.WORK_ORDER.DONE_TITLE') }}
         </h3>
         <p class="alg-cl-wo__done-body">
-          {{ t('ALGORYTHMO_ADMIN.C_LEVELS.WORK_ORDER.DONE_BODY', {
-            count: checkedItems.length,
-          }) }}
+          {{
+            t('ALGORYTHMO_ADMIN.C_LEVELS.WORK_ORDER.DONE_BODY', {
+              count: checkedItems.length,
+            })
+          }}
         </p>
         <ul class="alg-cl-wo__done-list" role="list">
           <li

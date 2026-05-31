@@ -103,11 +103,7 @@ onBeforeUnmount(() => {
 <template>
   <teleport to="body">
     <transition name="alg-cl-modal">
-      <div
-        v-if="open"
-        class="alg-modal-overlay"
-        @click.self="close"
-      >
+      <div v-if="open" class="alg-modal-overlay" @click.self="close">
         <div
           ref="modalRef"
           class="alg-modal"

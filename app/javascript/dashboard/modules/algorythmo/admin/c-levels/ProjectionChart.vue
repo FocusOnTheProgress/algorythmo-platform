@@ -124,7 +124,9 @@ const delta = computed(() => {
   if (projectedValue.value === null) return null;
   const diff = projectedValue.value - nowValue.value;
   const positive = props.indicator.goodUp ? diff >= 0 : diff <= 0;
-  const sign = diff > 0 ? '+' : diff < 0 ? '−' : '';
+  let sign = '';
+  if (diff > 0) sign = '+';
+  else if (diff < 0) sign = '−';
   return {
     positive,
     label: `${sign}${fmt(Math.abs(diff)).replace(/^[^\d-]+/, '')}`,
@@ -286,8 +288,8 @@ const delta = computed(() => {
   stroke-dasharray: 0.012 0.02;
   vector-effect: non-scaling-stroke;
   filter: drop-shadow(0 0 3px oklch(0.86 0.05 220 / 0.5));
-  animation: alg-cl-ghost-draw var(--alg-duration-slow) var(--alg-ease-cinematic)
-    both;
+  animation: alg-cl-ghost-draw var(--alg-duration-slow)
+    var(--alg-ease-cinematic) both;
 }
 
 @keyframes alg-cl-ghost-draw {

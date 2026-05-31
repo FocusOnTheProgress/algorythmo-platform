@@ -16,11 +16,7 @@
 import { ref, computed, nextTick, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAlgMotion } from 'dashboard/composables/algorythmo/useAlgMotion';
-import {
-  DIRECTORS,
-  GOALS,
-  debateForGoal,
-} from './clevels.demo.js';
+import { DIRECTORS, GOALS, debateForGoal } from './clevels.demo.js';
 import CommitteePanel from './CommitteePanel.vue';
 import OpeningPrompt from './OpeningPrompt.vue';
 import DebateBubble from './DebateBubble.vue';
@@ -60,6 +56,21 @@ const visibleTurns = computed(() => {
   return round.value.turns.filter(turn => seated.value.includes(turn.director));
 });
 
+// --- Impact Simulator preview (E3) -----------------------------------------
+const activeProjection = ref(null);
+const previewLabel = ref('');
+
+function previewProposal(turn) {
+  if (!turn?.projection) return;
+  activeProjection.value = turn.projection;
+  previewLabel.value = turn.figure ? t(turn.figure.labelKey) : '';
+}
+
+function clearPreview() {
+  activeProjection.value = null;
+  previewLabel.value = '';
+}
+
 function startRound({ goalId }) {
   // Demo: free text / unknown goal falls back to the first preset so the round
   // always runs end-to-end.
@@ -79,21 +90,6 @@ function resetRound() {
   round.value = null;
   turnStatus.value = {};
   clearPreview();
-}
-
-// --- Impact Simulator preview (E3) -----------------------------------------
-const activeProjection = ref(null);
-const previewLabel = ref('');
-
-function previewProposal(turn) {
-  if (!turn?.projection) return;
-  activeProjection.value = turn.projection;
-  previewLabel.value = turn.figure ? t(turn.figure.labelKey) : '';
-}
-
-function clearPreview() {
-  activeProjection.value = null;
-  previewLabel.value = '';
 }
 
 // --- Proposal actions (E2) --------------------------------------------------
@@ -183,7 +179,10 @@ onMounted(() => {
 
     <div class="alg-cl-room__grid">
       <!-- E1 — Committee (left) -->
-      <div class="alg-cl-room__col alg-cl-room__col--left" data-alg-reveal-panel>
+      <div
+        class="alg-cl-room__col alg-cl-room__col--left"
+        data-alg-reveal-panel
+      >
         <CommitteePanel
           :directors="directors"
           :seated="seated"
@@ -217,10 +216,7 @@ onMounted(() => {
           </header>
 
           <div ref="flowRef" class="alg-cl-room__flow" aria-live="polite">
-            <p
-              v-if="visibleTurns.length === 0"
-              class="alg-cl-room__empty"
-            >
+            <p v-if="visibleTurns.length === 0" class="alg-cl-room__empty">
               {{ t('ALGORYTHMO_ADMIN.C_LEVELS.DEBATE.NO_SEATS') }}
             </p>
             <DebateBubble
@@ -242,7 +238,10 @@ onMounted(() => {
       </section>
 
       <!-- E3 — Impact Simulator (right) -->
-      <div class="alg-cl-room__col alg-cl-room__col--right" data-alg-reveal-panel>
+      <div
+        class="alg-cl-room__col alg-cl-room__col--right"
+        data-alg-reveal-panel
+      >
         <ImpactSimulator
           :projection="activeProjection"
           :preview-label="previewLabel"
@@ -250,14 +249,13 @@ onMounted(() => {
       </div>
     </div>
 
-    <SourceReportModal
-      v-model:open="reportModalOpen"
-      :figure="activeFigure"
-    />
+    <SourceReportModal v-model:open="reportModalOpen" :figure="activeFigure" />
     <WorkOrderModal
       v-model:open="workOrderOpen"
       :proposal="workOrderProposal"
-      :director="workOrderProposal ? directorById[workOrderProposal.director] : null"
+      :director="
+        workOrderProposal ? directorById[workOrderProposal.director] : null
+      "
       @confirm="onWorkOrderConfirmed"
     />
   </main>
@@ -300,7 +298,10 @@ onMounted(() => {
 
 .alg-cl-room__grid {
   display: grid;
-  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) minmax(280px, 340px);
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) minmax(
+      280px,
+      340px
+    );
   gap: var(--alg-space-5);
   flex: 1 1 auto;
   min-height: 0;

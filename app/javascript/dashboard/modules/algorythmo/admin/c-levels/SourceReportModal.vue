@@ -11,7 +11,7 @@
 import { useI18n } from 'vue-i18n';
 import CLevelsModal from './CLevelsModal.vue';
 
-const props = defineProps({
+defineProps({
   open: { type: Boolean, default: false },
   figure: { type: Object, default: null },
 });
@@ -54,7 +54,11 @@ const rows = [
         >
           <dt>{{ t(`${rowKey}.LABEL`) }}</dt>
           <dd>{{ t(`${rowKey}.VALUE`) }}</dd>
-          <span v-if="i < rows.length - 1" class="alg-cl-report__hr" aria-hidden="true" />
+          <span
+            v-if="i < rows.length - 1"
+            class="alg-cl-report__hr"
+            aria-hidden="true"
+          />
         </div>
       </dl>
 
