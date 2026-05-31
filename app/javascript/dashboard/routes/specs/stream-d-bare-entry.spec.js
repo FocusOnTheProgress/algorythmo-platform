@@ -30,7 +30,7 @@ vi.mock('dashboard/store', () => ({
   },
 }));
 
-vi.mock('../helper/routeHelpers', () => ({
+vi.mock('../../helper/routeHelpers', () => ({
   validateLoggedInRoutes: vi.fn(() => null),
   isRouteBlockedByAlgorythmoGate: vi.fn(() => false),
 }));
@@ -167,7 +167,9 @@ describe('Stream D — bare-entry landing wiring', () => {
       account_id: 1,
     };
 
-    const { validateLoggedInRoutes } = await import('../helper/routeHelpers');
+    const { validateLoggedInRoutes } = await import(
+      '../../helper/routeHelpers'
+    );
     validateLoggedInRoutes.mockReturnValue(null);
 
     const next = vi.fn();
