@@ -159,10 +159,10 @@ describe('KanbanHeader (CONTRACT_M1B §2 v1.2.0)', () => {
       expect(gear.attributes('aria-expanded')).toBe('false');
     });
 
-    it('emits toggle-config on click', async () => {
+    it('emits toggleConfig on click', async () => {
       const wrapper = mountHeader();
       await wrapper.find('[data-testid="kanban-config-gear"]').trigger('click');
-      expect(wrapper.emitted('toggle-config')).toHaveLength(1);
+      expect(wrapper.emitted('toggleConfig')).toHaveLength(1);
     });
 
     it('reflects the open state via aria-expanded + active class', () => {

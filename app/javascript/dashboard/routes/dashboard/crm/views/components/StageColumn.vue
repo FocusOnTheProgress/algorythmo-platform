@@ -16,7 +16,7 @@
 //   so the layout stays stable across the loading → hydrated transition.
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
+import { inkForAccent } from '../accentInk.js';
 import LeadCard from './LeadCard.vue';
 
 const props = defineProps({
@@ -30,18 +30,19 @@ const props = defineProps({
   // summary, even though only a sampled subset of cards is rendered below.
   // Real configured pipelines pass null and fall back to leads.length.
   displayCount: { type: Number, default: null },
-  // Route the per-column gear links to. This is now the ONLY "configure
-  // pipeline" entry point in the CRM (the global header text-link was removed
-  // in the round-3 redesign). When null the column derives the path from the
-  // current route's accountId; if there's no accountId (e.g. an isolated unit
-  // test with a bare router) the gear is hidden rather than linking nowhere.
-  pipelineConfigPath: { type: [String, Object], default: null },
+  // Whether the per-column gear is shown. The gear opens the SAME inline config
+  // overlay the header gear opens — one paradigm, no page navigation (adversarial
+  // review #111). Defaults to true; isolated unit tests can pass false to assert
+  // the hidden state. (The legacy `pipelineConfigPath` router-link prop was
+  // removed when the per-column gear stopped navigating to a separate route.)
+  showConfig: { type: Boolean, default: true },
 });
 
 const emit = defineEmits([
   'open-lead',
   'open-menu',
   'addLead',
+  'configureStage',
   'drag-start',
   'drag-enter',
   'drag-over',
@@ -51,16 +52,6 @@ const emit = defineEmits([
 ]);
 
 const { t } = useI18n();
-const route = useRoute();
-
-// The gear's destination. Prefer an explicit prop; otherwise build the CRM
-// pipeline-config path from the current account. Null → the gear hides (no
-// dead links in tests / accountless contexts).
-const resolvedConfigPath = computed(() => {
-  if (props.pipelineConfigPath) return props.pipelineConfigPath;
-  const accountId = route?.params?.accountId;
-  return accountId ? `/app/accounts/${accountId}/crm/pipeline` : null;
-});
 
 const showColumnEmpty = computed(
   () => props.leads.length === 0 && props.boardHasAnyLead
@@ -81,10 +72,12 @@ const showColumnEmpty = computed(
 // Falls back to a neutral header when a stage carries no accent (live stages).
 const accentColor = computed(() => props.stage?.accent ?? null);
 
-// A bright hue (yellow) needs DARK ink for AA contrast; everything else takes
-// near-white ink. Stages declare 'dark' explicitly; default is 'light'.
+// Header ink (light vs dark) is COMPUTED from the accent's WCAG contrast — never
+// a hand-set flag (adversarial review #111). Any stage colour bright enough that
+// black ink reads better than white (yellow AND orange, and any future hue)
+// automatically gets dark ink, so a new accent can't silently fail AA.
 const accentInk = computed(() =>
-  props.stage?.accent_ink === 'dark' ? 'dark' : 'light'
+  accentColor.value ? inkForAccent(accentColor.value) : 'light'
 );
 
 const columnStyle = computed(() => {
@@ -179,13 +172,20 @@ const metricsAriaLabel = computed(() => {
   });
 });
 
-// Per-column header actions (round-3): a gear that is the sole entry to the
-// pipeline-config screen, and an add button. The add button is a demo-friendly
-// affordance — it emits 'add-lead'; the parent decides what (if anything) the
-// gesture does (a no-op tooltip in demo, a real create flow later).
+// Per-column header actions: a gear that opens the SAME inline pipeline-config
+// overlay the header gear opens (one paradigm — no page navigation), and an add
+// button. The add button is a demo-friendly affordance — it emits 'addLead';
+// the parent decides what (if anything) the gesture does.
 const configAriaLabel = computed(() =>
   t('ALGORYTHMO_CRM.KANBAN.CONFIGURE_STAGE_ARIA', { stage: props.stage.name })
 );
+
+function handleConfigure() {
+  emit('configureStage', {
+    stageId: props.stage.id,
+    stageName: props.stage.name,
+  });
+}
 
 const addAriaLabel = computed(() =>
   t('ALGORYTHMO_CRM.KANBAN.ADD_LEAD_TO_STAGE_ARIA', { stage: props.stage.name })
@@ -227,14 +227,15 @@ function handleAddLead() {
         </span>
 
         <div class="alg-stage-column__actions">
-          <router-link
-            v-if="resolvedConfigPath"
+          <button
+            v-if="showConfig"
+            type="button"
             class="alg-stage-column__action"
-            data-testid="pipeline-config-link"
-            :to="resolvedConfigPath"
+            data-testid="pipeline-config-trigger"
             :aria-label="configAriaLabel"
             :title="configAriaLabel"
-            @click.stop
+            aria-haspopup="dialog"
+            @click.stop="handleConfigure"
           >
             <svg
               aria-hidden="true"
@@ -252,7 +253,7 @@ function handleAddLead() {
                 d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9.4l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 6.6V6a2 2 0 1 1 4 0v.09c.7.27 1.27.84 1.51 1.51"
               />
             </svg>
-          </router-link>
+          </button>
           <button
             type="button"
             class="alg-stage-column__action"

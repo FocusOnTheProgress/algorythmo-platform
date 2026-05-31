@@ -218,14 +218,70 @@ const searchQuery = ref('');
 const drawerOpen = ref(false);
 const drawerLead = ref(null);
 
-// Pipeline-config reveal (C5). Hidden behind the header gear; clicking toggles
-// an inline config panel over the board — the single, contained config entry.
+// Pipeline-config reveal (C5). One paradigm, one behaviour: both the header gear
+// and every per-column gear open the SAME inline config overlay over the board.
+// No page navigation, no second config surface.
+//
+// The overlay declares role="dialog" + aria-modal, so it must behave like a
+// modal: focus moves into the panel on open, Tab/Shift+Tab are trapped inside
+// it, and focus returns to the trigger on close. Mirrors the AlgDrawer focus
+// contract (adversarial review #111).
 const configOpen = ref(false);
-function toggleConfig() {
-  configOpen.value = !configOpen.value;
+const configPanelRef = ref(null);
+let configPreviousFocus = null;
+
+function focusablesIn(el) {
+  if (!el) return [];
+  return Array.from(
+    el.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+  );
 }
+
+function handleConfigKeydown(event) {
+  if (event.key !== 'Tab') return;
+  const focusables = focusablesIn(configPanelRef.value);
+  if (!focusables.length) return;
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+  if (event.shiftKey) {
+    if (document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    }
+  } else if (document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function openConfig() {
+  if (configOpen.value) return;
+  configPreviousFocus = document.activeElement;
+  configOpen.value = true;
+  // Move focus into the panel once the transition has mounted it.
+  nextTick(() => {
+    const focusables = focusablesIn(configPanelRef.value);
+    if (focusables.length) focusables[0].focus();
+  });
+}
+
 function closeConfig() {
+  if (!configOpen.value) return;
   configOpen.value = false;
+  // Restore focus to whatever opened the overlay (header or per-column gear).
+  const target = configPreviousFocus;
+  configPreviousFocus = null;
+  nextTick(() => target?.focus?.());
+}
+
+function toggleConfig() {
+  if (configOpen.value) {
+    closeConfig();
+  } else {
+    openConfig();
+  }
 }
 
 // Card entrance choreography (shared motion system). When the board first
@@ -285,9 +341,10 @@ const AGING_TICK_MS = 30_000;
 let agingTimer = null;
 
 // Esc closes the pipeline-config reveal (C5) — keyboard parity with the drawer.
+// Routes through closeConfig() so focus is restored to the trigger.
 function handleConfigEsc(event) {
   if (event.key === 'Escape' && configOpen.value) {
-    configOpen.value = false;
+    closeConfig();
   }
 }
 
@@ -339,6 +396,7 @@ watch(accountId, async (newId, oldId) => {
   drawerOpen.value = false;
   drawerLead.value = null;
   configOpen.value = false;
+  configPreviousFocus = null;
   if (oldId && oldId !== newId) {
     clearLeadStoreForAccount(oldId);
     clearPipelineStoreForAccount(oldId);
@@ -572,6 +630,7 @@ async function handleConfirmMove({ leadId, stage }) {
         @drag-end="drag.end"
         @open-lead="handleOpenLead"
         @open-menu="handleOpenMenu"
+        @configure-stage="openConfig"
       />
     </div>
 
@@ -596,11 +655,13 @@ async function handleConfirmMove({ leadId, stage }) {
     <transition name="alg-config-panel">
       <aside
         v-if="configOpen"
+        ref="configPanelRef"
         class="alg-kanban__config-panel"
         data-testid="kanban-config-panel"
         role="dialog"
         aria-modal="true"
         :aria-label="t('ALGORYTHMO_CRM.PIPELINE_CONFIG.PLACEHOLDER_TITLE')"
+        @keydown="handleConfigKeydown"
       >
         <PipelineConfigPlaceholder
           embedded
@@ -624,6 +685,7 @@ async function handleConfirmMove({ leadId, stage }) {
       :lead="drawerLead"
       :account-id="accountId"
       :now="now"
+      :demo-mode="demoActive"
       @close="handleDrawerClose"
     />
 

@@ -29,6 +29,7 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import AlgDrawer from 'dashboard/components-next/algorythmo/AlgDrawer.vue';
 import AlgAvatar from 'dashboard/components-next/algorythmo/AlgAvatar.vue';
+import LeadChannelIcon from './LeadChannelIcon.vue';
 import { useAlgMotion } from 'dashboard/composables/algorythmo/useAlgMotion.js';
 import { useStageHistory } from 'dashboard/composables/algorythmo/useStageHistory.js';
 import {
@@ -52,6 +53,13 @@ const props = defineProps({
   now: {
     type: Number,
     default: () => Date.now(),
+  },
+  // In demo mode the leads carry SYNTHETIC conversation_ids (90101…) that don't
+  // resolve to a real thread. The CTA then routes to the conversations list
+  // instead of opening a phantom not-found pane (adversarial review #111).
+  demoMode: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -197,12 +205,14 @@ const hasSocial = computed(() => social.value.length > 0);
 // block stays present but shows the pending/empty copy so the section never
 // silently disappears — the operator always sees where this will live.
 const intelligence = computed(() => props.lead?.intelligence ?? null);
+// Research findings keep only data (source name + text). The icon is rendered by
+// the allowlist-driven <LeadChannelIcon> from the source NAME — never raw SVG —
+// so future agent-supplied content can't inject markup (adversarial review #111).
 const research = computed(() =>
   Array.isArray(intelligence.value?.research)
     ? intelligence.value.research.map(r => ({
         source: r.source,
         text: r.text,
-        icon: channelIconFor(r.source),
       }))
     : []
 );
@@ -240,18 +250,20 @@ const ownerAriaLabel = computed(() =>
 // "Ver conversa" CTA (C3)
 // -----------------------------------------------------------------------
 // The action is ALWAYS available — it takes the operator to the lead's
-// conversation. When the lead row carries a concrete `conversation_id` (every
-// demo lead does, and live leads will once the contact→conversation linkage is
-// wired) we deep-link straight to that thread. When it's absent we fall back to
-// the conversations view rather than leaving a dead button.
+// conversation. For a LIVE lead carrying a concrete `conversation_id` we
+// deep-link straight to that thread. In DEMO mode the conversation_ids are
+// synthetic (90101…) and resolve to nothing, so the CTA routes to the
+// conversations list instead of opening a phantom not-found pane.
 //
 // TODO(lead-linkage): live leads do not yet carry the real conversation_id /
 // contact_id. Once the lead store hydrates the contact's primary conversation
-// (M2 — contact→conversation join), replace the `home` fallback with a deep
-// link built from the contact's conversation. The demo ids (90101…) are
-// synthetic and only valid inside the demo board.
+// (M2 — contact→conversation join), the live branch deep-links from that real
+// id; the demo branch goes away with the demo board.
 const conversationId = computed(() => props.lead?.conversation_id ?? null);
-const hasConversation = computed(() => conversationId.value != null);
+// Whether we can deep-link to a REAL thread: a concrete id AND not demo mode.
+const hasConversation = computed(
+  () => !props.demoMode && conversationId.value != null
+);
 
 function openConversation() {
   if (hasConversation.value) {
@@ -264,8 +276,8 @@ function openConversation() {
     });
     return;
   }
-  // No concrete thread linked yet — land the operator on the conversations
-  // view so the action is never dead. See TODO(lead-linkage) above.
+  // Demo lead (synthetic id) or no concrete thread yet — land the operator on
+  // the conversations view so the action is never dead and never phantom.
   router.push({ name: 'home', params: { accountId: props.accountId } });
 }
 
@@ -507,19 +519,10 @@ function handleRetry() {
                 :key="`r-${i}`"
                 class="alg-lead-drawer__intel-item"
               >
-                <!-- eslint-disable-next-line vue/no-v-html -->
-                <svg
+                <LeadChannelIcon
                   class="alg-lead-drawer__channel-icon"
-                  aria-hidden="true"
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  v-html="r.icon"
+                  :source="r.source"
+                  :size="13"
                 />
                 <span>{{ r.text }}</span>
               </li>

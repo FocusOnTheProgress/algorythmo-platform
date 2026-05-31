@@ -14,10 +14,10 @@ import {
 // are calibrated so white (or, for the bright yellow, dark) ink holds AA
 // contrast. A regression here is a brand bug.
 const EXPECTED_ACCENTS = {
-  'demo-novo': 'oklch(0.62 0.15 245)',
+  'demo-novo': 'oklch(0.56 0.15 245)',
   'demo-qualificado': 'oklch(0.78 0.15 88)',
-  'demo-proposta': 'oklch(0.62 0.16 300)',
-  'demo-negociacao': 'oklch(0.68 0.16 48)',
+  'demo-proposta': 'oklch(0.56 0.16 300)',
+  'demo-negociacao': 'oklch(0.58 0.16 48)',
 };
 
 describe('CRM demo data', () => {
@@ -40,13 +40,12 @@ describe('CRM demo data', () => {
     });
   });
 
-  it('marks only the bright (yellow) stage for dark header ink (AA contrast)', () => {
-    // The yellow "Qualificado" header is too bright for white ink; it carries an
-    // explicit accent_ink:"dark". Every other stage takes the default (light).
-    const byId = Object.fromEntries(DEMO_STAGES.map(s => [s.id, s]));
-    expect(byId['demo-qualificado'].accent_ink).toBe('dark');
-    ['demo-novo', 'demo-proposta', 'demo-negociacao'].forEach(id => {
-      expect(byId[id].accent_ink).toBeUndefined();
+  it('does not hand-set header ink — it is computed from the accent (see accentInk.spec)', () => {
+    // Header ink (light/dark) is derived from each accent's WCAG contrast in
+    // accentInk.js, not stored on the stage. No stage carries an accent_ink flag
+    // anymore (adversarial review #111).
+    DEMO_STAGES.forEach(stage => {
+      expect(stage.accent_ink).toBeUndefined();
     });
   });
 

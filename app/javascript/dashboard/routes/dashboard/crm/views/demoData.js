@@ -28,7 +28,9 @@ export const DEMO_STAGES = Object.freeze([
     kind: 'open',
     position: 1,
     aging_coefficient: 1,
-    accent: 'oklch(0.62 0.15 245)', // info — azul (REF: "Novo Lead")
+    // info — azul (REF: "Novo Lead"). L tuned so white header ink clears WCAG AA
+    // (≥4.5:1) at the gradient top; the ink is then derived, not assumed.
+    accent: 'oklch(0.56 0.15 245)',
   },
   {
     id: 'demo-qualificado',
@@ -37,8 +39,6 @@ export const DEMO_STAGES = Object.freeze([
     position: 2,
     aging_coefficient: 3,
     accent: 'oklch(0.78 0.15 88)', // warning — amarelo (REF: "Qualificado")
-    // Yellow is too bright for white ink — the ref uses dark text on this one.
-    accent_ink: 'dark',
   },
   {
     id: 'demo-proposta',
@@ -46,7 +46,7 @@ export const DEMO_STAGES = Object.freeze([
     kind: 'open',
     position: 3,
     aging_coefficient: 5,
-    accent: 'oklch(0.62 0.16 300)', // violeta (REF: "Proposta Enviada")
+    accent: 'oklch(0.56 0.16 300)', // violeta (REF: "Proposta Enviada") — AA white
   },
   {
     id: 'demo-negociacao',
@@ -54,7 +54,7 @@ export const DEMO_STAGES = Object.freeze([
     kind: 'open',
     position: 4,
     aging_coefficient: 7,
-    accent: 'oklch(0.68 0.16 48)', // laranja (REF: "Negociação")
+    accent: 'oklch(0.58 0.16 48)', // laranja (REF: "Negociação") — AA white
   },
 ]);
 

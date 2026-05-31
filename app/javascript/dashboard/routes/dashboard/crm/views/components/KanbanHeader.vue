@@ -34,7 +34,7 @@ const props = defineProps({
   configOpen: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['update:searchValue', 'toggle-config']);
+const emit = defineEmits(['update:searchValue', 'toggleConfig']);
 
 const { t } = useI18n();
 
@@ -123,7 +123,7 @@ const conversionRateValue = computed(() =>
         :title="t('ALGORYTHMO_CRM.KANBAN.CONFIGURE_PIPELINE')"
         aria-haspopup="dialog"
         :aria-expanded="configOpen ? 'true' : 'false'"
-        @click="emit('toggle-config')"
+        @click="emit('toggleConfig')"
       >
         <svg
           aria-hidden="true"

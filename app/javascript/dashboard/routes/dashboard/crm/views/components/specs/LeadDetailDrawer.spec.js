@@ -663,6 +663,26 @@ describe('LeadDetailDrawer (CONTRACT_M1B §7 v1.1.0)', () => {
         params: { accountId: '7' },
       });
     });
+
+    it('in demo mode routes to the conversations list even with a (synthetic) conversation_id', async () => {
+      // Adversarial review #111: demo conversation_ids (90101…) are phantom — the
+      // CTA must NOT deep-link to a not-found pane. demoMode forces the fallback.
+      const wrapper = mountDrawer({
+        lead: baseLead({ conversation_id: 90123 }),
+        accountId: '7',
+        demoMode: true,
+      });
+      const cta = wrapper.find('[data-testid="drawer-open-conversation"]');
+      expect(cta.attributes('data-has-conversation')).toBe('false');
+      await cta.trigger('click');
+      expect(routerPush).toHaveBeenCalledWith({
+        name: 'home',
+        params: { accountId: '7' },
+      });
+      expect(routerPush).not.toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'inbox_conversation' })
+      );
+    });
   });
 
   // -------------------------------------------------------------------------
