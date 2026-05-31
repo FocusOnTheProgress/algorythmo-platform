@@ -16,6 +16,7 @@ import {
 import { emitter } from 'shared/helpers/mitt';
 
 import { createSnoozeHandlers } from 'dashboard/helper/commandbar/actions';
+import { useReadOnlyView } from 'dashboard/composables/algorythmo/useReadOnlyView';
 
 const SNOOZE_OPTIONS = wootConstants.SNOOZE_OPTIONS;
 
@@ -58,6 +59,8 @@ const OPEN_CONVERSATION_BULK_ACTIONS = [
 
 export function useBulkActionsHotKeys() {
   const { t } = useI18n();
+  // algorythmo: stream-a — suppress bulk-action hotkeys in the read-only aquarium.
+  const { isReadOnly } = useReadOnlyView();
 
   const selectedConversations = useMapGetter(
     'bulkActions/getSelectedConversationIds'
@@ -72,6 +75,8 @@ export function useBulkActionsHotKeys() {
   };
 
   const bulkActionsHotKeys = computed(() => {
+    // algorythmo: stream-a — no bulk mutations in the read-only aquarium
+    if (isReadOnly.value) return [];
     let actions = [];
     if (selectedConversations.value.length > 0) {
       actions = [

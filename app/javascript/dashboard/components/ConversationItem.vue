@@ -126,6 +126,9 @@ const onExpandedSelect = checked => {
 };
 
 const openContextMenu = e => {
+  // algorythmo: stream-a — suppress context menu in the read-only aquarium so
+  // the CEO cannot trigger assignAgent/assignTeam/updateStatus/mark-read-unread.
+  if (isReadOnly.value) return;
   e.preventDefault();
   toggleContextMenu(true);
   contextMenu.value.x = e.pageX || e.clientX;

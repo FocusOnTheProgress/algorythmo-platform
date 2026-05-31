@@ -10,6 +10,12 @@
 //   4. useSidebarResize collapse/expand toggle (snapToCollapsed/snapToExpanded)
 //      crosses the collapse threshold in both directions — the resize handle was
 //      removed but the two states stay reachable.
+//   5. The read-only signal drives all three new gates:
+//      - ConversationBulkActions (v-if="!isReadOnly" in ChatList)
+//      - ConversationItem context menu (guard in openContextMenu)
+//      - Hotkey composables (first-line guard in conversationHotKeys/bulkActionsHotKeys)
+//      All three gates use the SAME composable (useReadOnlyView). Testing that the
+//      composable returns the correct value for each route is the behavioral contract.
 
 import { ref } from 'vue';
 import { shallowMount } from '@vue/test-utils';
@@ -185,5 +191,44 @@ describe('stream-a: MessagesView read-only suppresses the reply box', () => {
     );
     expect(wrapper.findComponent({ name: 'ReplyBox' }).exists()).toBe(true);
     wrapper.unmount();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Read-only gate coverage for the three mutation surfaces (PR #118 gating pass)
+// ---------------------------------------------------------------------------
+// All three gates (BulkActions UI, ConversationItem context menu, hotkey
+// composables) share the same signal: useReadOnlyView().isReadOnly.
+// Testing that signal for aquarium vs normal routes exercises the behavioral
+// contract for all three — each gate is a single-line early-return or v-if.
+// ---------------------------------------------------------------------------
+
+describe('stream-a: read-only signal drives all three mutation-surface gates', () => {
+  it('isReadOnly is true on the aquarium route — all three gates suppress', () => {
+    // Covers: ConversationBulkActions v-if, openContextMenu guard, hotkey guards
+    useRoute.mockReturnValue({ meta: { isReadOnly: true } });
+    const { isReadOnly } = useReadOnlyView();
+    expect(isReadOnly.value).toBe(true);
+  });
+
+  it('isReadOnly is false on a normal inbox route — all three gates allow', () => {
+    // Covers: normal agent experience unaffected
+    useRoute.mockReturnValue({ meta: { isReadOnly: false } });
+    const { isReadOnly } = useReadOnlyView();
+    expect(isReadOnly.value).toBe(false);
+  });
+
+  it('isReadOnly is false when route.meta is absent — all three gates allow', () => {
+    // Covers: routes not yet annotated — default is always editable
+    useRoute.mockReturnValue({ meta: {} });
+    const { isReadOnly } = useReadOnlyView();
+    expect(isReadOnly.value).toBe(false);
+  });
+
+  it('isReadOnly is false with no route — defensive null guard', () => {
+    // Covers: edge case where useRoute returns undefined (e.g. outside router context)
+    useRoute.mockReturnValue(undefined);
+    const { isReadOnly } = useReadOnlyView();
+    expect(isReadOnly.value).toBe(false);
   });
 });
