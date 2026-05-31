@@ -139,6 +139,13 @@
 // bright segment sweeps the ENTIRE perimeter — no transform, no oversize, no
 // uncovered corner. Opacity is the intensity dial; the arc stays bright.
 .alg-aurora-border__beam {
+  // Per-sector ICE tint (founder decision 2026-05-31): the beam is an ICY,
+  // LIGHT version of each sector's hue — not pure white, not saturated. The
+  // hue is set per sector on .alg-shell--<sector> (see SECTOR ACCENTS below);
+  // it falls back to a neutral ice-blue (225) on non-sector surfaces (Brain
+  // dropzone). High L + low-moderate C = "frozen, tinted glass", never neon.
+  --alg-beam-h: var(--alg-sector-hue, 225);
+  --alg-beam-c: var(--alg-sector-chroma, 0.085);
   position: absolute;
   inset: 0;
   border-radius: inherit;
@@ -148,15 +155,15 @@
     from var(--alg-aurora-angle) at 50% 50%,
     transparent 0%,
     transparent 6%,
-    color-mix(in oklch, var(--alg-ice-3), transparent 45%) 11%,
-    var(--alg-ice-2) 15%,
-    var(--alg-ice-1) 18%,
-    oklch(0.98 0.025 220) 20%,
-    oklch(0.99 0.02 220) 21%,
-    oklch(0.98 0.025 220) 22%,
-    var(--alg-ice-1) 24%,
-    var(--alg-ice-2) 27%,
-    color-mix(in oklch, var(--alg-ice-3), transparent 45%) 32%,
+    oklch(0.7 var(--alg-beam-c) var(--alg-beam-h) / 0.55) 11%,
+    oklch(0.88 var(--alg-beam-c) var(--alg-beam-h)) 15%,
+    oklch(0.95 calc(var(--alg-beam-c) * 0.6) var(--alg-beam-h)) 18%,
+    oklch(0.99 calc(var(--alg-beam-c) * 0.35) var(--alg-beam-h)) 20%,
+    oklch(0.995 calc(var(--alg-beam-c) * 0.25) var(--alg-beam-h)) 21%,
+    oklch(0.99 calc(var(--alg-beam-c) * 0.35) var(--alg-beam-h)) 22%,
+    oklch(0.95 calc(var(--alg-beam-c) * 0.6) var(--alg-beam-h)) 24%,
+    oklch(0.88 var(--alg-beam-c) var(--alg-beam-h)) 27%,
+    oklch(0.7 var(--alg-beam-c) var(--alg-beam-h) / 0.55) 32%,
     transparent 38%,
     transparent 100%
   );
@@ -186,12 +193,90 @@
   animation-duration: var(--alg-duration-ambient);
 }
 
-// Reduced motion: park the arc at a fixed angle. The base ICE ring + the frozen
-// bright segment keep the border present, alive through colour, no movement.
+// Reduced motion: the travelling beam is the SIGNATURE of this surface and the
+// founder requires it to move (LIVE review, repeated: "o feixe não se mexe").
+// A prior build froze it here with `animation: none`, so anyone whose OS has
+// "reduce motion" / "animation effects off" (common on Windows) saw a dead
+// border — the exact bug reported. We honour the accessibility intent by
+// SLOWING the drift to a calm, non-distracting ~28s loop rather than killing
+// it: a slow ambient gradient is not the rapid/parallax motion reduce-motion
+// targets, and the beam stays alive.
 @media (prefers-reduced-motion: reduce) {
   .alg-aurora-border__beam {
-    animation: none;
-    --alg-aurora-angle: 36deg;
+    animation-duration: 28s;
+  }
+}
+
+// =============================================================================
+// SECTOR ACCENTS — each of the 8 management sectors owns ONE distinct hue.
+// -----------------------------------------------------------------------------
+// Set on the sector shell root (.alg-shell--<sector>, wired in SectorShellV2 from
+// the per-sector planet-class). The hue drives BOTH the ice-tinted Aurora beam
+// (--alg-sector-hue, consumed by .alg-aurora-border__beam above) AND the
+// sector's coloured figures (.alg-sector-ink). Hues are spread around the wheel
+// so NO two sectors repeat — the prior build reused a couple of accents, which
+// the founder flagged. Founder decision 2026-05-31.
+// =============================================================================
+.alg-shell--commercial     { --alg-sector-hue: 160; } // emerald
+.alg-shell--marketing      { --alg-sector-hue: 65; }  // amber
+.alg-shell--operations     { --alg-sector-hue: 240; } // sky
+.alg-shell--procurement    { --alg-sector-hue: 320; } // violet / magenta
+.alg-shell--hr             { --alg-sector-hue: 12; }  // rose
+.alg-shell--facilities     { --alg-sector-hue: 195; } // teal
+.alg-shell--finance        { --alg-sector-hue: 120; } // chartreuse / growth
+.alg-shell--administration { --alg-sector-hue: 275; } // indigo
+
+// Sector-coloured figure (KPI value / accent detail): the sector hue rendered as
+// a readable, vivid-but-not-neon ink against the dark canvas. Apply to the
+// numbers/details that should carry the sector identity.
+.alg-sector-ink {
+  color: oklch(0.82 0.13 var(--alg-sector-hue, 225));
+}
+
+// Inside a sector shell, the KPI tile's leading glyph carries the SECTOR colour
+// (it was a flat neutral grey, identical across every sector — the "repetition"
+// the founder flagged). Scoped to `[class*='alg-shell--']` so KPI tiles used
+// off a sector page keep their neutral ink. The directional delta pills stay
+// SEMANTIC (up=green / down=red) — that meaning is not a sector accent.
+[class*='alg-shell--'] .alg-kpi-tile__icon {
+  color: oklch(0.8 0.12 var(--alg-sector-hue, 225));
+}
+
+// =============================================================================
+// SIDEBAR — Ref design 1 (editorial chrome). Scoped to .alg-sidebar.
+// -----------------------------------------------------------------------------
+// The next-gen rail shipped on Chatwoot's Inter + slate tokens, which the
+// founder flagged (repeatedly) as "still looks like the old Chatwoot". Ref 1 is
+// editorial: the brand grotesk (Geist, bundled + loaded — verified live), quiet
+// muted labels, more vertical breathing room, hairline-tracked section headers.
+// The white inverse-pill active state (SidebarGroupHeader) is the one bright
+// accent and is intentionally LEFT as-is. Everything here is scoped to the
+// sidebar <aside>.alg-sidebar so no other surface inherits it.
+// =============================================================================
+.alg-sidebar {
+  font-family: var(--alg-font-sans);
+  letter-spacing: 0.002em;
+
+  // Idle labels read editorial-quiet; hover/active brighten (kept from the
+  // component classes). These overrides only retune the two slate inks the rail
+  // uses for text, scoped to the sidebar.
+  .text-n-slate-11 {
+    color: rgba(233, 236, 242, 0.52);
+  }
+  .text-n-slate-12 {
+    color: rgba(246, 248, 251, 0.94);
+  }
+
+  // Section headers in the brand grotesk, a touch more tracking, same hairline
+  // mute as the spec.
+  .font-interDisplay {
+    font-family: var(--alg-font-sans);
+    letter-spacing: 0.14em;
+  }
+
+  // Ref 1 is airy, not dense — open the rhythm between nav rows.
+  nav > ul {
+    gap: 0.3rem;
   }
 }
 
