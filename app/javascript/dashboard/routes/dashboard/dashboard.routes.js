@@ -11,6 +11,8 @@ import campaignsRoutes from './campaigns/campaigns.routes';
 import { routes as captainRoutes } from './captain/captain.routes';
 import algorythmoCrmRoutes from './crm/crm.routes';
 import algorythmoBrainRoutes from './algorythmo/brain.routes';
+// algorythmo: Stream D — "Início" (default landing surface)
+import algorythmoInicioRoutes from '../../modules/algorythmo/admin/inicio/routes';
 // algorythmo: M5 admin OS placeholder routes
 import algorythmoAdminOperacaoRoutes from '../../modules/algorythmo/admin/operacao/routes';
 import algorythmoAdminComprasRoutes from '../../modules/algorythmo/admin/compras/routes';
@@ -45,6 +47,8 @@ export default {
         ...campaignsRoutes.routes,
         ...algorythmoCrmRoutes.routes,
         ...algorythmoBrainRoutes.routes,
+        // algorythmo: Stream D — "Início" (default landing surface)
+        ...algorythmoInicioRoutes.routes,
         // algorythmo: M5 admin OS placeholder routes
         ...algorythmoAdminOperacaoRoutes.routes,
         ...algorythmoAdminComprasRoutes.routes,

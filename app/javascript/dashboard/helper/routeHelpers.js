@@ -35,9 +35,12 @@ export const defaultRedirectPage = (to, permissions) => {
   const { accountId } = to.params;
 
   const permissionRoutes = [
+    // algorythmo: Stream D — Início is the default landing surface. Any user who
+    // can reach the conversation dashboard falls into Início first (the universal
+    // welcome panorama); Conversations stay reachable via the sidebar as before.
     {
       permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
-      path: 'dashboard',
+      path: 'inicio',
     },
     { permissions: [CONTACT_PERMISSIONS], path: 'contacts' },
     { permissions: [REPORTS_PERMISSIONS], path: 'reports/overview' },
@@ -48,7 +51,10 @@ export const defaultRedirectPage = (to, permissions) => {
     hasPermissions(routePermissions, permissions)
   );
 
-  return `accounts/${accountId}/${route ? route.path : 'dashboard'}`;
+  // algorythmo: Stream D — Início is the universal default landing. The fallback
+  // (e.g. a bare custom_role with no specific surface permission) also lands on
+  // Início, whose route admits administrator / agent / custom_role alike.
+  return `accounts/${accountId}/${route ? route.path : 'inicio'}`;
 };
 
 const validateActiveAccountRoutes = (to, user) => {

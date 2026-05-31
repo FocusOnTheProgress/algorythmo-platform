@@ -61,7 +61,12 @@ export const validateAuthenticateRoutePermission = async (to, next) => {
     isActive;
 
   if (to.name === 'no_accounts' || !to.name) {
-    const target = needsOnboarding ? 'onboarding' : 'dashboard';
+    // algorythmo: Stream D — Início is the universal landing for all roles.
+    // Bare-entry (no route name) lands on Início directly; deep-links carry a
+    // route name and skip this branch entirely (deep-links preserved).
+    // Onboarding path is unchanged: admins in onboarding still land on the
+    // onboarding surface, not on Início.
+    const target = needsOnboarding ? 'onboarding' : 'inicio';
     return next(frontendURL(`accounts/${routeAccountId}/${target}`));
   }
 
