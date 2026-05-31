@@ -14,7 +14,9 @@
     "ALG_SECTOR_FINANCE": "Financeiro",
     "ALG_SECTOR_ADMINISTRATION": "Administração",
     "ALG_CONV_OPERACAO_AO_VIVO": "Operação ao vivo",
-    "ALG_CONV_CAIXA_DE_ENTRADA": "Caixa de entrada"
+    "ALG_CONV_CAIXA_DE_ENTRADA": "Caixa de entrada",
+    "COLLAPSE_SIDEBAR": "Recolher menu lateral",
+    "EXPAND_SIDEBAR": "Expandir menu lateral"
   },
   "ALGORYTHMO_ADMIN": {
     "READ_ONLY_NOTICE": "Você está visualizando como administrador. Para falar com o time, use a Inbox interna.",

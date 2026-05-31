@@ -2,6 +2,7 @@
 import { mapGetters } from 'vuex';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useAccount } from 'dashboard/composables/useAccount';
+import { useReadOnlyView } from 'dashboard/composables/algorythmo/useReadOnlyView';
 import ChatList from '../../../components/ChatList.vue';
 import ConversationBox from '../../../components/widgets/conversation/ConversationBox.vue';
 import wootConstants from 'dashboard/constants/globals';
@@ -52,22 +53,20 @@ export default {
       type: [String, Number],
       default: 0,
     },
-    // algorythmo: stream-a — "Operação ao vivo" read-only aquarium view.
-    // When true, the reply box is not rendered so the CEO cannot send messages
-    // while watching the live commercial operation.
-    isReadOnly: {
-      type: Boolean,
-      default: false,
-    },
   },
   setup() {
     const { uiSettings, updateUISettings } = useUISettings();
     const { accountId } = useAccount();
+    // algorythmo: stream-a — "Operação ao vivo" read-only aquarium view.
+    // Derived from route.meta.isReadOnly (durable source) so every conversation
+    // reached under the aquarium path is read-only, regardless of route name hit.
+    const { isReadOnly } = useReadOnlyView();
 
     return {
       uiSettings,
       updateUISettings,
       accountId,
+      isReadOnly,
     };
   },
   data() {

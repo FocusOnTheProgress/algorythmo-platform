@@ -11,7 +11,15 @@ export const conversationUrl = ({
   teamId,
   conversationType = '',
   foldersId,
+  isReadOnly = false,
 }) => {
+  // algorythmo: stream-a — in the "Operação ao vivo" read-only aquarium, cards must
+  // open the dedicated read-only conversation path so the opened conversation keeps
+  // meta.isReadOnly. Without this, clicking a card would route to the editable
+  // inbox_conversation path and the reply box / actions would reappear.
+  if (isReadOnly) {
+    return `accounts/${accountId}/operacao-ao-vivo/conversations/${id}`;
+  }
   let url = `accounts/${accountId}/conversations/${id}`;
   if (activeInbox) {
     url = `accounts/${accountId}/inbox/${activeInbox}/conversations/${id}`;

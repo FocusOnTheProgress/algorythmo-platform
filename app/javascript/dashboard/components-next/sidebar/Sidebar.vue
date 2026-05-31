@@ -188,18 +188,25 @@ const setExpandedItem = name => {
   writeExpandedToStorage(currentUser.value?.id, expandedItem.value);
 };
 
-const { sidebarWidth, isCollapsed } = useSidebarResize();
+const { sidebarWidth, isCollapsed, snapToCollapsed, snapToExpanded } =
+  useSidebarResize();
 
 // On mobile, sidebar is always expanded (flyout mode)
 const isEffectivelyCollapsed = computed(
   () => !isMobile.value && isCollapsed.value
 );
 
-// algorythmo: stream-a — resize handle removed. The sidebar is binary:
-// collapsed (64px) or expanded (200px). No drag-to-resize affordance.
-// isResizing is kept as a permanent-false ref so child components that
-// consume it from context don't need to be updated.
+// algorythmo: stream-a — free-drag resize handle removed (the sidebar is binary:
+// collapsed 56px ↔ expanded 200px). The collapse/expand TOGGLE is preserved as an
+// explicit button so a user who collapsed the rail is never stuck icon-only.
+// isResizing is kept as a permanent-false ref so child components that consume it
+// from context don't need to be updated.
 const isResizing = ref(false);
+
+const toggleSidebarCollapsed = () => {
+  if (isEffectivelyCollapsed.value) snapToExpanded();
+  else snapToCollapsed();
+};
 
 provideSidebarContext({
   expandedItem,
@@ -985,7 +992,7 @@ const menuItems = computed(() => {
         ],
       },
     ]"
-    class="alg-sidebar bg-n-background flex flex-col text-sm pb-px fixed top-0 ltr:left-0 rtl:right-0 h-full z-40 w-[200px] md:w-auto md:relative md:flex-shrink-0 md:ltr:translate-x-0 md:rtl:translate-x-0 ltr:border-r rtl:border-l border-n-weak transition-transform duration-200 ease-out"
+    class="alg-sidebar bg-n-background flex flex-col text-sm pb-px fixed top-0 ltr:left-0 rtl:right-0 h-full z-40 w-[200px] md:w-auto md:relative md:flex-shrink-0 md:ltr:translate-x-0 md:rtl:translate-x-0 ltr:border-r rtl:border-l border-n-weak transition-transform duration-200 ease-out md:transition-[width] md:duration-300 md:ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:md:transition-none"
     :class="[
       {
         'shadow-lg md:shadow-none': isMobileSidebarOpen,
@@ -1068,13 +1075,42 @@ const menuItems = computed(() => {
         "
       />
       <div
-        class="px-1 py-1.5 flex-shrink-0 flex w-full z-50 gap-2 items-center border-t border-n-weak shadow-[0px_-2px_4px_0px_rgba(27,28,29,0.02)]"
-        :class="isEffectivelyCollapsed ? 'justify-center' : 'justify-between'"
+        class="px-1 py-1.5 flex-shrink-0 flex w-full z-50 gap-2 border-t border-n-weak shadow-[0px_-2px_4px_0px_rgba(27,28,29,0.02)]"
+        :class="
+          isEffectivelyCollapsed
+            ? 'flex-col items-center justify-center'
+            : 'flex-row items-center justify-between'
+        "
       >
         <SidebarProfileMenu
           :is-collapsed="isEffectivelyCollapsed"
           @open-key-shortcut-modal="emit('openKeyShortcutModal')"
         />
+        <!-- algorythmo: stream-a — explicit collapse/expand toggle (desktop only).
+             Replaces the removed resize-handle double-click so the 56px ↔ 200px
+             states stay reachable. Monochrome chevron, consistent with sidebar
+             chrome; reduced-motion respected via the aside's width transition. -->
+        <button
+          type="button"
+          class="alg-sidebar-toggle hidden md:inline-flex items-center justify-center size-7 flex-shrink-0 rounded-md text-n-slate-11 hover:text-n-slate-12 hover:bg-n-alpha-1 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-brand/50"
+          :aria-label="
+            isEffectivelyCollapsed
+              ? $t('SIDEBAR.EXPAND_SIDEBAR')
+              : $t('SIDEBAR.COLLAPSE_SIDEBAR')
+          "
+          :aria-pressed="isEffectivelyCollapsed"
+          data-testid="sidebar-collapse-toggle"
+          @click="toggleSidebarCollapsed"
+        >
+          <span
+            class="size-4 rtl:rotate-180"
+            :class="
+              isEffectivelyCollapsed
+                ? 'i-lucide-panel-left-open'
+                : 'i-lucide-panel-left-close'
+            "
+          />
+        </button>
       </div>
     </section>
   </aside>
