@@ -21,11 +21,13 @@ import SidebarChangelogButton from './SidebarChangelogButton.vue';
 import ChannelLeaf from './ChannelLeaf.vue';
 import ChannelIcon from 'next/icon/ChannelIcon.vue';
 import SidebarAccountSwitcher from './SidebarAccountSwitcher.vue';
-// algorythmo: A1 — use the always-rendering inline brand mark instead of
-// next/icon/Logo (which silently fell back to an i-lucide-image placeholder when
-// no account/installation logo was configured). A2 — the ComposeConversation
-// (pencil) trigger is removed from the sidebar chrome entirely.
-import AlgBrandMark from 'dashboard/components-next/algorythmo/AlgBrandMark.vue';
+// algorythmo: render the CONFIGURED brand logo the founder uploads in the
+// account settings tab (account.logo_url → account.logo → globalConfig
+// logoThumbnail), falling back to the inline AlgBrandMark ONLY when no logo is
+// set. A prior build hard-wired AlgBrandMark here, so the uploaded logo never
+// appeared — AlgBrandLogo restores the configured-logo source. A2 — the
+// ComposeConversation (pencil) trigger is removed from the sidebar chrome.
+import AlgBrandLogo from 'dashboard/components-next/algorythmo/AlgBrandLogo.vue';
 
 const props = defineProps({
   isMobileSidebarOpen: {
@@ -1083,9 +1085,9 @@ const menuItems = computed(() => {
         </template>
         <template v-else>
           <div
-            class="grid flex-shrink-0 place-content-center size-7 rounded-[7px] bg-n-alpha-1 text-n-brand"
+            class="grid overflow-hidden flex-shrink-0 place-content-center size-7 rounded-[7px] bg-n-alpha-1 text-n-brand"
           >
-            <AlgBrandMark class="size-4" decorative />
+            <AlgBrandLogo class="size-5" decorative label="Logo" />
           </div>
           <SidebarAccountSwitcher
             class="flex-grow min-w-0"

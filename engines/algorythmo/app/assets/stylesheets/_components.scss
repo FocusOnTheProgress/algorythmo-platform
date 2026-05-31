@@ -62,6 +62,137 @@
 }
 
 // =============================================================================
+// AURORA BORDER (§6.6) — travelling ICE comet around the FULL perimeter
+// -----------------------------------------------------------------------------
+// ROOT CAUSE this block fixes (founder LIVE review, "the beam does not run the
+// WHOLE border"): the canonical technique is an animated conic-gradient whose
+// single bright stop rotates 0deg→360deg, so the bright arc traverses the
+// COMPLETE loop (top → right → bottom → left → top). That requires the angle to
+// be an ANIMATABLE custom property — which only works if it is registered with
+// `@property`. A prior build registered it inside the component's SCOPED <style>;
+// Vue's scoped-style transform does NOT preserve a global @property at-rule, so
+// the browser saw an unregistered (non-interpolable) property → the keyframe
+// jumped discretely and, because a conic gradient is periodic (0deg == 360deg),
+// the arc never appeared to move. The earlier "transform: rotate() an oversized
+// square layer" workaround swept a square, not the rounded-rect ring, so it read
+// as "only one side lights up", never a clean perimeter loop.
+//
+// THE FIX lives HERE, in a GLOBAL stylesheet (this file is @imported by
+// _woot.scss → emitted once on :root, never scoped): register the @property so
+// the angle interpolates, and drive a conic-gradient masked to the border ring.
+// The bright ICE arc now visibly runs the entire perimeter, continuously.
+//
+// ICE tone only (no magenta/green — magenta is the Orb's identity, not the
+// border's). Hairline thickness. Content never tinted (the ring is masked to the
+// padding box). Reduced motion parks the arc (still a border, no movement).
+// =============================================================================
+
+// Globally-registered angle — interpolable, so the conic `from <angle>` can be
+// animated smoothly. MUST be global (not scoped) or the browser ignores it.
+@property --alg-aurora-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes alg-aurora-border-travel {
+  to {
+    --alg-aurora-angle: 360deg;
+  }
+}
+
+.alg-aurora-border {
+  position: relative;
+  border-radius: var(--alg-border-radius, var(--alg-radius-lg));
+  isolation: isolate;
+}
+
+// The frame carries BOTH layers, masked to the hairline perimeter so the centre
+// (the content) is never tinted:
+//   1. a dim ICE base ring (always present — the frame is never a gap)
+//   2. the bright travelling arc, a conic gradient whose `from` angle animates
+//      0deg→360deg, sending the single bright stop around the whole loop.
+.alg-aurora-border__frame {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  border-radius: inherit;
+  padding: var(--alg-border-thickness, 1px);
+  pointer-events: none;
+  // Dim ICE base ring underneath the arc.
+  background: var(--alg-aurora-border-base);
+  // Cut the centre out so only the hairline perimeter paints. The arc layer
+  // below inherits this same mask via its own rule.
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+
+// The travelling arc: a conic gradient anchored at the box centre, painting one
+// bright ICE segment. Animating --alg-aurora-angle rotates the gradient so that
+// bright segment sweeps the ENTIRE perimeter — no transform, no oversize, no
+// uncovered corner. Opacity is the intensity dial; the arc stays bright.
+.alg-aurora-border__beam {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--alg-border-thickness, 1px);
+  opacity: var(--alg-border-opacity, 0.9);
+  background: conic-gradient(
+    from var(--alg-aurora-angle) at 50% 50%,
+    transparent 0%,
+    transparent 8%,
+    color-mix(in oklch, var(--alg-ice-3), transparent 55%) 13%,
+    var(--alg-ice-2) 18%,
+    var(--alg-ice-1) 21%,
+    var(--alg-ice-1) 23%,
+    var(--alg-ice-2) 26%,
+    color-mix(in oklch, var(--alg-ice-3), transparent 55%) 31%,
+    transparent 38%,
+    transparent 100%
+  );
+  // Same hairline mask as the frame — only the ring paints, never the centre.
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  will-change: --alg-aurora-angle;
+  animation: alg-aurora-border-travel var(--alg-duration-ambient-slow) linear
+    infinite;
+}
+
+.alg-aurora-border__content {
+  position: relative;
+  z-index: 1;
+  display: block;
+  border-radius: inherit;
+}
+
+// Processing: the arc quickens to the orb's ~6s breath.
+.alg-aurora-border--active .alg-aurora-border__beam {
+  animation-duration: var(--alg-duration-ambient);
+}
+
+// Reduced motion: park the arc at a fixed angle. The base ICE ring + the frozen
+// bright segment keep the border present, alive through colour, no movement.
+@media (prefers-reduced-motion: reduce) {
+  .alg-aurora-border__beam {
+    animation: none;
+    --alg-aurora-angle: 36deg;
+  }
+}
+
+// =============================================================================
 // BUTTON
 // =============================================================================
 
@@ -85,7 +216,7 @@
   gap: var(--alg-space-2);
 
   // Size: default = md
-  height: 2.25rem;                 // 36px
+  height: 2.25rem; // 36px
   padding: 0 var(--alg-space-button-padding-x);
   font-size: var(--alg-text-sm);
   font-weight: var(--alg-weight-medium);
@@ -147,7 +278,7 @@
       background: linear-gradient(
         90deg,
         rgba(255, 255, 255, 0.25) 0%,
-        rgba(255, 255, 255, 0.90) 50%,
+        rgba(255, 255, 255, 0.9) 50%,
         rgba(255, 255, 255, 0.25) 100%
       );
       background-clip: text;
@@ -231,8 +362,12 @@
   width: 2.25rem;
   padding: 0;
 
-  &.alg-btn--sm { width: 1.75rem; }
-  &.alg-btn--lg { width: 2.75rem; }
+  &.alg-btn--sm {
+    width: 1.75rem;
+  }
+  &.alg-btn--lg {
+    width: 2.75rem;
+  }
 }
 
 // =============================================================================
@@ -397,9 +532,7 @@
 .alg-card--glass {
   @include alg-glass(soft);
   border-color: var(--alg-glass-border);
-  box-shadow:
-    var(--alg-glass-highlight),
-    var(--alg-elevation-2);
+  box-shadow: var(--alg-glass-highlight), var(--alg-elevation-2);
 }
 
 .alg-card__header {
@@ -471,11 +604,26 @@
   flex-shrink: 0;
 }
 
-.alg-chip--info    { color: var(--alg-color-info);    background-color: var(--alg-color-info-subtle); }
-.alg-chip--success { color: var(--alg-color-success); background-color: var(--alg-color-success-subtle); }
-.alg-chip--warning { color: var(--alg-color-warning); background-color: var(--alg-color-warning-subtle); }
-.alg-chip--danger  { color: var(--alg-color-danger);  background-color: var(--alg-color-danger-subtle); }
-.alg-chip--brand   { color: var(--alg-color-brand-primary); background-color: var(--alg-color-brand-primary-subtle); }
+.alg-chip--info {
+  color: var(--alg-color-info);
+  background-color: var(--alg-color-info-subtle);
+}
+.alg-chip--success {
+  color: var(--alg-color-success);
+  background-color: var(--alg-color-success-subtle);
+}
+.alg-chip--warning {
+  color: var(--alg-color-warning);
+  background-color: var(--alg-color-warning-subtle);
+}
+.alg-chip--danger {
+  color: var(--alg-color-danger);
+  background-color: var(--alg-color-danger-subtle);
+}
+.alg-chip--brand {
+  color: var(--alg-color-brand-primary);
+  background-color: var(--alg-color-brand-primary-subtle);
+}
 
 // LeadAgingChip — preserved (D10 + D11 dual-coding)
 .alg-chip--aging {
@@ -499,10 +647,18 @@
     background-color: var(--alg-aging-neutral-bg);
   }
 
-  .alg-chip__glyph[data-glyph='green']::before   { content: '\25CF'; }
-  .alg-chip__glyph[data-glyph='yellow']::before  { content: '\25D0'; }
-  .alg-chip__glyph[data-glyph='red']::before     { content: '\25CB'; }
-  .alg-chip__glyph[data-glyph='neutral']::before { content: '\2014'; }
+  .alg-chip__glyph[data-glyph='green']::before {
+    content: '\25CF';
+  }
+  .alg-chip__glyph[data-glyph='yellow']::before {
+    content: '\25D0';
+  }
+  .alg-chip__glyph[data-glyph='red']::before {
+    content: '\25CB';
+  }
+  .alg-chip__glyph[data-glyph='neutral']::before {
+    content: '\2014';
+  }
 }
 
 // =============================================================================
@@ -551,8 +707,12 @@
 
   animation: alg-modal-in var(--alg-duration-slow) var(--alg-ease-cinematic);
 
-  &--sm { max-width: var(--alg-modal-width-sm); }
-  &--lg { max-width: var(--alg-modal-width-lg); }
+  &--sm {
+    max-width: var(--alg-modal-width-sm);
+  }
+  &--lg {
+    max-width: var(--alg-modal-width-lg);
+  }
 }
 
 .alg-modal__header {
@@ -647,8 +807,12 @@
 // =============================================================================
 
 @keyframes alg-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes alg-modal-in {
@@ -663,20 +827,33 @@
 }
 
 @keyframes alg-shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 // Button loading indicator — shimmer sweep across three dots.
 // alg-spin removed: spinners are forbidden by system doctrine (§11.4 DESIGN.md).
 @keyframes alg-btn-shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @keyframes alg-skeleton-pulse {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.55; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
 }
 
 // =============================================================================
@@ -756,13 +933,21 @@
 }
 
 @keyframes alg-drawer-in {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 @keyframes alg-drawer-out {
-  from { transform: translateX(0); }
-  to   { transform: translateX(100%); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
 }
 
 .alg-drawer--leaving {
@@ -781,9 +966,7 @@
   @include alg-glass(soft);
   border: 1px solid var(--alg-glass-border);
   border-radius: var(--alg-radius-md);
-  box-shadow:
-    var(--alg-glass-highlight),
-    var(--alg-elevation-3);
+  box-shadow: var(--alg-glass-highlight), var(--alg-elevation-3);
   padding: var(--alg-space-1) 0;
 
   animation: alg-menu-in var(--alg-duration-fast) var(--alg-ease-cinematic);
@@ -891,9 +1074,7 @@
   @include alg-glass(medium);
   border: 1px solid var(--alg-glass-border);
   border-radius: var(--alg-radius-md);
-  box-shadow:
-    var(--alg-glass-highlight),
-    var(--alg-elevation-3);
+  box-shadow: var(--alg-glass-highlight), var(--alg-elevation-3);
   font-size: var(--alg-text-sm);
   color: var(--alg-text-primary);
 
@@ -904,9 +1085,15 @@
   }
 }
 
-.alg-toast--success { border-left: 3px solid var(--alg-color-success); }
-.alg-toast--error   { border-left: 3px solid var(--alg-color-danger); }
-.alg-toast--info    { border-left: 3px solid var(--alg-color-info); }
+.alg-toast--success {
+  border-left: 3px solid var(--alg-color-success);
+}
+.alg-toast--error {
+  border-left: 3px solid var(--alg-color-danger);
+}
+.alg-toast--info {
+  border-left: 3px solid var(--alg-color-info);
+}
 
 .alg-toast__icon {
   flex-shrink: 0;
@@ -938,8 +1125,13 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 
-  &:hover { opacity: 0.85; }
-  &:focus-visible { outline: 2px solid var(--alg-color-brand-primary); outline-offset: 2px; }
+  &:hover {
+    opacity: 0.85;
+  }
+  &:focus-visible {
+    outline: 2px solid var(--alg-color-brand-primary);
+    outline-offset: 2px;
+  }
 }
 
 .alg-toast__close {
@@ -957,8 +1149,13 @@
   padding: 0;
   transition: color var(--alg-duration-instant) var(--alg-ease-cinematic);
 
-  &:hover { color: var(--alg-text-primary); }
-  &:focus-visible { outline: 2px solid var(--alg-color-brand-primary); outline-offset: 2px; }
+  &:hover {
+    color: var(--alg-text-primary);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--alg-color-brand-primary);
+    outline-offset: 2px;
+  }
 }
 
 .alg-toast--leaving {
@@ -966,13 +1163,25 @@
 }
 
 @keyframes alg-toast-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes alg-toast-out {
-  from { opacity: 1; transform: scale(1); }
-  to   { opacity: 0; transform: scale(0.95); }
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
 }
 
 // =============================================================================
@@ -1018,11 +1227,15 @@
 }
 
 .alg-avatar--ring {
-  box-shadow: 0 0 0 2px var(--alg-bg-raised), 0 0 0 3.5px var(--alg-color-brand-primary);
+  box-shadow:
+    0 0 0 2px var(--alg-bg-raised),
+    0 0 0 3.5px var(--alg-color-brand-primary);
 }
 
 .alg-avatar--ring-success {
-  box-shadow: 0 0 0 2px var(--alg-bg-raised), 0 0 0 3.5px var(--alg-color-success);
+  box-shadow:
+    0 0 0 2px var(--alg-bg-raised),
+    0 0 0 3.5px var(--alg-color-success);
 }
 
 // =============================================================================
@@ -1236,9 +1449,7 @@
   border-radius: var(--alg-radius-lg);
   @include alg-glass(soft);
   border: 1px solid var(--alg-glass-border);
-  box-shadow:
-    var(--alg-glass-highlight),
-    var(--alg-elevation-1);
+  box-shadow: var(--alg-glass-highlight), var(--alg-elevation-1);
 }
 
 .alg-sector__chart-title {
@@ -2174,8 +2385,8 @@
   }
 
   @media (max-width: 768px) {
-    padding: var(--alg-space-8);          // 96 → 32 on mobile
-    gap: var(--alg-space-6);              // 48 → 24
+    padding: var(--alg-space-8); // 96 → 32 on mobile
+    gap: var(--alg-space-6); // 48 → 24
   }
 }
 
@@ -2196,8 +2407,8 @@
   }
 
   @media (max-width: 768px) {
-    padding: var(--alg-space-6);          // 48 → 24 on mobile
-    gap: var(--alg-space-6);              // 32 → 24
+    padding: var(--alg-space-6); // 48 → 24 on mobile
+    gap: var(--alg-space-6); // 32 → 24
   }
 }
 
@@ -2218,15 +2429,15 @@
   }
 
   @media (max-width: 768px) {
-    padding: var(--alg-space-4);          // 24 → 16 on mobile
-    gap: var(--alg-space-3);              // 16 → 12
+    padding: var(--alg-space-4); // 24 → 16 on mobile
+    gap: var(--alg-space-3); // 16 → 12
   }
 }
 
 // Local "rise" — a hero region inside an operational page lifts its gap one
 // band without changing the inherited container density.
 .alg-density-operational > .alg-density-rise {
-  gap: var(--alg-space-8);                // 16 → 32
+  gap: var(--alg-space-8); // 16 → 32
 }
 
 // =============================================================================
@@ -2248,8 +2459,12 @@
   grid-template-columns: repeat(4, 1fr);
   gap: var(--alg-space-4);
 
-  @media (max-width: 1024px) { grid-template-columns: repeat(2, 1fr); }
-  @media (max-width: 480px)  { grid-template-columns: 1fr; }
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 // Single KPI tile — glass surface with grain.
@@ -2261,9 +2476,7 @@
 
   @include alg-glass(soft);
   border: 1px solid var(--alg-glass-border);
-  box-shadow:
-    var(--alg-glass-highlight),
-    var(--alg-elevation-2);
+  box-shadow: var(--alg-glass-highlight), var(--alg-elevation-2);
 
   // Grain overlay — the tell that separates real glass from rgba flatness.
   &::after {
@@ -2303,9 +2516,18 @@
   background: var(--alg-bg-tint-med);
   color: var(--alg-fg-tertiary);
 
-  &--up   { color: var(--alg-color-success); background: oklch(0.30 0.08 152 / 0.20); }
-  &--down { color: var(--alg-color-danger);  background: oklch(0.32 0.10 25  / 0.22); }
-  &--warn { color: var(--alg-color-warning); background: oklch(0.33 0.075 85 / 0.22); }
+  &--up {
+    color: var(--alg-color-success);
+    background: oklch(0.3 0.08 152 / 0.2);
+  }
+  &--down {
+    color: var(--alg-color-danger);
+    background: oklch(0.32 0.1 25 / 0.22);
+  }
+  &--warn {
+    color: var(--alg-color-warning);
+    background: oklch(0.33 0.075 85 / 0.22);
+  }
 }
 
 .alg-kpi-tile__value {
@@ -2340,7 +2562,9 @@
   margin: var(--alg-space-6) 0 var(--alg-space-4);
 
   // Extra top breathing room when a second section follows the first.
-  &--spaced { margin-top: var(--alg-space-4); }
+  &--spaced {
+    margin-top: var(--alg-space-4);
+  }
 }
 
 .alg-section-head__title {
@@ -2372,8 +2596,12 @@
   grid-template-columns: repeat(3, 1fr);
   gap: var(--alg-space-4);
 
-  @media (max-width: 1024px) { grid-template-columns: repeat(2, 1fr); }
-  @media (max-width: 640px)  { grid-template-columns: 1fr; }
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 // Sub-area card — glass, interactive hover, icon header + metric rows.
@@ -2387,9 +2615,7 @@
 
   @include alg-glass(soft);
   border: 1px solid var(--alg-glass-border);
-  box-shadow:
-    var(--alg-glass-highlight),
-    var(--alg-elevation-1);
+  box-shadow: var(--alg-glass-highlight), var(--alg-elevation-1);
 
   transition:
     transform var(--alg-duration-base) var(--alg-ease-cinematic),
@@ -2399,9 +2625,7 @@
   &:hover {
     transform: translateY(-2px);
     border-color: var(--alg-border-hover);
-    box-shadow:
-      var(--alg-glass-highlight),
-      var(--alg-elevation-2);
+    box-shadow: var(--alg-glass-highlight), var(--alg-elevation-2);
   }
 
   &:focus-visible {
@@ -2469,9 +2693,15 @@
   border-radius: 50%;
   flex-shrink: 0;
 
-  &--ok   { background: var(--alg-color-success); }
-  &--warn { background: var(--alg-color-warning); }
-  &--risk { background: var(--alg-color-danger); }
+  &--ok {
+    background: var(--alg-color-success);
+  }
+  &--warn {
+    background: var(--alg-color-warning);
+  }
+  &--risk {
+    background: var(--alg-color-danger);
+  }
 }
 
 // Status chip inside sub-area card.
@@ -2484,9 +2714,18 @@
   background: var(--alg-bg-tint-med);
   color: var(--alg-fg-secondary);
 
-  &--ok   { color: var(--alg-color-success); background: oklch(0.30 0.08 152 / 0.18); }
-  &--warn { color: var(--alg-color-warning); background: oklch(0.33 0.075 85 / 0.20); }
-  &--risk { color: var(--alg-color-danger);  background: oklch(0.32 0.10 25  / 0.20); }
+  &--ok {
+    color: var(--alg-color-success);
+    background: oklch(0.3 0.08 152 / 0.18);
+  }
+  &--warn {
+    color: var(--alg-color-warning);
+    background: oklch(0.33 0.075 85 / 0.2);
+  }
+  &--risk {
+    color: var(--alg-color-danger);
+    background: oklch(0.32 0.1 25 / 0.2);
+  }
 
   // Chip pinned to the trailing edge of an issue row (e.g. Reclame Aqui score).
   &--inline-end {
@@ -2503,7 +2742,9 @@
   padding: 7px 0;
   border-top: 1px solid var(--alg-border);
 
-  &:first-of-type { border-top: none; }
+  &:first-of-type {
+    border-top: none;
+  }
 
   // Flush row used for free-text descriptions (no divider, no top padding).
   &--flush {
@@ -2517,7 +2758,9 @@
   color: var(--alg-fg-tertiary);
 
   // Description variant — softer color, wraps as a paragraph.
-  &--desc { color: var(--alg-fg-secondary); }
+  &--desc {
+    color: var(--alg-fg-secondary);
+  }
 }
 
 .alg-subarea-card__val {
@@ -2549,21 +2792,46 @@
   }
 }
 
-.alg-planet--sm  { width: 24px; height: 24px; }
-.alg-planet--md  { width: 32px; height: 32px; }
-.alg-planet--lg  { width: 44px; height: 44px; }
+.alg-planet--sm {
+  width: 24px;
+  height: 24px;
+}
+.alg-planet--md {
+  width: 32px;
+  height: 32px;
+}
+.alg-planet--lg {
+  width: 44px;
+  height: 44px;
+}
 
 // Sector-specific planet gradients — one per sector agent.
 // Colors are within the Aurora band (magenta/rose/violet/amber/teal/ochre).
 // Format: radial-gradient(circle at 32% 28%, <light>, <mid> 46%, <shadow>)
-.alg-planet--operations   { background: radial-gradient(circle at 32% 28%, #e7b486, #b5603a 46%, #5b2a36); }
-.alg-planet--procurement  { background: radial-gradient(circle at 32% 28%, #d4e0a0, #7a9e3a 46%, #2d4a1a); }
-.alg-planet--hr           { background: radial-gradient(circle at 32% 28%, #b8d0f0, #4a7ab0 46%, #1a2e50); }
-.alg-planet--finance      { background: radial-gradient(circle at 32% 28%, #e8c870, #c09020 46%, #604000); }
-.alg-planet--administration { background: radial-gradient(circle at 32% 28%, #c0a8e8, #7040c0 46%, #2a1060); }
-.alg-planet--marketing    { background: radial-gradient(circle at 32% 28%, #f0a0c0, #c04080 46%, #601030); }
-.alg-planet--facilities   { background: radial-gradient(circle at 32% 28%, #a8d8c0, #3a8060 46%, #103020); }
-.alg-planet--commercial   { background: radial-gradient(circle at 32% 28%, #e0b8a0, #c07040 46%, #502010); }
+.alg-planet--operations {
+  background: radial-gradient(circle at 32% 28%, #e7b486, #b5603a 46%, #5b2a36);
+}
+.alg-planet--procurement {
+  background: radial-gradient(circle at 32% 28%, #d4e0a0, #7a9e3a 46%, #2d4a1a);
+}
+.alg-planet--hr {
+  background: radial-gradient(circle at 32% 28%, #b8d0f0, #4a7ab0 46%, #1a2e50);
+}
+.alg-planet--finance {
+  background: radial-gradient(circle at 32% 28%, #e8c870, #c09020 46%, #604000);
+}
+.alg-planet--administration {
+  background: radial-gradient(circle at 32% 28%, #c0a8e8, #7040c0 46%, #2a1060);
+}
+.alg-planet--marketing {
+  background: radial-gradient(circle at 32% 28%, #f0a0c0, #c04080 46%, #601030);
+}
+.alg-planet--facilities {
+  background: radial-gradient(circle at 32% 28%, #a8d8c0, #3a8060 46%, #103020);
+}
+.alg-planet--commercial {
+  background: radial-gradient(circle at 32% 28%, #e0b8a0, #c07040 46%, #502010);
+}
 
 // Overview pane wrapper — holds the KPI row + section head + sub-area grid.
 .alg-overview-pane {
@@ -2590,7 +2858,9 @@
   color: var(--alg-fg-tertiary);
 
   // Current (active) crumb leaf — brighter than the path root.
-  &--current { color: var(--alg-fg-secondary); }
+  &--current {
+    color: var(--alg-fg-secondary);
+  }
 }
 
 .alg-overview-crumb__sep {
@@ -2607,7 +2877,9 @@
   margin-bottom: var(--alg-space-6);
 
   // Slight top inset when the header sits directly under a sub-tab strip.
-  &--inset { margin-top: var(--alg-space-2); }
+  &--inset {
+    margin-top: var(--alg-space-2);
+  }
 }
 
 .alg-overview-head__left {
@@ -2652,9 +2924,7 @@
 
   @include alg-glass(soft);
   border: 1px solid var(--alg-glass-border);
-  box-shadow:
-    var(--alg-glass-highlight),
-    var(--alg-elevation-1);
+  box-shadow: var(--alg-glass-highlight), var(--alg-elevation-1);
 
   &::after {
     content: '';
@@ -2675,7 +2945,9 @@
   padding: var(--alg-space-3) 0;
   border-bottom: 1px solid var(--alg-border);
 
-  &:last-child { border-bottom: none; }
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
 .alg-issue-row__dot {
@@ -2684,9 +2956,15 @@
   border-radius: 50%;
   flex-shrink: 0;
 
-  &--open   { background: var(--alg-color-danger); }
-  &--review { background: var(--alg-color-warning); }
-  &--closed { background: var(--alg-color-success); }
+  &--open {
+    background: var(--alg-color-danger);
+  }
+  &--review {
+    background: var(--alg-color-warning);
+  }
+  &--closed {
+    background: var(--alg-color-success);
+  }
 }
 
 .alg-issue-row__title {
