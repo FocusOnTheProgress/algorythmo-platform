@@ -80,6 +80,10 @@ watch(accountId, id => {
 
 .alg-brain-page {
   display: flex;
+  flex: 1 1 auto;
+  // Fill the full content area to the right of the sidebar (was sizing to
+  // content → ~200px dark gap on the right that read as a "division").
+  width: 100%;
   flex-direction: column;
   height: 100%;
   min-height: 0;

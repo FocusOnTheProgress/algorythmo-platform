@@ -149,6 +149,7 @@ function onTabKeydown(event, index) {
       as="section"
       class="alg-shell__chat"
       radius="var(--alg-radius-2xl)"
+      thickness="2px"
       intensity="normal"
       glow
       elevation="var(--alg-elevation-2)"
