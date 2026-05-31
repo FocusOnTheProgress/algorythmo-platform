@@ -53,6 +53,17 @@ describe('AlgAuroraOrb', () => {
     expect(wrapper.classes()).toContain('alg-aurora-orb--active');
   });
 
+  it('keeps the aurora beam tone by default (no ice modifier)', () => {
+    const wrapper = mount(AlgAuroraOrb);
+    expect(wrapper.classes()).not.toContain('alg-aurora-orb--beam-ice');
+  });
+
+  it('applies the ice beam modifier when beam="ice" (Brain hub)', () => {
+    const wrapper = mount(AlgAuroraOrb, { props: { beam: 'ice' } });
+    // Re-tones only the conduits to the ice palette; the sphere keeps its chroma.
+    expect(wrapper.classes()).toContain('alg-aurora-orb--beam-ice');
+  });
+
   it('exposes an accessible label', () => {
     const wrapper = mount(AlgAuroraOrb);
     expect(wrapper.attributes('role')).toBe('img');

@@ -19,48 +19,44 @@
       "HUB": {
         "EYEBROW": "Base de conhecimento · cérebro da empresa",
         "TITLE": "O conhecimento que move seus agentes",
-        "SUBTITLE": "A Aurora guarda a memória viva da sua empresa e distribui contexto para cada agente em tempo real. Abaixo, um retrato do que ela sabe agora.",
+        "SUBTITLE": "A Aurora guarda a memória viva da sua empresa e distribui contexto para cada agente em tempo real. Cada camada abaixo é um fio de conhecimento ao qual o núcleo se conecta.",
         "ORB_ARIA": "Aurora — núcleo vivo de conhecimento da empresa",
-        "STAGE_ARIA": "Conhecimento conectado ao núcleo Aurora",
+        "STAGE_ARIA": "Camadas de conhecimento conectadas ao núcleo Aurora",
         "DEMO_WATERMARK": "Dados de demonstração",
+        "LAYER_SUFFIX": "Knowledge Layers",
         "LAYER_COUNT": "839",
         "LAYER_COUNT_LABEL": "Camadas vivas",
         "CARDS": {
-          "DOC_MVM": {
-            "LABEL": "Documento",
-            "TITLE": "MVM — Memória Mínima Viável",
-            "BODY": "Documento fundador absorvido: missão, tom de voz e princípios que os agentes herdam.",
-            "META": "Ingerido há 2 dias"
+          "SOURCE": {
+            "COUNT": "192",
+            "KIND": "Source",
+            "BODY": "Camadas de conhecimento absorvidas de documentos, políticas, catálogos e procedimentos da empresa alimentados na base."
           },
-          "FACT_VOICE": {
-            "LABEL": "Fato",
-            "TITLE": "Tom de voz da marca",
-            "BODY": "Técnico mas acessível, evita jargão. Confirma estoque antes de prometer prazos.",
-            "META": "Aprendido em 1.247 conversas"
+          "HUMAN": {
+            "COUNT": "322",
+            "KIND": "Human",
+            "BODY": "Camadas de conhecimento geradas através de interações com usuários em conversas e contextos."
           },
-          "DECISION": {
-            "LABEL": "Decisão",
-            "TITLE": "Dream cycle · 27/mai",
-            "BODY": "Consolidou 14 ajustes em 3 regras coerentes — sem contradições em aberto.",
-            "META": "Consolidado automaticamente"
+          "AUTO": {
+            "COUNT": "237",
+            "KIND": "Auto",
+            "BODY": "Camadas de conhecimento criadas automaticamente a partir de dados e sinais operacionais."
           },
-          "LEAD": {
-            "LABEL": "Lead",
-            "TITLE": "Maria Silva → Qualificado",
-            "BODY": "Movida por João às 14:32. O Brain anexou contexto e intenção completos para o time comercial.",
-            "META": "Atualizado há 18 min"
+          "AGENT": {
+            "COUNT": "88",
+            "KIND": "Agent Interaction",
+            "BODY": "Camadas de conhecimento geradas através de interações com outros agentes durante fluxos de operação."
           },
-          "CATALOG": {
-            "LABEL": "Catálogo",
-            "TITLE": "1.247 SKUs ativos",
-            "BODY": "Catálogo de produtos atualizado e indexado — preços, especificações e disponibilidade em dia.",
-            "META": "Sincronizado hoje"
+          "TOOL": {
+            "COUNT": "211",
+            "KIND": "Tool Interaction",
+            "BODY": "Camadas de conhecimento reunidas quando os agentes acionam ferramentas e integrações para concluir tarefas operacionais."
           },
-          "SIGNAL": {
-            "LABEL": "Sinal",
-            "TITLE": "Tempo de resposta −63%",
-            "BODY": "A primeira resposta caiu de 3h para 27 min depois que o Brain entrou em todos os canais.",
-            "META": "Últimos 30 dias"
+          "TOTAL": {
+            "COUNT": "493",
+            "KIND": "In Use",
+            "TITLE": "Knowledge Layers em uso",
+            "BODY": "Camadas vivas que os agentes estão utilizando agora em cada fluxo em operação."
           }
         }
       },
