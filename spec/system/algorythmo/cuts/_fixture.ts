@@ -213,6 +213,16 @@ function dashboardURL(accountId: string | number = ACCOUNT_ID): string {
   return `/app/accounts/${accountId}/dashboard`;
 }
 
+/** Account-scoped Início URL — the redirect target of the *permission* guard
+ *  (`validateLoggedInRoutes` → `defaultRedirectPage`) in
+ *  `app/javascript/dashboard/routes/index.js`. Stream D repointed the
+ *  permission-denied default landing from `/dashboard` to `/inicio` (the
+ *  universal welcome surface). Surfaces gated by role/permission — rather than
+ *  by an `algorythmoCutFlag` — land here when blocked. */
+function inicioURL(accountId: string | number = ACCOUNT_ID): string {
+  return `/app/accounts/${accountId}/inicio`;
+}
+
 /** Options consumed by `expectSurfaceVisible` and `expectSurfaceBlocked`. */
 export interface SurfaceAssertOpts {
   /** Regex matching the sidebar entry's accessible name (text or aria-label).
@@ -240,6 +250,12 @@ export interface SurfaceAssertOpts {
    *  shortest common prefix here. `expectSurfaceVisible` asserts the final
    *  URL starts with this prefix. Defaults to `routePath`. */
   routePathPrefix?: string;
+  /** Where the guard redirects when this surface is blocked. Cut-flag surfaces
+   *  fall through to the `algorythmoCutFlag` gate, which lands on `/dashboard`
+   *  (the default). Surfaces blocked earlier by the role/permission guard
+   *  (e.g. `custom_roles` for the seeded admin) land on `/inicio` since
+   *  Stream D repointed `defaultRedirectPage` there. Defaults to `'dashboard'`. */
+  blockedRedirectTo?: 'dashboard' | 'inicio';
 }
 
 const escapeForRegex = (s: string): string => s.replace(/[\\^$.*+?()[\]{}|/]/g, '\\$&');
@@ -364,18 +380,21 @@ export async function expectSurfaceBlocked(
 ): Promise<void> {
   await loginAsAdmin(page);
 
-  const dashboardPath = dashboardURL();
-  const dashboardRegex = new RegExp(`^${escapeForRegex(dashboardPath)}/?$`);
+  // Cut-flag surfaces land on /dashboard (the gate's target); permission-gated
+  // surfaces land on /inicio (Stream D's repointed defaultRedirectPage).
+  const redirectPath =
+    opts.blockedRedirectTo === 'inicio' ? inicioURL() : dashboardURL();
+  const redirectRegex = new RegExp(`^${escapeForRegex(redirectPath)}/?$`);
 
-  // 1. Direct nav → redirect to /dashboard.
+  // 1. Direct nav → redirect to the safe landing surface.
   await page.goto(`${BASE_URL}${opts.routePath}`);
   await page.waitForLoadState('domcontentloaded');
   await expect
     .poll(() => new URL(page.url()).pathname, {
       timeout: 10_000,
-      message: `expected guard to redirect ${opts.routePath} → ${dashboardPath}`,
+      message: `expected guard to redirect ${opts.routePath} → ${redirectPath}`,
     })
-    .toMatch(dashboardRegex);
+    .toMatch(redirectRegex);
 
   // 2. Sidebar link absent in the context where it would normally render.
   if (opts.sidebarLabel) {

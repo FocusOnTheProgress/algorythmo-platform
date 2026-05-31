@@ -30,6 +30,12 @@ export default {
       type: Boolean,
       default: true,
     },
+    // algorythmo: stream-a — propagated from ConversationView.
+    // When true, MessagesView will not render the ReplyBox.
+    isReadOnly: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return { activeIndex: 0 };
@@ -124,6 +130,7 @@ export default {
         v-if="currentChat.id"
         :inbox-id="inboxId"
         :is-inbox-view="isInboxView"
+        :is-read-only="isReadOnly"
       />
       <EmptyState
         v-if="!currentChat.id && !isInboxView"

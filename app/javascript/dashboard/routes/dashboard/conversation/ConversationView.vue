@@ -2,6 +2,7 @@
 import { mapGetters } from 'vuex';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useAccount } from 'dashboard/composables/useAccount';
+import { useReadOnlyView } from 'dashboard/composables/algorythmo/useReadOnlyView';
 import ChatList from '../../../components/ChatList.vue';
 import ConversationBox from '../../../components/widgets/conversation/ConversationBox.vue';
 import wootConstants from 'dashboard/constants/globals';
@@ -56,11 +57,16 @@ export default {
   setup() {
     const { uiSettings, updateUISettings } = useUISettings();
     const { accountId } = useAccount();
+    // algorythmo: stream-a — "Operação ao vivo" read-only aquarium view.
+    // Derived from route.meta.isReadOnly (durable source) so every conversation
+    // reached under the aquarium path is read-only, regardless of route name hit.
+    const { isReadOnly } = useReadOnlyView();
 
     return {
       uiSettings,
       updateUISettings,
       accountId,
+      isReadOnly,
     };
   },
   data() {
@@ -210,6 +216,7 @@ export default {
       v-if="showMessageView"
       :inbox-id="inboxId"
       :is-on-expanded-layout="isOnExpandedLayout"
+      :is-read-only="isReadOnly"
     >
       <SidepanelSwitch v-if="currentChat.id" />
     </ConversationBox>

@@ -99,7 +99,9 @@ watch(accountId, id => {
   gap: var(--space-small, 0.5rem);
   padding: var(--space-large, 1.5rem) 0;
   font-size: var(--font-size-small, 0.75rem);
-  color: var(--color-body, rgba(255, 255, 255, 0.45));
+  // algorythmo: Stream E — fallback routes through the token's paper-aware tier
+  // (was a hardcoded white that vanished on the paper canvas).
+  color: var(--color-body, var(--alg-fg-tertiary));
 }
 
 .alg-brain-loading__icon {

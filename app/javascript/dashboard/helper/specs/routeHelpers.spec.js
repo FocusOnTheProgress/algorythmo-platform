@@ -22,9 +22,11 @@ describe('#defaultRedirectPage', () => {
     name: 'home',
   };
 
-  it('should return dashboard route for users with conversation permissions', () => {
+  // algorythmo: Stream D — Início is the default landing surface for any user
+  // who can reach the conversation dashboard (the universal welcome panorama).
+  it('should return inicio route for users with conversation permissions', () => {
     const permissions = ['conversation_manage', 'agent'];
-    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/dashboard');
+    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/inicio');
   });
 
   it('should return contacts route for users with contact permissions', () => {
@@ -44,17 +46,19 @@ describe('#defaultRedirectPage', () => {
     expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/portals');
   });
 
-  it('should return dashboard route as default for users with custom roles', () => {
+  // algorythmo: Stream D — custom_role / administrator carry the conversation
+  // permission set, so they too land on Início by default.
+  it('should return inicio route as default for users with custom roles', () => {
     const permissions = ['custom_role'];
-    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/dashboard');
+    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/inicio');
   });
 
-  it('should return dashboard route for users with administrator role', () => {
+  it('should return inicio route for users with administrator role', () => {
     const permissions = ['administrator'];
-    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/dashboard');
+    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/inicio');
   });
 
-  it('should return dashboard route for users with multiple permissions', () => {
+  it('should return inicio route for users with multiple permissions', () => {
     const permissions = [
       'contact_manage',
       'custom_role',
@@ -62,7 +66,7 @@ describe('#defaultRedirectPage', () => {
       'agent',
       'administrator',
     ];
-    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/dashboard');
+    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/inicio');
   });
 });
 
@@ -115,7 +119,9 @@ describe('#validateLoggedInRoutes', () => {
         });
       });
       describe('when route is not accessible', () => {
-        it('returns dashboard url', () => {
+        // algorythmo: Stream D — an inaccessible route redirects to the default
+        // landing, which is now Início (the universal welcome).
+        it('returns inicio url', () => {
           expect(
             validateLoggedInRoutes(
               {
@@ -125,7 +131,7 @@ describe('#validateLoggedInRoutes', () => {
               },
               { accounts: [{ id: 1, role: 'agent', status: 'active' }] }
             )
-          ).toEqual(`accounts/1/dashboard`);
+          ).toEqual(`accounts/1/inicio`);
         });
       });
       describe('when route is suspended route', () => {

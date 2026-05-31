@@ -3,6 +3,7 @@ import { computed, ref, watch, inject } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { frontendURL, conversationUrl } from 'dashboard/helper/URLHelper';
+import { useReadOnlyView } from 'dashboard/composables/algorythmo/useReadOnlyView';
 import ConversationCard from './widgets/conversation/ConversationCard.vue';
 import ConversationCardExpanded from 'dashboard/components-next/Conversation/ConversationCard/ConversationCardExpanded.vue';
 import ContextMenu from 'dashboard/components/ui/ContextMenu.vue';
@@ -20,6 +21,10 @@ const props = defineProps({
 
 const router = useRouter();
 const store = useStore();
+// algorythmo: stream-a — when the active list route is the "Operação ao vivo"
+// aquarium (route.meta.isReadOnly), build the read-only conversation path so the
+// opened conversation stays read-only instead of falling back to the editable route.
+const { isReadOnly } = useReadOnlyView();
 
 const selectConversation = inject('selectConversation');
 const deSelectConversation = inject('deSelectConversation');
@@ -89,6 +94,7 @@ const conversationPath = computed(() =>
       teamId: props.teamId,
       conversationType: props.conversationType,
       foldersId: props.foldersId,
+      isReadOnly: isReadOnly.value,
     })
   )
 );
@@ -120,6 +126,9 @@ const onExpandedSelect = checked => {
 };
 
 const openContextMenu = e => {
+  // algorythmo: stream-a — suppress context menu in the read-only aquarium so
+  // the CEO cannot trigger assignAgent/assignTeam/updateStatus/mark-read-unread.
+  if (isReadOnly.value) return;
   e.preventDefault();
   toggleContextMenu(true);
   contextMenu.value.x = e.pageX || e.clientX;

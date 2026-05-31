@@ -147,6 +147,20 @@
     0.36
   ); // watermarks, decorative-only, non-operable meta
 
+  // algorythmo: MONOCHROME ICON TIERS (founder Brief v3, Stream C). Icons are
+  // monochromatic white in opacity tiers — NEVER coloured, NEVER filled. This
+  // kills the orange/green icon "carnival". Verbatim founder values
+  // (rgba(250,250,250, 1 / .72 / .48 / .28)): 250 (not 255) so the brightest
+  // glyph is a hair under pure white, matching the typography "never #FFF" rule.
+  //   icon-1  primary glyph (active / emphasised)
+  //   icon-2  default glyph (KPI tile leading icon, list affordances)
+  //   icon-3  muted glyph (metadata, secondary affordances)
+  //   icon-4  faint glyph (decorative, watermark-adjacent)
+  --alg-icon-1: rgba(250, 250, 250, 1);
+  --alg-icon-2: rgba(250, 250, 250, 0.72);
+  --alg-icon-3: rgba(250, 250, 250, 0.48);
+  --alg-icon-4: rgba(250, 250, 250, 0.28);
+
   // Inverse (rare — used only on bright accent fills if/when they exist)
   --alg-fg-inverse: var(--alg-black-1);
 
@@ -297,6 +311,19 @@
     color-mix(in oklch, var(--alg-ice-3), transparent 86%) 0%,
     color-mix(in oklch, var(--alg-ice-3), transparent 80%) 100%
   );
+
+  // algorythmo: BEAM TONE tokens (Stream E, plan 0011) — the travelling comet's
+  // lightness ladder, lifted out of the hardcoded conic in _components.scss so it
+  // can FLIP per theme. In dark/ice the comet is WHITE (high L); on paper it must
+  // become INK (low L) or it's invisible on the light canvas. The conic stops in
+  // _components.scss now read from these. --alg-beam-c / --alg-beam-h (the faint
+  // cool cast) live next to the gradient. Dark register = the approved white comet.
+  --alg-beam-l-peak: 1; // core of the comet (brightest)
+  --alg-beam-l-1: 0.99;
+  --alg-beam-l-2: 0.96;
+  --alg-beam-l-3: 0.9;
+  --alg-beam-l-edge: 0.78; // outermost visible stop before transparent
+  --alg-beam-edge-alpha: 0.4; // edge stop opacity
 
   // ---------------------------------------------------------------------------
   // 5. COLOR — Semantic status (used sparingly, always with a reason)
@@ -800,6 +827,38 @@
   --alg-shadow-xl: var(--alg-elevation-4);
 
   --alg-glow-subtle: inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+
+  // algorythmo: AURORA BEAM on paper (Stream E, plan 0011) — INVERT the comet.
+  // ---------------------------------------------------------------------------
+  // The §6.6 travelling beam is WHITE/ice in dark mode. On the paper canvas a
+  // white comet is INVISIBLE. We flip the lightness ladder to INK (near-black,
+  // faint cool cast preserved) so the SAME arc reads as a dark comet travelling
+  // the hairline. Motion, mask, geometry are untouched — only the colour tone.
+  // The cast hue (--alg-beam-h) is inherited; chroma stays whisper-low so the
+  // comet reads as ink, never a coloured (AI-slop) stroke.
+  --alg-beam-l-peak: 0.2; // core of the ink comet (darkest, most present)
+  --alg-beam-l-1: 0.24;
+  --alg-beam-l-2: 0.32;
+  --alg-beam-l-3: 0.42;
+  --alg-beam-l-edge: 0.6; // outermost visible ink stop before transparent
+  --alg-beam-edge-alpha: 0.32;
+
+  // Ice palette → ink on paper. The §6.6 border base ring + glow read off these;
+  // a cool near-white ring is invisible on paper, so re-tone to low-L ink with a
+  // faint cool cast (keeps the "intelligence speaks here" register, now in ink).
+  --alg-ice-1: oklch(0.32 0.012 225); // ink — arc peak adjacency
+  --alg-ice-2: oklch(0.42 0.02 230); // mid ink
+  --alg-ice-3: oklch(0.58 0.025 235); // lighter ink — ring base / tail
+
+  // Border base ring + outer glow re-toned to ink on paper (low-alpha, calm).
+  --alg-aurora-border-base: conic-gradient(
+    from 0deg,
+    color-mix(in oklch, var(--alg-ice-3), transparent 88%) 0%,
+    color-mix(in oklch, var(--alg-ice-3), transparent 82%) 100%
+  );
+  --alg-aurora-border-glow: 0 0 24px 0
+      color-mix(in oklch, var(--alg-ice-2), transparent 86%),
+    0 0 64px 8px color-mix(in oklch, var(--alg-ice-3), transparent 92%);
 }
 
 // =============================================================================
@@ -901,5 +960,28 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  // algorythmo: AURORA BEAM is an EXPLICIT EXCEPTION to the kill-switch above.
+  // -------------------------------------------------------------------------
+  // The travelling ICE arc is the SIGNATURE of every agent surface and the
+  // founder requires it to MOVE (LIVE review, repeated: "o feixe não se mexe").
+  // It was silently frozen on every machine with OS "animation effects off"
+  // (common on Windows — the founder's review machine) by TWO compounding
+  // overrides: the ambient duration tokens collapse to 1ms (above) AND the
+  // universal `*` rule forces `animation-iteration-count: 1` (runs once, dies).
+  // A prior `_components.scss` override tried to slow it to 28s but lost to the
+  // `!important` universal rule. We restore the beam here, in the SAME media
+  // block + cascade layer so this rule wins the `!important` tie by source
+  // order. A slow 24s ambient hue drift on a hairline is NOT the parallax /
+  // translational motion `prefers-reduced-motion` exists to suppress (WCAG
+  // 2.3.3) — it is a calm, non-distracting glow. We honour the intent by
+  // SLOWING it, not by killing the product's signature.
+  .alg-aurora-border__beam,
+  .alg-aurora-border__beam::before {
+    animation-name: alg-aurora-border-travel !important;
+    animation-duration: 24s !important;
+    animation-timing-function: linear !important;
+    animation-iteration-count: infinite !important;
   }
 }

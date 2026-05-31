@@ -163,6 +163,98 @@ describe('SectorShellV2', () => {
     expect(wrapper.find('.alg-shell__hero-planet').exists()).toBe(false);
   });
 
+  // -------------------------------------------------------------------------
+  // REGRESSION GUARDS — class/structure contracts the SCSS keys off.
+  //
+  // jsdom cannot assert layout (computed position, stacking), but the CSS
+  // rules for the sticky-chat overlap fix and the sector accent both depend on
+  // EXACT class names being present (or absent) on specific elements. Asserting
+  // those class names here means any future refactor that re-introduces
+  // stickiness or drops the accent class will fail CI before it ships.
+  // -------------------------------------------------------------------------
+
+  describe('sticky-chat overlap regression guard', () => {
+    it('chat band carries the in-flow class alg-shell__chat', () => {
+      // The SCSS `.alg-shell__chat` rule sets `position: relative` (in-flow).
+      // If this class is absent, the Aurora-border frame loses its positioning
+      // context and the band reverts to a flat block — observable as a lost
+      // border ring on the hero band.
+      expect(wrapper.find('.alg-shell__chat').exists()).toBe(true);
+    });
+
+    it('chat band does NOT carry any sticky/fixed positioning modifier', () => {
+      // The prior build used `position: sticky; top: 0` which permanently
+      // occluded the KPI grid (Brief v3, Stream C #1 complaint). Guard against
+      // re-introduction of any sticky-modifier class. The SCSS position contract
+      // is `relative` (in-flow); sticky variants must not appear.
+      const chat = wrapper.find('.alg-shell__chat');
+      expect(chat.classes()).not.toContain('alg-shell__chat--sticky');
+      expect(chat.classes()).not.toContain('alg-shell__chat--fixed');
+      // Also verify the element is inside the normal document flow by confirming
+      // the shell root itself is not a scroll container with a trapped sticky child.
+      // We do this by checking the shell root has no class that would scope a
+      // sticky context (e.g. alg-shell--scroll-trap).
+      expect(wrapper.find('.alg-shell').classes()).not.toContain(
+        'alg-shell--scroll-trap'
+      );
+    });
+  });
+
+  describe('sector-accent class contract', () => {
+    it('active tab carries alg-shell__tab--active (SCSS hue keyed off this)', () => {
+      // The SCSS rule `[class*="alg-shell--"] .alg-shell__tab--active` sets the
+      // sector-hue underline accent. If this modifier class is renamed or removed,
+      // the active-tab colour accent silently disappears for ALL 8 sectors.
+      const tabs = wrapper.findAll('[role="tab"]');
+      expect(tabs[0].classes()).toContain('alg-shell__tab--active');
+      expect(tabs[1].classes()).not.toContain('alg-shell__tab--active');
+    });
+
+    it('active-tab accent class moves when the active tab changes', async () => {
+      const tabs = wrapper.findAll('[role="tab"]');
+      await tabs[1].trigger('click');
+      expect(tabs[1].classes()).toContain('alg-shell__tab--active');
+      expect(tabs[0].classes()).not.toContain('alg-shell__tab--active');
+    });
+
+    it('root carries alg-shell--<sector> when planetClass is provided', () => {
+      // The per-sector SCSS hue map keys off `[class*="alg-shell--"]` on the root.
+      // The derivation rule is: 'alg-planet--<slug>' → 'alg-shell--<slug>'.
+      // If SectorShellV2 stops deriving or renames the root class, ALL sector hue
+      // accents and the scoped icon monochrome rule vanish silently.
+      const withSector = mount(SectorShellV2, {
+        props: {
+          titleKey: 'SECTOR.OPERACOES.TITLE',
+          chatHeadingKey: 'SECTOR.OPERACOES.AGENT_CHAT_HEADING',
+          tabs: TABS,
+          planetClass: 'alg-planet--operations',
+        },
+        slots: {
+          overview: '<div class="test-overview">overview body</div>',
+          agentChat: '<div class="test-chat">chat body</div>',
+        },
+        global: {},
+      });
+      expect(withSector.find('.alg-shell').classes()).toContain(
+        'alg-shell--operations'
+      );
+    });
+
+    it('root has NO sector class when planetClass is absent', () => {
+      // Off-sector: no hue class means the sector override rules are inactive,
+      // so KPI icons fall back to the neutral global default (--alg-fg-tertiary).
+      expect(wrapper.find('.alg-shell').classes()).not.toContain(
+        'alg-shell--operations'
+      );
+      // Verify no alg-shell-- sector class slips in under any slug.
+      const shellClasses = wrapper.find('.alg-shell').classes();
+      const hasSectorClass = shellClasses.some(c =>
+        c.startsWith('alg-shell--')
+      );
+      expect(hasSectorClass).toBe(false);
+    });
+  });
+
   describe('tabs prop validator', () => {
     // Vue 3 passes multiple args to console.warn; inspect the first one.
     function expectPropValidationWarn(spy) {

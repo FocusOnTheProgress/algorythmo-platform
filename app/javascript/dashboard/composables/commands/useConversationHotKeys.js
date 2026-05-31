@@ -41,6 +41,7 @@ import {
   isAConversationRoute,
   isAInboxViewRoute,
 } from 'dashboard/helper/routeHelpers';
+import { useReadOnlyView } from 'dashboard/composables/algorythmo/useReadOnlyView';
 
 const prepareActions = (actions, t) => {
   return actions.map(action => ({
@@ -138,6 +139,9 @@ export function useConversationHotKeys() {
   const { t } = useI18n();
   const store = useStore();
   const route = useRoute();
+  // algorythmo: stream-a — suppress all conversation-mutating command-bar actions
+  // under the "Operação ao vivo" read-only aquarium. Navigation/search stay on.
+  const { isReadOnly } = useReadOnlyView();
 
   const {
     activeLabels,
@@ -388,6 +392,8 @@ export function useConversationHotKeys() {
   });
 
   const conversationHotKeys = computed(() => {
+    // algorythmo: stream-a — no mutation actions in the read-only aquarium
+    if (isReadOnly.value) return [];
     if (shouldShowSnoozeOption.value) {
       return prepareActions(SNOOZE_CONVERSATION_ACTIONS, t);
     }

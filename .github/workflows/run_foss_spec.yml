@@ -72,8 +72,10 @@ jobs:
         run: |
           TZ=UTC pnpm exec vitest run \
             engines/algorythmo/app/javascript \
+            engines/algorythmo/app/assets/stylesheets/specs \
             app/javascript/dashboard/composables/specs/useAlgorythmoFeatureGate.spec.js \
             app/javascript/dashboard/composables/algorythmo/specs/useAlgMotion.spec.js \
+            app/javascript/dashboard/composables/algorythmo/specs/useAlgChartTheme.spec.js \
             app/javascript/dashboard/helper/specs/routeHelpers_algorythmo.spec.js \
             app/javascript/dashboard/helper/specs/themeHelper.spec.js \
             app/javascript/dashboard/i18n/i18n_overlay.spec.js \
@@ -115,12 +117,16 @@ jobs:
             app/javascript/dashboard/modules/algorythmo/admin/facilities/specs/FacilitiesControlePane.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/facilities/specs/facilities-overview-contract.spec.js \
             app/javascript/dashboard/modules/algorythmo/admin/c-levels/specs/CLevelsBoardroom.spec.js \
+            app/javascript/dashboard/modules/algorythmo/admin/inicio/specs/InicioScreen.spec.js \
+            app/javascript/dashboard/routes/specs/stream-d-bare-entry.spec.js \
             app/javascript/dashboard/components-next/sidebar/specs/ChannelLeaf.spec.js \
             app/javascript/dashboard/components-next/sidebar/specs/SidebarChevron.spec.js \
             app/javascript/dashboard/components-next/sidebar/specs/SidebarCollapseNoLeak.spec.js \
             app/javascript/dashboard/components-next/sidebar/specs/SidebarGroupLeaf.spec.js \
             app/javascript/dashboard/components-next/sidebar/specs/SidebarManagementOrder.spec.js \
             app/javascript/dashboard/components-next/sidebar/specs/SidebarActiveNavRadius.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/SidebarStreamAConversas.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/SidebarContactsItemRender.spec.js \
             app/javascript/dashboard/modules/algorythmo/brain/specs/BrainAquario.spec.js \
             app/javascript/dashboard/modules/algorythmo/brain/specs/BrainViewer.spec.js \
             app/javascript/dashboard/components/widgets/conversation/specs/OnboardingViewPurge.spec.js \

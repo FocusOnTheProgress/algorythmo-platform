@@ -7,25 +7,32 @@
 // agent hero and the Brain knowledge dropzone. Sanctioned only on signature/
 // identity surfaces — never on operational chrome.
 //
-// ROOT CAUSE + FIX (why the beam never ran the WHOLE border) — founder LIVE
-// review. The canonical "comet" is an animated conic-gradient whose single
-// bright stop rotates 0deg→360deg, so the bright arc traverses the COMPLETE
-// perimeter. That needs the angle to be an *animatable* custom property, which
-// only works when registered via `@property`. A prior build registered it inside
-// THIS component's SCOPED <style>; Vue's scoped-style transform does not preserve
-// a global @property at-rule, so the browser treated the angle as unregistered
-// (non-interpolable) → the keyframe jumped discretely and, since a conic gradient
-// is periodic (0deg == 360deg), the arc never moved. A later "rotate an oversized
-// square layer" workaround swept a square, not the rounded-rect ring, so it read
-// as "only one side lights up".
+// ROOT CAUSE + FIX (why the beam kept rendering STATIC) — TWO bugs (Stream C,
+// plan 0011), both fixed in the GLOBAL stylesheets:
+//   1. The conic `from <angle>` must be an *animatable* custom property,
+//      registered via a GLOBAL `@property`. A prior build put it in a Vue SCOPED
+//      <style>, which Vue does not preserve → non-interpolable → discrete jump,
+//      and since a conic is periodic (0deg == 360deg) the arc looked frozen.
+//      Already fixed by moving registration to _components.scss (global).
+//   2. THE REAL SCAR on the founder's machine: the global reduced-motion policy
+//      in _tokens.scss collapses ambient durations to 1ms AND applies a universal
+//      `* { animation-iteration-count: 1 !important }` kill-switch. On any OS
+//      with "animation effects off" (common on Windows — the founder reviews
+//      there) the beam ran ONCE at ~0ms then died. A _components.scss override
+//      that "slowed it to 28s" was dead code, out-ranked by that !important rule.
+//      Fixed by an explicit beam exception INSIDE that same reduced-motion block
+//      in _tokens.scss, keeping the arc moving (calm 24s loop).
 //
-// FIX: the @property registration + the conic-ring styles now live in the GLOBAL
-// engine stylesheet (engines/algorythmo/.../_components.scss, emitted once on
-// :root via _woot.scss — never scoped). This component is now presentational: it
-// renders the .alg-aurora-border structure and sets the per-instance CSS vars.
-// The bright ICE arc visibly runs the entire perimeter, continuously. ICE tone
-// only, hairline thickness, content never tinted (masked), reduced-motion parks
-// the arc. See DESIGN.md §6.6 / §3.7.
+// The beam is WHITE / ICE and UNIVERSAL (founder Brief v3: "o feixe ... deve ser
+// branco" — no per-sector tint). 3 stacked layers (founder's exact technique):
+//   front  — the solid content body (slightly inset, so the border shows);
+//   middle — the crisp conic arc on the hairline ring (.alg-aurora-border__beam);
+//   behind — a BLURRED copy of that arc for the neon glow spread (::before).
+// The @property + conic-ring styles live in the GLOBAL engine stylesheet
+// (engines/algorythmo/.../_components.scss, emitted once via _woot.scss, never
+// scoped). This component is presentational: it renders the structure + sets the
+// per-instance CSS vars. Hairline thickness, content never tinted (masked),
+// reduced-motion keeps the arc alive (slowed). See DESIGN.md §6.6 / §3.7.
 import { computed } from 'vue';
 
 const props = defineProps({

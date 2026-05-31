@@ -66,6 +66,42 @@ export default {
         return { inboxId: 0, conversationId: route.params.conversation_id };
       },
     },
+    // algorythmo: stream-a — "Operação ao vivo" read-only aquarium view.
+    // Identical to `home`/`inbox_conversation` but with meta.isReadOnly=true so the
+    // CEO can watch the live commercial operation without any path to message the
+    // customer. Read-only is carried on route meta (a durable source) and read via
+    // useReadOnlyView — NOT a per-route prop — so EVERY conversation reached under
+    // this path inherits read-only no matter which component or navigation hits it.
+    // These routes must NOT be used for agent sessions — agents navigate to `home`.
+    {
+      path: frontendURL('accounts/:accountId/operacao-ao-vivo'),
+      name: 'alg_operacao_ao_vivo',
+      meta: {
+        permissions: CONVERSATION_PERMISSIONS,
+        isReadOnly: true,
+      },
+      component: ConversationView,
+      props: () => {
+        return { inboxId: 0 };
+      },
+    },
+    {
+      path: frontendURL(
+        'accounts/:accountId/operacao-ao-vivo/conversations/:conversation_id'
+      ),
+      name: 'alg_operacao_ao_vivo_conversation',
+      meta: {
+        permissions: CONVERSATION_PERMISSIONS,
+        isReadOnly: true,
+      },
+      component: ConversationView,
+      props: route => {
+        return {
+          inboxId: 0,
+          conversationId: route.params.conversation_id,
+        };
+      },
+    },
     {
       path: frontendURL('accounts/:accountId/inbox/:inbox_id'),
       name: 'inbox_dashboard',
