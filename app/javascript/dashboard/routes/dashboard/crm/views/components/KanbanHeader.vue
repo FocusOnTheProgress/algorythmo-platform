@@ -29,9 +29,12 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   error: { type: String, default: null },
   searchValue: { type: String, default: '' },
+  // Whether the pipeline-config surface is currently revealed (C5). Drives the
+  // gear's pressed state + aria-expanded so the toggle reads correctly to AT.
+  configOpen: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['update:searchValue']);
+const emit = defineEmits(['update:searchValue', 'toggleConfig']);
 
 const { t } = useI18n();
 
@@ -111,6 +114,35 @@ const conversionRateValue = computed(() =>
     </div>
 
     <div class="alg-kanban-header__actions">
+      <button
+        type="button"
+        class="alg-kanban-header__gear"
+        :class="{ 'is-active': configOpen }"
+        data-testid="kanban-config-gear"
+        :aria-label="t('ALGORYTHMO_CRM.KANBAN.CONFIGURE_PIPELINE')"
+        :title="t('ALGORYTHMO_CRM.KANBAN.CONFIGURE_PIPELINE')"
+        aria-haspopup="dialog"
+        :aria-expanded="configOpen ? 'true' : 'false'"
+        @click="emit('toggleConfig')"
+      >
+        <svg
+          aria-hidden="true"
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9.4l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 6.6V6a2 2 0 1 1 4 0v.09c.7.27 1.27.84 1.51 1.51"
+          />
+        </svg>
+      </button>
+
       <div
         class="alg-kanban-header__summary"
         data-testid="kanban-metrics-summary"
@@ -250,8 +282,53 @@ const conversionRateValue = computed(() =>
 .alg-kanban-header__actions {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
   flex: 0 0 auto;
+}
+
+// Pipeline-config gear (C5) — the sole entry to pipeline configuration, tucked
+// top-right exactly as the reference. Ghost at rest; brand-toned when the config
+// surface is revealed.
+.alg-kanban-header__gear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--alg-border);
+  border-radius: var(--alg-radius-sm, 8px);
+  background-color: var(--alg-bg-tint-low);
+  color: var(--alg-fg-tertiary);
+  cursor: pointer;
+  transition:
+    background-color var(--alg-duration-fast, 180ms) var(--alg-ease-cinematic),
+    border-color var(--alg-duration-fast, 180ms) var(--alg-ease-cinematic),
+    color var(--alg-duration-fast, 180ms) var(--alg-ease-cinematic);
+
+  &:hover {
+    background-color: var(--alg-bg-tint-med);
+    color: var(--alg-fg-primary);
+    border-color: var(--alg-border-hover);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--alg-ring-focus);
+  }
+
+  &.is-active {
+    color: var(--alg-color-brand-primary);
+    border-color: color-mix(
+      in oklch,
+      var(--alg-color-brand-primary) 50%,
+      var(--alg-border)
+    );
+    background-color: var(
+      --alg-color-brand-primary-subtle,
+      var(--alg-bg-tint-med)
+    );
+  }
 }
 
 .alg-kanban-header__summary {

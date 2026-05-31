@@ -16,7 +16,7 @@
 //   so the layout stays stable across the loading → hydrated transition.
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
+import { inkForAccent } from '../accentInk.js';
 import LeadCard from './LeadCard.vue';
 
 const props = defineProps({
@@ -30,18 +30,19 @@ const props = defineProps({
   // summary, even though only a sampled subset of cards is rendered below.
   // Real configured pipelines pass null and fall back to leads.length.
   displayCount: { type: Number, default: null },
-  // Route the per-column gear links to. This is now the ONLY "configure
-  // pipeline" entry point in the CRM (the global header text-link was removed
-  // in the round-3 redesign). When null the column derives the path from the
-  // current route's accountId; if there's no accountId (e.g. an isolated unit
-  // test with a bare router) the gear is hidden rather than linking nowhere.
-  pipelineConfigPath: { type: [String, Object], default: null },
+  // Whether the per-column gear is shown. The gear opens the SAME inline config
+  // overlay the header gear opens — one paradigm, no page navigation (adversarial
+  // review #111). Defaults to true; isolated unit tests can pass false to assert
+  // the hidden state. (The legacy `pipelineConfigPath` router-link prop was
+  // removed when the per-column gear stopped navigating to a separate route.)
+  showConfig: { type: Boolean, default: true },
 });
 
 const emit = defineEmits([
   'open-lead',
   'open-menu',
   'addLead',
+  'configureStage',
   'drag-start',
   'drag-enter',
   'drag-over',
@@ -51,33 +52,52 @@ const emit = defineEmits([
 ]);
 
 const { t } = useI18n();
-const route = useRoute();
-
-// The gear's destination. Prefer an explicit prop; otherwise build the CRM
-// pipeline-config path from the current account. Null → the gear hides (no
-// dead links in tests / accountless contexts).
-const resolvedConfigPath = computed(() => {
-  if (props.pipelineConfigPath) return props.pipelineConfigPath;
-  const accountId = route?.params?.accountId;
-  return accountId ? `/app/accounts/${accountId}/crm/pipeline` : null;
-});
 
 const showColumnEmpty = computed(
   () => props.leads.length === 0 && props.boardHasAnyLead
 );
 
-// Per-stage status hue (DESIGN-DELTA-0009). Drives a 2px top bar + a ~12% tint
-// on the count pill ONLY — never a saturated header, never the Aurora magenta.
-// Falls back to a neutral hairline when a stage carries no accent (live stages).
+// Per-stage status hue (REF CRM). Drives the COLOURED HEADER BLOCK that crowns
+// each column (blue / yellow / purple / orange in the reference), plus a darker
+// count pill that sits inside it. The accent stays the locked OKLCH (L≈0.55,
+// C≤0.12) — rich enough to read as the ref's coloured header, contained enough
+// to never go neon, and never the Aurora magenta (sacred to the orb/avatars).
+//
+// On the coloured header we drive every derived token from the one accent:
+//   --alg-stage-accent        the base hue (the header fill / status bar)
+//   --alg-stage-accent-strong a touch deeper for the header's gradient floor
+//   --alg-stage-accent-ink    near-white header foreground (name + glyphs)
+//   --alg-stage-accent-pill   the translucent-dark count pill inside the header
+//   --alg-stage-accent-tint   the column-body wash (separates body from canvas)
+// Falls back to a neutral header when a stage carries no accent (live stages).
 const accentColor = computed(() => props.stage?.accent ?? null);
-const columnStyle = computed(() =>
-  accentColor.value
-    ? {
-        '--alg-stage-accent': accentColor.value,
-        '--alg-stage-accent-tint': `color-mix(in oklch, ${accentColor.value} 12%, transparent)`,
-      }
-    : {}
+
+// Header ink (light vs dark) is COMPUTED from the accent's WCAG contrast — never
+// a hand-set flag (adversarial review #111). Any stage colour bright enough that
+// black ink reads better than white (yellow AND orange, and any future hue)
+// automatically gets dark ink, so a new accent can't silently fail AA.
+const accentInk = computed(() =>
+  accentColor.value ? inkForAccent(accentColor.value) : 'light'
 );
+
+const columnStyle = computed(() => {
+  if (!accentColor.value) return {};
+  const dark = accentInk.value === 'dark';
+  return {
+    '--alg-stage-accent': accentColor.value,
+    '--alg-stage-accent-strong': `color-mix(in oklch, ${accentColor.value}, black 18%)`,
+    // Ink: near-white on dark/mid hues, near-black on bright hues. The count
+    // pill flips with it (dark-translucent on white ink, white-translucent on
+    // dark ink) so it always separates from the header fill.
+    '--alg-stage-accent-ink': dark
+      ? `color-mix(in oklch, ${accentColor.value}, black 78%)`
+      : `color-mix(in oklch, ${accentColor.value}, white 90%)`,
+    '--alg-stage-accent-pill': dark
+      ? `color-mix(in srgb, white 42%, transparent)`
+      : `color-mix(in srgb, black 34%, transparent)`,
+    '--alg-stage-accent-tint': `color-mix(in oklch, ${accentColor.value} 7%, transparent)`,
+  };
+});
 
 // Header pill number: the explicit stage total when provided (demo mode),
 // otherwise the count of cards actually in the column (real pipelines).
@@ -152,13 +172,20 @@ const metricsAriaLabel = computed(() => {
   });
 });
 
-// Per-column header actions (round-3): a gear that is the sole entry to the
-// pipeline-config screen, and an add button. The add button is a demo-friendly
-// affordance — it emits 'add-lead'; the parent decides what (if anything) the
-// gesture does (a no-op tooltip in demo, a real create flow later).
+// Per-column header actions: a gear that opens the SAME inline pipeline-config
+// overlay the header gear opens (one paradigm — no page navigation), and an add
+// button. The add button is a demo-friendly affordance — it emits 'addLead';
+// the parent decides what (if anything) the gesture does.
 const configAriaLabel = computed(() =>
   t('ALGORYTHMO_CRM.KANBAN.CONFIGURE_STAGE_ARIA', { stage: props.stage.name })
 );
+
+function handleConfigure() {
+  emit('configureStage', {
+    stageId: props.stage.id,
+    stageName: props.stage.name,
+  });
+}
 
 const addAriaLabel = computed(() =>
   t('ALGORYTHMO_CRM.KANBAN.ADD_LEAD_TO_STAGE_ARIA', { stage: props.stage.name })
@@ -175,6 +202,7 @@ function handleAddLead() {
     :class="{
       'alg-stage-column--drop-target': isDropTarget,
       'alg-stage-column--accented': accentColor,
+      'alg-stage-column--ink-dark': accentColor && accentInk === 'dark',
     }"
     :style="columnStyle"
     data-testid="stage-column"
@@ -186,7 +214,7 @@ function handleAddLead() {
     @drop="emit('drop', $event, { stageId: stage.id, stageName: stage.name })"
   >
     <header class="alg-stage-column__header" data-testid="stage-column-header">
-      <div class="alg-stage-column__header-top">
+      <div class="alg-stage-column__header-bar">
         <h3 class="alg-stage-column__name" data-testid="stage-name">
           {{ stage.name }}
         </h3>
@@ -199,14 +227,15 @@ function handleAddLead() {
         </span>
 
         <div class="alg-stage-column__actions">
-          <router-link
-            v-if="resolvedConfigPath"
+          <button
+            v-if="showConfig"
+            type="button"
             class="alg-stage-column__action"
-            data-testid="pipeline-config-link"
-            :to="resolvedConfigPath"
+            data-testid="pipeline-config-trigger"
             :aria-label="configAriaLabel"
             :title="configAriaLabel"
-            @click.stop
+            aria-haspopup="dialog"
+            @click.stop="handleConfigure"
           >
             <svg
               aria-hidden="true"
@@ -224,7 +253,7 @@ function handleAddLead() {
                 d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9.4l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 6.6V6a2 2 0 1 1 4 0v.09c.7.27 1.27.84 1.51 1.51"
               />
             </svg>
-          </router-link>
+          </button>
           <button
             type="button"
             class="alg-stage-column__action"
@@ -310,9 +339,10 @@ function handleAddLead() {
 </template>
 
 <style lang="scss" scoped>
-// A column is a zone of canvas, not a card. It sits ON --alg-bg with a hairline
-// frame; the only colour is the 2px top status bar (attenuated stage hue) and a
-// ~12% tint on the count pill. DESIGN.md §7.1.
+// REF CRM column. A column is a soft-filled zone that separates from the dark
+// canvas (C4), crowned by a COLOURED HEADER BLOCK in the stage hue (C1). The
+// header carries the name, a darker count pill, and the gear + add glyphs — all
+// living inside the colour, exactly as the reference shows.
 .alg-stage-column {
   position: relative;
   display: flex;
@@ -320,27 +350,29 @@ function handleAddLead() {
   min-width: 17.5rem;
   max-width: 21rem;
   flex: 1 1 17.5rem;
+  // Column body = a subtle wash distinct from the canvas (C4). Defaults to a
+  // raised surface; an accented stage adds a 7% tint of its hue on top so each
+  // lane reads as its own zone in both dark and light mode.
   background-color: var(--alg-bg-raised);
   border: 1px solid var(--alg-border);
   border-radius: var(--alg-radius-lg, 16px);
-  padding: 0.875rem;
-  gap: 0.75rem;
+  // No top padding: the coloured header sits flush to the top edge, bleeding
+  // into the rounded corners like the ref. Sides/bottom keep the gutter.
+  padding: 0 0.625rem 0.75rem;
+  gap: 0.625rem;
   box-shadow: var(--alg-elevation-1);
+  overflow: hidden;
   transition:
     box-shadow var(--alg-duration-base, 240ms) var(--alg-ease-cinematic),
     background-color var(--alg-duration-base, 240ms) var(--alg-ease-cinematic);
 
-  // 2px status bar pinned to the top edge — the single sanctioned use of the
-  // stage hue. Hidden when no accent is provided (live stages).
-  &--accented::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    border-radius: var(--alg-radius-lg, 16px) var(--alg-radius-lg, 16px) 0 0;
-    background-color: var(--alg-stage-accent);
+  // Accented body wash — a whisper of the stage hue over the raised surface so
+  // the lane separates from the canvas without becoming a slab.
+  &--accented {
+    background-image: linear-gradient(
+      var(--alg-stage-accent-tint),
+      var(--alg-stage-accent-tint)
+    );
   }
 
   &--drop-target {
@@ -351,16 +383,35 @@ function handleAddLead() {
   }
 }
 
+// Header wrapper holds the coloured bar + the metrics strip beneath it.
 .alg-stage-column__header {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  // Pull the bar to the column's edges so the colour bleeds to the rounded top.
+  margin: 0 -0.625rem 0;
+  gap: 0;
 }
 
-.alg-stage-column__header-top {
+// THE COLOURED HEADER BLOCK (C1). Full-bleed bar in the stage hue with a
+// top-down gradient + inset highlight (DESIGN §3.5 elevation grammar) so it
+// reads as an illuminated object, not a flat swatch. Foreground is a near-white
+// ink derived from the hue for AA contrast.
+.alg-stage-column__header-bar {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.5rem 0.625rem 0.5rem 0.75rem;
+  min-height: 2.375rem;
+  background-color: var(--alg-bg-tint-high);
+}
+
+.alg-stage-column--accented .alg-stage-column__header-bar {
+  background-image: linear-gradient(
+    180deg,
+    var(--alg-stage-accent) 0%,
+    var(--alg-stage-accent-strong) 100%
+  );
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
 }
 
 .alg-stage-column__name {
@@ -369,10 +420,25 @@ function handleAddLead() {
   letter-spacing: var(--alg-tracking-snug, -0.012em);
   margin: 0;
   color: var(--alg-fg-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-// Count pill — mono numerals on a faint tint of the stage hue (12%), or a
-// neutral tint when the stage has no accent.
+.alg-stage-column--accented .alg-stage-column__name {
+  color: var(--alg-stage-accent-ink);
+  // A faint shadow grounds the white ink on the brighter hues (orange/blue).
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.22);
+}
+
+// Dark-ink header (bright hue, e.g. yellow): drop the dark text-shadow (it would
+// muddy near-black ink) and use a light-side lift instead.
+.alg-stage-column--ink-dark .alg-stage-column__name {
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+// Count pill — mono numerals in a darker translucent pill inside the coloured
+// header, exactly as the reference (84 / 52 / 42 / 21).
 .alg-stage-column__count {
   display: inline-flex;
   align-items: center;
@@ -389,29 +455,17 @@ function handleAddLead() {
 }
 
 .alg-stage-column--accented .alg-stage-column__count {
-  background-color: var(--alg-stage-accent-tint);
+  color: var(--alg-stage-accent-ink);
+  background-color: var(--alg-stage-accent-pill);
 }
 
-// Header action cluster — gear (config) + add. Ghost buttons that surface on
-// column hover/focus so the header reads clean at rest, like Linear's board.
+// Header action cluster — gear (config) + add, always present on the coloured
+// bar (the ref shows them at rest). Ink inherits the header foreground.
 .alg-stage-column__actions {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
   gap: 0.125rem;
-  opacity: 0;
-  transition: opacity var(--alg-duration-fast, 180ms) var(--alg-ease-cinematic);
-}
-
-.alg-stage-column:hover .alg-stage-column__actions,
-.alg-stage-column:focus-within .alg-stage-column__actions {
-  opacity: 1;
-}
-
-@media (hover: none) {
-  .alg-stage-column__actions {
-    opacity: 1;
-  }
 }
 
 .alg-stage-column__action {
@@ -438,16 +492,36 @@ function handleAddLead() {
 
   &:focus-visible {
     outline: none;
-    opacity: 1;
     box-shadow: var(--alg-ring-focus);
   }
 }
 
+// On the coloured header the glyphs read as the near-white ink and hover lifts
+// with a translucent-white wash (not the dark tint, which would vanish).
+.alg-stage-column--accented .alg-stage-column__action {
+  color: color-mix(in srgb, var(--alg-stage-accent-ink) 82%, transparent);
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.16);
+    color: var(--alg-stage-accent-ink);
+  }
+}
+
+// On a bright (dark-ink) header a white hover wash disappears — use a dark one.
+.alg-stage-column--ink-dark .alg-stage-column__action:hover {
+  background-color: rgba(0, 0, 0, 0.12);
+}
+
+// Metrics strip sits on the column body, just under the coloured bar. The
+// parent header is full-bled (negative side margin), so re-inset the strip with
+// matching side padding to realign it with the cards below.
 .alg-stage-column__metrics {
-  display: inline-flex;
+  display: flex;
   flex-wrap: wrap;
   gap: 0.375rem;
   align-items: center;
+  margin-top: 0.625rem;
+  padding: 0 0.625rem;
   font-family: var(--alg-font-mono);
   font-size: var(--alg-text-2xs, 0.6875rem);
   color: var(--alg-fg-tertiary);
@@ -469,7 +543,7 @@ function handleAddLead() {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.625rem;
   min-height: 1rem;
 }
 

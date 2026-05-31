@@ -5,7 +5,9 @@
       "SEARCH_PLACEHOLDER": "Search lead",
       "BOARD_ARIA_LABEL": "CRM Kanban",
       "PIPELINE_CONFIG_LINK": "Configure pipeline",
+      "CONFIGURE_PIPELINE": "Configure pipeline",
       "CONFIGURE_STAGE_ARIA": "Configure pipeline — {stage}",
+      "CONFIG_CLOSE": "Close configuration",
       "ADD_LEAD_TO_STAGE_ARIA": "Add lead to {stage}",
       "STAGE_COUNT": "{count} leads",
       "STAGE_COUNT_ONE": "1 lead",
@@ -91,7 +93,15 @@
         "ACTIVITY": "Activity",
         "SUMMARY": "Summary",
         "QUALIFICATION": "Qualification",
-        "SOCIAL": "Social"
+        "SOCIAL": "Social",
+        "INTELLIGENCE": "Lead intelligence"
+      },
+      "INTELLIGENCE": {
+        "CAPTION": "LinkedIn, Instagram and Facebook research + conversation memory, gathered by the nurturing agent.",
+        "PENDING_BADGE": "Nurturing agent",
+        "RESEARCH_LABEL": "Research",
+        "MEMORY_LABEL": "Conversation memory",
+        "EMPTY": "The nurturing agent will fill this profile as it researches and talks with the lead."
       },
       "CONTACT": {
         "EMAIL_LABEL": "Email",
@@ -122,7 +132,9 @@
     },
     "PIPELINE_CONFIG": {
       "PLACEHOLDER_TITLE": "Pipeline configuration",
-      "PLACEHOLDER_BODY": "This screen will be available soon."
+      "PLACEHOLDER_BODY": "Rename, reorder and tune your funnel stages. Full editing is coming soon.",
+      "STAGES_LABEL": "Funnel stages",
+      "EDIT_SOON": "Edit, reorder and add stages — coming soon."
     },
     "SIDEBAR": {
       "CRM": "CRM",

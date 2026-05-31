@@ -125,22 +125,34 @@ describe('StageColumn (CONTRACT_M1B §2)', () => {
     expect(dropEvents[0][1]).toEqual({ stageId: 7, stageName: 'Qualificado' });
   });
 
-  // Round-3 — per-column header actions (gear is the sole pipeline-config entry)
-  describe('header actions (round-3)', () => {
-    it('renders the gear config link to pipelineConfigPath when provided', () => {
-      const wrapper = mountColumn({
-        pipelineConfigPath: '/app/accounts/9/crm/pipeline',
-      });
-      const link = wrapper.find('[data-testid="pipeline-config-link"]');
-      expect(link.exists()).toBe(true);
-      expect(link.attributes('href')).toBe('/app/accounts/9/crm/pipeline');
-      expect(link.attributes('aria-label')).toContain('Qualificado');
+  // Round-4 — per-column header actions. The gear no longer navigates to a
+  // separate route; it opens the SAME inline config overlay the header gear
+  // opens (one paradigm — adversarial review #111). It is a <button> that emits
+  // 'configure-stage', not a <router-link>.
+  describe('header actions (round-4)', () => {
+    it('renders the gear as a dialog-trigger button by default', () => {
+      const wrapper = mountColumn();
+      const gear = wrapper.find('[data-testid="pipeline-config-trigger"]');
+      expect(gear.exists()).toBe(true);
+      expect(gear.element.tagName).toBe('BUTTON');
+      expect(gear.attributes('aria-haspopup')).toBe('dialog');
+      expect(gear.attributes('aria-label')).toContain('Qualificado');
     });
 
-    it('hides the gear when no pipelineConfigPath is provided (e.g. demo)', () => {
+    it('emits configureStage with the stage payload when the gear is clicked', async () => {
       const wrapper = mountColumn();
+      await wrapper
+        .find('[data-testid="pipeline-config-trigger"]')
+        .trigger('click');
+      const events = wrapper.emitted('configureStage');
+      expect(events).toBeTruthy();
+      expect(events[0][0]).toEqual({ stageId: 7, stageName: 'Qualificado' });
+    });
+
+    it('hides the gear when showConfig is false (isolated/no-config contexts)', () => {
+      const wrapper = mountColumn({ showConfig: false });
       expect(
-        wrapper.find('[data-testid="pipeline-config-link"]').exists()
+        wrapper.find('[data-testid="pipeline-config-trigger"]').exists()
       ).toBe(false);
     });
 

@@ -5,7 +5,9 @@
       "SEARCH_PLACEHOLDER": "Buscar lead",
       "BOARD_ARIA_LABEL": "Kanban CRM",
       "PIPELINE_CONFIG_LINK": "Configurar pipeline",
+      "CONFIGURE_PIPELINE": "Configurar pipeline",
       "CONFIGURE_STAGE_ARIA": "Configurar pipeline — {stage}",
+      "CONFIG_CLOSE": "Fechar configuração",
       "ADD_LEAD_TO_STAGE_ARIA": "Adicionar lead em {stage}",
       "STAGE_COUNT": "{count} leads",
       "STAGE_COUNT_ONE": "1 lead",
@@ -91,7 +93,15 @@
         "ACTIVITY": "Atividade",
         "SUMMARY": "Resumo",
         "QUALIFICATION": "Qualificação",
-        "SOCIAL": "Social"
+        "SOCIAL": "Social",
+        "INTELLIGENCE": "Inteligência do lead"
+      },
+      "INTELLIGENCE": {
+        "CAPTION": "Pesquisa de LinkedIn, Instagram e Facebook + memória das conversas, reunida pelo agente de nutrição.",
+        "PENDING_BADGE": "Agente de nutrição",
+        "RESEARCH_LABEL": "Pesquisa",
+        "MEMORY_LABEL": "Memória da conversa",
+        "EMPTY": "O agente de nutrição vai preencher este perfil conforme pesquisa e conversa com o lead."
       },
       "CONTACT": {
         "EMAIL_LABEL": "E-mail",
@@ -122,7 +132,9 @@
     },
     "PIPELINE_CONFIG": {
       "PLACEHOLDER_TITLE": "Configuração do pipeline",
-      "PLACEHOLDER_BODY": "Esta tela ficará disponível em breve."
+      "PLACEHOLDER_BODY": "Renomeie, reordene e ajuste as etapas do seu funil. A edição completa chega em breve.",
+      "STAGES_LABEL": "Etapas do funil",
+      "EDIT_SOON": "Editar, reordenar e adicionar etapas — em breve."
     },
     "SIDEBAR": {
       "CRM": "CRM",
