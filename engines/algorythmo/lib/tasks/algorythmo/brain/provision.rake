@@ -4,9 +4,12 @@
 #
 # Provisions (or re-provisions) the GBrain for one Chatwoot account:
 #   1. gbrain init --pglite --force --non-interactive
-#        --embedding-model openai:text-embedding-3-small --embedding-dimensions 1536
+#        --embedding-model zeroentropyai:zembed-1 --embedding-dimensions 1280
 #      Embedding provider/dimensions are CRAVADOS (no auto-detect/picker) so the
 #      command never blocks waiting on TTY input. --force makes re-runs idempotent.
+#      The provider/dims are the gbrain ENGINE DEFAULT (founder directive 2026-06-04:
+#      use the motor's default, not OpenAI). Still pinned EXPLICITLY — the init
+#      env-picker fails loud in non-TTY (P0-4), so we never rely on auto-detect.
 #   2. gbrain config set models.think deepseek:deepseek-chat
 #      Synthesis (think) runs on DeepSeek (P0-3). models.think is a KNOWN config key
 #      (verified: src/core/config.ts), so no --force is needed for the set.
@@ -17,6 +20,9 @@
 # Flags VERIFIED in source at the pinned SHA (engines/algorythmo/GBRAIN_PINNED_SHA):
 #   --pglite, --force, --non-interactive, --embedding-model, --embedding-dimensions
 #     → src/commands/init.ts
+#   engine default embedding = zeroentropyai:zembed-1 / 1280 dims
+#     → src/core/ai/defaults.ts L20-21 (DEFAULT_EMBEDDING_MODEL/DIMENSIONS)
+#   ZeroEntropy reads ZEROENTROPY_API_KEY → src/core/config.ts L43, L409
 #   config set <key> <value>; models.think known key → src/commands/config.ts + core/config.ts
 #   DeepSeek reads DEEPSEEK_API_KEY → src/core/ai/recipes/deepseek.ts
 #
@@ -24,7 +30,7 @@
 #   ACCOUNT_ID=2 bundle exec rake algorythmo:brain:provision
 #   bundle exec rake "algorythmo:brain:provision[2]"
 #
-# Requires OPENAI_API_KEY (embeddings) and DEEPSEEK_API_KEY (synthesis) in the env.
+# Requires ZEROENTROPY_API_KEY (embeddings) and DEEPSEEK_API_KEY (synthesis) in the env.
 
 require 'open3'
 
@@ -33,8 +39,11 @@ module Algorythmo
     # Provisions a single account's GBrain. Pure subprocess orchestration — no Rails
     # models touched, so it is safe to run before/independently of the app boot.
     class BrainProvision
-      EMBEDDING_MODEL      = 'openai:text-embedding-3-small'
-      EMBEDDING_DIMENSIONS = '1536'
+      # gbrain engine default (defaults.ts L20-21). Pinned explicitly to stay
+      # non-TTY-safe; OpenAI remains swappable via these constants if the founder
+      # reverts (directive 2026-06-04).
+      EMBEDDING_MODEL      = 'zeroentropyai:zembed-1'
+      EMBEDDING_DIMENSIONS = '1280'
       THINK_MODEL          = 'deepseek:deepseek-chat'
 
       GBRAIN_BIN = ENV.fetch('GBRAIN_BIN', 'gbrain').freeze
@@ -67,15 +76,15 @@ module Algorythmo
       # Same env hash contract as Brain::Client#subprocess_env: keys only in env.
       def subprocess_env
         env = { 'GBRAIN_HOME' => gbrain_home }
-        env['OPENAI_API_KEY']   = ENV.fetch('OPENAI_API_KEY', nil)
-        env['DEEPSEEK_API_KEY'] = ENV.fetch('DEEPSEEK_API_KEY', nil)
+        env['ZEROENTROPY_API_KEY'] = ENV.fetch('ZEROENTROPY_API_KEY', nil)
+        env['DEEPSEEK_API_KEY']    = ENV.fetch('DEEPSEEK_API_KEY', nil)
         env
       end
 
       def require_keys!
         missing = []
-        missing << 'OPENAI_API_KEY (embeddings)'   if ENV['OPENAI_API_KEY'].to_s.strip.empty?
-        missing << 'DEEPSEEK_API_KEY (synthesis)'  if ENV['DEEPSEEK_API_KEY'].to_s.strip.empty?
+        missing << 'ZEROENTROPY_API_KEY (embeddings)' if ENV['ZEROENTROPY_API_KEY'].to_s.strip.empty?
+        missing << 'DEEPSEEK_API_KEY (synthesis)'     if ENV['DEEPSEEK_API_KEY'].to_s.strip.empty?
         return if missing.empty?
 
         raise ProvisionError, "Missing required env var(s): #{missing.join(', ')}"
@@ -110,7 +119,7 @@ module Algorythmo
       # Defensive: never let a leaked key reach the abort message / logs.
       def redact(text)
         out = text.to_s
-        [ENV.fetch('OPENAI_API_KEY', nil), ENV.fetch('DEEPSEEK_API_KEY', nil)].each do |secret|
+        [ENV.fetch('ZEROENTROPY_API_KEY', nil), ENV.fetch('DEEPSEEK_API_KEY', nil)].each do |secret|
           next if secret.to_s.empty?
 
           out = out.gsub(secret, '[REDACTED]')
