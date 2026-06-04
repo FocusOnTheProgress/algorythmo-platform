@@ -317,5 +317,39 @@ RSpec.describe Algorythmo::Brain::IngestionWorker do
         Algorythmo::Brain::WriteLock::LockContended
       )
     end
+
+    # P1 safety: SnapshotRecorder failure must never corrupt the ingestion outcome.
+    # If stats times out or any StandardError occurs in record_snapshot_best_effort,
+    # the ingestion log must stay :success and the worker must NOT re-raise
+    # (which would trigger Sidekiq retry and duplicate the capture in GBrain).
+    it 'keeps ingestion log :success and does NOT re-raise when SnapshotRecorder raises' do
+      stub_write_lock_passthrough
+      stub_capture_success
+
+      # Override the shared allow to simulate a recorder failure
+      allow(Algorythmo::Brain::SnapshotRecorder).to receive(:record)
+        .and_raise(Algorythmo::Brain::Client::SubprocessError, 'gbrain stats timed out')
+
+      expect { worker.perform(account.id, conversation.id) }.not_to raise_error
+
+      log = Algorythmo::Brain::IngestionLog.find_by!(
+        account_id: account.id, conversation_id: conversation.id
+      )
+      expect(log.outcome).to eq('success')
+    end
+
+    it 'logs a warning when SnapshotRecorder raises (visible, never silently swallowed)' do
+      stub_write_lock_passthrough
+      stub_capture_success
+
+      allow(Algorythmo::Brain::SnapshotRecorder).to receive(:record)
+        .and_raise(StandardError, 'transient failure')
+
+      expect(Rails.logger).to receive(:warn).with(
+        a_string_including('snapshot skipped', account.id.to_s)
+      )
+
+      worker.perform(account.id, conversation.id)
+    end
   end
 end

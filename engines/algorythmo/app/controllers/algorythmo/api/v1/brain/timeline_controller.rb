@@ -16,12 +16,13 @@ class Algorythmo::Api::V1::Brain::TimelineController < Algorythmo::Api::V1::Brai
   PAGE_SIZE = 30
 
   def index
-    page   = [params.fetch(:page, 1).to_i, 1].max
-    events = build_timeline_events(current_account.id, page: page)
+    page        = [params.fetch(:page, 1).to_i, 1].max
+    events      = build_timeline_events(current_account.id, page: page)
+    total_count = Algorythmo::Brain::Snapshot.where(account_id: current_account.id).count
 
     render json: {
       data: events,
-      meta: { page: page, per_page: PAGE_SIZE, count: events.size }
+      meta: { page: page, per_page: PAGE_SIZE, count: events.size, total_count: total_count }
     }, status: :ok
   end
 

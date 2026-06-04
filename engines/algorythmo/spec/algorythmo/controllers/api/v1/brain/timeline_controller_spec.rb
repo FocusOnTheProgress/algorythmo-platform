@@ -63,6 +63,7 @@ RSpec.describe Algorythmo::Api::V1::Brain::TimelineController, type: :request do
 
       body = JSON.parse(response.body)
       expect(body['data']).to eq([])
+      expect(body['meta']['total_count']).to eq(0)
     end
   end
 

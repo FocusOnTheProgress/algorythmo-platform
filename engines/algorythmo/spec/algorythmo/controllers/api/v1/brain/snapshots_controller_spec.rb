@@ -60,6 +60,7 @@ RSpec.describe Algorythmo::Api::V1::Brain::SnapshotsController, type: :request d
       body = JSON.parse(response.body)
       expect(body['data']).to eq([])
       expect(body['meta']['count']).to eq(0)
+      expect(body['meta']['total_count']).to eq(0)
     end
   end
 
@@ -124,6 +125,7 @@ RSpec.describe Algorythmo::Api::V1::Brain::SnapshotsController, type: :request d
       body = JSON.parse(response.body)
       expect(body['data'].size).to eq(20)
       expect(body['meta']['page']).to eq(1)
+      expect(body['meta']['total_count']).to eq(25)
     end
 
     it 'returns the remainder on page 2' do

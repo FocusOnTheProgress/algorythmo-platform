@@ -15,13 +15,14 @@ class Algorythmo::Api::V1::Brain::SnapshotsController < Algorythmo::Api::V1::Bra
   PAGE_SIZE = 20
 
   def index
-    page      = [params.fetch(:page, 1).to_i, 1].max
-    offset    = (page - 1) * PAGE_SIZE
-    snapshots = page_of_snapshots(current_account.id, offset)
+    page        = [params.fetch(:page, 1).to_i, 1].max
+    offset      = (page - 1) * PAGE_SIZE
+    snapshots   = page_of_snapshots(current_account.id, offset)
+    total_count = Algorythmo::Brain::Snapshot.where(account_id: current_account.id).count
 
     render json: {
       data: snapshots.map { |s| serialize_snapshot(s) },
-      meta: { page: page, per_page: PAGE_SIZE, count: snapshots.size }
+      meta: { page: page, per_page: PAGE_SIZE, count: snapshots.size, total_count: total_count }
     }, status: :ok
   end
 
