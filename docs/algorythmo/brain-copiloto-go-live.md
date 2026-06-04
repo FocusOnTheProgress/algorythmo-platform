@@ -13,16 +13,34 @@ O código está pronto e testado (com o motor gbrain **mockado** no CI). Esta é
 - `OPENAI_API_KEY` — indexador/embeddings (`text-embedding-3-small`). **PENDENTE.** Sem ele a ingestão de documento falha (status `failed`) e a busca não funciona — o cérebro não fica consultável.
 - Setar as duas no Easypanel (env dos serviços **app** E **sidekiq**), nunca no código/chat.
 
-### 2. gbrain instalado na imagem de produção — INFRA (gap aberto)
-**Hoje o `docker/Dockerfile` NÃO instala o gbrain.** O `engines/algorythmo/package.json` declara a dependência pinada (`garrytan/gbrain#<SHA>`, ADR-0013) mas a imagem não a instala nem coloca o binário no PATH. Antes do deploy:
-- Adicionar ao Dockerfile a instalação do gbrain no SHA pinado (confirmar o runtime real — Node CLI via `pnpm install` no engine, ou bun; o package.json diz Node/pnpm, a auditoria do motor menciona bun+PGLite — **verificar contra o binário real**).
-- Garantir `gbrain --version` funcionando dentro do container e `GBRAIN_BIN` resolvendo (default `gbrain` no PATH).
-- NÃO fazer no escuro: uma instalação errada quebra o build inteiro. Fazer com verificação de runtime + a prova de integração (passo 5).
+### 2. gbrain instalado na imagem de produção — INFRA ✅ RESOLVIDO (branch `algorythmo/brain-engine-image`)
+**Resolvido:** o `docker/Dockerfile` agora instala o motor.
+- Runtime confirmado contra o binário real no SHA pinado: **GBrain é um CLI Bun** (`engines: bun >=1.3.10`, entrypoint `src/cli.ts`), **não** Node/pnpm. A nota antiga do `package.json` do engine estava errada e foi corrigida.
+- Instalação: `bun install -g github:garrytan/gbrain#<SHA>`, lendo `engines/algorythmo/GBRAIN_PINNED_SHA` (fonte única do pin, sem duplicação). bun + o install global ficam em `/usr/local/bun` no pre-builder e são copiados pro estágio final slim.
+- Sem `--ignore-scripts`: o `postinstall` do gbrain é auto-protegido (no-op na instalação) e o `@electric-sql/pglite` (trustedDependency) roda o setup do WASM.
+- Smoke no próprio build (`gbrain --version`) falha cedo se o motor não entrar na imagem.
+- **Validado end-to-end** numa imagem com o mesmo formato de produção (Alpine + Ruby, sem npm/curl): `init --pglite` + `capture` + `stats` → cérebro nasce com `Pages: 0`, captura 1 doc → `Pages: 1`. bun 1.3.14, gbrain 0.42.25.0.
+- Portão final: build completo no GitHub Actions na branch (publica só tag `sha-…`, não toca `latest`/produção) antes do merge.
 
-### 3. Volume persistente pro cérebro — INFRA (crítico, decorre do #2)
-O cérebro vive em `GBRAIN_HOME/<account_id>/.gbrain` (arquivo PGLite). **Sem volume persistente, o cérebro é apagado a cada deploy** — todo o conhecimento anexado some (mesma lição do Active Storage, ver memória `project_active_storage_persistent_volume`).
-- Montar um volume persistente no caminho do `GBRAIN_HOME` (base, ex.: `/app/.gbrain-accounts`) nos serviços **app** + **sidekiq** (os dois acessam o cérebro).
-- Setar `GBRAIN_HOME_BASE` (ou o env equivalente) apontando pro volume.
+### 3. Volume persistente pro cérebro — INFRA (crítico)
+O cérebro vive em `GBRAIN_HOME_BASE/<account_id>/.gbrain` (arquivo PGLite). **Sem volume persistente, o cérebro é apagado a cada deploy** — todo o conhecimento anexado some (mesma lição do Active Storage, ver memória `project_active_storage_persistent_volume`).
+
+**Lado-imagem (já feito nesta branch):** o Dockerfile crava `ENV GBRAIN_HOME_BASE=/app/.gbrain-accounts` e cria o diretório. Sem o volume o motor ainda roda; só não persiste.
+
+**Lado-Easypanel (founder roda uma vez, antes do primeiro provisionamento):** montar um volume persistente em `/app/.gbrain-accounts` nos serviços **app** E **sidekiq** do projeto `os-empresarial` — idêntico ao volume `storage` já provado.
+
+Pela UI (mais simples): em cada serviço → **Mounts** → **Add Mount** → tipo **Volume**, Name `gbrain-accounts`, Mount Path `/app/.gbrain-accounts`. Repetir no `app` e no `sidekiq` (mesmo Name → mesmo volume compartilhado). Depois **Deploy** em cada serviço.
+
+Pela API Easypanel (tRPC), o equivalente exato (rodar nos dois serviços):
+```
+mounts.createMount  { json: { projectName: "os-empresarial", serviceName: "app",
+                              values: { type: "volume", name: "gbrain-accounts",
+                                        mountPath: "/app/.gbrain-accounts" } } }
+mounts.createMount  { json: { projectName: "os-empresarial", serviceName: "sidekiq",
+                              values: { type: "volume", name: "gbrain-accounts",
+                                        mountPath: "/app/.gbrain-accounts" } } }
+```
+Conferir com `mounts.listMounts` no serviço `app` (em `db`/`redis` dá "Invalid service type"). Sem isso, o passo 4 (provisionar) cria um cérebro que o próximo deploy apaga.
 
 ### 4. Provisionar o cérebro da Modeloja — comando no container
 Rodar uma vez (founder roda no container, ou via deploy hook), com as chaves no env:

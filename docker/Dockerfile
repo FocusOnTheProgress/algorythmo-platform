@@ -59,6 +59,28 @@ RUN echo 'export PNPM_HOME="/root/.local/share/pnpm"' >> /root/.shrc \
 ENV PNPM_HOME="/root/.local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
+# algorythmo: install the GBrain engine (Brain + Copiloto) into the image.
+#
+# GBrain is a BUN CLI (engines requires bun >=1.3.10; entrypoint src/cli.ts), NOT a
+# Node/pnpm package — verified against garrytan/gbrain at the pinned SHA. It is pinned
+# by 40-char commit SHA (ADR-0013); engines/algorythmo/GBRAIN_PINNED_SHA is the single
+# source of truth, read here so the pin never drifts. bun + the global gbrain install
+# live under a controlled prefix (/usr/local/bun) so the whole tree is COPY'd into the
+# slim final stage. We do NOT pass --ignore-scripts: gbrain's postinstall is self-guarded
+# (`command -v gbrain && ...` -> no-op during install) and @electric-sql/pglite is a
+# trustedDependency whose WASM setup must run. Validated end-to-end (init/capture/stats
+# in a production-shaped image) before this landed.
+ARG BUN_VERSION="1.3.14"
+ENV BUN_INSTALL="/usr/local/bun"
+ENV PATH="/usr/local/bun/bin:$PATH"
+RUN apk add --no-cache bash unzip
+COPY engines/algorythmo/GBRAIN_PINNED_SHA /tmp/GBRAIN_PINNED_SHA
+RUN curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}" \
+  && bun --version \
+  && bun install -g "github:garrytan/gbrain#$(tr -d '[:space:]' < /tmp/GBRAIN_PINNED_SHA)" \
+  && gbrain --version \
+  && rm -f /tmp/GBRAIN_PINNED_SHA
+
 WORKDIR /app
 
 COPY Gemfile Gemfile.lock ./
@@ -137,6 +159,8 @@ RUN apk update && apk add --no-cache \
   imagemagick \
   git \
   vips \
+  libstdc++ \
+  libgcc \
   && gem install bundler -v "$BUNDLER_VERSION"
 
 COPY --from=node /usr/local/bin/node /usr/local/bin/
@@ -150,11 +174,32 @@ RUN if [ "$RAILS_ENV" != "production" ]; then \
   && pnpm --version; \
   fi
 
+# algorythmo: bring the GBrain engine (bun runtime + global gbrain install) into the
+# slim runtime image. The shim at /usr/local/bun/bin/gbrain is `#!/usr/bin/env bun`, so
+# bun must be on PATH (set below). libstdc++/libgcc (added above) are bun's musl deps.
+ENV BUN_INSTALL="/usr/local/bun"
+ENV PATH="/usr/local/bun/bin:$PATH"
+COPY --from=pre-builder /usr/local/bun /usr/local/bun
+
+# algorythmo: where each account's brain lives. Brain::Client uses GBRAIN_HOME_BASE and
+# appends "/<account_id>" (gbrain then appends "/.gbrain"). This path MUST be backed by a
+# persistent Easypanel volume on BOTH the app and sidekiq services, or every deploy wipes
+# the brain (same lesson as the Active Storage /app/storage volume). Without a volume the
+# engine still runs; the knowledge just isn't durable. See docs/algorythmo/brain-copiloto-go-live.md.
+ENV GBRAIN_HOME_BASE="/app/.gbrain-accounts"
+
+# Fail the build early if the engine didn't make it into the final image.
+RUN gbrain --version
+
 COPY --from=pre-builder /gems/ /gems/
 COPY --from=pre-builder /app /app
 
 # Copy .git_sha file from pre-builder stage
 COPY --from=pre-builder /app/.git_sha /app/.git_sha
+
+# algorythmo: ensure the brain base dir exists for the no-volume case (a mounted
+# Easypanel volume takes precedence and supplies persistence).
+RUN mkdir -p /app/.gbrain-accounts
 
 WORKDIR /app
 
