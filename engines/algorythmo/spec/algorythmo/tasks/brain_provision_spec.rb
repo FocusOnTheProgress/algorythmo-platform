@@ -16,9 +16,8 @@ main_obj = TOPLEVEL_BINDING.eval('self')
 main_obj.extend(Rake::DSL) unless main_obj.singleton_class.include?(Rake::DSL)
 Rake.application ||= Rake::Application.new
 
-unless Rake::Task.task_defined?('algorythmo:brain:provision')
-  load Rails.root.join('engines/algorythmo/lib/tasks/algorythmo/brain/provision.rake')
-end
+provision_rake = Rails.root.join('engines/algorythmo/lib/tasks/algorythmo/brain/provision.rake')
+load provision_rake unless Rake::Task.task_defined?('algorythmo:brain:provision')
 
 RSpec.describe Algorythmo::Tasks::BrainProvision do
   subject(:provisioner) { described_class.new(account_id: account_id, output: output) }
