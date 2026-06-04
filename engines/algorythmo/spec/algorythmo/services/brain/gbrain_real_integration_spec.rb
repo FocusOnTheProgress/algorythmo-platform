@@ -16,7 +16,7 @@ require 'open3'
 #
 # How to run (locally, with a brain-capable machine + keys):
 #   GBRAIN_REAL=1 \
-#   OPENAI_API_KEY=sk-... DEEPSEEK_API_KEY=sk-... \
+#   ZEROENTROPY_API_KEY=ze-... DEEPSEEK_API_KEY=sk-... \
 #   bundle exec rspec engines/algorythmo/spec/algorythmo/services/brain/gbrain_real_integration_spec.rb
 #
 # What it proves:
@@ -42,7 +42,7 @@ RSpec.describe 'GBrain real integration', :gbrain_real do
       next
     end
 
-    skip 'set OPENAI_API_KEY + DEEPSEEK_API_KEY to run' if ENV['OPENAI_API_KEY'].to_s.empty? || ENV['DEEPSEEK_API_KEY'].to_s.empty?
+    skip 'set ZEROENTROPY_API_KEY + DEEPSEEK_API_KEY to run' if ENV['ZEROENTROPY_API_KEY'].to_s.empty? || ENV['DEEPSEEK_API_KEY'].to_s.empty?
 
     client_rb = Rails.root.join('engines/algorythmo/app/services/algorythmo/brain/client.rb')
     Dir.mktmpdir('gbrain_real_') do |base|

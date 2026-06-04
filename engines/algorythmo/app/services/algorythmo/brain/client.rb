@@ -13,8 +13,10 @@ require 'tmpdir'
 #   The path is injected via the Open3 env hash on EVERY invocation — never a flag.
 #
 # Provider keys (verified in source at the pinned SHA):
-#   - OPENAI_API_KEY   → embeddings        (src/core/config.ts L187)
-#   - DEEPSEEK_API_KEY → synthesis (think) (src/core/ai/recipes/deepseek.ts)
+#   - ZEROENTROPY_API_KEY → embeddings        (src/core/config.ts L43, L409)
+#       engine default provider zeroentropyai:zembed-1 / 1280 (defaults.ts L20-21).
+#       Founder directive 2026-06-04: use the motor default, not OpenAI.
+#   - DEEPSEEK_API_KEY    → synthesis (think) (src/core/ai/recipes/deepseek.ts)
 #   gbrain does NOT read DEEPSEEK_BASE_URL / DEEPSEEK_MODEL — we never inject them.
 #   Keys travel ONLY in the env hash — never as a CLI argument, never logged.
 #
@@ -108,16 +110,16 @@ module Algorythmo
       #
       # This is a DELTA: Open3 merges it onto the parent process env (PATH, HOME,
       # etc. survive because we do not pass unsetenv_others: true). We add:
-      #   - GBRAIN_HOME      → per-account brain root (P0-5 isolation)
-      #   - OPENAI_API_KEY   → only if present (embeddings)
-      #   - DEEPSEEK_API_KEY → only if present (synthesis)
+      #   - GBRAIN_HOME         → per-account brain root (P0-5 isolation)
+      #   - ZEROENTROPY_API_KEY → only if present (embeddings, engine default)
+      #   - DEEPSEEK_API_KEY    → only if present (synthesis)
       #
       # Deliberately absent: DEEPSEEK_BASE_URL / DEEPSEEK_MODEL (gbrain ignores them).
       # Keys live here and ONLY here — never in args, never logged.
       def subprocess_env
         env = { 'GBRAIN_HOME' => self.class.gbrain_home_for(@account_id) }
-        env['OPENAI_API_KEY']   = ENV['OPENAI_API_KEY']   if ENV['OPENAI_API_KEY'].present?
-        env['DEEPSEEK_API_KEY'] = ENV['DEEPSEEK_API_KEY'] if ENV['DEEPSEEK_API_KEY'].present?
+        env['ZEROENTROPY_API_KEY'] = ENV['ZEROENTROPY_API_KEY'] if ENV['ZEROENTROPY_API_KEY'].present?
+        env['DEEPSEEK_API_KEY']    = ENV['DEEPSEEK_API_KEY']    if ENV['DEEPSEEK_API_KEY'].present?
         env
       end
 
@@ -215,7 +217,7 @@ module Algorythmo
       # into stderr we must not let it reach an exception message or the logs.
       def redact_secrets(text)
         redacted = text.to_s
-        [ENV.fetch('OPENAI_API_KEY', nil), ENV.fetch('DEEPSEEK_API_KEY', nil)].each do |secret|
+        [ENV.fetch('ZEROENTROPY_API_KEY', nil), ENV.fetch('DEEPSEEK_API_KEY', nil)].each do |secret|
           next if secret.blank?
 
           redacted = redacted.gsub(secret, '[REDACTED]')

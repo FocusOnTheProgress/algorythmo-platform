@@ -2,7 +2,7 @@
 
 **Status do código:** COMPLETO no `algorythmo/main`. PRs: #127 (fundação), #130 (Ver), #131 (Histórico), #132 (Upload), #133 (Colar), #134 (tela Brain), #135 (Copiloto backend), #136 (Copiloto frontend).
 
-O código está pronto e testado (com o motor gbrain **mockado** no CI). Esta é a fase de **ligar de verdade** — feita junto com o founder quando a chave do indexador OpenAI chegar. Os passos são sequenciais; cada um depende do anterior.
+O código está pronto e testado (com o motor gbrain **mockado** no CI). Esta é a fase de **ligar de verdade** — feita junto com o founder quando a chave do indexador (ZeroEntropy, default do motor) chegar. Os passos são sequenciais; cada um depende do anterior.
 
 ---
 
@@ -10,7 +10,7 @@ O código está pronto e testado (com o motor gbrain **mockado** no CI). Esta é
 
 ### 1. Chaves (BYOK) — founder fornece
 - `DEEPSEEK_API_KEY` — síntese (`gbrain think`). **Founder JÁ tem.**
-- `OPENAI_API_KEY` — indexador/embeddings (`text-embedding-3-small`). **PENDENTE.** Sem ele a ingestão de documento falha (status `failed`) e a busca não funciona — o cérebro não fica consultável.
+- `ZEROENTROPY_API_KEY` — indexador/embeddings (`zeroentropyai:zembed-1`, 1280 dims — **default do motor gbrain**, decisão founder 2026-06-04; OpenAI segue trocável depois). **PENDENTE.** Sem ele a ingestão de documento falha (status `failed`) e a busca não funciona — o cérebro não fica consultável.
 - Setar as duas no Easypanel (env dos serviços **app** E **sidekiq**), nunca no código/chat.
 
 ### 2. gbrain instalado na imagem de produção — INFRA (gap aberto)
@@ -29,13 +29,13 @@ Rodar uma vez (founder roda no container, ou via deploy hook), com as chaves no 
 ```
 ACCOUNT_ID=2 bundle exec rake algorythmo:brain:provision
 ```
-Isso roda `gbrain init --pglite --force --embedding-model openai:text-embedding-3-small ...` + `gbrain config set models.think deepseek:deepseek-chat`, com `GBRAIN_HOME` isolado da Modeloja (account 2). O cérebro nasce **zerado** (0 páginas — sem nada do dogfooding do founder, isolamento P0-5).
+Isso roda `gbrain init --pglite --force --embedding-model zeroentropyai:zembed-1 --embedding-dimensions 1280 ...` + `gbrain config set models.think deepseek:deepseek-chat`, com `GBRAIN_HOME` isolado da Modeloja (account 2). O cérebro nasce **zerado** (0 páginas — sem nada do dogfooding do founder, isolamento P0-5).
 - Setar `ALGORYTHMO_PRIMARY_ACCOUNT_ID=2` no env.
 
 ### 5. Prova de integração real — o portão (ADR-0013 / PR0)
 Antes de confiar no Copiloto, rodar o gate:
 ```
-GBRAIN_REAL=1 OPENAI_API_KEY=... DEEPSEEK_API_KEY=... bundle exec rspec engines/algorythmo/spec/algorythmo/services/brain/gbrain_real_integration_spec.rb
+GBRAIN_REAL=1 ZEROENTROPY_API_KEY=... DEEPSEEK_API_KEY=... bundle exec rspec engines/algorythmo/spec/algorythmo/services/brain/gbrain_real_integration_spec.rb
 ```
 Prova: `capture → stats → search` funciona contra o gbrain real no SHA pinado, e o cérebro nasce com 0 páginas. Se passar, o motor está OK de verdade (até aqui tudo foi mockado).
 
@@ -52,13 +52,13 @@ O merge no main já dispara o build (GH Actions → ghcr.io). Falta o pull/deplo
 ## Ordem de dependência
 
 ```
-chave OpenAI (2)  ─┐
-gbrain na imagem (2)├─► provisionar (4) ─► prova de integração (5) ─► deploy (6) ─► smoke (7)
+chave ZeroEntropy (2)─┐
+gbrain na imagem (2)  ├─► provisionar (4) ─► prova de integração (5) ─► deploy (6) ─► smoke (7)
 volume persistente (3)┘         ▲
                                 └── precisa das chaves + gbrain rodando
 ```
 
-Sem a chave OpenAI, nada além da UI funciona (upload cai em `failed`, Copiloto retorna `engine_unconfigured`/503 honestamente). A UI em si (tela do Brain + chat do Copiloto) já fica visível e navegável pós-deploy — útil pra revisão visual do founder mesmo antes da operação real.
+Sem a chave ZeroEntropy, nada além da UI funciona (upload cai em `failed`, Copiloto retorna `engine_unconfigured`/503 honestamente). A UI em si (tela do Brain + chat do Copiloto) já fica visível e navegável pós-deploy — útil pra revisão visual do founder mesmo antes da operação real.
 
 ---
 

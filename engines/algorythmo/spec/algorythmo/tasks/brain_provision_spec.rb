@@ -37,7 +37,7 @@ RSpec.describe Algorythmo::Tasks::BrainProvision do
   end
 
   around do |example|
-    ClimateControl.modify(OPENAI_API_KEY: 'sk-openai-test', DEEPSEEK_API_KEY: 'sk-deepseek-test') do
+    ClimateControl.modify(ZEROENTROPY_API_KEY: 'ze-test', DEEPSEEK_API_KEY: 'sk-deepseek-test') do
       example.run
     end
   end
@@ -51,13 +51,13 @@ RSpec.describe Algorythmo::Tasks::BrainProvision do
       expect(labels).to eq(%w[init config])
     end
 
-    it 'init pins the embedding provider and dimensions (no auto-detect picker)' do
+    it 'init pins the engine-default embedding provider and dimensions (no auto-detect picker)' do
       calls = stub_capture3_success
       provisioner.run!
 
       init = calls.first[:argv]
-      expect(init).to include('--embedding-model', 'openai:text-embedding-3-small')
-      expect(init).to include('--embedding-dimensions', '1536')
+      expect(init).to include('--embedding-model', 'zeroentropyai:zembed-1')
+      expect(init).to include('--embedding-dimensions', '1280')
     end
 
     it 'init is non-TTY-safe and idempotent (--non-interactive + --force + --pglite)' do
@@ -93,9 +93,9 @@ RSpec.describe Algorythmo::Tasks::BrainProvision do
       provisioner.run!
 
       calls.each do |call|
-        expect(call[:env]['OPENAI_API_KEY']).to eq('sk-openai-test')
+        expect(call[:env]['ZEROENTROPY_API_KEY']).to eq('ze-test')
         expect(call[:env]['DEEPSEEK_API_KEY']).to eq('sk-deepseek-test')
-        expect(call[:argv].join(' ')).not_to include('sk-openai-test')
+        expect(call[:argv].join(' ')).not_to include('ze-test')
         expect(call[:argv].join(' ')).not_to include('sk-deepseek-test')
       end
     end
@@ -123,11 +123,11 @@ RSpec.describe Algorythmo::Tasks::BrainProvision do
   end
 
   describe 'key validation' do
-    it 'fails clearly when OPENAI_API_KEY is missing, before any subprocess' do
+    it 'fails clearly when ZEROENTROPY_API_KEY is missing, before any subprocess' do
       allow(Open3).to receive(:capture3)
-      ClimateControl.modify(OPENAI_API_KEY: nil) do
+      ClimateControl.modify(ZEROENTROPY_API_KEY: nil) do
         expect { provisioner.run! }
-          .to raise_error(described_class::ProvisionError, /OPENAI_API_KEY/)
+          .to raise_error(described_class::ProvisionError, /ZEROENTROPY_API_KEY/)
       end
       expect(Open3).not_to have_received(:capture3)
     end
