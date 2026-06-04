@@ -20,7 +20,7 @@ RSpec.describe Algorythmo::Brain::Client do
   # double to avoid VerifiedDoubles on a non-standard method.
   # Records the env hash (first popen3 arg) of every invocation so isolation tests
   # can inspect multiple calls without re-stubbing (which would reset the spy count).
-  attr_reader :popen3_envs
+  let(:popen3_envs) { [] }
 
   def stub_popen3(stdout:, stderr: '', exit_status: 0)
     status   = instance_double(Process::Status, success?: exit_status.zero?, exitstatus: exit_status)
@@ -28,9 +28,8 @@ RSpec.describe Algorythmo::Brain::Client do
     allow(wait_thr).to receive(:join).and_return(wait_thr) # returns self = not timed out
     allow(wait_thr).to receive(:alive?).and_return(false)
 
-    @popen3_envs = []
     allow(Open3).to receive(:popen3) do |first, *_rest, &blk|
-      @popen3_envs << first
+      popen3_envs << first
       blk.call(
         instance_double(IO, close: nil),
         instance_double(IO, read: stdout),

@@ -17,7 +17,7 @@ main_obj.extend(Rake::DSL) unless main_obj.singleton_class.include?(Rake::DSL)
 Rake.application ||= Rake::Application.new
 
 unless Rake::Task.task_defined?('algorythmo:brain:provision')
-  load Rails.root.join('engines/algorythmo/lib/tasks/algorythmo/brain/provision.rake') # rubocop:disable Style/IfUnlessModifier
+  load Rails.root.join('engines/algorythmo/lib/tasks/algorythmo/brain/provision.rake')
 end
 
 RSpec.describe Algorythmo::Tasks::BrainProvision do
