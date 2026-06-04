@@ -18,11 +18,11 @@ RSpec.describe Algorythmo::Api::V1::Brain::SnapshotsController, type: :request d
 
   def make_snapshot(account:, taken_at: Time.current, trigger: 'cron', stats: {}, diff_summary: nil)
     Algorythmo::Brain::Snapshot.create!(
-      account:      account,
-      taken_at:     taken_at,
-      stats:        stats,
+      account: account,
+      taken_at: taken_at,
+      stats: stats,
       diff_summary: diff_summary,
-      trigger:      trigger
+      trigger: trigger
     )
   end
 
