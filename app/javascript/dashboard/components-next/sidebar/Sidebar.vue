@@ -672,17 +672,16 @@ const menuItems = computed(() => {
     },
 
     // ── INTELIGÊNCIA block ────────────────────────────────────────────────────
-    // algorythmo: M5 sidebar restructure — INTELIGÊNCIA header (admin-only)
-    ...(isAdmin.value
-      ? [
-          {
-            type: 'section',
-            name: 'section-inteligencia',
-            label: t('SIDEBAR.ALGORYTHMO_SECTION_INTELIGENCIA'),
-            isFirst: false,
-          },
-        ]
-      : []),
+    // algorythmo: INTELIGÊNCIA header — shown to ANY permitted role, not just
+    // admins. The Brain (curation) stays admin-only below, but the Copiloto is
+    // the OPERATOR's tool, so the section must render for agents too — otherwise
+    // an agent would see the Copiloto item floating with no header above it.
+    {
+      type: 'section',
+      name: 'section-inteligencia',
+      label: t('SIDEBAR.ALGORYTHMO_SECTION_INTELIGENCIA'),
+      isFirst: false,
+    },
     // algorythmo: M5 sidebar restructure — Brain MOVED from original position (D1: one entry point)
     // Brain is ungated for this single-tenant instance — shown to admins,
     // consistent with the INTELIGÊNCIA section + the route's administrator
@@ -698,6 +697,18 @@ const menuItems = computed(() => {
           },
         ]
       : []),
+    // algorythmo: PR7 — Copiloto (operator knowledge consultant).
+    // NOT gated by isAdmin: the Copiloto is the OPERATOR's (Malu's) tool — a
+    // read-only Q&A consultant over the company Brain — so agents must see it.
+    // Route permissions (administrator / agent / custom_role) scope access; the
+    // menu mirrors them by leaving this entry ungated.
+    {
+      name: 'AlgorythmoCopilot',
+      icon: 'i-lucide-sparkles',
+      label: t('ALGORYTHMO_COPILOT.SIDEBAR.COPILOT'),
+      activeOn: ['algorythmo_copilot'],
+      to: accountScopedRoute('algorythmo_copilot'),
+    },
     // algorythmo: M5 sidebar restructure — Marketplace placeholder (M8c ships catalog UI)
     {
       name: 'AdminMarketplace',

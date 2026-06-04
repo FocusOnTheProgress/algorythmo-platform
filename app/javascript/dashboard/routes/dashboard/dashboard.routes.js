@@ -11,6 +11,8 @@ import campaignsRoutes from './campaigns/campaigns.routes';
 import { routes as captainRoutes } from './captain/captain.routes';
 import algorythmoCrmRoutes from './crm/crm.routes';
 import algorythmoBrainRoutes from './algorythmo/brain.routes';
+// algorythmo: PR7 — Copiloto (operator knowledge consultant)
+import algorythmoCopilotRoutes from './algorythmo/copilot.routes';
 // algorythmo: Stream D — "Início" (default landing surface)
 import algorythmoInicioRoutes from '../../modules/algorythmo/admin/inicio/routes';
 // algorythmo: M5 admin OS placeholder routes
@@ -47,6 +49,7 @@ export default {
         ...campaignsRoutes.routes,
         ...algorythmoCrmRoutes.routes,
         ...algorythmoBrainRoutes.routes,
+        ...algorythmoCopilotRoutes.routes,
         // algorythmo: Stream D — "Início" (default landing surface)
         ...algorythmoInicioRoutes.routes,
         // algorythmo: M5 admin OS placeholder routes

@@ -1,4 +1,5 @@
 import algorythmoBrain from './algorythmoBrain.json';
+import algorythmoCopilot from './algorythmoCopilot.json';
 import algorythmoCrm from './algorythmoCrm.json';
 import advancedFilters from './advancedFilters.json';
 import agentBots from './agentBots.json';
@@ -46,6 +47,7 @@ import yearInReview from './yearInReview.json';
 
 export default {
   ...algorythmoBrain,
+  ...algorythmoCopilot,
   ...algorythmoCrm,
   ...advancedFilters,
   ...agentBots,

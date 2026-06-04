@@ -44,6 +44,8 @@ export default defineConfig({
       // components-next/. Listed EXPLICITLY so the specs actually run in CI —
       // a green check that never ran the spec is a check that lies.
       'app/javascript/dashboard/modules/algorythmo/brain/specs/**/*.spec.{js,ts}',
+      // algorythmo: PR7 — Copiloto (operator knowledge consultant) specs.
+      'app/javascript/dashboard/modules/algorythmo/copilot/**/*.spec.{js,ts}',
       'engines/algorythmo/app/javascript/**/*.spec.{js,ts}',
     ],
     globals: true,

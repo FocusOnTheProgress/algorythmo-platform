@@ -1,0 +1,40 @@
+{
+  "ALGORYTHMO_COPILOT": {
+    "SIDEBAR": {
+      "COPILOT": "Copilot"
+    },
+    "ARIA_LABEL": "Copilot — knowledge consultant grounded in your company Brain",
+    "EYEBROW": "Knowledge consultant · grounded in the Brain",
+    "TITLE": "Copilot",
+    "SUBTITLE": "Ask about your company's policies, products and procedures. The Copilot answers only from what the Brain knows — and tells you honestly when it doesn't.",
+    "INPUT_LABEL": "Ask the Copilot a question",
+    "PLACEHOLDER": "Ask anything about your company…",
+    "SEND": "Send",
+    "LOADING": "The Copilot is consulting the Brain…",
+    "EMPTY": {
+      "TITLE": "What would you like to know?",
+      "BODY": "The Copilot reads your company Brain and answers grounded in it — with the sources it used.",
+      "SUGGESTIONS": [
+        "What's our return policy?",
+        "How do I escalate a complaint?",
+        "What are the business hours?"
+      ]
+    },
+    "STATES": {
+      "UNGROUNDED": "I couldn't find this in the Brain.",
+      "DEGRADED": "Answer unavailable right now — please try again.",
+      "ENGINE_UNCONFIGURED": "AI engine not configured.",
+      "ENGINE_UNCONFIGURED_HINT": "This is a system setting, not a gap in the Brain. An administrator needs to configure the AI engine."
+    },
+    "CITATION": {
+      "ARIA_LABEL": "Sources from the Brain",
+      "UNKNOWN": "Brain source"
+    },
+    "ERRORS": {
+      "RATE_LIMITED": "Too many questions right now — try again in a moment.",
+      "FORBIDDEN": "You don't have access to the Copilot.",
+      "UNKNOWN": "Something went wrong — please try again.",
+      "TOO_LONG": "The question is too long (max {max} characters)."
+    }
+  }
+}

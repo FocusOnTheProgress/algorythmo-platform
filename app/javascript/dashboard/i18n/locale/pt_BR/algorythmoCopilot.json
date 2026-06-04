@@ -1,0 +1,40 @@
+{
+  "ALGORYTHMO_COPILOT": {
+    "SIDEBAR": {
+      "COPILOT": "Copiloto"
+    },
+    "ARIA_LABEL": "Copiloto — consultor de conhecimento fundamentado no Cérebro da sua empresa",
+    "EYEBROW": "Consultor de conhecimento · fundamentado no Cérebro",
+    "TITLE": "Copiloto",
+    "SUBTITLE": "Pergunte sobre as políticas, produtos e procedimentos da sua empresa. O Copiloto responde apenas com base no que o Cérebro sabe — e avisa com honestidade quando não sabe.",
+    "INPUT_LABEL": "Faça uma pergunta ao Copiloto",
+    "PLACEHOLDER": "Pergunte qualquer coisa sobre a sua empresa…",
+    "SEND": "Enviar",
+    "LOADING": "O Copiloto está consultando o Cérebro…",
+    "EMPTY": {
+      "TITLE": "O que você quer saber?",
+      "BODY": "O Copiloto lê o Cérebro da sua empresa e responde com base nele — mostrando as fontes que usou.",
+      "SUGGESTIONS": [
+        "Qual é a nossa política de troca?",
+        "Como eu escalo uma reclamação?",
+        "Qual é o horário de atendimento?"
+      ]
+    },
+    "STATES": {
+      "UNGROUNDED": "Não encontrei isso no Cérebro.",
+      "DEGRADED": "Resposta indisponível no momento — tente de novo.",
+      "ENGINE_UNCONFIGURED": "Motor de IA não configurado.",
+      "ENGINE_UNCONFIGURED_HINT": "Isto é uma configuração do sistema, não uma falta no Cérebro. Um administrador precisa configurar o motor de IA."
+    },
+    "CITATION": {
+      "ARIA_LABEL": "Fontes do Cérebro",
+      "UNKNOWN": "Fonte do Cérebro"
+    },
+    "ERRORS": {
+      "RATE_LIMITED": "Muitas perguntas agora — tente em instantes.",
+      "FORBIDDEN": "Você não tem acesso ao Copiloto.",
+      "UNKNOWN": "Algo deu errado — tente de novo.",
+      "TOO_LONG": "A pergunta está muito longa (máx. {max} caracteres)."
+    }
+  }
+}
