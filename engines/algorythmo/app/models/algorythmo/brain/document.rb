@@ -22,7 +22,9 @@ module Algorythmo
 
       # Content categories surfaced in the "Ajustar" dropzone (plan §11 — 6 chips,
       # of which "todos" is a UI filter, not a real category).
-      CATEGORIES = %w[policies manuals rules design_system other].freeze
+      # "ajuste" is reserved for pasted-text entries created by AdjustmentsController
+      # (plan 0012 §6, PR4 — "colar conhecimento" flow).
+      CATEGORIES = %w[policies manuals rules design_system other ajuste].freeze
 
       # Hard ceiling on upload size (plan §4.3). 10 MiB.
       MAX_BYTE_SIZE = 10 * 1024 * 1024
