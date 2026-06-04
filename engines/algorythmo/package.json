@@ -4,10 +4,11 @@
   "private": true,
   "description": "GBrain CLI dependency for Algorythmo Brain MVP (M3). Managed separately from the frontend bundle.",
   "dependencies": {
-    "gbrain": "garrytan/gbrain#SHA_TO_BE_PINNED_DAY0"
+    "gbrain": "garrytan/gbrain#9a0bae8d62cdd1e0dd6655e24e082fe6c69c5dac"
   },
   "notes": {
-    "pin-policy": "ADR-0013 — pin by 40-char commit SHA, bump bi-weekly (odd ISO week Mondays) + hotfix lane for CVE/regression. Replace SHA_TO_BE_PINNED_DAY0 with the actual 40-char SHA before merging PR M3-1.",
+    "pin-policy": "ADR-0013 — pin by 40-char commit SHA, bump bi-weekly (odd ISO week Mondays) + hotfix lane for CVE/regression. Mirror of engines/algorythmo/GBRAIN_PINNED_SHA (single source of truth for bumps).",
+    "pinned-sha-date": "garrytan/gbrain@master HEAD as of 2026-06-04 (PR 0 brain-copiloto).",
     "runtime": "GBrain is a Node.js CLI. Install via pnpm (project default) or bun: `pnpm install` in engines/algorythmo/. The gbrain binary is invoked via Open3 subprocess from Brain::Client (PR M3-2)."
   }
 }

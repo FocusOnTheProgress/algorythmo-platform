@@ -53,6 +53,11 @@ O SHA de 40 chars é preenchido no PR M3-1 após o engineer validar a versão lo
 - **Negativo:** bump bi-semanal é overhead real (~30min por ciclo de validação). Mitigação: PR M3-1.5 automatiza os drift checks na CI nightly.
 - **Risco aceito:** entre bumps, CVEs no GBrain não corrigidas ficam no código. Mitigação: hotfix lane + CI nightly no SHA pinado detecta regressões antes do bump promover.
 
+## SHA pinado (atual)
+
+- `9a0bae8d62cdd1e0dd6655e24e082fe6c69c5dac` — `garrytan/gbrain@master` HEAD em 2026-06-04 (PR 0 brain-copiloto). Fonte de verdade única: `engines/algorythmo/GBRAIN_PINNED_SHA` (espelhado em `engines/algorythmo/package.json`). Fatos verificados no source neste SHA: `engines/algorythmo/GBRAIN_PINNED_SHA.md`.
+
 ## Histórico de revisão
 
+- v5.1 (2026-06-04): SHA placeholder substituído pelo SHA real (`9a0bae8…`) no PR 0 brain-copiloto; arquivo `GBRAIN_PINNED_SHA` virou fonte de verdade única do pin.
 - v5.0 (2026-05-25): SHA pin substituiu "tag exata" (upstream não tem release tags — fato confirmado por codex review v1 P1 #16). Cadência mensal → bi-semanal (codex v1 P1 #17 — upstream patches em dias). Hotfix lane adicionada (codex v1 P2 #19). Allowed drift checks explicitados (codex v1 P2 #20).
