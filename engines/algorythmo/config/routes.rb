@@ -59,6 +59,12 @@ Algorythmo::Engine.routes.draw do
           # Enqueues IngestionWorker — does NOT call gbrain synchronously.
           resources :adjustments, only: %i[create], controller: 'adjustments'
 
+          # POST /brain/documents  → Brain::DocumentsController#create  (0012 PR3 — upload)
+          # GET  /brain/documents  → Brain::DocumentsController#index   (0012 PR3 — "Ver")
+          # Validates (§4.3) before storing the blob, then enqueues
+          # BrainDocumentIngestionWorker (extract → markdown → capture under WriteLock).
+          resources :documents, only: %i[index create], controller: 'documents'
+
           # GET  /brain/snapshots     → Brain::SnapshotsController#index       (T4, PR M3-7)
           resources :snapshots, only: %i[index], controller: 'snapshots'
 
