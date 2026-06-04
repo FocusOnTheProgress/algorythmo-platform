@@ -132,10 +132,26 @@ RSpec.describe 'Brain routes', type: :request do
     end
   end
 
+  # POST /brain/adjustments — implemented in plan 0012 PR4 ("colar conhecimento").
+  # Tenant gate still enforced; happy-path response is 422 (empty body) or 201.
   describe 'POST /brain/adjustments' do
-    it_behaves_like 'a brain route that enforces tenant gate',
-                    method: :post,
-                    path_template: '/api/v1/accounts/:account_id/brain/adjustments'
+    context 'when the authenticated account is NOT the primary account (non-founder)' do
+      it 'returns 403' do
+        without_primary_account_match do
+          post "/algorythmo/api/v1/accounts/#{account.id}/brain/adjustments", headers: headers
+          expect(response).to have_http_status(:forbidden)
+        end
+      end
+    end
+
+    context 'when the authenticated account IS the primary account (founder)' do
+      it 'returns 422 with no body (implementation live — not a stub)' do
+        with_primary_account do
+          post "/algorythmo/api/v1/accounts/#{account.id}/brain/adjustments", headers: headers
+          expect(response).to have_http_status(:unprocessable_entity)
+        end
+      end
+    end
   end
 
   # GET /brain/snapshots — wired in PR 0012-5 (Fatia 5). Returns 200, not 501.

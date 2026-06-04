@@ -49,9 +49,7 @@ class Algorythmo::Api::V1::Brain::AdjustmentsController < Algorythmo::Api::V1::B
     return render json: { error: 'content is required' }, status: :unprocessable_entity if content.nil?
 
     scrubbed = content.scrub
-    if scrubbed.empty?
-      return render json: { error: 'content cannot be blank' }, status: :unprocessable_entity
-    end
+    return render json: { error: 'content cannot be blank' }, status: :unprocessable_entity if scrubbed.empty?
 
     if scrubbed.bytesize > MAX_CONTENT_BYTES
       return render json: { error: 'content exceeds 1 MB limit' }, status: :unprocessable_entity
@@ -59,10 +57,7 @@ class Algorythmo::Api::V1::Brain::AdjustmentsController < Algorythmo::Api::V1::B
 
     document = build_document(scrubbed)
     attach_blob(document, scrubbed)
-
-    unless document.save
-      return render json: { error: document.errors.full_messages.to_sentence }, status: :unprocessable_entity
-    end
+    return render json: { error: document.errors.full_messages.to_sentence }, status: :unprocessable_entity unless document.save
 
     Algorythmo::Brain::BrainDocumentIngestionWorker.perform_async(current_account.id, document.id)
     render json: document_json(document), status: :created
@@ -98,10 +93,9 @@ class Algorythmo::Api::V1::Brain::AdjustmentsController < Algorythmo::Api::V1::B
   end
 
   def attach_blob(document, content)
-    filename = document.filename
     document.file.attach(
       io: StringIO.new(content),
-      filename: filename,
+      filename: document.filename,
       content_type: 'text/markdown'
     )
   end
