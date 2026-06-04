@@ -34,14 +34,14 @@ RSpec.describe 'GBRAIN_PINNED_SHA / package.json SHA parity' do
   end
 
   it 'package.json gbrain dependency encodes a 40-char hex SHA' do
-    expect(sha_from_package_json).to match(/\A[0-9a-f]{40}\z/),
-                                     "package.json gbrain dep should be garrytan/gbrain#<sha40>, got: #{sha_from_package_json.inspect}"
+    msg = "package.json gbrain dep should be garrytan/gbrain#<sha40>, got: #{sha_from_package_json.inspect}"
+    expect(sha_from_package_json).to match(/\A[0-9a-f]{40}\z/), msg
   end
 
   it 'both SHAs are identical — no silent drift between doc and runtime' do
-    expect(sha_from_file).to eq(sha_from_package_json),
-                              "GBRAIN_PINNED_SHA (#{sha_from_file}) diverges from " \
-                              "package.json (#{sha_from_package_json}). " \
-                              'Update both files atomically when bumping (ADR-0013).'
+    msg = "GBRAIN_PINNED_SHA (#{sha_from_file}) diverges from " \
+          "package.json (#{sha_from_package_json}). " \
+          'Update both files atomically when bumping (ADR-0013).'
+    expect(sha_from_file).to eq(sha_from_package_json), msg
   end
 end
