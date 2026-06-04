@@ -40,6 +40,8 @@ export default defineConfig({
       'app/javascript/dashboard/helper/algorythmo/**/*.spec.{js,ts}',
       'app/javascript/dashboard/composables/algorythmo/**/*.spec.{js,ts}',
       'app/javascript/dashboard/components-next/algorythmo/**/*.spec.{js,ts}',
+      // algorythmo: PR7 — Copiloto (operator knowledge consultant) specs.
+      'app/javascript/dashboard/modules/algorythmo/copilot/**/*.spec.{js,ts}',
       'engines/algorythmo/app/javascript/**/*.spec.{js,ts}',
     ],
     globals: true,
