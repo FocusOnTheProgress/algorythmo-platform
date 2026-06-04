@@ -68,6 +68,11 @@ Algorythmo::Engine.routes.draw do
           # GET  /brain/snapshots     → Brain::SnapshotsController#index       (T4, PR M3-7)
           resources :snapshots, only: %i[index], controller: 'snapshots'
 
+          # POST /brain/copilot/ask → Brain::CopilotController#ask  (Fatia 6 — read-only RAG)
+          # Operator tool: inherits the Brain auth chain but NOT admin authorization
+          # (agents may ask). Synchronous + Redis semaphore (no admin-only gate).
+          post 'copilot/ask', to: 'copilot#ask'
+
           # POST   /brain/mcp_token   → Brain::McpTokensController#create      (T3, PR M3-6)
           resource :mcp_token, only: %i[create], controller: 'mcp_tokens'
 
