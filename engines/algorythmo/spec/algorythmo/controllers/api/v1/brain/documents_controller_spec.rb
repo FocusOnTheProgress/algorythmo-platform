@@ -18,14 +18,13 @@ RSpec.describe Algorythmo::Api::V1::Brain::DocumentsController, type: :controlle
   PDF_BYTES = "%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"
   EXE_BYTES = "MZ\x90\x00\x03\x00\x00\x00".b
 
-  # fixture_file_upload is the established controller-spec pattern for file params.
-  # We write a tempfile with the correct extension so original_filename is preserved.
+  # Write content to a file named exactly `filename` inside a tmpdir so that
+  # fixture_file_upload's original_filename == filename (not a random tempfile name).
   def upload_for(content, filename:)
-    tempfile = Tempfile.new([File.basename(filename, '.*'), File.extname(filename)])
-    tempfile.binmode
-    tempfile.write(content.is_a?(String) ? content.b : content)
-    tempfile.flush
-    fixture_file_upload(tempfile.path, 'application/octet-stream')
+    dir  = Dir.mktmpdir('doc_upload_spec_')
+    path = File.join(dir, filename)
+    File.binwrite(path, content.respond_to?(:b) ? content.b : content)
+    fixture_file_upload(path, 'application/octet-stream')
   end
 
   before do
