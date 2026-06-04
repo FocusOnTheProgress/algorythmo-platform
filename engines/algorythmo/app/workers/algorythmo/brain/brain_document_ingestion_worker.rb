@@ -71,13 +71,15 @@ module Algorythmo
       end
 
       # Frontmatter so the brain page is self-describing: title, category, origin, date.
+      # Dynamic scalars are JSON-encoded — valid YAML for scalars — so a filename
+      # carrying a newline or colon cannot break out of or inject into the frontmatter.
       def with_frontmatter(document, body)
         <<~MARKDOWN
           ---
-          titulo: #{document.filename}
-          categoria: #{document.category}
-          origem: documento anexado
-          data: #{document.created_at.iso8601}
+          titulo: #{document.filename.to_json}
+          categoria: #{document.category.to_json}
+          origem: "documento anexado"
+          data: #{document.created_at.iso8601.to_json}
           ---
 
           #{body}

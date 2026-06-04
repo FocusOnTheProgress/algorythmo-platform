@@ -117,6 +117,28 @@ RSpec.describe Algorythmo::Brain::BrainDocumentIngestionWorker do
     end
   end
 
+  describe 'frontmatter safety' do
+    it 'JSON-encodes a filename with a newline so it cannot inject frontmatter' do
+      stub_write_lock_passthrough
+      document.update!(filename: "evil\ntitulo: injected")
+      captured_markdown = nil
+      client = stub_capture_success
+      allow(client).to receive(:capture) do |file:|
+        captured_markdown = File.read(file)
+        { 'page_path' => '/brain/documents/evil.md' }
+      end
+
+      worker.perform(account.id, document.id)
+
+      front = captured_markdown[/---\n(.*?)\n---/m, 1]
+      yaml = YAML.safe_load("#{front}\n")
+      aggregate_failures do
+        expect(yaml.keys).to contain_exactly('titulo', 'categoria', 'origem', 'data')
+        expect(yaml['titulo']).to eq("evil\ntitulo: injected")
+      end
+    end
+  end
+
   describe 'tmpfile hygiene' do
     it 'removes the tmpdir after a successful capture' do
       stub_write_lock_passthrough
