@@ -82,10 +82,32 @@ RSpec.describe 'Brain routes', type: :request do
     end
   end
 
+  # GET /brain/compiled_truth — implemented in PR 0012-1.
+  # Happy-path response is 200 (not 501 stub); tenant gate still enforced.
   describe 'GET /brain/compiled_truth' do
-    it_behaves_like 'a brain route that enforces tenant gate',
-                    method: :get,
-                    path_template: '/api/v1/accounts/:account_id/brain/compiled_truth'
+    context 'when the authenticated account is NOT the primary account (non-founder)' do
+      it 'returns 403' do
+        without_primary_account_match do
+          get "/algorythmo/api/v1/accounts/#{account.id}/brain/compiled_truth", headers: headers
+          expect(response).to have_http_status(:forbidden)
+        end
+      end
+    end
+
+    context 'when the authenticated account IS the primary account (founder)' do
+      before do
+        allow_any_instance_of(Algorythmo::Brain::Client)
+          .to receive(:stats)
+          .and_return({ 'aggregate' => { 'total_pages' => 0, 'total_edges' => 0 } })
+      end
+
+      it 'returns 200 (implementation live — not a stub)' do
+        with_primary_account do
+          get "/algorythmo/api/v1/accounts/#{account.id}/brain/compiled_truth", headers: headers
+          expect(response).to have_http_status(:ok)
+        end
+      end
+    end
   end
 
   describe 'GET /brain/timeline' do
