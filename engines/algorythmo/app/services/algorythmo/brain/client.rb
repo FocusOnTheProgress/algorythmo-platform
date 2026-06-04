@@ -210,7 +210,7 @@ module Algorythmo
       # into stderr we must not let it reach an exception message or the logs.
       def redact_secrets(text)
         redacted = text.to_s
-        [ENV['OPENAI_API_KEY'], ENV['DEEPSEEK_API_KEY']].each do |secret|
+        [ENV.fetch('OPENAI_API_KEY', nil), ENV.fetch('DEEPSEEK_API_KEY', nil)].each do |secret|
           next if secret.blank?
 
           redacted = redacted.gsub(secret, '[REDACTED]')

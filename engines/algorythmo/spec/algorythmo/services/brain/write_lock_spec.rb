@@ -82,7 +82,10 @@ RSpec.describe Algorythmo::Brain::WriteLock do
     it 'acquires on the per-account key' do
       acquired_key = nil
       conn = instance_double(Redis::Namespace)
-      allow(conn).to receive(:set) { |key, _val, **_| acquired_key = key; 'OK' }
+      allow(conn).to receive(:set) do |key, _val, **_|
+        acquired_key = key
+        'OK'
+      end
       allow(conn).to receive(:eval).and_return(1)
       stub_redis_pool(conn)
 

@@ -54,8 +54,10 @@ module Algorythmo
       def self.with_lock(account_id:, timeout: 5)
         key      = lock_key(account_id)
         token    = SecureRandom.uuid
-        acquired = acquire(key, token, timeout)
-        raise LockContended, "gbrain write lock held by another process — account=#{account_id} token=#{token[0, 8]}… timeout=#{timeout}s" unless acquired
+        unless acquire(key, token, timeout)
+          raise LockContended,
+                "gbrain write lock held by another process — account=#{account_id} token=#{token[0, 8]}… timeout=#{timeout}s"
+        end
 
         begin
           yield

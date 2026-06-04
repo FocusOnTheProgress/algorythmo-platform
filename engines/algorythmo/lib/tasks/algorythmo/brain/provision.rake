@@ -67,8 +67,8 @@ module Algorythmo
       # Same env hash contract as Brain::Client#subprocess_env: keys only in env.
       def subprocess_env
         env = { 'GBRAIN_HOME' => gbrain_home }
-        env['OPENAI_API_KEY']   = ENV['OPENAI_API_KEY']
-        env['DEEPSEEK_API_KEY'] = ENV['DEEPSEEK_API_KEY']
+        env['OPENAI_API_KEY']   = ENV.fetch('OPENAI_API_KEY', nil)
+        env['DEEPSEEK_API_KEY'] = ENV.fetch('DEEPSEEK_API_KEY', nil)
         env
       end
 
@@ -110,7 +110,7 @@ module Algorythmo
       # Defensive: never let a leaked key reach the abort message / logs.
       def redact(text)
         out = text.to_s
-        [ENV['OPENAI_API_KEY'], ENV['DEEPSEEK_API_KEY']].each do |secret|
+        [ENV.fetch('OPENAI_API_KEY', nil), ENV.fetch('DEEPSEEK_API_KEY', nil)].each do |secret|
           next if secret.to_s.empty?
 
           out = out.gsub(secret, '[REDACTED]')

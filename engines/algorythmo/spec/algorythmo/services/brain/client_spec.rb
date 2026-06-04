@@ -18,13 +18,19 @@ RSpec.describe Algorythmo::Brain::Client do
   # Simulates a subprocess result without spawning a real process.
   # Open3's wait_thr carries a monkey-patched #pid on Thread; we use a plain
   # double to avoid VerifiedDoubles on a non-standard method.
+  # Records the env hash (first popen3 arg) of every invocation so isolation tests
+  # can inspect multiple calls without re-stubbing (which would reset the spy count).
+  attr_reader :popen3_envs
+
   def stub_popen3(stdout:, stderr: '', exit_status: 0)
     status   = instance_double(Process::Status, success?: exit_status.zero?, exitstatus: exit_status)
     wait_thr = double('Open3WaitThread', pid: 99_999, value: status)
     allow(wait_thr).to receive(:join).and_return(wait_thr) # returns self = not timed out
     allow(wait_thr).to receive(:alive?).and_return(false)
 
-    allow(Open3).to receive(:popen3) do |*_args, &blk|
+    @popen3_envs = []
+    allow(Open3).to receive(:popen3) do |first, *_rest, &blk|
+      @popen3_envs << first
       blk.call(
         instance_double(IO, close: nil),
         instance_double(IO, read: stdout),
@@ -216,11 +222,9 @@ RSpec.describe Algorythmo::Brain::Client do
   describe 'subprocess env hash (Open3.popen3 first arg)' do
     let(:account_client) { described_class.new(42) }
 
-    # Open3.popen3(env, *args): the env hash is the first positional argument.
+    # The env hash (first popen3 arg) of the most recent invocation.
     def captured_env
-      env = nil
-      expect(Open3).to have_received(:popen3) { |first, *_rest| env = first }
-      env
+      popen3_envs.last
     end
 
     it 'injects a per-account GBRAIN_HOME (base/<account_id>, no .gbrain suffix)' do
@@ -235,12 +239,10 @@ RSpec.describe Algorythmo::Brain::Client do
     it 'isolates accounts: different account_id → different GBRAIN_HOME' do
       stub_popen3(stdout: '{}')
       described_class.new(1).stats
-      home_one = captured_env['GBRAIN_HOME']
-
-      stub_popen3(stdout: '{}')
       described_class.new(2).stats
-      home_two = captured_env['GBRAIN_HOME']
 
+      home_one = popen3_envs[0]['GBRAIN_HOME']
+      home_two = popen3_envs[1]['GBRAIN_HOME']
       expect(home_one).not_to eq(home_two)
     end
 
