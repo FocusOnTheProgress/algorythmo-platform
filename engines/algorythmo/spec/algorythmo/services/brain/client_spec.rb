@@ -307,6 +307,48 @@ RSpec.describe Algorythmo::Brain::Client do
   end
 
   # ---------------------------------------------------------------------------
+  # C2 — Integer coercion in initialize (path-traversal guard)
+  # ---------------------------------------------------------------------------
+  describe '.new account_id coercion' do
+    it 'accepts a valid integer account_id' do
+      expect { described_class.new(7) }.not_to raise_error
+    end
+
+    it 'accepts a numeric string' do
+      expect { described_class.new('42') }.not_to raise_error
+    end
+
+    it 'raises on a traversal-attempt string like "../99"' do
+      expect { described_class.new('../99') }.to raise_error(ArgumentError)
+    end
+
+    it 'raises on a non-numeric string' do
+      expect { described_class.new('evil') }.to raise_error(ArgumentError)
+    end
+
+    it 'raises on nil' do
+      expect { described_class.new(nil) }.to raise_error(TypeError)
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # C3 — parse_output redacts API keys from JSON parse error message
+  # ---------------------------------------------------------------------------
+  describe 'parse_output key redaction' do
+    it 'redacts a leaked key from a JSON ParseError message in stdout' do
+      # A future gbrain version could echo config (including keys) to stdout
+      # before crashing — the ParseError message would then contain the key.
+      stub_popen3(stdout: 'auth=sk-leaked-stdout-456 invalid json {', exit_status: 0)
+      ClimateControl.modify(OPENAI_API_KEY: 'sk-leaked-stdout-456') do
+        expect { client.stats }.to raise_error(described_class::SubprocessError) do |err|
+          expect(err.message).to include('[REDACTED]')
+          expect(err.message).not_to include('sk-leaked-stdout-456')
+        end
+      end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # Error paths
   # ---------------------------------------------------------------------------
   describe 'SubprocessError' do

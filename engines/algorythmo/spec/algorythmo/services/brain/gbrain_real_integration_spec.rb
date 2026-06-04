@@ -7,9 +7,12 @@ require 'open3'
 # REAL gbrain integration gate — the manual proof-of-life before the Copiloto
 # state machine (PR 6) ships against a live brain.
 #
-# This spec spawns the actual gbrain CLI. It is EXCLUDED from CI (tag :gbrain_real,
-# filtered out in engines/algorythmo/spec/spec_helper.rb unless GBRAIN_REAL=1) and
-# additionally self-skips if the keys are absent.
+# This spec spawns the actual gbrain CLI. It is EXCLUDED from CI via two independent
+# guards (defence-in-depth):
+#   1. config.filter_run_excluding(:gbrain_real) in spec/spec_helper.rb (HOST — always
+#      loaded by the CI runner) and mirrored in the engine spec_helper.rb.
+#   2. `before { skip ... unless GBRAIN_REAL }` inside the spec itself.
+# Both must agree; neither alone is sufficient — see CORREÇÃO 1 (adversarial review).
 #
 # How to run (locally, with a brain-capable machine + keys):
 #   GBRAIN_REAL=1 \
@@ -85,10 +88,19 @@ RSpec.describe 'GBrain real integration', :gbrain_real do
     expect(page_count(stats_b)).to eq(0)
   end
 
-  # gbrain stats shape varies across versions; accept the common keys defensively.
+  # Reads total_pages from the canonical stats shape verified in source at the pinned SHA:
+  #   StatsResult.aggregate.total_pages  (src/core/schema-pack/stats.ts)
+  #
+  # Fails LOUD if gbrain renames the key on a bump — that's intentional: a rename
+  # must be caught here (hard failure) not masked by a fallback chain that silently
+  # returns 0 for both accounts (which would make the isolation assertion vacuous).
   def page_count(stats)
-    return 0 unless stats.is_a?(Hash)
+    raise "stats response is not a Hash (got #{stats.class})" unless stats.is_a?(Hash)
 
-    (stats['pages'] || stats['pageCount'] || stats['page_count'] || 0).to_i
+    aggregate = stats['aggregate']
+    raise "stats missing 'aggregate' key — field may have been renamed on a gbrain bump" unless aggregate.is_a?(Hash)
+    raise "aggregate missing 'total_pages' key — field may have been renamed on a gbrain bump" unless aggregate.key?('total_pages')
+
+    Integer(aggregate['total_pages'])
   end
 end

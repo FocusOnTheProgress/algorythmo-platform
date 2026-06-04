@@ -41,8 +41,10 @@ module Algorythmo
 
       # @param account_id [Integer] Chatwoot account ID. Selects the per-account
       #   GBRAIN_HOME so brains are isolated at the filesystem level (P0-5).
+      #   Coerced with Integer() at construction so a malicious string like "../99"
+      #   raises immediately rather than landing in File.join (path-traversal guard).
       def initialize(account_id)
-        @account_id = account_id
+        @account_id = Integer(account_id)
       end
 
       # Absolute path used as GBRAIN_HOME for this account. gbrain appends ".gbrain".
@@ -198,7 +200,10 @@ module Algorythmo
 
         JSON.parse(stdout)
       rescue JSON::ParserError => e
-        raise SubprocessError, "gbrain returned non-JSON output (#{args.first(2).join(' ')}): #{e.message}"
+        # redact_secrets guards against a key leaking via a partial stdout fragment
+        # embedded in the ParseError message (e.g. JSON cut mid-token).
+        safe_msg = redact_secrets(e.message).truncate(200)
+        raise SubprocessError, "gbrain returned non-JSON output (#{args.first(2).join(' ')}): #{safe_msg}"
       end
 
       def build_error(args, status, stderr)
