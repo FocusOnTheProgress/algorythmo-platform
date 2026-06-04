@@ -18,9 +18,19 @@
 class Algorythmo::Api::V1::Brain::CopilotController < Algorythmo::Api::V1::Brain::BaseController
   MAX_QUESTION_LENGTH = 2000
 
+  # Rejects strings that start with a flag-like prefix (--foo or -f followed by a
+  # non-space character). `question` is the first positional argument to
+  # `gbrain think <question> --json`, so a crafted value like "--save" or
+  # "--model evil:x" would be parsed by the gbrain CLI as a flag. We close this
+  # at our boundary — independent of whether the current gbrain version happens to
+  # guard against it — so the contract holds through future SHA bumps (ADR-0013).
+  # No legitimate operator question begins with a hyphen-flag sequence.
+  FLAG_INJECTION_PATTERN = /\A--?\S/
+
   def ask
     question = params[:question].to_s.strip
     return render_invalid_question if question.empty? || question.length > MAX_QUESTION_LENGTH
+    return render_invalid_question if question.match?(FLAG_INJECTION_PATTERN)
     return render_rate_limited unless within_rate_limit?
 
     result = Algorythmo::Brain::ConcurrencySemaphore.with_slot do

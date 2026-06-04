@@ -6,6 +6,13 @@
 # A fixed-window counter per user caps abuse and runaway loops. We keep it in the
 # engine (not Rack::Attack) so it is unit-testable and the limit lives next to the
 # feature it protects.
+#
+# TTL safety (P2-1): EXPIRE is called on EVERY request, not only on current==1.
+# If the process dies between INCR and the conditional EXPIRE (deploy, OOM, SIGKILL
+# — realistic on a 4 GB VPS), the key would persist without a TTL and block the
+# user permanently. Calling EXPIRE unconditionally is idempotent (it resets the TTL
+# to the same WINDOW value the key already carries) and costs one extra Redis round
+# trip, but makes the invariant "this key always has a TTL" a hard guarantee.
 module Algorythmo
   module Brain
     class CopilotRateLimiter
@@ -25,7 +32,7 @@ module Algorythmo
         key = key_for(account_id, user_id)
         count = redis_pool.with do |conn|
           current = conn.incr(key)
-          conn.expire(key, WINDOW) if current == 1
+          conn.expire(key, WINDOW) # unconditional — guards against TTL-less key on crash
           current
         end
         count <= MAX_REQUESTS

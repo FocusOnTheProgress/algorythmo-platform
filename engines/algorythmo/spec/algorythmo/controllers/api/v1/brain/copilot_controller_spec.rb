@@ -63,6 +63,39 @@ RSpec.describe Algorythmo::Api::V1::Brain::CopilotController, type: :request do
       post path, headers: headers, params: { question: 'a' * 2001 }
       expect(response).to have_http_status(:unprocessable_entity)
     end
+
+    # Adversarial: flag-injection guard (P1 / ADR-0013).
+    # `question` is the first positional CLI arg to `gbrain think <question> --json`.
+    # A value starting with a dash-flag prefix would be parsed by the gbrain CLI as a
+    # flag, not a question. We reject it at the controller boundary — independent of
+    # whether the current gbrain SHA happens to guard against it — so the contract
+    # survives future upstream bumps.
+    context 'when the question starts with a CLI flag prefix (adversarial)' do
+      it 'rejects --save with 422 and does NOT call the engine' do
+        expect(Algorythmo::Brain::CopilotAnswer).not_to receive(:call)
+        post path, headers: headers, params: { question: '--save' }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'rejects --model evil:x with 422 and does NOT call the engine' do
+        expect(Algorythmo::Brain::CopilotAnswer).not_to receive(:call)
+        post path, headers: headers, params: { question: '--model evil:x' }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'rejects a single-dash flag like -q with 422' do
+        expect(Algorythmo::Brain::CopilotAnswer).not_to receive(:call)
+        post path, headers: headers, params: { question: '-q' }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'allows a question that starts with a dash used naturally (e.g. "- qual?")', :aggregate_failures do
+        stub_answer(state: 'ungrounded', answer: '', citations: [], gaps: [], model_used: nil, pages_gathered: 0)
+        post path, headers: headers, params: { question: '- qual é a política?' }
+        # "- " (dash + space) is NOT a flag prefix — it is a list-item markdown prefix.
+        expect(response).to have_http_status(:ok)
+      end
+    end
   end
 
   describe 'state machine → HTTP mapping' do

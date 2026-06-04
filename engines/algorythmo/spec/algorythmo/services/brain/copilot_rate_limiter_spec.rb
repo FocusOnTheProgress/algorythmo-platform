@@ -34,11 +34,22 @@ RSpec.describe Algorythmo::Brain::CopilotRateLimiter do
     expect(described_class.allow?(account_id: account_id, user_id: user_id)).to be(false)
   end
 
-  it 'sets the window TTL only on the first request of the window' do
+  # P2-1: EXPIRE is called on EVERY request (not only when current==1).
+  # If the process dies between INCR and a conditional EXPIRE (deploy/OOM/SIGKILL),
+  # the key would survive with no TTL and block the user permanently. Unconditional
+  # EXPIRE is idempotent and guarantees the key always carries a finite TTL.
+  it 'calls expire on every request to guarantee the TTL survives a crash between INCR and EXPIRE' do
     conn = stub_pool
+    n = 3
+    n.times { described_class.allow?(account_id: account_id, user_id: user_id) }
+    expect(conn).to have_received(:expire).exactly(n).times
+  end
+
+  it 'sets the expire TTL to WINDOW seconds' do
+    conn = stub_pool
+    key  = described_class.key_for(account_id, user_id)
     described_class.allow?(account_id: account_id, user_id: user_id)
-    described_class.allow?(account_id: account_id, user_id: user_id)
-    expect(conn).to have_received(:expire).once
+    expect(conn).to have_received(:expire).with(key, described_class::WINDOW)
   end
 
   it 'isolates counters per user' do

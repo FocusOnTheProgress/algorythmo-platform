@@ -61,8 +61,13 @@ module Algorythmo
           answer: payload['answer'].to_s,
           citations: normalize_citations(payload['citations']),
           gaps: Array(payload['gaps']),
-          model_used: payload['modelUsed'],
-          pages_gathered: payload['pagesGathered']
+          # model_used is nullable by contract (absent in degraded/engine_unconfigured).
+          # Frontend renders nil/null as "—"; do not coerce to a false string.
+          model_used: payload['modelUsed'] || nil,
+          # pages_gathered is always an integer by contract. gbrain may omit it in
+          # error states (P2-2); .to_i coerces nil → 0 so the frontend always gets a
+          # number, never null.
+          pages_gathered: payload['pagesGathered'].to_i
         }
       end
 

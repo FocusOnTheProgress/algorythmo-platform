@@ -125,6 +125,30 @@ RSpec.describe Algorythmo::Brain::CopilotAnswer do
     end
   end
 
+  describe 'contract-safe defaults (P2-2)' do
+    context 'when pagesGathered and modelUsed are absent in the gbrain payload' do
+      before do
+        stub_think(
+          'answer' => '',
+          'synthesisOk' => false,
+          'citations' => [],
+          'warnings' => ['LLM_OUTPUT_NOT_JSON']
+          # pagesGathered and modelUsed intentionally absent
+        )
+      end
+
+      it 'coerces pages_gathered to 0 (never null) so the frontend always gets an integer' do
+        result = described_class.call(account_id: account_id, question: 'x?')
+        expect(result[:pages_gathered]).to eq(0)
+      end
+
+      it 'returns model_used as nil (nullable by contract — frontend renders "—")' do
+        result = described_class.call(account_id: account_id, question: 'x?')
+        expect(result[:model_used]).to be_nil
+      end
+    end
+  end
+
   describe 'prompt injection is inert (read-only structural defense)' do
     before do
       stub_think(
