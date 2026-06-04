@@ -9,6 +9,7 @@ require 'zip'
 RSpec.describe Algorythmo::Brain::DocumentExtractor do
   # let-held tmpdir avoids RSpec/InstanceVariable. Cleaned up after each example.
   let(:tmpdir) { Dir.mktmpdir('extractor_spec_') }
+
   after { FileUtils.rm_rf(tmpdir) }
 
   def write_text(name, content)
@@ -85,7 +86,7 @@ RSpec.describe Algorythmo::Brain::DocumentExtractor do
         '<< /Type /Catalog /Pages 2 0 R >>',
         '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
         '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] ' \
-          '/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',
+        '/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',
         "<< /Length #{PDF_CONTENT.bytesize} >>\nstream\n#{PDF_CONTENT}\nendstream",
         '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'
       ]

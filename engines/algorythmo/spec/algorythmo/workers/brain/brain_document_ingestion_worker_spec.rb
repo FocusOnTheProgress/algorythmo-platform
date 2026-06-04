@@ -12,8 +12,12 @@ require 'rails_helper'
 RSpec.describe Algorythmo::Brain::BrainDocumentIngestionWorker do
   subject(:worker) { described_class.new }
 
-  let(:account)  { create(:account) }
-  let(:document) { create(:algorythmo_brain_document, account: account, filename: 'doc.md', content_type: 'text/markdown') }
+  let(:account) { create(:account) }
+  let(:document) do
+    doc = create(:algorythmo_brain_document, account: account, filename: 'doc.md', content_type: 'text/markdown')
+    doc.file.attach(io: StringIO.new("# Conteúdo\n"), filename: 'doc.md', content_type: 'text/markdown')
+    doc
+  end
 
   def stub_capture_success(page_path: '/brain/documents/doc.md')
     client = instance_double(Algorythmo::Brain::Client, capture: { 'page_path' => page_path })

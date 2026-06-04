@@ -58,7 +58,8 @@ module Algorythmo
         return failure('filename is invalid') unless safe_filename?(filename)
 
         extension = File.extname(filename).downcase
-        return failure("extension not allowed: #{extension.blank? ? '(none)' : extension}") unless EXTENSION_MIME.key?(extension)
+        extension_error = validate_extension(extension)
+        return failure(extension_error) if extension_error
 
         size_error = validate_size(@upload.size.to_i)
         return failure(size_error) if size_error
@@ -70,6 +71,14 @@ module Algorythmo
       end
 
       private
+
+      # Returns a failure reason string when the extension is not in the allowlist, nil if OK.
+      def validate_extension(extension)
+        return nil if EXTENSION_MIME.key?(extension)
+
+        label = extension.presence || '(none)'
+        "extension not allowed: #{label}"
+      end
 
       # Returns a failure reason string if size is invalid, nil if OK.
       # Extracted to keep `call` under the cyclomatic complexity limit.

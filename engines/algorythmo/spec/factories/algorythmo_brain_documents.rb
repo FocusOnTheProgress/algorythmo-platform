@@ -11,15 +11,11 @@ FactoryBot.define do
     category     { 'manuals' }
     status       { :pending }
 
-    # Active Storage requires the record to be persisted before attaching.
-    # after(:build) raises in Rails 7.1 with the test service on an unsaved record.
-    # Specs that only build (validations) do not need a real blob attached.
-    after(:create) do |document|
-      document.file.attach(
-        io: StringIO.new("# Manual\n\nConteúdo de teste."),
-        filename: document.filename,
-        content_type: document.content_type
-      )
-    end
+    # No after(:build) / after(:create) attachment here.
+    # Active Storage has_one_attached :file is required only by the worker
+    # (blob.open). Tests that need an actual attached blob build it explicitly:
+    #   document.file.attach(io: StringIO.new('content'), filename: 'f.md', content_type: 'text/plain')
+    # The column-level factory (above) is enough for every spec that
+    # tests status transitions, validations, or controller rendering.
   end
 end
