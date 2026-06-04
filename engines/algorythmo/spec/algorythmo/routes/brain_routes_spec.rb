@@ -9,6 +9,7 @@ require 'rails_helper'
 #      Algorythmo::Api::V1::Brain::BaseController (ensuring TenantResolution is always applied).
 #   B. Behavioural: request specs for each Brain route — non-founder → 403, founder → 501
 #      (stub responds 501 until T1-T4 land).
+#      Exceptions: timeline + snapshots were wired in PR 0012-5 and return 200.
 RSpec.describe 'Brain routes', type: :request do
   let(:account) { create(:account) }
   let(:admin)   { create(:user, account: account, role: :administrator) }
@@ -110,10 +111,25 @@ RSpec.describe 'Brain routes', type: :request do
     end
   end
 
+  # GET /brain/timeline — wired in PR 0012-5 (Fatia 5). Returns 200, not 501.
   describe 'GET /brain/timeline' do
-    it_behaves_like 'a brain route that enforces tenant gate',
-                    method: :get,
-                    path_template: '/api/v1/accounts/:account_id/brain/timeline'
+    context 'when the authenticated account is NOT the primary account (non-founder)' do
+      it 'returns 403' do
+        without_primary_account_match do
+          get "/algorythmo/api/v1/accounts/#{account.id}/brain/timeline", headers: headers
+          expect(response).to have_http_status(:forbidden)
+        end
+      end
+    end
+
+    context 'when the authenticated account IS the primary account (founder)' do
+      it 'returns 200 (implemented in PR 0012-5)' do
+        with_primary_account do
+          get "/algorythmo/api/v1/accounts/#{account.id}/brain/timeline", headers: headers
+          expect(response).to have_http_status(:ok)
+        end
+      end
+    end
   end
 
   describe 'POST /brain/adjustments' do
@@ -122,10 +138,25 @@ RSpec.describe 'Brain routes', type: :request do
                     path_template: '/api/v1/accounts/:account_id/brain/adjustments'
   end
 
+  # GET /brain/snapshots — wired in PR 0012-5 (Fatia 5). Returns 200, not 501.
   describe 'GET /brain/snapshots' do
-    it_behaves_like 'a brain route that enforces tenant gate',
-                    method: :get,
-                    path_template: '/api/v1/accounts/:account_id/brain/snapshots'
+    context 'when the authenticated account is NOT the primary account (non-founder)' do
+      it 'returns 403' do
+        without_primary_account_match do
+          get "/algorythmo/api/v1/accounts/#{account.id}/brain/snapshots", headers: headers
+          expect(response).to have_http_status(:forbidden)
+        end
+      end
+    end
+
+    context 'when the authenticated account IS the primary account (founder)' do
+      it 'returns 200 (implemented in PR 0012-5)' do
+        with_primary_account do
+          get "/algorythmo/api/v1/accounts/#{account.id}/brain/snapshots", headers: headers
+          expect(response).to have_http_status(:ok)
+        end
+      end
+    end
   end
 
   # POST /brain/mcp_token — implemented in PR M3-5 (T3).
