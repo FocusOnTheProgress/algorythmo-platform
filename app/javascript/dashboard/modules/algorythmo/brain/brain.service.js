@@ -1,9 +1,9 @@
 /* global axios */
-// algorythmo: M3-PR3 — Brain service layer
+// algorythmo: Brain service layer
 // Tries the Rails API first. Falls back to fixtures when the backend returns
-// 501 (PR M3-4 ingestion not yet merged) or when the endpoint is absent.
-// The fixture fallback warns loudly in DEV so engineers never silently ship
-// stale data to production.
+// 501 (backend stub not yet implemented for that endpoint) — kept as a safety
+// net even after compiled_truth went live (PR 0012-1). Auth errors (401/403)
+// and 404 bubble up untouched — never silently degrade to fixtures.
 import compiledTruthFixture from './fixtures/compiledTruth.json';
 import timelineFixture from './fixtures/timeline.json';
 
@@ -13,22 +13,25 @@ const warnFixture = name => {
   if (DEV) {
     // eslint-disable-next-line no-console
     console.warn(
-      `[Brain] API not available for "${name}" — using fixture. ` +
-        'Real data available after PR M3-4 merges.'
+      `[Brain] API returned 501 for "${name}" — using fixture as safety net. ` +
+        'Check that the backend endpoint is implemented and deployed.'
     );
   }
 };
 
-// Only 501 (Not Implemented) means "backend stub — M3-4 ingestion not yet merged".
+// Only 501 (Not Implemented) means "backend stub not yet live".
 // 404 means the route is gone or accountId is invalid — that must NOT silently
-// degrade to fixtures, otherwise a founder sees Day-1 placeholder data thinking
-// it's live. Auth errors (401/403) also bubble up untouched.
+// degrade to fixtures, otherwise a user sees placeholder data thinking it's live.
+// Auth errors (401/403) also bubble up untouched.
 const isStubStatus = err => err?.response?.status === 501;
 
 function brainBase(accountId) {
   return `/algorythmo/api/v1/accounts/${accountId}/brain`;
 }
 
+// compiled_truth shape (200 real response):
+//   { pages: Integer, edges: Integer, raw_stats: Hash, account_id: Integer }
+// Empty brain returns zeros — never an error at the API level.
 export const brainService = {
   async fetchCompiledTruth(accountId) {
     try {
