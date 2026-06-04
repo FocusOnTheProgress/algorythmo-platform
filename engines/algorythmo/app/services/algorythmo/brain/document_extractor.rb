@@ -3,6 +3,7 @@
 require 'pdf-reader'
 require 'zip'
 require 'nokogiri'
+require 'timeout'
 
 module Algorythmo
   module Brain
@@ -23,9 +24,31 @@ module Algorythmo
       # docx member that holds the document body.
       DOCX_BODY = 'word/document.xml'
 
-      # Cap on bytes read from a single docx XML member — a zip-bomb member that
-      # inflates far beyond the 10 MiB upload ceiling is refused rather than read.
-      DOCX_MEMBER_LIMIT = 64 * 1024 * 1024
+      # Maximum pages extracted from a PDF.  pdf-reader iterates pages lazily, but a
+      # hostile PDF can declare millions of page objects; capping the slice prevents
+      # iterating a runaway page tree.  2 000 pages of dense text is already ~4 MB of
+      # output — far beyond any real knowledge document.
+      PDF_PAGE_LIMIT = 2_000
+
+      # Wall-clock budget for the full PDF extraction.  A valid text-layer PDF of
+      # PDF_PAGE_LIMIT pages extracts in seconds; a crafted PDF that triggers O(n²)
+      # parsing in pdf-reader can spin for minutes.
+      PDF_EXTRACT_TIMEOUT = 30 # seconds
+
+      # Hard cap on bytes READ from a single docx XML member.
+      #
+      # Why not trust entry.size (the declared uncompressed size in the Central
+      # Directory)?  Because that field is attacker-controlled.  A zip-bomb can
+      # declare size = 60 MiB (below any size-check we write) while compressing to
+      # a few KB; the Inflater then happily streams out 60 MiB.  To defeat this we
+      # (a) keep the limit small — real docx prose XML never approaches 16 MiB —
+      # and (b) use IO#read(limit+1) so the OS kernel limits actual decompressed
+      # bytes, regardless of what the directory says.
+      #
+      # rubyzip 3.x also has Zip.validate_entry_sizes (default true): it raises
+      # Zip::DecompressionSizeError when inflated bytes exceed the declared size.
+      # We rescue that alongside Zip::Error so it surfaces as a clean ExtractionError.
+      DOCX_MEMBER_LIMIT = 16 * 1024 * 1024
 
       # @param blob_path [String] absolute path to the file on disk (server-owned tmpfile)
       # @param content_type [String] real MIME detected upstream (used only to pick a route
@@ -60,9 +83,18 @@ module Algorythmo
 
       # PDF text layer only. pdf-reader walks the content streams; it does not render
       # and does not evaluate embedded JavaScript. One paragraph per page.
+      #
+      # Defences against hostile PDFs:
+      #   - PDF_PAGE_LIMIT caps the number of pages iterated (zip-bomb-style page tree).
+      #   - PDF_EXTRACT_TIMEOUT caps wall-clock time (crafted PDFs that trigger
+      #     pathological parser paths).  Timeout::Error is re-raised as ExtractionError.
       def extract_pdf
-        reader = PDF::Reader.new(@blob_path)
-        reader.pages.map { |page| page.text.to_s.strip }.reject(&:empty?).join("\n\n")
+        Timeout.timeout(PDF_EXTRACT_TIMEOUT) do
+          reader = PDF::Reader.new(@blob_path)
+          reader.pages.first(PDF_PAGE_LIMIT).map { |page| page.text.to_s.strip }.reject(&:empty?).join("\n\n")
+        end
+      rescue Timeout::Error
+        raise ExtractionError, 'pdf extraction timed out'
       rescue PDF::Reader::MalformedPDFError, PDF::Reader::UnsupportedFeatureError => e
         raise ExtractionError, "pdf extraction failed: #{e.message}"
       end
@@ -77,7 +109,7 @@ module Algorythmo
 
         doc.css('p').map { |para| para.css('t').map(&:text).join }
            .map(&:strip).reject(&:empty?).join("\n\n")
-      rescue Zip::Error, Nokogiri::XML::SyntaxError => e
+      rescue Zip::DecompressionSizeError, Zip::Error, Nokogiri::XML::SyntaxError => e
         raise ExtractionError, "docx extraction failed: #{e.message}"
       end
 
@@ -85,9 +117,15 @@ module Algorythmo
         Zip::File.open(@blob_path) do |zip|
           entry = zip.find_entry(DOCX_BODY)
           raise ExtractionError, 'docx is missing word/document.xml' if entry.nil?
-          raise ExtractionError, 'docx body exceeds inflate limit' if entry.size > DOCX_MEMBER_LIMIT
 
-          entry.get_input_stream.read
+          # Read at most DOCX_MEMBER_LIMIT + 1 bytes from the decompressed stream.
+          # Using IO#read(n) caps the bytes the Inflater actually materialises in
+          # memory, regardless of the declared size in the zip directory.  If we
+          # get back more than the limit the file is pathological → reject it.
+          data = entry.get_input_stream.read(DOCX_MEMBER_LIMIT + 1)
+          raise ExtractionError, 'docx body exceeds inflate limit' if data.bytesize > DOCX_MEMBER_LIMIT
+
+          data
         end
       end
     end

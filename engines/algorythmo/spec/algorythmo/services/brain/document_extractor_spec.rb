@@ -73,6 +73,22 @@ RSpec.describe Algorythmo::Brain::DocumentExtractor do
         described_class.call(blob_path: path, content_type: 'application/zip')
       end.to raise_error(Algorythmo::Brain::DocumentExtractor::ExtractionError, %r{missing word/document\.xml})
     end
+
+    it 'raises ExtractionError when inflated body exceeds DOCX_MEMBER_LIMIT (zip-bomb defence)' do
+      # Override the cap to a tiny value so the test does not materialise megabytes.
+      stub_const('Algorythmo::Brain::DocumentExtractor::DOCX_MEMBER_LIMIT', 10)
+
+      # Build a docx whose word/document.xml is 12 bytes — just over the stubbed cap.
+      oversized_xml = 'A' * 12
+      path = File.join(tmpdir, 'bomb.docx')
+      Zip::File.open(path, create: true) do |zip|
+        zip.get_output_stream('word/document.xml') { |os| os.write(oversized_xml) }
+      end
+
+      expect do
+        described_class.call(blob_path: path, content_type: 'application/zip')
+      end.to raise_error(Algorythmo::Brain::DocumentExtractor::ExtractionError, /exceeds inflate limit/)
+    end
   end
 
   describe 'pdf' do
@@ -120,6 +136,23 @@ RSpec.describe Algorythmo::Brain::DocumentExtractor do
       path = write_binary('doc.pdf', build_pdf_bytes)
       result = described_class.call(blob_path: path, content_type: 'application/pdf')
       expect(result).to include('Hello PDF')
+    end
+
+    it 'caps extraction at PDF_PAGE_LIMIT pages' do
+      # Stub the reader so it reports more pages than the cap. We verify that
+      # only the first PDF_PAGE_LIMIT pages are consumed, not the full collection.
+      fake_page = instance_double(PDF::Reader::Page, text: 'content')
+      many_pages = Array.new(described_class::PDF_PAGE_LIMIT + 10, fake_page)
+
+      reader_double = instance_double(PDF::Reader, pages: many_pages)
+      allow(PDF::Reader).to receive(:new).and_return(reader_double)
+      # The real `pages` is an array; first(N) is called on it.
+      allow(many_pages).to receive(:first).with(described_class::PDF_PAGE_LIMIT).and_call_original
+
+      path = write_binary('large.pdf', build_pdf_bytes)
+      described_class.call(blob_path: path, content_type: 'application/pdf')
+
+      expect(many_pages).to have_received(:first).with(described_class::PDF_PAGE_LIMIT)
     end
   end
 

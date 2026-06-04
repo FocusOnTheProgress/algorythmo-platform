@@ -5,6 +5,7 @@ require 'tempfile'
 
 # Covers the DocumentsController contract (plan 0012 §6, PR3):
 #   - auth fail-closed: no token → 401; wrong account → 403
+#   - role gate (P1-A): non-admin agent → 403 on both index and create
 #   - create: valid upload → 201 + record + worker enqueued
 #   - create: hostile upload (exe renamed .pdf) → 422, no record, no enqueue
 #   - create: bad category → 422
@@ -14,6 +15,7 @@ RSpec.describe Algorythmo::Api::V1::Brain::DocumentsController, type: :controlle
 
   let(:account) { create(:account) }
   let(:admin)   { create(:user, account: account, role: :administrator) }
+  let(:agent)   { create(:user, account: account, role: :agent) }
 
   PDF_BYTES = "%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"
   EXE_BYTES = "MZ\x90\x00\x03\x00\x00\x00".b
@@ -44,6 +46,40 @@ RSpec.describe Algorythmo::Api::V1::Brain::DocumentsController, type: :controlle
 
       get :index, params: { account_id: account.id }
       expect(response).to have_http_status(:forbidden)
+    end
+  end
+
+  # P1-A: role gate — Brain curation is admin-only; agents can only read via Copilot.
+  # Pundit::NotAuthorizedError is rescued by RequestExceptionHandler#render_unauthorized
+  # which returns 401 (matching the behaviour of LeadsController#destroy for agents).
+  describe 'role gate (admin-only)' do
+    before do
+      stub_env('ALGORYTHMO_PRIMARY_ACCOUNT_ID', account.id.to_s)
+      request.headers['api_access_token'] = agent.access_token.token
+    end
+
+    it 'returns 401 for GET #index when called by a non-admin agent' do
+      get :index, params: { account_id: account.id }
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it 'returns 401 for POST #create when called by a non-admin agent' do
+      post :create, params: {
+        account_id: account.id,
+        file: upload_for("# doc\nbody", filename: 'doc.md'),
+        category: 'manuals'
+      }
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it 'does not create a document record when the agent is rejected' do
+      expect do
+        post :create, params: {
+          account_id: account.id,
+          file: upload_for("# doc\nbody", filename: 'doc.md'),
+          category: 'manuals'
+        }
+      end.not_to change(Algorythmo::Brain::Document, :count)
     end
   end
 

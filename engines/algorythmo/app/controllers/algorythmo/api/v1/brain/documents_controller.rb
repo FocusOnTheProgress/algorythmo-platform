@@ -8,7 +8,16 @@
 # Inherits the full Brain auth chain via BaseController (auth → account → crm gate →
 # tenant fail-closed). The upload is validated BEFORE the blob is persisted, so a
 # hostile file never reaches storage.
+#
+# Role gate: Brain curation (upload / list) is admin-only. The operator consumes
+# knowledge through the Copilot read-only endpoint — they do NOT curate it.
+# An agent who can call POST here could poison the Brain with hostile content.
+# check_admin_authorization? raises Pundit::NotAuthorizedError (→ 403) for
+# non-admins; the helper lives in Api::BaseController and is used identically
+# in LeadsController and StagesController.
 class Algorythmo::Api::V1::Brain::DocumentsController < Algorythmo::Api::V1::Brain::BaseController
+  before_action :check_admin_authorization?, only: %i[index create]
+
   DEFAULT_PER_PAGE = 25
   MAX_PER_PAGE     = 100
 
