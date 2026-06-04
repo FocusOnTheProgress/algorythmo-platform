@@ -51,9 +51,7 @@ class Algorythmo::Api::V1::Brain::AdjustmentsController < Algorythmo::Api::V1::B
     scrubbed = content.scrub
     return render json: { error: 'content cannot be blank' }, status: :unprocessable_entity if scrubbed.empty?
 
-    if scrubbed.bytesize > MAX_CONTENT_BYTES
-      return render json: { error: 'content exceeds 1 MB limit' }, status: :unprocessable_entity
-    end
+    return render json: { error: 'content exceeds 1 MB limit' }, status: :unprocessable_entity if scrubbed.bytesize > MAX_CONTENT_BYTES
 
     document = build_document(scrubbed)
     attach_blob(document, scrubbed)
