@@ -20,4 +20,9 @@ RSpec.configure do |config|
     mocks.verify_partial_doubles = true
   end
   config.shared_context_metadata_behavior = :apply_to_host_groups
+
+  # :gbrain_real specs spawn a REAL gbrain subprocess (needs the binary + API keys).
+  # They are a manual gate before the Copiloto state machine (PR 6) ships — never
+  # run in normal CI. Opt in with GBRAIN_REAL=1.
+  config.filter_run_excluding(:gbrain_real) unless ENV['GBRAIN_REAL'] == '1'
 end

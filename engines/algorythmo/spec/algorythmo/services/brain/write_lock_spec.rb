@@ -12,6 +12,10 @@ require 'rails_helper'
 RSpec.describe Algorythmo::Brain::WriteLock do
   subject(:lock) { described_class }
 
+  # All examples acquire on behalf of a concrete account (per-account key, P0-5).
+  let(:account_id) { 7 }
+  let(:lock_key)   { described_class.lock_key(account_id) }
+
   # ---------------------------------------------------------------------------
   # Shared helpers
   # ---------------------------------------------------------------------------
@@ -41,22 +45,56 @@ RSpec.describe Algorythmo::Brain::WriteLock do
     before { stub_redis_pool(build_fake_conn(held: true)) }
 
     it 'yields the block and returns its value' do
-      result = lock.with_lock { 42 }
+      result = lock.with_lock(account_id: account_id) { 42 }
       expect(result).to eq(42)
     end
 
     it 'releases via eval after the block completes' do
       conn = build_fake_conn(held: true)
       stub_redis_pool(conn)
-      lock.with_lock { nil }
+      lock.with_lock(account_id: account_id) { nil }
       expect(conn).to have_received(:eval).once
     end
 
     it 'releases the lock even when the block raises' do
       conn = build_fake_conn(held: true)
       stub_redis_pool(conn)
-      expect { lock.with_lock { raise 'boom' } }.to raise_error(RuntimeError, 'boom')
+      expect { lock.with_lock(account_id: account_id) { raise 'boom' } }.to raise_error(RuntimeError, 'boom')
       expect(conn).to have_received(:eval).once
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Per-account key (P0-5)
+  # ---------------------------------------------------------------------------
+  describe '.lock_key' do
+    it 'namespaces the lock per account' do
+      expect(described_class.lock_key(7)).to eq('gbrain:write:lock:7')
+      expect(described_class.lock_key(99)).to eq('gbrain:write:lock:99')
+    end
+
+    it 'rejects a nil account_id (would collide all callers)' do
+      expect { described_class.lock_key(nil) }.to raise_error(ArgumentError, /account_id/)
+    end
+  end
+
+  describe '.with_lock — per-account isolation' do
+    it 'acquires on the per-account key' do
+      acquired_key = nil
+      conn = instance_double(Redis::Namespace)
+      allow(conn).to receive(:set) do |key, _val, **_|
+        acquired_key = key
+        'OK'
+      end
+      allow(conn).to receive(:eval).and_return(1)
+      stub_redis_pool(conn)
+
+      lock.with_lock(account_id: 42) { nil }
+      expect(acquired_key).to eq('gbrain:write:lock:42')
+    end
+
+    it 'requires account_id' do
+      expect { lock.with_lock(timeout: 0) { nil } }.to raise_error(ArgumentError)
     end
   end
 
@@ -67,24 +105,25 @@ RSpec.describe Algorythmo::Brain::WriteLock do
     it 'raises LockContended immediately when lock is held and timeout is zero' do
       stub_redis_pool(build_fake_conn(held: false))
       expect do
-        lock.with_lock(timeout: 0) { nil }
+        lock.with_lock(account_id: account_id, timeout: 0) { nil }
       end.to raise_error(described_class::LockContended, /held by another process/)
     end
 
     it 'raises LockContended after polling exhausts timeout' do
       stub_redis_pool(build_fake_conn(held: false))
       expect do
-        lock.with_lock(timeout: 0.05) { nil }
+        lock.with_lock(account_id: account_id, timeout: 0.05) { nil }
       end.to raise_error(described_class::LockContended)
     end
 
     it 'includes diagnostic info in the exception message' do
       stub_redis_pool(build_fake_conn(held: false))
       begin
-        lock.with_lock(timeout: 0) { nil }
+        lock.with_lock(account_id: account_id, timeout: 0) { nil }
       rescue described_class::LockContended => e
         expect(e.message).to match(/token=/)
         expect(e.message).to match(/timeout=0s/)
+        expect(e.message).to match(/account=#{account_id}/)
       end
     end
 
@@ -92,11 +131,11 @@ RSpec.describe Algorythmo::Brain::WriteLock do
       # Use real $alfred (MockRedis) for this threaded test — no EVAL involved
       # because the second thread never acquires and therefore never calls release.
       token = SecureRandom.uuid
-      $alfred.with { |conn| conn.set(described_class::LOCK_KEY, token, nx: true, ex: 90) } # rubocop:disable Style/GlobalVars
+      $alfred.with { |conn| conn.set(lock_key, token, nx: true, ex: 90) } # rubocop:disable Style/GlobalVars
 
       second_raised = false
       t = Thread.new do
-        lock.with_lock(timeout: 0.05) { nil }
+        lock.with_lock(account_id: account_id, timeout: 0.05) { nil }
       rescue described_class::LockContended
         second_raised = true
       end
@@ -104,7 +143,7 @@ RSpec.describe Algorythmo::Brain::WriteLock do
 
       expect(second_raised).to be(true)
     ensure
-      $alfred.with { |conn| conn.del(described_class::LOCK_KEY) } # rubocop:disable Style/GlobalVars
+      $alfred.with { |conn| conn.del(lock_key) } # rubocop:disable Style/GlobalVars
     end
   end
 
@@ -129,10 +168,10 @@ RSpec.describe Algorythmo::Brain::WriteLock do
       end
       stub_redis_pool(conn)
 
-      lock.with_lock { nil }
+      lock.with_lock(account_id: account_id) { nil }
 
       expect(eval_script).to eq(described_class::LUA_RELEASE)
-      expect(eval_keys).to eq([described_class::LOCK_KEY])
+      expect(eval_keys).to eq([lock_key])
       expect(eval_argv.first).to match(/\A[0-9a-f-]{36}\z/)
     end
 
@@ -143,8 +182,8 @@ RSpec.describe Algorythmo::Brain::WriteLock do
       allow(conn).to receive(:eval) { |_script, argv:, **_| tokens << argv.first }
       stub_redis_pool(conn)
 
-      lock.with_lock { nil }
-      lock.with_lock { nil }
+      lock.with_lock(account_id: account_id) { nil }
+      lock.with_lock(account_id: account_id) { nil }
 
       expect(tokens.length).to eq(2)
       expect(tokens.first).not_to eq(tokens.last)
@@ -156,12 +195,12 @@ RSpec.describe Algorythmo::Brain::WriteLock do
   # ---------------------------------------------------------------------------
   describe 'TTL expiry' do
     it 'allows re-acquisition after lock TTL expires (simulated by manual delete)' do
-      $alfred.with { |conn| conn.set(described_class::LOCK_KEY, 'stale', nx: true, ex: 1) } # rubocop:disable Style/GlobalVars
-      $alfred.with { |conn| conn.del(described_class::LOCK_KEY) } # rubocop:disable Style/GlobalVars
+      $alfred.with { |conn| conn.set(lock_key, 'stale', nx: true, ex: 1) } # rubocop:disable Style/GlobalVars
+      $alfred.with { |conn| conn.del(lock_key) } # rubocop:disable Style/GlobalVars
 
       conn = build_fake_conn(held: true)
       stub_redis_pool(conn)
-      expect { lock.with_lock { nil } }.not_to raise_error
+      expect { lock.with_lock(account_id: account_id) { nil } }.not_to raise_error
     end
   end
 
@@ -195,7 +234,7 @@ RSpec.describe Algorythmo::Brain::WriteLock do
 
       threads = Array.new(3) do |i|
         Thread.new do
-          lock.with_lock(timeout: 10) do
+          lock.with_lock(account_id: account_id, timeout: 10) do
             sleep(0.02)
             mutex.synchronize { completed << i }
           end

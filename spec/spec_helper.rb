@@ -16,4 +16,11 @@ RSpec.configure do |config|
   def with_modified_env(options, &)
     ClimateControl.modify(options, &)
   end
+
+  # :gbrain_real specs spawn a real gbrain subprocess (binary + API keys required).
+  # Excluded from CI automatically; opt in with GBRAIN_REAL=1.
+  # This filter lives HERE (host spec_helper) because `.rspec --require spec_helper`
+  # resolves to spec/spec_helper.rb; the engine's own spec_helper.rb is NOT loaded
+  # by the CI runner. The engine spec_helper keeps a mirror for local engine-only runs.
+  config.filter_run_excluding(:gbrain_real) unless ENV['GBRAIN_REAL'] == '1'
 end
