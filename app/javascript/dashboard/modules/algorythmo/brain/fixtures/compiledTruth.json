@@ -1,8 +1,0 @@
-{
-  "meta": {
-    "updated_at": "2026-05-26T06:00:00Z",
-    "version": 1,
-    "source": "fixture"
-  },
-  "content": "---\ntitle: Algorythmo OS — Conhecimento da Empresa\nupdated: 2026-05-26\n---\n\n## Sobre a Algorythmo\n\nA Algorythmo é uma empresa de tecnologia que ajuda PMEs a escalar seus negócios por meio de processos otimizados com AI. Fundada com a convicção de que software world-class não precisa ser exclusividade de grandes corporações.\n\n## Mercado\n\nFoco em PMEs brasileiras que operam via WhatsApp, com volume de conversas suficiente para justificar automação mas sem time de engenharia interno.\n\n## Produto\n\nFork Chatwoot com camada Algorythmo OS: CRM Kanban, Brain de contexto empresarial, e agente Manu (M4) que operará como SDR híbrido indistinguível de humano em stakes baixos.\n\n## Princípios operacionais\n\n- Segurança não é uma preocupação pra depois. É construída desde o primeiro commit.\n- Performance não é uma fase de otimização. É uma restrição de design.\n- Se alguém auditasse esse codebase pra comprar, não encontraria nada pra ter vergonha.\n"
-}

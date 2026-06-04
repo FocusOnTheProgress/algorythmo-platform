@@ -40,6 +40,10 @@ export default defineConfig({
       'app/javascript/dashboard/helper/algorythmo/**/*.spec.{js,ts}',
       'app/javascript/dashboard/composables/algorythmo/**/*.spec.{js,ts}',
       'app/javascript/dashboard/components-next/algorythmo/**/*.spec.{js,ts}',
+      // algorythmo: Brain screen (plan 0012) lives under modules/, not
+      // components-next/. Listed EXPLICITLY so the specs actually run in CI —
+      // a green check that never ran the spec is a check that lies.
+      'app/javascript/dashboard/modules/algorythmo/brain/specs/**/*.spec.{js,ts}',
       'engines/algorythmo/app/javascript/**/*.spec.{js,ts}',
     ],
     globals: true,
