@@ -14,9 +14,10 @@ require 'rails_helper'
 #   7. before_action order                   → resolve_tenant! runs AFTER authenticate + current_account + feature gate
 RSpec.describe Algorythmo::Brain::TenantResolution, type: :controller do
   # Use CompiledTruthController as the concrete carrier; it inherits BaseController
-  # which includes TenantResolution. The stub returns 501 once the concern passes.
+  # which includes TenantResolution. Client#stats is stubbed so the controller
+  # reaches its successful render (200) without spawning a real subprocess.
   controller(Algorythmo::Api::V1::Brain::CompiledTruthController) do
-    # Nothing extra — stub already responds with head :not_implemented (501)
+    # Nothing extra — real action runs with stubbed Client#stats
   end
 
   routes { Algorythmo::Engine.routes }
@@ -56,20 +57,24 @@ RSpec.describe Algorythmo::Brain::TenantResolution, type: :controller do
   end
 
   # -------------------------------------------------------------------------
-  # Case 3 — User with membership + ENV match → concern passes, stub returns 501
-  # 501 proves the full Chatwoot auth chain ran (auth → current_account → feature gate →
+  # Case 3 — User with membership + ENV match → concern passes, controller runs (200)
+  # 200 proves the full Chatwoot auth chain ran (auth → current_account → feature gate →
   # resolve_tenant!) without any guard aborting. Current.account being set is a
-  # precondition enforced by the upstream chain; reaching 501 is proof.
+  # precondition enforced by the upstream chain; reaching 200 is proof.
+  # Client#stats is stubbed — no subprocess, no real brain required.
   # -------------------------------------------------------------------------
   context 'when user has membership and ENV matches account id' do
     before do
       stub_env('ALGORYTHMO_PRIMARY_ACCOUNT_ID', account.id.to_s)
       request.headers['api_access_token'] = admin.access_token.token
+      allow_any_instance_of(Algorythmo::Brain::Client)
+        .to receive(:stats)
+        .and_return({ 'aggregate' => { 'total_pages' => 0, 'total_edges' => 0 } })
     end
 
-    it 'passes all guards and reaches the stub action (returns 501, not 403)' do
+    it 'passes all guards and reaches the action (returns 200, not 403)' do
       get :show, params: { account_id: account.id }
-      expect(response).to have_http_status(:not_implemented)
+      expect(response).to have_http_status(:ok)
     end
   end
 

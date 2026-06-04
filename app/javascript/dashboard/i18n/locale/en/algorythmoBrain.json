@@ -14,6 +14,90 @@
       "TIMELINE_LIST_ARIA_LABEL": "Brain events",
       "TIMELINE_UNAVAILABLE": "History unavailable right now."
     },
+    "HEADER": {
+      "ARIA_LABEL": "Brain — identity and stats of the company brain",
+      "ORB_ARIA": "Aurora — living core of company knowledge",
+      "EYEBROW": "Company brain",
+      "TITLE": "Brain · Modeloja",
+      "STATS": {
+        "DOCUMENTS": "Documents",
+        "EDGES": "Passages",
+        "GREW": "Grew"
+      },
+      "GREW_NOW": "just now",
+      "GREW_MINUTES": "{n} min ago",
+      "GREW_HOURS": "{n}h ago",
+      "GREW_DAYS": "{n}d ago"
+    },
+    "TABS": {
+      "ARIA_LABEL": "Brain sections",
+      "VER": "View",
+      "AJUSTAR": "Adjust",
+      "HISTORICO": "History"
+    },
+    "VER": {
+      "ARIA_LABEL": "Brain knowledge — absorbed documents",
+      "LIST_ARIA": "Documents in the Brain",
+      "EMPTY_TITLE": "No knowledge yet",
+      "EMPTY_BODY": "Attach company documents or paste knowledge in the Adjust tab — they appear here as soon as the Brain absorbs them.",
+      "ERROR": "Could not load the Brain's documents.",
+      "RETRY": "Try again",
+      "STATUS": {
+        "INDEXED": "Indexed",
+        "READING": "Reading",
+        "PENDING": "Queued",
+        "FAILED": "Failed"
+      }
+    },
+    "AJUSTAR": {
+      "ARIA_LABEL": "Adjust the Brain's knowledge",
+      "UPLOAD": {
+        "HEADING": "Attach documents",
+        "LEDE": "Drop company files — policies, manuals, rules. The Brain extracts the text and absorbs it automatically.",
+        "ARIA_LABEL": "Attach company documents to feed the Brain",
+        "DROPZONE_ARIA": "Drop files here or click to choose",
+        "MICROCOPY": "Drag files here or click to choose",
+        "FORMATS": "PDF · DOCX · MD · TXT · up to 10 MB",
+        "LIST_ARIA": "Uploaded files",
+        "REMOVE_ARIA": "Remove {name} from the list",
+        "REJECT_TYPE": "Unsupported format (use PDF, DOCX, MD or TXT).",
+        "REJECT_SIZE": "File over 10 MB.",
+        "FAILED": "Upload failed. Try again.",
+        "CATEGORIES": {
+          "ALL": "All",
+          "POLICIES": "Policies",
+          "MANUALS": "Manuals",
+          "RULES": "Rules",
+          "DESIGN_SYSTEM": "Design system",
+          "OTHER": "Other"
+        },
+        "STATE": {
+          "UPLOADING": "Uploading",
+          "CAPTURED": "Received",
+          "REJECTED": "Rejected"
+        }
+      },
+      "PASTE": {
+        "HEADING": "Paste knowledge",
+        "LEDE": "Paste text directly — a rule, a procedure, a decision. The Brain absorbs it as one more source.",
+        "TITLE_LABEL": "Title (optional)",
+        "TITLE_PLACEHOLDER": "e.g. Return policy",
+        "CONTENT_LABEL": "Knowledge",
+        "CONTENT_PLACEHOLDER": "Paste the text the Brain should learn…",
+        "SUBMIT": "Add to Brain",
+        "SAVING": "Adding…",
+        "SAVED": "Added — the Brain is absorbing it.",
+        "ERROR": "Could not add it. Try again."
+      }
+    },
+    "HISTORICO": {
+      "ARIA_LABEL": "History — how the Brain grew",
+      "LIST_ARIA": "Brain events, newest to oldest",
+      "EMPTY_TITLE": "The Brain hasn't grown yet",
+      "EMPTY_BODY": "Every document attached and every knowledge pasted becomes a milestone here — the timeline of what the company taught the Brain.",
+      "ERROR": "Could not load the Brain's history.",
+      "RETRY": "Try again"
+    },
     "AQUARIO": {
       "ARIA_LABEL": "Brain knowledge hub — the living core of company intelligence",
       "HUB": {

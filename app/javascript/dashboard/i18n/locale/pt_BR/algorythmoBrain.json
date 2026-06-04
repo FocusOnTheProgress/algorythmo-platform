@@ -14,6 +14,90 @@
       "TIMELINE_LIST_ARIA_LABEL": "Eventos do Brain",
       "TIMELINE_UNAVAILABLE": "Histórico indisponível no momento."
     },
+    "HEADER": {
+      "ARIA_LABEL": "Brain — identidade e estatísticas do cérebro da empresa",
+      "ORB_ARIA": "Aurora — núcleo vivo de conhecimento da empresa",
+      "EYEBROW": "Cérebro da empresa",
+      "TITLE": "Brain · Modeloja",
+      "STATS": {
+        "DOCUMENTS": "Documentos",
+        "EDGES": "Trechos",
+        "GREW": "Cresceu"
+      },
+      "GREW_NOW": "agora",
+      "GREW_MINUTES": "há {n} min",
+      "GREW_HOURS": "há {n}h",
+      "GREW_DAYS": "há {n}d"
+    },
+    "TABS": {
+      "ARIA_LABEL": "Seções do Brain",
+      "VER": "Ver",
+      "AJUSTAR": "Ajustar",
+      "HISTORICO": "Histórico"
+    },
+    "VER": {
+      "ARIA_LABEL": "Conhecimento do Brain — documentos absorvidos",
+      "LIST_ARIA": "Documentos no Brain",
+      "EMPTY_TITLE": "Nenhum conhecimento ainda",
+      "EMPTY_BODY": "Anexe documentos da empresa ou cole conhecimento na aba Ajustar — eles aparecem aqui assim que o Brain os absorve.",
+      "ERROR": "Não foi possível carregar os documentos do Brain.",
+      "RETRY": "Tentar de novo",
+      "STATUS": {
+        "INDEXED": "Indexado",
+        "READING": "Lendo",
+        "PENDING": "Na fila",
+        "FAILED": "Falhou"
+      }
+    },
+    "AJUSTAR": {
+      "ARIA_LABEL": "Ajustar o conhecimento do Brain",
+      "UPLOAD": {
+        "HEADING": "Anexar documentos",
+        "LEDE": "Arraste arquivos da empresa — políticas, manuais, regras. O Brain extrai o texto e absorve automaticamente.",
+        "ARIA_LABEL": "Anexar documentos da empresa para alimentar o Brain",
+        "DROPZONE_ARIA": "Solte arquivos aqui ou clique para escolher",
+        "MICROCOPY": "Arraste arquivos aqui ou clique para escolher",
+        "FORMATS": "PDF · DOCX · MD · TXT · até 10 MB",
+        "LIST_ARIA": "Arquivos enviados",
+        "REMOVE_ARIA": "Remover {name} da lista",
+        "REJECT_TYPE": "Formato não aceito (use PDF, DOCX, MD ou TXT).",
+        "REJECT_SIZE": "Arquivo acima de 10 MB.",
+        "FAILED": "Falha ao enviar. Tente de novo.",
+        "CATEGORIES": {
+          "ALL": "Todos",
+          "POLICIES": "Políticas",
+          "MANUALS": "Manuais",
+          "RULES": "Regras",
+          "DESIGN_SYSTEM": "Design system",
+          "OTHER": "Outros"
+        },
+        "STATE": {
+          "UPLOADING": "Enviando",
+          "CAPTURED": "Recebido",
+          "REJECTED": "Recusado"
+        }
+      },
+      "PASTE": {
+        "HEADING": "Colar conhecimento",
+        "LEDE": "Cole texto direto — uma regra, um procedimento, uma decisão. O Brain absorve como mais uma fonte.",
+        "TITLE_LABEL": "Título (opcional)",
+        "TITLE_PLACEHOLDER": "Ex.: Política de trocas",
+        "CONTENT_LABEL": "Conhecimento",
+        "CONTENT_PLACEHOLDER": "Cole aqui o texto que o Brain deve aprender…",
+        "SUBMIT": "Adicionar ao Brain",
+        "SAVING": "Adicionando…",
+        "SAVED": "Adicionado — o Brain está absorvendo.",
+        "ERROR": "Não foi possível adicionar. Tente de novo."
+      }
+    },
+    "HISTORICO": {
+      "ARIA_LABEL": "Histórico — como o Brain cresceu",
+      "LIST_ARIA": "Eventos do Brain, do mais recente ao mais antigo",
+      "EMPTY_TITLE": "O Brain ainda não cresceu",
+      "EMPTY_BODY": "Cada documento anexado e cada conhecimento colado vira um marco aqui — a linha do tempo do que a empresa ensinou ao Brain.",
+      "ERROR": "Não foi possível carregar o histórico do Brain.",
+      "RETRY": "Tentar de novo"
+    },
     "AQUARIO": {
       "ARIA_LABEL": "Central de conhecimento do Brain — o núcleo vivo da inteligência da empresa",
       "HUB": {
