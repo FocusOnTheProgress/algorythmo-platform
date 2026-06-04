@@ -51,11 +51,12 @@ RSpec.describe Algorythmo::Brain::Client do
     it 'calls gbrain capture <real_path> without --dir' do
       stub_popen3(stdout: '{}')
       client.capture(file: tmp_state[:file])
-      expect(Open3).to have_received(:popen3) do |*args|
-        expect(args).not_to include('--dir')
-        expect(args[1]).to eq('capture')
-        # arg[2] is the resolved real_path — may differ on macOS symlinks
-        expect(args[2]).to be_a(String)
+      expect(Open3).to have_received(:popen3) do |env, *cli|
+        expect(env).to be_a(Hash) # first arg is always the subprocess env
+        expect(cli).not_to include('--dir')
+        expect(cli[1]).to eq('capture')
+        # cli[2] is the resolved real_path — may differ on macOS symlinks
+        expect(cli[2]).to be_a(String)
       end
     end
   end
@@ -131,9 +132,9 @@ RSpec.describe Algorythmo::Brain::Client do
         File.write(tmp_file, '# safe')
         stub_popen3(stdout: '{}')
         client.capture(file: tmp_file)
-        expect(Open3).to have_received(:popen3) do |*args|
+        expect(Open3).to have_received(:popen3) do |_env, *cli|
           # The path passed to gbrain must be the resolved real path
-          expect(File.absolute_path?(args[2])).to be(true)
+          expect(File.absolute_path?(cli[2])).to be(true)
         end
       end
     end
@@ -152,25 +153,147 @@ RSpec.describe Algorythmo::Brain::Client do
     it 'passes --limit to the subprocess' do
       stub_popen3(stdout: '[]')
       client.search(query: 'test', limit: 5)
-      expect(Open3).to have_received(:popen3) do |*args|
-        limit_idx = args.index('--limit')
-        expect(args[limit_idx + 1]).to eq('5')
+      expect(Open3).to have_received(:popen3) do |_env, *cli|
+        limit_idx = cli.index('--limit')
+        expect(cli[limit_idx + 1]).to eq('5')
       end
     end
   end
 
   describe '#think' do
-    it 'parses JSON stdout' do
-      stub_popen3(stdout: '{"answer":"Use monthly pricing","citations":[]}')
-      result = client.think(prompt: 'what pricing strategy?')
-      expect(result['answer']).to eq('Use monthly pricing')
+    # Real think --json shape (verified: src/core/think/index.ts at pinned SHA).
+    let(:think_json) do
+      {
+        answer: 'Use monthly pricing',
+        gaps: [],
+        modelUsed: 'deepseek:deepseek-chat',
+        pagesGathered: 3,
+        takesGathered: 1,
+        graphHits: 2,
+        citations: [{ page_slug: 'pricing', row_num: 4, citation_index: 1 }],
+        warnings: [],
+        saved_slug: nil,
+        evidence_inserted: 1
+      }.to_json
     end
 
-    it 'does not pass --context when context is nil' do
+    it 'parses the real think --json payload shape' do
+      stub_popen3(stdout: think_json)
+      result = client.think(prompt: 'what pricing strategy?')
+
+      expect(result['answer']).to eq('Use monthly pricing')
+      expect(result['modelUsed']).to eq('deepseek:deepseek-chat')
+      expect(result['citations'].first).to eq(
+        'page_slug' => 'pricing', 'row_num' => 4, 'citation_index' => 1
+      )
+    end
+
+    it 'passes --json (required — gbrain prints markdown otherwise)' do
+      stub_popen3(stdout: '{}')
+      client.think(prompt: 'question')
+      expect(Open3).to have_received(:popen3) do |*args|
+        # args[0] is the env hash; CLI tokens follow.
+        expect(args).to include('--json')
+      end
+    end
+
+    it 'never passes --context (flag does not exist in gbrain)' do
       stub_popen3(stdout: '{}')
       client.think(prompt: 'question')
       expect(Open3).to have_received(:popen3) do |*args|
         expect(args).not_to include('--context')
+      end
+    end
+
+    it 'does not accept a context: keyword' do
+      expect { client.think(prompt: 'q', context: 'x') }.to raise_error(ArgumentError)
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # subprocess_env — every invocation carries the per-account env hash (P0-5)
+  # ---------------------------------------------------------------------------
+  describe 'subprocess env hash (Open3.popen3 first arg)' do
+    let(:account_client) { described_class.new(42) }
+
+    # Open3.popen3(env, *args): the env hash is the first positional argument.
+    def captured_env
+      env = nil
+      expect(Open3).to have_received(:popen3) { |first, *_rest| env = first }
+      env
+    end
+
+    it 'injects a per-account GBRAIN_HOME (base/<account_id>, no .gbrain suffix)' do
+      stub_popen3(stdout: '{}')
+      account_client.stats
+      expect(captured_env).to be_a(Hash)
+      expect(captured_env['GBRAIN_HOME']).to eq(described_class.gbrain_home_for(42))
+      expect(captured_env['GBRAIN_HOME']).to end_with(File.join('', '42'))
+      expect(captured_env['GBRAIN_HOME']).not_to end_with('.gbrain')
+    end
+
+    it 'isolates accounts: different account_id → different GBRAIN_HOME' do
+      stub_popen3(stdout: '{}')
+      described_class.new(1).stats
+      home_one = captured_env['GBRAIN_HOME']
+
+      stub_popen3(stdout: '{}')
+      described_class.new(2).stats
+      home_two = captured_env['GBRAIN_HOME']
+
+      expect(home_one).not_to eq(home_two)
+    end
+
+    it 'includes OPENAI_API_KEY and DEEPSEEK_API_KEY when present, never the unread vars' do
+      stub_popen3(stdout: '{}')
+      ClimateControl.modify(
+        OPENAI_API_KEY: 'sk-openai-xyz',
+        DEEPSEEK_API_KEY: 'sk-deepseek-xyz',
+        DEEPSEEK_BASE_URL: 'https://evil.example',
+        DEEPSEEK_MODEL: 'should-be-ignored'
+      ) do
+        account_client.stats
+      end
+
+      env = captured_env
+      expect(env['OPENAI_API_KEY']).to eq('sk-openai-xyz')
+      expect(env['DEEPSEEK_API_KEY']).to eq('sk-deepseek-xyz')
+      expect(env).not_to have_key('DEEPSEEK_BASE_URL')
+      expect(env).not_to have_key('DEEPSEEK_MODEL')
+    end
+
+    it 'omits keys entirely when the env vars are absent' do
+      stub_popen3(stdout: '{}')
+      ClimateControl.modify(OPENAI_API_KEY: nil, DEEPSEEK_API_KEY: nil) do
+        account_client.stats
+      end
+
+      env = captured_env
+      expect(env).not_to have_key('OPENAI_API_KEY')
+      expect(env).not_to have_key('DEEPSEEK_API_KEY')
+    end
+
+    it 'never places an API key in the CLI argv' do
+      stub_popen3(stdout: '{}')
+      ClimateControl.modify(DEEPSEEK_API_KEY: 'sk-deepseek-secret') do
+        account_client.think(prompt: 'sensitive question')
+      end
+
+      expect(Open3).to have_received(:popen3) do |_env, *cli_args|
+        expect(cli_args).not_to include('sk-deepseek-secret')
+        expect(cli_args.join(' ')).not_to include('sk-deepseek-secret')
+      end
+    end
+  end
+
+  describe 'stderr secret redaction' do
+    it 'redacts a leaked API key from the SubprocessError message' do
+      stub_popen3(stdout: '', stderr: 'auth failed for key sk-leaked-123', exit_status: 1)
+      ClimateControl.modify(DEEPSEEK_API_KEY: 'sk-leaked-123') do
+        expect { client.stats }.to raise_error(described_class::SubprocessError) do |err|
+          expect(err.message).to include('[REDACTED]')
+          expect(err.message).not_to include('sk-leaked-123')
+        end
       end
     end
   end
