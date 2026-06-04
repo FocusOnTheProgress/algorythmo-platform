@@ -15,35 +15,35 @@ class Algorythmo::Api::V1::Brain::SnapshotsController < Algorythmo::Api::V1::Bra
   PAGE_SIZE = 20
 
   def index
-    page = [params.fetch(:page, 1).to_i, 1].max
-
-    snapshots = Algorythmo::Brain::Snapshot
-                  .where(account_id: current_account.id)
-                  .order(taken_at: :desc)
-                  .offset((page - 1) * PAGE_SIZE)
-                  .limit(PAGE_SIZE)
+    page      = [params.fetch(:page, 1).to_i, 1].max
+    offset    = (page - 1) * PAGE_SIZE
+    snapshots = page_of_snapshots(current_account.id, offset)
 
     render json: {
-      data:  snapshots.map { |s| serialize_snapshot(s) },
-      meta:  {
-        page:     page,
-        per_page: PAGE_SIZE,
-        count:    snapshots.size
-      }
+      data: snapshots.map { |s| serialize_snapshot(s) },
+      meta: { page: page, per_page: PAGE_SIZE, count: snapshots.size }
     }, status: :ok
   end
 
   private
 
+  def page_of_snapshots(account_id, offset)
+    Algorythmo::Brain::Snapshot
+      .where(account_id: account_id)
+      .order(taken_at: :desc)
+      .offset(offset)
+      .limit(PAGE_SIZE)
+  end
+
   def serialize_snapshot(snapshot)
     {
-      id:           snapshot.id,
-      account_id:   snapshot.account_id,
-      taken_at:     snapshot.taken_at.iso8601,
-      stats:        snapshot.stats,
+      id: snapshot.id,
+      account_id: snapshot.account_id,
+      taken_at: snapshot.taken_at.iso8601,
+      stats: snapshot.stats,
       diff_summary: snapshot.diff_summary,
-      trigger:      snapshot.trigger,
-      created_at:   snapshot.created_at.iso8601
+      trigger: snapshot.trigger,
+      created_at: snapshot.created_at.iso8601
     }
   end
 end

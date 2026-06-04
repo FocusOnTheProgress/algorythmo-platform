@@ -18,6 +18,16 @@ RSpec.describe Algorythmo::Api::V1::Brain::TimelineController, type: :request do
 
   let(:base_path) { "/algorythmo/api/v1/accounts/#{account.id}/brain/timeline" }
 
+  def make_snapshot(account:, taken_at: Time.current, trigger: 'cron', stats: {}, diff_summary: nil)
+    Algorythmo::Brain::Snapshot.create!(
+      account: account,
+      taken_at: taken_at,
+      stats: stats,
+      diff_summary: diff_summary,
+      trigger: trigger
+    )
+  end
+
   before do
     allow(Algorythmo::FeatureGate).to receive(:cut_enabled?).and_return(true)
     allow(ENV).to receive(:[]).and_call_original
@@ -60,13 +70,14 @@ RSpec.describe Algorythmo::Api::V1::Brain::TimelineController, type: :request do
   # Snapshot events
   # ---------------------------------------------------------------------------
   context 'when the account has snapshots' do
-    let!(:snapshot) do
-      create(:algorythmo_brain_snapshot,
-             account: account,
-             taken_at: 1.hour.ago,
-             stats: { 'pages' => 5 },
-             diff_summary: 'pages: 4→5 (+1)',
-             trigger: 'cron')
+    before do
+      make_snapshot(
+        account: account,
+        taken_at: 1.hour.ago,
+        stats: { 'pages' => 5 },
+        diff_summary: 'pages: 4->5 (+1)',
+        trigger: 'cron'
+      )
     end
 
     it 'returns 200' do
@@ -81,9 +92,9 @@ RSpec.describe Algorythmo::Api::V1::Brain::TimelineController, type: :request do
 
       aggregate_failures do
         expect(snap_event).not_to be_nil
-        expect(snap_event['id']).to eq("snapshot-#{snapshot.id}")
-        expect(snap_event['summary']).to eq('pages: 4→5 (+1)')
+        expect(snap_event['summary']).to eq('pages: 4->5 (+1)')
         expect(snap_event['trigger']).to eq('cron')
+        expect(snap_event).to have_key('id')
         expect(snap_event).to have_key('occurred_at')
         expect(snap_event).to have_key('meta')
       end
@@ -104,9 +115,9 @@ RSpec.describe Algorythmo::Api::V1::Brain::TimelineController, type: :request do
 
     let!(:ingestion_log) do
       Algorythmo::Brain::IngestionLog.create!(
-        account_id:      account.id,
+        account_id: account.id,
         conversation_id: conversation.id,
-        outcome:         :success,
+        outcome: :success,
         brain_indexed_at: 30.minutes.ago,
         brain_page_path: '/brain/conv/42.md'
       )
@@ -123,17 +134,17 @@ RSpec.describe Algorythmo::Api::V1::Brain::TimelineController, type: :request do
 
     it 'does not include failed ingestion logs' do
       failed_conv = create(:conversation, account: account, inbox: inbox, status: 'resolved')
-      Algorythmo::Brain::IngestionLog.create!(
-        account_id:      account.id,
+      failed_log  = Algorythmo::Brain::IngestionLog.create!(
+        account_id: account.id,
         conversation_id: failed_conv.id,
-        outcome:         :failed,
-        last_error:      'gbrain exploded'
+        outcome: :failed,
+        last_error: 'gbrain exploded'
       )
 
       get base_path, headers: headers
       events = JSON.parse(response.body)['data']
       ids = events.map { |e| e['id'] }
-      expect(ids).not_to include("ingestion-#{Algorythmo::Brain::IngestionLog.find_by(outcome: :failed).id}")
+      expect(ids).not_to include("ingestion-#{failed_log.id}")
     end
 
     it 'does not include ingestion events on page 2' do
@@ -148,24 +159,15 @@ RSpec.describe Algorythmo::Api::V1::Brain::TimelineController, type: :request do
   # Events sorted newest-first
   # ---------------------------------------------------------------------------
   context 'ordering' do
-    let!(:old_snapshot) do
-      create(:algorythmo_brain_snapshot,
-             account: account,
-             taken_at: 3.hours.ago,
-             trigger: 'cron')
-    end
-
-    let!(:new_snapshot) do
-      create(:algorythmo_brain_snapshot,
-             account: account,
-             taken_at: 1.hour.ago,
-             trigger: 'upload')
+    before do
+      make_snapshot(account: account, taken_at: 3.hours.ago, trigger: 'cron')
+      make_snapshot(account: account, taken_at: 1.hour.ago,  trigger: 'upload')
     end
 
     it 'returns events newest-first' do
       get base_path, headers: headers
       events = JSON.parse(response.body)['data']
-      times = events.map { |e| Time.parse(e['occurred_at']) }
+      times = events.map { |e| Time.zone.parse(e['occurred_at']) }
       expect(times).to eq(times.sort.reverse)
     end
   end

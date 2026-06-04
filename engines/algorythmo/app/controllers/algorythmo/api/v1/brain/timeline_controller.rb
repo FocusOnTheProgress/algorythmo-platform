@@ -11,22 +11,17 @@
 # Auth chain inherited from Brain::BaseController (5 levels, fail-closed).
 #
 # Shape per event:
-#   { id, type, occurred_at, summary, trigger (snapshots only), meta }
+#   { id, type, occurred_at, summary, trigger, meta }
 class Algorythmo::Api::V1::Brain::TimelineController < Algorythmo::Api::V1::Brain::BaseController
   PAGE_SIZE = 30
 
   def index
-    page = [params.fetch(:page, 1).to_i, 1].max
-
+    page   = [params.fetch(:page, 1).to_i, 1].max
     events = build_timeline_events(current_account.id, page: page)
 
     render json: {
       data: events,
-      meta: {
-        page:     page,
-        per_page: PAGE_SIZE,
-        count:    events.size
-      }
+      meta: { page: page, per_page: PAGE_SIZE, count: events.size }
     }, status: :ok
   end
 
@@ -36,12 +31,7 @@ class Algorythmo::Api::V1::Brain::TimelineController < Algorythmo::Api::V1::Brai
     offset = (page - 1) * PAGE_SIZE
 
     # Snapshots: brain grew (capture / upload / adjustment / cron)
-    snapshot_events = Algorythmo::Brain::Snapshot
-                        .where(account_id: account_id)
-                        .order(taken_at: :desc)
-                        .limit(PAGE_SIZE)
-                        .offset(offset)
-                        .map { |s| snapshot_to_event(s) }
+    snapshot_events = snapshot_page(account_id, offset).map { |s| snapshot_to_event(s) }
 
     # Ingestion logs: individual conversation captures (success only).
     # Included on the first page only to avoid double-pagination complexity.
@@ -49,6 +39,14 @@ class Algorythmo::Api::V1::Brain::TimelineController < Algorythmo::Api::V1::Brai
     ingestion_events = page == 1 ? recent_ingestion_events(account_id) : []
 
     merge_events(snapshot_events, ingestion_events)
+  end
+
+  def snapshot_page(account_id, offset)
+    Algorythmo::Brain::Snapshot
+      .where(account_id: account_id)
+      .order(taken_at: :desc)
+      .limit(PAGE_SIZE)
+      .offset(offset)
   end
 
   def recent_ingestion_events(account_id)
@@ -70,23 +68,23 @@ class Algorythmo::Api::V1::Brain::TimelineController < Algorythmo::Api::V1::Brai
 
   def snapshot_to_event(snapshot)
     {
-      id:          "snapshot-#{snapshot.id}",
-      type:        'snapshot',
+      id: "snapshot-#{snapshot.id}",
+      type: 'snapshot',
       occurred_at: snapshot.taken_at.iso8601,
-      summary:     snapshot.diff_summary || 'Brain snapshot recorded',
-      trigger:     snapshot.trigger,
-      meta:        snapshot.stats.slice('pages', 'page_count', 'edges', 'edge_count')
+      summary: snapshot.diff_summary || 'Brain snapshot recorded',
+      trigger: snapshot.trigger,
+      meta: snapshot.stats.slice('pages', 'page_count', 'edges', 'edge_count')
     }
   end
 
   def ingestion_to_event(log)
     {
-      id:          "ingestion-#{log.id}",
-      type:        'conversation_ingested',
+      id: "ingestion-#{log.id}",
+      type: 'conversation_ingested',
       occurred_at: (log.brain_indexed_at || log.created_at).iso8601,
-      summary:     "Conversation ##{log.conversation_id} indexed into Brain",
-      trigger:     'cron',
-      meta:        { conversation_id: log.conversation_id, page_path: log.brain_page_path }
+      summary: "Conversation ##{log.conversation_id} indexed into Brain",
+      trigger: 'cron',
+      meta: { conversation_id: log.conversation_id, page_path: log.brain_page_path }
     }
   end
 end

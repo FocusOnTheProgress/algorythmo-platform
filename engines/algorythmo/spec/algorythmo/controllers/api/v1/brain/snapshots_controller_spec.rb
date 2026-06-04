@@ -16,6 +16,16 @@ RSpec.describe Algorythmo::Api::V1::Brain::SnapshotsController, type: :request d
 
   let(:base_path) { "/algorythmo/api/v1/accounts/#{account.id}/brain/snapshots" }
 
+  def make_snapshot(account:, taken_at: Time.current, trigger: 'cron', stats: {}, diff_summary: nil)
+    Algorythmo::Brain::Snapshot.create!(
+      account:      account,
+      taken_at:     taken_at,
+      stats:        stats,
+      diff_summary: diff_summary,
+      trigger:      trigger
+    )
+  end
+
   before do
     allow(Algorythmo::FeatureGate).to receive(:cut_enabled?).and_return(true)
     allow(ENV).to receive(:[]).and_call_original
@@ -27,7 +37,6 @@ RSpec.describe Algorythmo::Api::V1::Brain::SnapshotsController, type: :request d
   # ---------------------------------------------------------------------------
   context 'when the requesting account does not match ALGORYTHMO_PRIMARY_ACCOUNT_ID' do
     let(:other_account) { create(:account) }
-    let(:other_admin)   { create(:user, account: other_account, role: :administrator) }
 
     before do
       allow(ENV).to receive(:[]).with('ALGORYTHMO_PRIMARY_ACCOUNT_ID')
@@ -58,21 +67,8 @@ RSpec.describe Algorythmo::Api::V1::Brain::SnapshotsController, type: :request d
   # Non-empty — shape and ordering
   # ---------------------------------------------------------------------------
   context 'when the account has snapshots' do
-    let!(:older_snapshot) do
-      create(:algorythmo_brain_snapshot,
-             account: account,
-             taken_at: 2.hours.ago,
-             stats: { 'pages' => 2 },
-             trigger: 'cron')
-    end
-
-    let!(:newer_snapshot) do
-      create(:algorythmo_brain_snapshot,
-             account: account,
-             taken_at: 1.hour.ago,
-             stats: { 'pages' => 3 },
-             trigger: 'upload')
-    end
+    let!(:older_snapshot) { make_snapshot(account: account, taken_at: 2.hours.ago, stats: { 'pages' => 2 }, trigger: 'cron') }
+    let!(:newer_snapshot) { make_snapshot(account: account, taken_at: 1.hour.ago,  stats: { 'pages' => 3 }, trigger: 'upload') }
 
     it 'returns 200' do
       get base_path, headers: headers
@@ -102,13 +98,13 @@ RSpec.describe Algorythmo::Api::V1::Brain::SnapshotsController, type: :request d
     end
 
     it 'does not return snapshots from a different account' do
-      other_account   = create(:account)
-      _other_snapshot = create(:algorythmo_brain_snapshot, account: other_account, trigger: 'cron')
+      other_account  = create(:account)
+      other_snapshot = make_snapshot(account: other_account, trigger: 'cron')
 
       get base_path, headers: headers
       ids = JSON.parse(response.body)['data'].map { |s| s['id'] }
 
-      expect(ids).not_to include(_other_snapshot.id)
+      expect(ids).not_to include(other_snapshot.id)
     end
   end
 
@@ -119,10 +115,7 @@ RSpec.describe Algorythmo::Api::V1::Brain::SnapshotsController, type: :request d
     before do
       # Create 25 snapshots (PAGE_SIZE=20 → first page has 20, second has 5)
       25.times do |i|
-        create(:algorythmo_brain_snapshot,
-               account: account,
-               taken_at: i.hours.ago,
-               trigger: 'cron')
+        make_snapshot(account: account, taken_at: i.hours.ago, trigger: 'cron')
       end
     end
 

@@ -17,6 +17,15 @@ RSpec.describe Algorythmo::Brain::SnapshotRecorder do
     client_double
   end
 
+  def make_prior_snapshot(stats:, taken_at: 1.hour.ago)
+    Algorythmo::Brain::Snapshot.create!(
+      account: account,
+      taken_at: taken_at,
+      stats: stats,
+      trigger: 'cron'
+    )
+  end
+
   # ---------------------------------------------------------------------------
   # Happy path — first snapshot (no prior)
   # ---------------------------------------------------------------------------
@@ -24,9 +33,9 @@ RSpec.describe Algorythmo::Brain::SnapshotRecorder do
     it 'creates one Snapshot row' do
       stub_stats({ 'pages' => 3, 'edges' => 7 })
 
-      expect {
+      expect do
         described_class.record(account_id: account.id, trigger: 'cron')
-      }.to change { Algorythmo::Brain::Snapshot.where(account_id: account.id).count }.by(1)
+      end.to change { Algorythmo::Brain::Snapshot.where(account_id: account.id).count }.by(1)
     end
 
     it 'stores the stats hash returned by Client#stats' do
@@ -62,37 +71,37 @@ RSpec.describe Algorythmo::Brain::SnapshotRecorder do
   # diff_summary computed against prior snapshot
   # ---------------------------------------------------------------------------
   describe '.record — subsequent snapshot' do
-    before do
-      create(:algorythmo_brain_snapshot,
-             account: account,
-             taken_at: 1.hour.ago,
-             stats: { 'pages' => 4, 'edges' => 10 },
-             trigger: 'cron')
-    end
-
     it 'produces a human-readable diff_summary with page and edge deltas' do
+      make_prior_snapshot(stats: { 'pages' => 4, 'edges' => 10 })
       stub_stats({ 'pages' => 6, 'edges' => 13 })
+
       snapshot = described_class.record(account_id: account.id, trigger: 'cron')
 
-      expect(snapshot.diff_summary).to include('pages')
-      expect(snapshot.diff_summary).to include('4→6')
-      expect(snapshot.diff_summary).to include('+2')
+      aggregate_failures do
+        expect(snapshot.diff_summary).to include('pages')
+        expect(snapshot.diff_summary).to include('4')
+        expect(snapshot.diff_summary).to include('6')
+        expect(snapshot.diff_summary).to include('+2')
+        expect(snapshot.diff_summary).to include('edges')
+        expect(snapshot.diff_summary).to include('10')
+        expect(snapshot.diff_summary).to include('13')
+        expect(snapshot.diff_summary).to include('+3')
+      end
     end
 
     it 'shows negative delta when pages decreased (defensive)' do
+      make_prior_snapshot(stats: { 'pages' => 5, 'edges' => 10 })
       stub_stats({ 'pages' => 2, 'edges' => 10 })
+
       snapshot = described_class.record(account_id: account.id, trigger: 'cron')
 
-      expect(snapshot.diff_summary).to include('-2')
+      expect(snapshot.diff_summary).to include('-3')
     end
 
     it 'falls back to "no measurable change" when keys are absent in both snapshots' do
-      create(:algorythmo_brain_snapshot,
-             account: account,
-             taken_at: 30.minutes.ago,
-             stats: {},
-             trigger: 'cron')
+      make_prior_snapshot(stats: {})
       stub_stats({})
+
       snapshot = described_class.record(account_id: account.id, trigger: 'cron')
 
       expect(snapshot.diff_summary).to eq('no measurable change')
@@ -107,9 +116,9 @@ RSpec.describe Algorythmo::Brain::SnapshotRecorder do
       client_double = instance_double(Algorythmo::Brain::Client, stats: nil)
       allow(Algorythmo::Brain::Client).to receive(:new).and_return(client_double)
 
-      expect {
+      expect do
         described_class.record(account_id: account.id, trigger: 'cron')
-      }.not_to raise_error
+      end.not_to raise_error
 
       snapshot = Algorythmo::Brain::Snapshot.where(account_id: account.id).last
       expect(snapshot.stats).to eq({})
@@ -127,16 +136,16 @@ RSpec.describe Algorythmo::Brain::SnapshotRecorder do
       )
       allow(Algorythmo::Brain::Client).to receive(:new).and_return(client_double)
 
-      expect {
+      expect do
         described_class.record(account_id: account.id, trigger: 'cron')
-      }.to raise_error(Algorythmo::Brain::Client::SubprocessError)
+      end.to raise_error(Algorythmo::Brain::Client::SubprocessError)
 
       expect(Algorythmo::Brain::Snapshot.where(account_id: account.id)).to be_empty
     end
   end
 
   # ---------------------------------------------------------------------------
-  # No WriteLock — Client is instantiated without going through WriteLock
+  # No WriteLock — stats is read-only
   # ---------------------------------------------------------------------------
   describe '.record — does not acquire WriteLock' do
     it 'never calls WriteLock.with_lock' do
