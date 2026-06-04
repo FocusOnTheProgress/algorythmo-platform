@@ -10,6 +10,7 @@ require 'rails_helper'
 #   - Failure path writes log with outcome: :failed + last_error; exception re-raises
 #   - LockContended re-raises (Sidekiq retry handles backoff)
 #   - Trigger rejects mismatched account_id
+#   - Snapshot hook: successful capture fires SnapshotRecorder.record (Fatia 5)
 RSpec.describe Algorythmo::Brain::IngestionWorker do
   subject(:worker) { described_class.new }
 
@@ -55,6 +56,10 @@ RSpec.describe Algorythmo::Brain::IngestionWorker do
     # Pin the start date so the eligible conversation (created_at: start_date + 1.day) is
     # above the gate and old_conversation (created_at: start_date - 1.day) is below it.
     account.update_column(:algorythmo_m3_start_date, 30.days.ago)
+    # SnapshotRecorder.record is called after every successful capture.  Stub it
+    # out here so existing worker tests don't need to know about the recorder
+    # internals (they test the worker, not the recorder — recorder has its own spec).
+    allow(Algorythmo::Brain::SnapshotRecorder).to receive(:record)
   end
 
   after { Current.reset }
@@ -272,6 +277,45 @@ RSpec.describe Algorythmo::Brain::IngestionWorker do
           last_error: 'forced mismatch'
         )
       end.to raise_error(ActiveRecord::StatementInvalid, /does not match/)
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Snapshot hook (Fatia 5 — SnapshotRecorder wiring)
+  # ---------------------------------------------------------------------------
+  describe 'snapshot hook' do
+    it 'calls SnapshotRecorder.record with trigger: cron after a successful capture' do
+      stub_write_lock_passthrough
+      stub_capture_success
+
+      # Override the shared before stub to assert, not just allow
+      expect(Algorythmo::Brain::SnapshotRecorder).to receive(:record)
+        .with(account_id: account.id, trigger: 'cron')
+        .once
+
+      worker.perform(account.id, conversation.id)
+    end
+
+    it 'does NOT call SnapshotRecorder.record when capture raises' do
+      stub_write_lock_passthrough
+      stub_capture_failure
+
+      expect(Algorythmo::Brain::SnapshotRecorder).not_to receive(:record)
+
+      expect { worker.perform(account.id, conversation.id) }.to raise_error(RuntimeError)
+    end
+
+    it 'does NOT call SnapshotRecorder.record when lock is contended' do
+      stub_write_lock_contended
+      allow(Algorythmo::Brain::Client).to receive(:new).and_return(
+        instance_double(Algorythmo::Brain::Client)
+      )
+
+      expect(Algorythmo::Brain::SnapshotRecorder).not_to receive(:record)
+
+      expect { worker.perform(account.id, conversation.id) }.to raise_error(
+        Algorythmo::Brain::WriteLock::LockContended
+      )
     end
   end
 end

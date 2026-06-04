@@ -60,6 +60,9 @@ module Algorythmo
                                                  brain_indexed_at: Time.current,
                                                  brain_page_path: extract_page_path(result))
           end
+          # Record a lightweight snapshot after each successful capture.
+          # stats is read-only — no WriteLock required (plan §5 / Fatia 5).
+          Algorythmo::Brain::SnapshotRecorder.record(account_id: account_id, trigger: 'cron')
         end
       rescue Algorythmo::Brain::WriteLock::LockContended => e
         Rails.logger.warn("[Algorythmo::Brain::IngestionWorker] Lock contended conversation=#{conversation.id}: #{e.message}")
