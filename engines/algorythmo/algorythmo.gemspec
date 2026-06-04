@@ -19,5 +19,14 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = '>= 3.4.0'
 
   spec.add_dependency 'rails', '~> 7.1'
+
+  # Brain document-upload pipeline (plan 0012 PR3). TEXT-ONLY extraction:
+  #   pdf-reader → PDF text layer (no render, no embedded JS)
+  #   rubyzip    → unzip docx to read word/document.xml (parsed with nokogiri,
+  #                already a transitive dep of the host) — no macro execution
+  # Both are mature, pure-Ruby, single-purpose gems. Touched ONLY by DocumentExtractor.
+  spec.add_dependency 'pdf-reader', '~> 2.15'
+  spec.add_dependency 'rubyzip', '~> 3.3'
+
   spec.metadata['rubygems_mfa_required'] = 'true'
 end

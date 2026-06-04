@@ -61,12 +61,25 @@ module Algorythmo
                                                  brain_page_path: extract_page_path(result))
           end
         end
+        # Best-effort snapshot OUTSIDE the WriteLock and OUTSIDE the rescue chain:
+        # stats is read-only (no lock needed) and a snapshot failure must never
+        # re-mark an already-succeeded ingestion as :failed or trigger a Sidekiq
+        # retry that would duplicate the capture in GBrain.
+        record_snapshot_best_effort(account_id)
       rescue Algorythmo::Brain::WriteLock::LockContended => e
         Rails.logger.warn("[Algorythmo::Brain::IngestionWorker] Lock contended conversation=#{conversation.id}: #{e.message}")
         raise # Sidekiq retry handles backoff (2s/4s/8s, max 3)
       rescue StandardError => e
         record_failure(account_id, conversation, e)
         raise
+      end
+
+      # Snapshot is secondary/best-effort. If stats or DB hiccups, log and move
+      # on — never corrupt the primary ingestion outcome, never trigger retry.
+      def record_snapshot_best_effort(account_id)
+        Algorythmo::Brain::SnapshotRecorder.record(account_id: account_id, trigger: 'cron')
+      rescue StandardError => e
+        Rails.logger.warn("[Algorythmo::Brain::IngestionWorker] snapshot skipped account=#{account_id}: #{e.message}")
       end
 
       # Writes markdown to a tmpfile, yields the path, and removes the dir on
