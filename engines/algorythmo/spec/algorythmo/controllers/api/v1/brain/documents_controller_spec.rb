@@ -19,11 +19,15 @@ RSpec.describe Algorythmo::Api::V1::Brain::DocumentsController, type: :controlle
   EXE_BYTES = "MZ\x90\x00\x03\x00\x00\x00".b
 
   def upload_for(content, filename:)
-    file = Tempfile.new(['upload', File.extname(filename)])
-    file.binmode
-    file.write(content)
-    file.rewind
-    Rack::Test::UploadedFile.new(file.path, nil, original_filename: filename)
+    tempfile = Tempfile.new(['upload', File.extname(filename)])
+    tempfile.binmode
+    tempfile.write(content)
+    tempfile.rewind
+    ActionDispatch::Http::UploadedFile.new(
+      tempfile: tempfile,
+      filename: filename,
+      type: 'application/octet-stream'
+    )
   end
 
   before do

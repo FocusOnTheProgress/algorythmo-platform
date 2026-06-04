@@ -39,8 +39,10 @@ RSpec.describe Algorythmo::Brain::Document do
   end
 
   describe 'associations' do
-    it 'has an attached file' do
-      expect(document.file).to be_attached
+    # Active Storage attach requires a persisted record — use create here.
+    it 'has an attached file after persisting' do
+      persisted = create(:algorythmo_brain_document)
+      expect(persisted.file).to be_attached
     end
 
     it 'allows a null user (uploader removed later)' do

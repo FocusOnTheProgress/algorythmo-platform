@@ -24,10 +24,10 @@ module Algorythmo
       # database. Both are accepted for the .docx extension; the extractor then verifies
       # the zip actually contains word/document.xml.
       EXTENSION_MIME = {
-        '.pdf'  => ['application/pdf'].freeze,
+        '.pdf' => ['application/pdf'].freeze,
         '.docx' => ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip'].freeze,
-        '.md'   => ['text/plain', 'text/markdown', 'text/x-markdown', 'application/octet-stream'].freeze,
-        '.txt'  => ['text/plain', 'application/octet-stream'].freeze
+        '.md' => ['text/plain', 'text/markdown', 'text/x-markdown', 'application/octet-stream'].freeze,
+        '.txt' => ['text/plain', 'application/octet-stream'].freeze
       }.freeze
 
       # Binary signatures that must never slip through under a text extension. If the
@@ -58,11 +58,10 @@ module Algorythmo
         return failure('filename is invalid') unless safe_filename?(filename)
 
         extension = File.extname(filename).downcase
-        return failure("extension #{extension.presence || '(none)'} not allowed") unless EXTENSION_MIME.key?(extension)
+        return failure("extension not allowed: #{extension.blank? ? '(none)' : extension}") unless EXTENSION_MIME.key?(extension)
 
-        size = @upload.size.to_i
-        return failure('file is empty') if size.zero?
-        return failure("file exceeds #{Document::MAX_BYTE_SIZE} bytes") if size > Document::MAX_BYTE_SIZE
+        size_error = validate_size(@upload.size.to_i)
+        return failure(size_error) if size_error
 
         detected = detect_mime(filename)
         return failure("content type #{detected} is not permitted") unless mime_allowed?(extension, detected)
@@ -71,6 +70,15 @@ module Algorythmo
       end
 
       private
+
+      # Returns a failure reason string if size is invalid, nil if OK.
+      # Extracted to keep `call` under the cyclomatic complexity limit.
+      def validate_size(size)
+        return 'file is empty' if size.zero?
+        return "file exceeds #{Document::MAX_BYTE_SIZE} bytes" if size > Document::MAX_BYTE_SIZE
+
+        nil
+      end
 
       # A safe basename: present, no null byte, no path separators, no "..".
       # The sanitized basename is for display only — the real path on disk always

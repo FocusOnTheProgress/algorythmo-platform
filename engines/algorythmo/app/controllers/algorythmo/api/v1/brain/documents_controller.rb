@@ -39,9 +39,7 @@ class Algorythmo::Api::V1::Brain::DocumentsController < Algorythmo::Api::V1::Bra
     document = build_document(validation)
     document.file.attach(upload_param)
 
-    unless document.save
-      return render json: { error: document.errors.full_messages.to_sentence }, status: :unprocessable_entity
-    end
+    return render json: { error: document.errors.full_messages.to_sentence }, status: :unprocessable_entity unless document.save
 
     Algorythmo::Brain::BrainDocumentIngestionWorker.perform_async(current_account.id, document.id)
     render json: document_json(document), status: :created
