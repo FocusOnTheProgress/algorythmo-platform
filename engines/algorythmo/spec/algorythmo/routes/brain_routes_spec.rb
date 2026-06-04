@@ -159,6 +159,19 @@ RSpec.describe 'Brain routes', type: :request do
     end
   end
 
+  # GET /brain/documents — implemented in plan 0012 PR3 (upload pipeline).
+  # Tenant gate still tested; happy-path response is 200 with a real list (not 501 stub).
+  describe 'GET /brain/documents' do
+    context 'when non-founder' do
+      it 'returns 403' do
+        without_primary_account_match do
+          get "/algorythmo/api/v1/accounts/#{account.id}/brain/documents", headers: headers
+          expect(response).to have_http_status(:forbidden)
+        end
+      end
+    end
+  end
+
   # POST /brain/mcp_token — implemented in PR M3-5 (T3).
   # Tenant gate still tested; happy-path response is 201 (not 501 stub).
   describe 'POST /brain/mcp_token' do

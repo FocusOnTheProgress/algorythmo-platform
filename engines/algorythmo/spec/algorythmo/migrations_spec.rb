@@ -32,4 +32,24 @@ RSpec.describe 'Algorythmo M0 migrations', type: :model do
       expect(ActiveRecord::Base.connection.select_value('SELECT COUNT(*) FROM telemetry_events').to_i).to eq(0)
     end
   end
+
+  # Plan 0012 PR3 — brain document upload pipeline table.
+  describe 'algorythmo_brain_documents table' do
+    it 'exists in the database' do
+      expect(ActiveRecord::Base.connection.table_exists?(:algorythmo_brain_documents)).to be(true)
+    end
+
+    it 'has the columns the pipeline relies on' do
+      columns = ActiveRecord::Base.connection.columns(:algorythmo_brain_documents).map(&:name)
+      expect(columns).to include(
+        'account_id', 'user_id', 'filename', 'content_type', 'byte_size',
+        'category', 'status', 'brain_page_path', 'last_error'
+      )
+    end
+
+    it 'indexes (account_id, status) for the paginated listing' do
+      indexes = ActiveRecord::Base.connection.indexes(:algorythmo_brain_documents)
+      expect(indexes.map(&:columns)).to include(%w[account_id status])
+    end
+  end
 end
