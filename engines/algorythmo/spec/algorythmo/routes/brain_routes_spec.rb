@@ -106,6 +106,19 @@ RSpec.describe 'Brain routes', type: :request do
                     path_template: '/api/v1/accounts/:account_id/brain/snapshots'
   end
 
+  # POST /brain/copilot/ask — implemented in Fatia 6.
+  # Read-only operator consultant; still behind the tenant gate (non-founder → 403).
+  describe 'POST /brain/copilot/ask' do
+    context 'when non-founder' do
+      it 'returns 403' do
+        without_primary_account_match do
+          post "/algorythmo/api/v1/accounts/#{account.id}/brain/copilot/ask", headers: headers, params: { question: 'q?' }
+          expect(response).to have_http_status(:forbidden)
+        end
+      end
+    end
+  end
+
   # POST /brain/mcp_token — implemented in PR M3-5 (T3).
   # Tenant gate still tested; happy-path response is 201 (not 501 stub).
   describe 'POST /brain/mcp_token' do
