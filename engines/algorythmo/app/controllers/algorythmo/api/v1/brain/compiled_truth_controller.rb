@@ -36,9 +36,9 @@ class Algorythmo::Api::V1::Brain::CompiledTruthController < Algorythmo::Api::V1:
     aggregate = raw.is_a?(Hash) ? (raw['aggregate'] || {}) : {}
 
     {
-      pages:      Integer(aggregate['total_pages'] || 0),
-      edges:      Integer(aggregate['total_edges']  || 0),
-      raw_stats:  raw,
+      pages: Integer(aggregate['total_pages'] || 0),
+      edges: Integer(aggregate['total_edges'] || 0),
+      raw_stats: raw,
       account_id: account_id
     }
   end
