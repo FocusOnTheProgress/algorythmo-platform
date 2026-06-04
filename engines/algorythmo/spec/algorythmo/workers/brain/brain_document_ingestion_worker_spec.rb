@@ -124,7 +124,8 @@ RSpec.describe Algorythmo::Brain::BrainDocumentIngestionWorker do
   describe 'frontmatter safety' do
     it 'JSON-encodes a filename with a newline so it cannot inject frontmatter' do
       stub_write_lock_passthrough
-      document.update!(filename: "evil\ntitulo: injected")
+      # Filename has a .md extension (for extraction) and a newline (for injection test).
+      document.update!(filename: "evil\ntitulo: injected.md")
       captured_markdown = nil
       client = stub_capture_success
       allow(client).to receive(:capture) do |file:|
@@ -138,7 +139,7 @@ RSpec.describe Algorythmo::Brain::BrainDocumentIngestionWorker do
       yaml = YAML.safe_load("#{front}\n")
       aggregate_failures do
         expect(yaml.keys).to contain_exactly('titulo', 'categoria', 'origem', 'data')
-        expect(yaml['titulo']).to eq("evil\ntitulo: injected")
+        expect(yaml['titulo']).to eq("evil\ntitulo: injected.md")
       end
     end
   end

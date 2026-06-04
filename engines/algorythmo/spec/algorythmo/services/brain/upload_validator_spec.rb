@@ -12,7 +12,9 @@ RSpec.describe Algorythmo::Brain::UploadValidator do
   EXE_BYTES = "MZ\x90\x00\x03\x00\x00\x00".b
 
   def upload_for(content, filename:)
-    tempfile = Tempfile.new(['upload', File.extname(filename)])
+    # File.extname raises on filenames with null bytes. Use a safe fallback suffix.
+    safe_ext = filename.include?("\0") ? '' : File.extname(filename)
+    tempfile = Tempfile.new(['upload', safe_ext])
     tempfile.binmode
     tempfile.write(content)
     tempfile.rewind
