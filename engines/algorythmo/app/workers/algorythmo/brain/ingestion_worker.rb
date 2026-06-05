@@ -101,9 +101,9 @@ module Algorythmo
       def extract_page_path(result)
         return nil unless result.is_a?(Hash)
 
-        path = result['path'] || result['slug'] || result['page_path'] ||
-               result[:path] || result[:slug] || result[:page_path]
-        path.is_a?(String) && !path.empty? ? path : nil
+        %w[path slug page_path]
+          .map { |key| result[key] || result[key.to_sym] }
+          .find { |value| value.is_a?(String) && !value.empty? }
       end
 
       def upsert_log(account_id, conversation, attrs)
