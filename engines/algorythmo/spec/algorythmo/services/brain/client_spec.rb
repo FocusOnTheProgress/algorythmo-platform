@@ -142,8 +142,9 @@ RSpec.describe Algorythmo::Brain::Client do
         stub_popen3(stdout: '{}')
         client.capture(file: tmp_file)
         expect(Open3).to have_received(:popen3) do |_env, *cli|
-          # The path passed to gbrain must be the resolved real path
-          expect(File.absolute_path?(cli[2])).to be(true)
+          # The path passed to gbrain (after --file) must be the resolved real path
+          path = cli[cli.index('--file') + 1]
+          expect(File.absolute_path?(path)).to be(true)
         end
       end
     end
