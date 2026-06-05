@@ -7,8 +7,8 @@
     "gbrain": "garrytan/gbrain#9a0bae8d62cdd1e0dd6655e24e082fe6c69c5dac"
   },
   "notes": {
-    "pin-policy": "ADR-0013 — pin by 40-char commit SHA, bump bi-weekly (odd ISO week Mondays) + hotfix lane for CVE/regression. Mirror of engines/algorythmo/GBRAIN_PINNED_SHA (single source of truth for bumps).",
+    "pin-policy": "ADR-0013 — pin by 40-char commit SHA, bump bi-weekly (odd ISO week Mondays) + hotfix lane for CVE/regression. engines/algorythmo/GBRAIN_PINNED_SHA is the single source of truth; this dependency line is a mirror pin record only.",
     "pinned-sha-date": "garrytan/gbrain@master HEAD as of 2026-06-04 (PR 0 brain-copiloto).",
-    "runtime": "GBrain is a Node.js CLI. Install via pnpm (project default) or bun: `pnpm install` in engines/algorythmo/. The gbrain binary is invoked via Open3 subprocess from Brain::Client (PR M3-2)."
+    "runtime": "GBrain is a BUN CLI (package.json engines: bun >=1.3.10; bin entrypoint src/cli.ts), NOT Node/pnpm. It is NOT installed by pnpm in this engine — the production install lives in docker/Dockerfile via `bun install -g github:garrytan/gbrain#<GBRAIN_PINNED_SHA>` (reads the SHA file). The gbrain binary is invoked via Open3 subprocess from Brain::Client. For local dev, install per ~/.claude (setup-gbrain / `bun install -g`)."
   }
 }

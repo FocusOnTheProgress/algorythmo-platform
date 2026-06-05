@@ -59,6 +59,50 @@ RUN echo 'export PNPM_HOME="/root/.local/share/pnpm"' >> /root/.shrc \
 ENV PNPM_HOME="/root/.local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
+# algorythmo: install the GBrain engine (Brain + Copiloto) into the image.
+#
+# GBrain is a BUN CLI (engines requires bun >=1.3.10; entrypoint src/cli.ts), NOT a
+# Node/pnpm package — verified against garrytan/gbrain at the pinned SHA. It is pinned
+# by 40-char commit SHA (ADR-0013); engines/algorythmo/GBRAIN_PINNED_SHA is the single
+# source of truth, read here so the pin never drifts.
+#
+# Determinism (supply chain): we clone the engine at the exact SHA and install with
+# `bun install --frozen-lockfile` against its COMMITTED bun.lock, so transitive deps
+# (which use caret ranges in gbrain's package.json) resolve identically on every rebuild.
+# `bun install -g <git#sha>` would re-resolve those carets against the live registry and
+# is NOT reproducible. --production drops devDependencies from the runtime tree.
+#
+# We do NOT pass --ignore-scripts: gbrain's postinstall is self-guarded
+# (`command -v gbrain && ...` -> no-op during install) and @electric-sql/pglite is a
+# trustedDependency whose PGLite/WASM setup must run.
+#
+# bun lives at /usr/local/bun; the engine at /usr/local/gbrain-src; a tiny wrapper on
+# PATH makes `gbrain` resolve for the rake task, Brain::Client, and manual use. Both
+# trees are COPY'd into the slim final stage (bun cache + clone .git pruned first).
+# NOTE: bun.sh/install is fetched live (pinned by version tag, TLS, single trusted
+# vendor) — accepted; revisit with a checksum-pinned tarball if the CSO bar tightens.
+# Validated end-to-end (init + capture + stats in a production-shaped image) before this landed.
+ARG BUN_VERSION="1.3.14"
+ENV BUN_INSTALL="/usr/local/bun"
+ENV PATH="/usr/local/bun/bin:$PATH"
+RUN apk add --no-cache bash unzip
+COPY engines/algorythmo/GBRAIN_PINNED_SHA /tmp/GBRAIN_PINNED_SHA
+# bun (pinned), with retry on the piped install for transient network blips
+RUN for i in 1 2 3; do curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}" && break || sleep 5; done \
+  && bun --version
+# clone @SHA + frozen, production-only install against the committed bun.lock
+RUN GBRAIN_SHA="$(tr -d '[:space:]' < /tmp/GBRAIN_PINNED_SHA)" \
+  && for i in 1 2 3; do git clone https://github.com/garrytan/gbrain.git /usr/local/gbrain-src && break || sleep 5; done \
+  && cd /usr/local/gbrain-src \
+  && git checkout --quiet "${GBRAIN_SHA}" \
+  && { test -f bun.lock || { echo "FATAL: no committed bun.lock at pinned SHA"; exit 1; }; } \
+  && bun install --frozen-lockfile --production
+# wrapper on PATH so `gbrain` resolves everywhere; verify; prune non-runtime weight
+RUN printf '#!/bin/sh\nexec bun /usr/local/gbrain-src/src/cli.ts "$@"\n' > /usr/local/bun/bin/gbrain \
+  && chmod +x /usr/local/bun/bin/gbrain \
+  && gbrain --version \
+  && rm -rf /usr/local/bun/install/cache "$HOME/.bun/install/cache" /usr/local/gbrain-src/.git /tmp/GBRAIN_PINNED_SHA
+
 WORKDIR /app
 
 COPY Gemfile Gemfile.lock ./
@@ -137,6 +181,8 @@ RUN apk update && apk add --no-cache \
   imagemagick \
   git \
   vips \
+  libstdc++ \
+  libgcc \
   && gem install bundler -v "$BUNDLER_VERSION"
 
 COPY --from=node /usr/local/bin/node /usr/local/bin/
@@ -150,11 +196,42 @@ RUN if [ "$RAILS_ENV" != "production" ]; then \
   && pnpm --version; \
   fi
 
+# algorythmo: bring the GBrain engine (bun runtime + the pinned engine tree) into the
+# slim runtime image. The `gbrain` wrapper is `exec bun /usr/local/gbrain-src/src/cli.ts`,
+# so bun must be on PATH (set below) and the engine tree must be present.
+# libstdc++/libgcc (added above) are bun's musl runtime deps.
+ENV BUN_INSTALL="/usr/local/bun"
+ENV PATH="/usr/local/bun/bin:$PATH"
+COPY --from=pre-builder /usr/local/bun /usr/local/bun
+COPY --from=pre-builder /usr/local/gbrain-src /usr/local/gbrain-src
+
+# algorythmo: where each account's brain lives. Brain::Client uses GBRAIN_HOME_BASE and
+# appends "/<account_id>" (gbrain then appends "/.gbrain"). This path MUST be backed by a
+# persistent Easypanel volume on BOTH the app and sidekiq services, or every deploy wipes
+# the brain (same lesson as the Active Storage /app/storage volume). Without a volume the
+# engine still runs; the knowledge just isn't durable. See docs/algorythmo/brain-copiloto-go-live.md.
+# 0775 so a non-root process can still write here if the image is ever hardened off root
+# (today both app and sidekiq run as root, so this is forward-insurance, not a today-fix).
+ENV GBRAIN_HOME_BASE="/app/.gbrain-accounts"
+
+# Real build-time smoke: prove a PGLite brain actually initializes (exercises the WASM +
+# dependency graph), not just that the wrapper prints a version. Throwaway home, removed after.
+RUN set -eux; \
+  gbrain --version; \
+  GBRAIN_HOME=/tmp/_brain_smoke gbrain init --pglite --force --non-interactive \
+    --embedding-model openai:text-embedding-3-small --embedding-dimensions 1536; \
+  GBRAIN_HOME=/tmp/_brain_smoke gbrain stats; \
+  rm -rf /tmp/_brain_smoke
+
 COPY --from=pre-builder /gems/ /gems/
 COPY --from=pre-builder /app /app
 
 # Copy .git_sha file from pre-builder stage
 COPY --from=pre-builder /app/.git_sha /app/.git_sha
+
+# algorythmo: ensure the brain base dir exists for the no-volume case (a mounted
+# Easypanel volume takes precedence and supplies persistence).
+RUN mkdir -p /app/.gbrain-accounts && chmod 0775 /app/.gbrain-accounts
 
 WORKDIR /app
 
