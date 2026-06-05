@@ -12,13 +12,15 @@ require 'tmpdir'
 #   GBRAIN_HOME=<base>/<account_id> yields a config dir <base>/<account_id>/.gbrain.
 #   The path is injected via the Open3 env hash on EVERY invocation — never a flag.
 #
-# Provider keys (verified in source at the pinned SHA):
-#   - ZEROENTROPY_API_KEY → embeddings        (src/core/config.ts L43, L409)
-#       engine default provider zeroentropyai:zembed-1 / 1280 (defaults.ts L20-21).
-#       Founder directive 2026-06-04: use the motor default, not OpenAI.
-#   - DEEPSEEK_API_KEY    → synthesis (think) (src/core/ai/recipes/deepseek.ts)
+# Provider config (verified in source at the pinned SHA):
+#   - OLLAMA_BASE_URL  → embeddings endpoint  (src/core/ai/recipes/ollama.ts)
+#       SELF-HOSTED indexer ollama:nomic-embed-text / 768 dims, no API key.
+#       Founder directive 2026-06-05: own the indexer on our VPS, zero paid services.
+#       OLLAMA_BASE_URL is NOT a secret (a service URL) — injected, but not redacted.
+#   - DEEPSEEK_API_KEY → synthesis (think)    (src/core/ai/recipes/deepseek.ts)
+#   - OPENAI_API_KEY   → manual synthesis fallback (only if set; flip models.think)
 #   gbrain does NOT read DEEPSEEK_BASE_URL / DEEPSEEK_MODEL — we never inject them.
-#   Keys travel ONLY in the env hash — never as a CLI argument, never logged.
+#   Secrets travel ONLY in the env hash — never as a CLI argument, never logged.
 #
 # All write methods (capture, export) MUST be wrapped by WriteLock.with_lock.
 # Read methods (search, think, stats) do NOT acquire the lock.
@@ -110,16 +112,18 @@ module Algorythmo
       #
       # This is a DELTA: Open3 merges it onto the parent process env (PATH, HOME,
       # etc. survive because we do not pass unsetenv_others: true). We add:
-      #   - GBRAIN_HOME         → per-account brain root (P0-5 isolation)
-      #   - ZEROENTROPY_API_KEY → only if present (embeddings, engine default)
-      #   - DEEPSEEK_API_KEY    → only if present (synthesis)
+      #   - GBRAIN_HOME      → per-account brain root (P0-5 isolation)
+      #   - OLLAMA_BASE_URL  → self-hosted embeddings endpoint (not a secret)
+      #   - DEEPSEEK_API_KEY → only if present (synthesis)
+      #   - OPENAI_API_KEY   → only if present (manual synthesis fallback)
       #
       # Deliberately absent: DEEPSEEK_BASE_URL / DEEPSEEK_MODEL (gbrain ignores them).
       # Keys live here and ONLY here — never in args, never logged.
       def subprocess_env
         env = { 'GBRAIN_HOME' => self.class.gbrain_home_for(@account_id) }
-        env['ZEROENTROPY_API_KEY'] = ENV['ZEROENTROPY_API_KEY'] if ENV['ZEROENTROPY_API_KEY'].present?
-        env['DEEPSEEK_API_KEY']    = ENV['DEEPSEEK_API_KEY']    if ENV['DEEPSEEK_API_KEY'].present?
+        env['OLLAMA_BASE_URL']  = ENV['OLLAMA_BASE_URL']  if ENV['OLLAMA_BASE_URL'].present?
+        env['DEEPSEEK_API_KEY'] = ENV['DEEPSEEK_API_KEY'] if ENV['DEEPSEEK_API_KEY'].present?
+        env['OPENAI_API_KEY']   = ENV['OPENAI_API_KEY']   if ENV['OPENAI_API_KEY'].present?
         env
       end
 
@@ -215,9 +219,10 @@ module Algorythmo
 
       # Defensive: gbrain should never echo a key, but if a future version leaks one
       # into stderr we must not let it reach an exception message or the logs.
+      # OLLAMA_BASE_URL is not a secret, so it is not redacted.
       def redact_secrets(text)
         redacted = text.to_s
-        [ENV.fetch('ZEROENTROPY_API_KEY', nil), ENV.fetch('DEEPSEEK_API_KEY', nil)].each do |secret|
+        [ENV.fetch('DEEPSEEK_API_KEY', nil), ENV.fetch('OPENAI_API_KEY', nil)].each do |secret|
           next if secret.blank?
 
           redacted = redacted.gsub(secret, '[REDACTED]')

@@ -26,18 +26,19 @@ end
 RSpec.describe Algorythmo::Tasks::SmokeOllama do
   subject(:smoke) { described_class.new(host: host, model: model, output: output) }
 
-  let(:host)   { 'http://localhost:11434' }
+  let(:host)   { 'http://localhost:11434/v1' } # OpenAI-compat base (same as gbrain's OLLAMA_BASE_URL)
   let(:model)  { 'nomic-embed-text' }
   let(:output) { StringIO.new }
   let(:embedding_768) { Array.new(768, 0.01) }
 
   # Helper: stub a successful Ollama response for a single POST.
+  # OpenAI-compatible embeddings shape: { model, input } -> { data: [{ embedding }] }.
   def stub_ollama_success(prompt)
-    stub_request(:post, "#{host}/api/embeddings")
-      .with(body: hash_including('model' => model, 'prompt' => prompt))
+    stub_request(:post, "#{host}/embeddings")
+      .with(body: hash_including('model' => model, 'input' => prompt))
       .to_return(
         status: 200,
-        body: JSON.generate(embedding: embedding_768),
+        body: JSON.generate(data: [{ embedding: embedding_768 }]),
         headers: { 'Content-Type' => 'application/json' }
       )
   end
@@ -73,7 +74,7 @@ RSpec.describe Algorythmo::Tasks::SmokeOllama do
 
     context 'Ollama offline (Errno::ECONNREFUSED)' do
       before do
-        stub_request(:post, "#{host}/api/embeddings")
+        stub_request(:post, "#{host}/embeddings")
           .to_raise(Errno::ECONNREFUSED)
       end
 
@@ -94,7 +95,7 @@ RSpec.describe Algorythmo::Tasks::SmokeOllama do
 
     context 'model not found (HTTP 404)' do
       before do
-        stub_request(:post, "#{host}/api/embeddings")
+        stub_request(:post, "#{host}/embeddings")
           .to_return(status: 404, body: 'model not found')
       end
 

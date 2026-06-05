@@ -37,7 +37,7 @@ RSpec.describe Algorythmo::Tasks::BrainProvision do
   end
 
   around do |example|
-    ClimateControl.modify(ZEROENTROPY_API_KEY: 'ze-test', DEEPSEEK_API_KEY: 'sk-deepseek-test') do
+    ClimateControl.modify(OLLAMA_BASE_URL: 'http://localhost:11434/v1', DEEPSEEK_API_KEY: 'sk-deepseek-test') do
       example.run
     end
   end
@@ -51,13 +51,13 @@ RSpec.describe Algorythmo::Tasks::BrainProvision do
       expect(labels).to eq(%w[init config])
     end
 
-    it 'init pins the engine-default embedding provider and dimensions (no auto-detect picker)' do
+    it 'init pins the self-hosted Ollama embedding model and dimensions (no auto-detect picker)' do
       calls = stub_capture3_success
       provisioner.run!
 
       init = calls.first[:argv]
-      expect(init).to include('--embedding-model', 'zeroentropyai:zembed-1')
-      expect(init).to include('--embedding-dimensions', '1280')
+      expect(init).to include('--embedding-model', 'ollama:nomic-embed-text')
+      expect(init).to include('--embedding-dimensions', '768')
     end
 
     it 'init is non-TTY-safe and idempotent (--non-interactive + --force + --pglite)' do
@@ -88,14 +88,13 @@ RSpec.describe Algorythmo::Tasks::BrainProvision do
       end
     end
 
-    it 'passes keys only in the env hash, never in argv' do
+    it 'passes config + keys only in the env hash, never in argv' do
       calls = stub_capture3_success
       provisioner.run!
 
       calls.each do |call|
-        expect(call[:env]['ZEROENTROPY_API_KEY']).to eq('ze-test')
-        expect(call[:env]['DEEPSEEK_API_KEY']).to eq('sk-deepseek-test')
-        expect(call[:argv].join(' ')).not_to include('ze-test')
+        expect(call[:env]['OLLAMA_BASE_URL']).to eq('http://localhost:11434/v1') # embeddings endpoint
+        expect(call[:env]['DEEPSEEK_API_KEY']).to eq('sk-deepseek-test')          # synthesis key
         expect(call[:argv].join(' ')).not_to include('sk-deepseek-test')
       end
     end
@@ -123,11 +122,11 @@ RSpec.describe Algorythmo::Tasks::BrainProvision do
   end
 
   describe 'key validation' do
-    it 'fails clearly when ZEROENTROPY_API_KEY is missing, before any subprocess' do
+    it 'fails clearly when OLLAMA_BASE_URL is missing, before any subprocess' do
       allow(Open3).to receive(:capture3)
-      ClimateControl.modify(ZEROENTROPY_API_KEY: nil) do
+      ClimateControl.modify(OLLAMA_BASE_URL: nil) do
         expect { provisioner.run! }
-          .to raise_error(described_class::ProvisionError, /ZEROENTROPY_API_KEY/)
+          .to raise_error(described_class::ProvisionError, /OLLAMA_BASE_URL/)
       end
       expect(Open3).not_to have_received(:capture3)
     end

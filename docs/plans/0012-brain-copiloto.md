@@ -15,8 +15,8 @@
 | Sem LLM: `answer="(no LLM available …)"`, `gaps=["no LLM available; …"]`, `warnings=["NO_ANTHROPIC_API_KEY"]`, **`synthesisOk=false`**, exit 0 | VERIFICADO | `src/core/think/index.ts:440-462` |
 | Modelo de síntese default = **Anthropic** (`ANTHROPIC_API_KEY`), resolvido por chain de 6 tiers, `configKey: 'models.think'`, `tier: 'deep'` | VERIFICADO | `src/core/think/index.ts:233-237`, `src/core/config.ts:59-61` |
 | DeepSeek é provider de **chat** (recipe `id:'deepseek'`, `base_url_default:'https://api.deepseek.com/v1'`, lê `DEEPSEEK_API_KEY`). **NÃO tem modelo de embeddings** | VERIFICADO | `src/core/ai/recipes/deepseek.ts:10-31`, `docs/integrations/embedding-providers.md` (tabela: `deepseek` = "chat only") |
-| Embedding default do gbrain = **ZeroEntropy** (`zeroentropyai:zembed-1`, 1280 dims, chave `ZEROENTROPY_API_KEY`) — **provider escolhido (founder 2026-06-04)**; OpenAI segue trocável | VERIFICADO | `src/core/ai/defaults.ts:20-21`, `src/core/config.ts:43-44,409` |
-| `init` auto-detecta provider por env key; **múltiplas keys → picker interativo; non-TTY → exit 1**. `--embedding-model zeroentropyai:zembed-1` crava sem auto-detect | VERIFICADO | `src/commands/init.ts:30-90, 416`, `src/core/ai/defaults.ts:20-21` |
+| Provider de embeddings **escolhido = SELF-HOSTED Ollama** (`ollama:nomic-embed-text`, 768 dims, endpoint `OLLAMA_BASE_URL`, sem chave) — **founder 2026-06-05** (supersede ZeroEntropy/OpenAI). Engine default seria ZeroEntropy, mas cravamos Ollama. | VERIFICADO | `src/core/ai/recipes/ollama.ts`; `src/core/ai/defaults.ts:20-21` |
+| `init` auto-detecta provider por env key; **múltiplas keys → picker interativo; non-TTY → exit 1**. `--embedding-model ollama:nomic-embed-text` crava sem auto-detect | VERIFICADO | `src/commands/init.ts:30-90, 416`, `src/core/ai/recipes/ollama.ts` |
 | Isolamento de brain por **`GBRAIN_HOME`** (relocaliza `~/.gbrain/` inteiro por invocação) e/ou `GBRAIN_DATABASE_URL` | VERIFICADO | `src/core/config.ts:24-25` (configDir honra GBRAIN_HOME), `src/core/storage-config.ts:16-17` |
 | gbrain roda em **bun + PGLite (Postgres-17 WASM)**, **por subprocess** (sem daemon Day-1) — RAM residente por invocação | VERIFICADO | `src/core/pglite-engine.ts`, premissa M3 (subprocess stdio) |
 | `stats` é read-only barato; `export` é caro e adquire write-lock | A CONFIRMAR (assumido pelo M3) | — |
@@ -111,11 +111,11 @@ O worktree `.claude/worktrees/m8b-brain-upload` está na branch `engineer/m8b-br
                           │ embeddings            │ síntese (think)
                           ▼                        ▼
               ┌────────────────────────┐   ┌────────────────────────────┐
-              │  ZeroEntropy (default) │   │   DeepSeek (chat)          │
-              │  zeroentropyai:zembed-1│   │   recipe lê DEEPSEEK_API_KEY│
-              │  (1280d)               │   │   base_url já embutido no  │
-              │  via ZEROENTROPY_API_KEY│  │   recipe (api.deepseek.com)│
-              │  ~0 RAM                 │   │   setado por config, NÃO   │
+              │  Ollama (self-hosted)  │   │   DeepSeek (chat)          │
+              │  ollama:nomic-embed-text│  │   recipe lê DEEPSEEK_API_KEY│
+              │  (768d)                │   │   base_url já embutido no  │
+              │  via OLLAMA_BASE_URL    │  │   recipe (api.deepseek.com)│
+              │  local na VPS, sem chave│   │   setado por config, NÃO   │
               │  (provider CRAVADO no  │   │   por env per-request:     │
               │   init, não auto-det.) │   │   models.think=deepseek:…  │
               └────────────────────────┘   └────────────────────────────┘
@@ -201,9 +201,13 @@ A porta entregue pronta: enquanto o founder não anexa nada, **o Ver e o Histór
 
 ## 3. Motores: embeddings, síntese, provisionamento e isolamento
 
-### 3.1 Decisão de embeddings — DEFAULT do motor `zeroentropyai:zembed-1` (founder 2026-06-04)
+### 3.1 Decisão de embeddings — SELF-HOSTED `ollama:nomic-embed-text` (founder 2026-06-05)
 
-> **REVISÃO 2026-06-04 (founder):** NÃO usar OpenAI como indexador "por enquanto" — usar o **DEFAULT do próprio motor gbrain**: `zeroentropyai:zembed-1` (1280 dims), chave `ZEROENTROPY_API_KEY` [VERIFICADO no SHA pinado: `src/core/ai/defaults.ts:20-21` (`DEFAULT_EMBEDDING_MODEL`/`DEFAULT_EMBEDDING_DIMENSIONS`), `src/core/config.ts:43,409`]. Continua **cravado explicitamente** no provisionamento (`--embedding-model` + `--embedding-dimensions`), porque o picker do `init` trava em non-TTY (P0-4) — não confiar em auto-detect. OpenAI segue **trocável** via as constantes do provisionador se o founder reverter. O histórico abaixo (escolha OpenAI anterior) fica como contexto.
+> **SUPERSEDE 2026-06-05 (founder) — indexador PRÓPRIO, grátis, na VPS.** O indexador passa a ser **self-hosted Ollama**: `ollama:nomic-embed-text` (768 dims), endpoint `OLLAMA_BASE_URL`, **sem chave, sem serviço pago** [VERIFICADO no SHA pinado: `src/core/ai/recipes/ollama.ts` — provider `ollama`, lê `OLLAMA_BASE_URL` (default `http://localhost:11434/v1`), sem API key]. Cravado explicitamente no provisionamento (`--embedding-model` + `--embedding-dimensions`) — o picker do `init` trava em non-TTY (P0-4). **Validado ponta a ponta** (Docker + Ollama: captura + busca semântica, score 0.82 com pergunta de palavras diferentes do doc). Decisão de recursos: desativar os outros projetos da VPS (`central_modeloja`, `algorythmo`) deixa só a operação da Modeloja, liberando RAM pro Ollama (modelo pequeno, CPU). DeepSeek segue na síntese; `OPENAI_API_KEY` = reserva manual.
+>
+> **GANHO DE LGPD (importante):** com embeddings **locais**, o acervo do cliente **NÃO sai mais da nossa VPS** para indexação. Some a superfície de dados de terceiro no upload (a ⚠ ressalva abaixo). Só a síntese (DeepSeek) vê o **subconjunto recuperado** por pergunta. Isso **fortalece** o material de venda, não enfraquece.
+>
+> _As revisões abaixo (ZeroEntropy 2026-06-04 e OpenAI anterior) ficam como histórico de decisão — superadas._
 
 ---
 
@@ -229,9 +233,11 @@ Por quê:
 
 Como o default do gbrain seria ZeroEntropy, **mandar para a OpenAI é escolha ativa que precisa de consentimento explícito** no contrato / material de venda da Modeloja ("seus documentos são processados por provedores de IA terceiros — OpenAI para indexação, DeepSeek para respostas"). **Registrar como decisão de produto consentida.** Trilha de fuga se um cliente recusar: ZeroEntropy (default), ou embeddings locais (Ollama) numa VPS com RAM suficiente — ver §12.
 
-### 3.2 Por que NÃO Ollama local (override consciente da D-OQ5 do M3)
+### 3.2 ~~Por que NÃO Ollama local~~ → REVERTIDO 2026-06-05 (Ollama É a escolha)
 
-D-OQ5 escolheu Ollama `nomic-embed-text` por "custo/privacidade zero". Override: (a) o modelo + runtime come **centenas de MB residentes** numa VPS de 4 GB dividida por 4 serviços — risco de OOM; (b) "custo zero" vira custo de confiabilidade. Ollama fica como **fallback** (§12) só com VPS ≥ 8 GB ou exigência LGPD de não-saída de dados.
+> **REVERTIDO 2026-06-05:** o founder optou por indexador self-hosted (§3.1 SUPERSEDE). A objeção de RAM abaixo se resolve **desativando os outros projetos da VPS** (`central_modeloja` + `algorythmo`), deixando só a operação da Modeloja — sobra memória pro Ollama (modelo pequeno, CPU). Se ainda apertar, aumenta-se a VPS. O texto abaixo fica como histórico.
+
+D-OQ5 escolheu Ollama `nomic-embed-text` por "custo/privacidade zero". Override (HISTÓRICO, revertido): (a) o modelo + runtime come **centenas de MB residentes** numa VPS de 4 GB dividida por 4 serviços — risco de OOM; (b) "custo zero" vira custo de confiabilidade. Ollama fica como **fallback** (§12) só com VPS ≥ 8 GB ou exigência LGPD de não-saída de dados.
 
 ### 3.3 Síntese = DeepSeek — configurada por PROVISIONAMENTO, não por env per-request (P0-3)
 
@@ -251,14 +257,14 @@ Sem isto, a **ingestão falha no primeiro upload** em produção: `gbrain init` 
 
 ```
 # 1. cria o brain (provider de embeddings explícito — sem auto-detect/picker)
-#    DEFAULT do motor (founder 2026-06-04): zeroentropyai:zembed-1 / 1280 dims.
+#    SELF-HOSTED (founder 2026-06-05): ollama:nomic-embed-text / 768 dims.
 gbrain init --pglite --force --non-interactive \
-  --embedding-model zeroentropyai:zembed-1 --embedding-dimensions 1280
+  --embedding-model ollama:nomic-embed-text --embedding-dimensions 768
 # 2. aponta a síntese para o DeepSeek
 gbrain config set models.think deepseek:deepseek-chat
 ```
 
-Roda com `GBRAIN_HOME` apontando para o brain da Modeloja (§3.5) e `ZEROENTROPY_API_KEY` no env. **Quando** roda: no provisionamento do brain (uma vez), e idempotente em re-deploys (o `init` sem `--force` preserva; com `--force` re-cria — usar `--force` só na criação inicial). [VERIFICADO no SHA pinado: dims do default = 1280 — `src/core/ai/defaults.ts:21` (`DEFAULT_EMBEDDING_DIMENSIONS`); a init help-text do gbrain cita 2560 como tier "largest", mas o sistema crava 1280 no fresh-install — `src/commands/init.ts` `resolveEmbeddingByEnv`.]
+Roda com `GBRAIN_HOME` apontando para o brain da Modeloja (§3.5) e `OLLAMA_BASE_URL` + `DEEPSEEK_API_KEY` no env. **Quando** roda: no provisionamento do brain (uma vez), e idempotente em re-deploys (o `init` sem `--force` preserva; com `--force` re-cria — usar `--force` só na criação inicial). [VERIFICADO no SHA pinado: receita Ollama lê `OLLAMA_BASE_URL`, sem chave — `src/core/ai/recipes/ollama.ts`; `nomic-embed-text` = 768 dims nativo.]
 
 ### 3.5 Isolamento por brain DEDICADO da Modeloja (P0-5 — era P0 ABERTO)
 
@@ -401,7 +407,7 @@ Algorythmo::Brain::CopilotAnswer.call(account_id:, question:) →
     # mapeado da máquina de estados §2.2 a partir de synthesisOk/warnings/citations do think --json
 Algorythmo::Brain::Client#think(prompt:)  → agora passa --json (P0-1); parse do shape real
 Algorythmo::Brain::Client#subprocess_env (privado) → Hash
-    # injeta GBRAIN_HOME=<brain Modeloja>, ZEROENTROPY_API_KEY, DEEPSEEK_API_KEY no Open3.
+    # injeta GBRAIN_HOME=<brain Modeloja>, OLLAMA_BASE_URL, DEEPSEEK_API_KEY no Open3.
     # NÃO injeta DEEPSEEK_BASE_URL/DEEPSEEK_MODEL (não lidos pelo gbrain — §3.3).
 ```
 
@@ -417,7 +423,7 @@ Gate explícito: o Copiloto herda o gate `algorythmo_crm`. Como Modeloja terá `
 |---|---|
 | **Cérebro vazio** (Modeloja ainda sem documentos) | Ver/Histórico = empty-state honesto. Copiloto: estado **`ungrounded`** (200, "Não encontrei isso no Cérebro"). Distinto de "motor não configurado". Nunca inventa. |
 | **`DEEPSEEK_API_KEY` / `ANTHROPIC_API_KEY` de síntese ausente** | `think --json` volta `synthesisOk=false` + `warnings:[NO_ANTHROPIC_API_KEY]`. Copiloto: estado **`engine_unconfigured`** → 503 + UI "Motor de IA não configurado". **NÃO** é "não sei" (P1-2 — não mentir pro operador). Ver/Ajustar/Histórico seguem funcionando (não dependem do LLM). |
-| **`ZEROENTROPY_API_KEY` ausente (embeddings)** | Upload aceita o arquivo, mas a ingestão (`capture`) falha (sem embeddings) → status `failed` + `last_error` claro no Ver. Sem 500. |
+| **`OLLAMA_BASE_URL` ausente / Ollama fora do ar (embeddings)** | Upload aceita o arquivo, mas a ingestão (`capture`) falha (sem embeddings) → status `failed` + `last_error` claro no Ver. Sem 500. |
 | **LLM devolve lixo não-JSON** | `think --json` marca `warnings:[LLM_OUTPUT_NOT_JSON]`, `synthesisOk=false`. Copiloto: estado **`degraded`** → 200 "Resposta indisponível, tente de novo". |
 | **`think` sem `--json` (bug P0-1)** | **Corrigido:** Client passa `--json`; sem isso o gbrain devolveria markdown e o `JSON.parse` quebraria em toda pergunta. Spec trava `--json` presente. |
 | **Upload hostil** (.exe renomeado, SVG com script, PDF-bomba, 0 byte) | Rejeitado na validação (allowlist + magic bytes + tamanho). Nunca chega ao disco do brain. |
@@ -441,8 +447,8 @@ Cada PR ≤ ~200 linhas quando possível, responsabilidade única, salvaguarda/t
 
 ### PR 0 — Fundação: brain isolado da Modeloja + pin de SHA + prova de integração real (NOVO, P0-4/P0-5/P1-4)
 - **Pin do SHA do gbrain** (40 chars) num arquivo versionado (ADR-0013) — o repo teve push hoje e tem ~839 issues abertas; o contrato pode mudar.
-- **Rake task `algorythmo:brain:provision`** (idempotente, non-TTY-safe): `gbrain init --pglite --force --non-interactive --embedding-model zeroentropyai:zembed-1 --embedding-dimensions 1280` + `gbrain config set models.think deepseek:deepseek-chat`, rodando com `GBRAIN_HOME` da Modeloja e `ZEROENTROPY_API_KEY` no env (§3.4/§3.5).
-- **`Brain::Client#subprocess_env`** injetando `GBRAIN_HOME` (isolamento), `ZEROENTROPY_API_KEY`, `DEEPSEEK_API_KEY`; **WriteLock por-brain** (`<account_id>`).
+- **Rake task `algorythmo:brain:provision`** (idempotente, non-TTY-safe): `gbrain init --pglite --force --non-interactive --embedding-model ollama:nomic-embed-text --embedding-dimensions 768` + `gbrain config set models.think deepseek:deepseek-chat`, rodando com `GBRAIN_HOME` da Modeloja e `OLLAMA_BASE_URL` + `DEEPSEEK_API_KEY` no env (§3.4/§3.5).
+- **`Brain::Client#subprocess_env`** injetando `GBRAIN_HOME` (isolamento), `OLLAMA_BASE_URL`, `DEEPSEEK_API_KEY` (+ `OPENAI_API_KEY` se presente, reserva); **WriteLock por-brain** (`<account_id>`).
 - **`gbrain_real_integration_spec`** (roda contra o SHA pinado, fora do CI padrão se preciso, gate manual): `capture` de um markdown → `stats` mostra a página → `search` acha → brain nasce com 0 páginas após init. Prova que o Client funciona de verdade e que o brain da Modeloja está vazio (sem dado do founder).
 - **Salvaguarda:** o integration spec é o gate; sem ele verde, PR 6 (Copiloto) não começa.
 
@@ -494,7 +500,7 @@ Cada PR ≤ ~200 linhas quando possível, responsabilidade única, salvaguarda/t
 | Workers de ingestão (documento + **raw markdown** P2) | RSpec | capture sob lock por-brain, idempotência, falha → status+last_error, tmpfile removido; raw markdown NÃO toca `account.conversations` |
 | `CopilotAnswer` (máquina de estados P1-2) | RSpec | **4 estados distintos**: grounded / ungrounded / engine_unconfigured (503, ≠ "não sei") / degraded; mapeados de `synthesisOk`+`warnings`+`citations` do `think --json`; **prompt injection neutralizada por read-only** |
 | `Brain::Client#think` (P0-1) | RSpec | passa `--json`; parseia shape real (`page_slug/row_num/citation_index`, `gaps`, `synthesisOk`) |
-| `Brain::Client#subprocess_env` | RSpec | injeta `GBRAIN_HOME`/`ZEROENTROPY_API_KEY`/`DEEPSEEK_API_KEY` no env hash; **nunca** em args; nunca em log; NÃO injeta vars que o gbrain não lê |
+| `Brain::Client#subprocess_env` | RSpec | injeta `GBRAIN_HOME`/`OLLAMA_BASE_URL`/`DEEPSEEK_API_KEY`/`OPENAI_API_KEY` no env hash; **nunca** chave em args; nunca em log; NÃO injeta vars que o gbrain não lê |
 | Provisionamento (rake task P0-4) | RSpec | idempotente; non-TTY (sem picker); embedding provider cravado; `models.think=deepseek` setado |
 | Concorrência gbrain (P1-1) | RSpec | semáforo limita N subprocessos; WriteLock por-brain serializa escrita |
 | Componentes Vue (Ver/Ajustar/Histórico/Copiloto) | Vitest + Vue Test Utils | estados (dado/vazio/erro/loading), upload (sucesso/rejeitado/falha), **4 estados do Copiloto**, **saída escapada (anti-XSS)** |
@@ -517,7 +523,7 @@ Gate: **≥90% backend** nas fatias novas, **interação Vue testada** em todas 
 
 As principais já estão trancadas (aba dedicada, read-only Dia-1, Manu adiada, Ver/Ajustar/Histórico, DeepSeek como motor de síntese, embeddings externos via OpenAI, brain isolado da Modeloja, BYOK). Restam estas, genuinamente de produto — **não decida por ele**:
 
-1. **Consentimento LGPD do envio do acervo a terceiros (CONSENTIDO, registrar formalmente).** O founder já aprovou embeddings externos; o que falta é **materializar o consentimento no contrato/material de venda da Modeloja**: "documentos do cliente são processados por provedores de IA terceiros — OpenAI (indexação, acervo inteiro no upload) e DeepSeek (respostas, subconjunto recuperado)". Não é decisão técnica; é cláusula de produto/jurídico. (§3.1)
+1. **Consentimento LGPD — agora MENOR superfície (indexação é LOCAL).** Com o indexador self-hosted (Ollama, 2026-06-05), **o acervo do cliente NÃO sai mais da nossa VPS** para indexação. Só a **síntese** (DeepSeek) vê o **subconjunto recuperado** por pergunta. Materializar no contrato/material de venda: "documentos do cliente são indexados localmente na nossa infraestrutura; apenas o trecho relevante de cada pergunta é enviado ao provedor de respostas (DeepSeek)". Não é decisão técnica; é cláusula de produto/jurídico — e agora mais forte. (§3.1)
 2. **Nome e ícone do Copiloto no menu.** Entra como entrada irmã do Brain sob INTELIGÊNCIA. Sugestão: "Copiloto" (ícone `i-lucide-sparkles` ou `i-lucide-message-circle-question`). O founder escolhe o rótulo final.
 3. **Categorias de documento.** O `BrainDocumentUpload.vue` reusado traz 6 (políticas / manuais / regras / design system / outros / todos). Confirmar se servem para a Modeloja. (Default: manter as 6.)
 
@@ -529,9 +535,9 @@ Tudo o mais é decisão técnica — resolvida neste plano.
 
 | Risco | Severidade | Mitigação |
 |---|---|---|
-| **RAM da VPS 4 GB — motor gbrain por subprocess (P1-1)** | Alta | Embeddings via API = 0 RAM, MAS cada `capture/search/think` sobe bun+PGLite WASM residente. **Semáforo de concorrência gbrain** (máx. ~2 subprocessos) + fila Sidekiq baixa concorrência pro Copiloto + **medição real de RAM no deploy** antes de liberar (§3.6). Fallback embeddings (LGPD/qualidade): ZeroEntropy (default) ou Ollama só com VPS ≥ 8 GB. |
+| **RAM da VPS 4 GB — gbrain por subprocess + Ollama local (P1-1)** | Alta | Cada `capture/search/think` sobe bun+PGLite WASM residente; o Ollama (embeddings) também consome RAM. Mitigação 2026-06-05: **desativar `central_modeloja` + `algorythmo`** (sobra só a Modeloja → libera ~1-2GB pro Ollama, modelo pequeno/CPU). **Semáforo de concorrência gbrain** (máx. ~2 subprocessos) + fila Sidekiq baixa concorrência + **medição real de RAM no deploy**. Se apertar, aumentar a VPS. |
 | **Vazamento cross-tenant account 1 ↔ Modeloja (P0-5)** | Alta | Brain DEDICADO da Modeloja via **`GBRAIN_HOME` isolado** (mecanismo upstream real, `config.ts:24`), nascido zerado por `gbrain init --force`. WriteLock por-brain. Spec de integração afirma 0 páginas do founder. |
-| **`init` non-TTY trava em produção (P0-4)** | Alta | Provisionamento com provider **cravado** (`--embedding-model zeroentropyai:zembed-1 --embedding-dimensions 1280`), sem auto-detect/picker. Rake task idempotente no deploy (§3.4). |
+| **`init` non-TTY trava em produção (P0-4)** | Alta | Provisionamento com provider **cravado** (`--embedding-model ollama:nomic-embed-text --embedding-dimensions 768`), sem auto-detect/picker. Rake task idempotente no deploy (§3.4). |
 | **`think` quebra (markdown vs JSON) (P0-1)** | Alta | Client passa `--json`; spec trava. Sem isso, 502 em toda pergunta. |
 | **DeepSeek mal configurado (env não basta) (P0-3)** | Alta | Síntese via `gbrain config set models.think deepseek:deepseek-chat` (persistido), não via env per-request. DeepSeek não tem embeddings — separação obrigatória. |
 | **Prompt injection via documento anexado (P0-2)** | Média (rebaixada) | **Não controlamos o prompt do `think`** — a defesa real é read-only estrutural (sem ação possível) + saída escapada anti-XSS + citações (§4.4). Fronteira de prompt real só com arquitetura `search`+LLM-direto (evolução futura). Teste no PR 6. |
@@ -554,15 +560,17 @@ Tudo o mais é decisão técnica — resolvida neste plano.
 
 ```
 # --- Síntese (think) ---
-DEEPSEEK_API_KEY=            # lido pela recipe DeepSeek do gbrain. Founder entrega depois.
+DEEPSEEK_API_KEY=            # lido pela recipe DeepSeek do gbrain. Founder tem crédito.
                             # Unset → think devolve synthesisOk=false → Copiloto 503.
                             # (NÃO setar DEEPSEEK_BASE_URL/DEEPSEEK_MODEL — gbrain não os lê;
                             #  o base_url está embutido na recipe; o modelo vem de config.)
+OPENAI_API_KEY=             # RESERVA MANUAL (GPT nano). Opcional. Só entra virando models.think
+                            # na mão (sem failover automático — decisão 'a' 2026-06-05).
 
-# --- Embeddings (DEFAULT do motor — founder 2026-06-04) ---
-ZEROENTROPY_API_KEY=        # provider de embeddings DEFAULT do gbrain (zeroentropyai:zembed-1, 1280 dims).
+# --- Embeddings (SELF-HOSTED — founder 2026-06-05) ---
+OLLAMA_BASE_URL=http://os-empresarial_ollama:11434/v1   # indexador local (ollama:nomic-embed-text, 768d), sem chave.
                             # Unset → ingestão (capture) falha com erro claro.
-                            # (OpenAI text-embedding-3-small era a escolha anterior; segue trocável.)
+                            # Depende do serviço Ollama no ar na VPS (go-live §3.5).
 
 # --- Isolamento do brain (P0-5) ---
 ALGORYTHMO_BRAIN_HOME=/var/algorythmo/brains/account-2   # GBRAIN_HOME da Modeloja (volume persistente)
@@ -574,17 +582,17 @@ ALGORYTHMO_PRIMARY_ACCOUNT_ID=2                          # tenant fail-closed �
 
 ### Provisionamento (rake `algorythmo:brain:provision`, idempotente, non-TTY-safe)
 
-Roda uma vez por brain no deploy, com `GBRAIN_HOME=$ALGORYTHMO_BRAIN_HOME` e `ZEROENTROPY_API_KEY` no env:
+Roda uma vez por brain no deploy, com `GBRAIN_HOME=$ALGORYTHMO_BRAIN_HOME` e `OLLAMA_BASE_URL` + `DEEPSEEK_API_KEY` no env:
 
 ```
 gbrain init --pglite --force --non-interactive \
-  --embedding-model zeroentropyai:zembed-1 --embedding-dimensions 1280
+  --embedding-model ollama:nomic-embed-text --embedding-dimensions 768
 gbrain config set models.think deepseek:deepseek-chat
 ```
 
 - `--force` só na criação inicial do brain (nasce zerado, garante isolamento).
 - O `GBRAIN_HOME` precisa de **volume persistente** (igual ao Active Storage) — senão o brain some a cada deploy.
-- [VERIFICADO no SHA pinado: embeddings default = `zeroentropyai:zembed-1` / 1280 dims — `src/core/ai/defaults.ts:20-21`; chave `ZEROENTROPY_API_KEY` — `src/core/config.ts:43,409`.] [A CONFIRMAR ANTES DO DEPLOY: identificador de modelo DeepSeek vigente (aliases `deepseek-chat`/`deepseek-reasoner` em deprecação — checar V4).]
+- [VERIFICADO no SHA pinado: receita Ollama (`ollama:nomic-embed-text`, 768 dims) lê `OLLAMA_BASE_URL`, sem chave — `src/core/ai/recipes/ollama.ts`; validado ponta a ponta (captura + busca semântica).] [A CONFIRMAR ANTES DO DEPLOY: identificador de modelo DeepSeek vigente (aliases `deepseek-chat`/`deepseek-reasoner` — checar tier padrão atual).]
 
 ---
 
