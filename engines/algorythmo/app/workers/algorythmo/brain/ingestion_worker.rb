@@ -94,14 +94,16 @@ module Algorythmo
         FileUtils.rm_rf(dir) if dir
       end
 
-      # GBrain CLI returns JSON; the page_path key is the canonical write
-      # destination. Defensive: tolerate empty/legacy shapes (return nil so the
-      # column reflects "unknown" rather than a literal "{}" string).
+      # capture --json returns { ..., path, slug, ... }; `path` is the canonical write
+      # destination, `slug` identifies the page (page_path kept as a defensive fallback).
+      # Defensive: tolerate empty/legacy shapes (return nil so the column reflects
+      # "unknown" rather than a literal "{}" string).
       def extract_page_path(result)
         return nil unless result.is_a?(Hash)
 
-        path = result['page_path'] || result[:page_path]
-        path.is_a?(String) && !path.empty? ? path : nil
+        %w[path slug page_path]
+          .map { |key| result[key] || result[key.to_sym] }
+          .find { |value| value.is_a?(String) && !value.empty? }
       end
 
       def upsert_log(account_id, conversation, attrs)

@@ -86,12 +86,14 @@ module Algorythmo
         MARKDOWN
       end
 
-      # capture() returns the gbrain JSON; page_path is the canonical write destination.
+      # capture --json returns { ..., path, slug, ... }; `path` is the canonical write
+      # destination, `slug` identifies the page. (page_path kept as a defensive fallback.)
       def extract_page_path(result)
         return nil unless result.is_a?(Hash)
 
-        path = result['page_path'] || result[:page_path]
-        path.is_a?(String) && !path.empty? ? path : nil
+        %w[path slug page_path]
+          .map { |key| result[key] || result[key.to_sym] }
+          .find { |value| value.is_a?(String) && !value.empty? }
       end
 
       def record_failure(document, exception)

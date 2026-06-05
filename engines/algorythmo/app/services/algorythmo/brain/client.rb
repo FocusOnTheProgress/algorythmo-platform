@@ -63,15 +63,24 @@ module Algorythmo
       # @raise [ArgumentError] if path fails defensive validation.
       # @raise [SubprocessError] if gbrain exits non-zero.
       # @raise [TimeoutError] if gbrain exceeds WRITE_TIMEOUT.
+      # --json is REQUIRED: without it `gbrain capture` prints a human-readable
+      # receipt ("captured:\n  slug: ...") that JSON.parse rejects. With --json it
+      # emits {slug,status,chunks,content_hash,written,path,source_kind,captured_at}
+      # (verified: src/commands/capture.ts at the pinned SHA).
       def capture(file:)
         real_path = validate_capture_path!(file)
-        run_subprocess([GBRAIN_BIN, 'capture', real_path], timeout: WRITE_TIMEOUT)
+        run_subprocess([GBRAIN_BIN, 'capture', real_path, '--json'], timeout: WRITE_TIMEOUT)
       end
 
       # Search the brain for pages matching query.
       # @param query [String]
       # @param limit [Integer] max results (default 10)
       # @return [Array<Hash>]
+      # KNOWN ISSUE (follow-up): `gbrain search "<query>"` is a shared op rendered as
+      # human text ("[0.82] slug -- title") and IGNORES --json (the --json on `search
+      # modes/stats/tune` is a different sub-subcommand). So this still returns non-JSON
+      # and parse_output raises. No live caller today (Copiloto uses `think`, which is
+      # JSON). Proper fix = parse the text output, guarded by gbrain_real_integration_spec.
       def search(query:, limit: 10)
         run_subprocess([GBRAIN_BIN, 'search', query, '--limit', limit.to_s], timeout: READ_TIMEOUT)
       end
@@ -100,7 +109,13 @@ module Algorythmo
         run_subprocess([GBRAIN_BIN, 'export', '--out', out], timeout: WRITE_TIMEOUT)
       end
 
-      # Return usage statistics from the brain.
+      # KNOWN ISSUE (follow-up): `gbrain stats` is a shared op rendered as human text
+      # ("Pages: N\nChunks: N\n...") and IGNORES --json, so parse_output raises on the
+      # real engine. Real fields are FLAT (page_count, chunk_count, embedded_count,
+      # link_count, tag_count, timeline_entry_count) — NOT { aggregate: { total_pages } }.
+      # Used only by the history/overview surface (compiled_truth/snapshots), not the
+      # upload→Copiloto path. Proper fix = parse the text + align the 3 callers to the
+      # flat shape, guarded by gbrain_real_integration_spec.
       # @return [Hash]
       def stats
         run_subprocess([GBRAIN_BIN, 'stats'], timeout: READ_TIMEOUT)

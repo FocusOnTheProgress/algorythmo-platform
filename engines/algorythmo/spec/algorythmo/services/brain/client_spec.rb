@@ -53,7 +53,7 @@ RSpec.describe Algorythmo::Brain::Client do
       end
     end
 
-    it 'calls gbrain capture <real_path> without --dir' do
+    it 'calls gbrain capture <real_path> --json without --dir' do
       stub_popen3(stdout: '{}')
       client.capture(file: tmp_state[:file])
       expect(Open3).to have_received(:popen3) do |env, *cli|
@@ -62,6 +62,8 @@ RSpec.describe Algorythmo::Brain::Client do
         expect(cli[1]).to eq('capture')
         # cli[2] is the resolved real_path — may differ on macOS symlinks
         expect(cli[2]).to be_a(String)
+        # --json is REQUIRED: gbrain capture prints a human receipt otherwise.
+        expect(cli).to include('--json')
       end
     end
   end
