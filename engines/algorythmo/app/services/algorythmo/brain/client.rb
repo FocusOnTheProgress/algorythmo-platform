@@ -63,13 +63,15 @@ module Algorythmo
       # @raise [ArgumentError] if path fails defensive validation.
       # @raise [SubprocessError] if gbrain exits non-zero.
       # @raise [TimeoutError] if gbrain exceeds WRITE_TIMEOUT.
-      # --json is REQUIRED: without it `gbrain capture` prints a human-readable
-      # receipt ("captured:\n  slug: ...") that JSON.parse rejects. With --json it
-      # emits {slug,status,chunks,content_hash,written,path,source_kind,captured_at}
-      # (verified: src/commands/capture.ts at the pinned SHA).
+      # --file is REQUIRED to ingest a FILE: a POSITIONAL argument is captured as
+      # LITERAL content text (verified: src/commands/capture.ts — `parsed.content` →
+      # Buffer, "positional content"). Passing the path positionally captured the path
+      # STRING, not the document body — the page ended up holding "/tmp/.../doc.md" and
+      # `think` gathered 0 pages. `--file <path>` reads the file from disk.
+      # --json is REQUIRED too: without it gbrain prints a human receipt JSON.parse rejects.
       def capture(file:)
         real_path = validate_capture_path!(file)
-        run_subprocess([GBRAIN_BIN, 'capture', real_path, '--json'], timeout: WRITE_TIMEOUT)
+        run_subprocess([GBRAIN_BIN, 'capture', '--file', real_path, '--json'], timeout: WRITE_TIMEOUT)
       end
 
       # Search the brain for pages matching query.
