@@ -47,7 +47,8 @@ Conferir com `mounts.listMounts` no serviço `app` (em `db`/`redis` dá "Invalid
 Indexador próprio, grátis, na VPS. Para caber na VPS de 4GB, **desativar** os outros projetos do Easypanel primeiro (`central_modeloja` — Chatwoot original em uso hoje — e `algorythmo` — formulário), deixando só `os-empresarial`. Isso libera ~1-2GB de RAM. `nomic-embed-text` é um modelo pequeno (CPU, ~270MB em disco, ~1-1,5GB RAM em uso).
 - Criar um serviço Easypanel `ollama` no projeto `os-empresarial` a partir da imagem `ollama/ollama`, com um volume persistente pro modelo (ex.: `ollama-models` → `/root/.ollama`).
 - Puxar o modelo uma vez: `ollama pull nomic-embed-text` (no container do serviço ollama).
-- Apontar `OLLAMA_BASE_URL=http://os-empresarial_ollama:11434/v1` no env do `app` e do `sidekiq` (§1).
+- Apontar `OLLAMA_BASE_URL=http://os-empresarial_ollama:11434/v1` no env do `app` **e** do `sidekiq` (§1). Esquecer no `sidekiq` = a ingestão (que roda lá) cai em `failed`.
+- **Check de pré-condição** (antes de provisionar): `bundle exec rake algorythmo:brain:smoke_ollama` — bate no **mesmo** endpoint `/v1` que o gbrain usa (lê `OLLAMA_BASE_URL`); verde = gbrain vai alcançar o indexador. 10 perguntas PT-BR, valida 768 dims.
 - Validado localmente ponta a ponta: captura + busca semântica (pergunta com palavras diferentes do doc casou com score 0.82). Sem chave, sem serviço externo.
 
 ### 4. Provisionar o cérebro da Modeloja — comando no container

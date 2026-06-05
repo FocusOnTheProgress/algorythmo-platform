@@ -12,13 +12,15 @@ require 'tmpdir'
 #   GBRAIN_HOME=<base>/<account_id> yields a config dir <base>/<account_id>/.gbrain.
 #   The path is injected via the Open3 env hash on EVERY invocation — never a flag.
 #
-# Provider keys (verified in source at the pinned SHA):
-#   - ZEROENTROPY_API_KEY → embeddings        (src/core/config.ts L43, L409)
-#       engine default provider zeroentropyai:zembed-1 / 1280 (defaults.ts L20-21).
-#       Founder directive 2026-06-04: use the motor default, not OpenAI.
-#   - DEEPSEEK_API_KEY    → synthesis (think) (src/core/ai/recipes/deepseek.ts)
+# Provider config (verified in source at the pinned SHA):
+#   - OLLAMA_BASE_URL  → embeddings endpoint  (src/core/ai/recipes/ollama.ts)
+#       SELF-HOSTED indexer ollama:nomic-embed-text / 768 dims, no API key.
+#       Founder directive 2026-06-05: own the indexer on our VPS, zero paid services.
+#       OLLAMA_BASE_URL is NOT a secret (a service URL) — injected, but not redacted.
+#   - DEEPSEEK_API_KEY → synthesis (think)    (src/core/ai/recipes/deepseek.ts)
+#   - OPENAI_API_KEY   → manual synthesis fallback (only if set; flip models.think)
 #   gbrain does NOT read DEEPSEEK_BASE_URL / DEEPSEEK_MODEL — we never inject them.
-#   Keys travel ONLY in the env hash — never as a CLI argument, never logged.
+#   Secrets travel ONLY in the env hash — never as a CLI argument, never logged.
 #
 # All write methods (capture, export) MUST be wrapped by WriteLock.with_lock.
 # Read methods (search, think, stats) do NOT acquire the lock.

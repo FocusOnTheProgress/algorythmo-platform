@@ -1,24 +1,28 @@
 # frozen_string_literal: true
 
-# algorythmo:brain:smoke_ollama — Day-0 BYOK embedding diagnostic.
+# algorythmo:brain:smoke_ollama — Day-0 embedding precondition check.
 #
 # Validates that the Ollama instance configured for the Brain is reachable,
 # that the embedding model is loaded, and that each test query returns a
 # well-formed embedding vector of the expected dimensionality.
 #
-# Decision D-OQ5 (docs/plans/0004-m3-brain-mvp.md §2):
-#   Embedding provider = Ollama local, model nomic-embed-text (768 dims).
+# Indexer = SELF-HOSTED Ollama, nomic-embed-text (768 dims) — founder directive
+# 2026-06-05 (reinstates the original D-OQ5 choice, docs/plans/0004 §2).
 #
-# ENV config (both have safe defaults for local dev):
-#   ALGORYTHMO_BRAIN_EMBEDDING_HOST  — default http://localhost:11434
+# IMPORTANT: this hits the SAME OpenAI-compatible endpoint gbrain calls
+# (`<OLLAMA_BASE_URL>/embeddings`, e.g. http://host:11434/v1/embeddings), reading
+# the SAME env var (OLLAMA_BASE_URL) — so a green smoke means gbrain capture will
+# also reach the indexer (no false-green from probing the native /api route).
+#
+# ENV config (safe default for local dev):
+#   OLLAMA_BASE_URL                  — default http://localhost:11434/v1
 #   ALGORYTHMO_BRAIN_EMBEDDING_MODEL — default nomic-embed-text
 #
 # Usage:
 #   bundle exec rake algorythmo:brain:smoke_ollama
 #
-# Founder dogfooding: run this before the first gbrain capture to confirm
-# Ollama is warm and the model is pulled. Output is terminal-friendly with
-# ANSI color, alignment, and a summary box — no external deps beyond stdlib.
+# Run this before the first gbrain capture to confirm Ollama is warm and the
+# model is pulled. Output is terminal-friendly — no external deps beyond stdlib.
 
 require 'net/http'
 require 'json'
@@ -63,7 +67,8 @@ module Algorythmo
         @host   = host
         @model  = model
         @output = output
-        @uri    = URI.join(host, '/api/embeddings')
+        # Hit the OpenAI-compatible route gbrain uses: <OLLAMA_BASE_URL>/embeddings.
+        @uri    = URI("#{host.chomp('/')}/embeddings")
       end
 
       def run!
@@ -98,7 +103,8 @@ module Algorythmo
         http.read_timeout = TIMEOUT_SECS
 
         request = Net::HTTP::Post.new(@uri.path, 'Content-Type' => 'application/json')
-        request.body = JSON.generate(model: @model, prompt: query)
+        # OpenAI-compatible embeddings shape: { model, input } → { data: [{ embedding }] }.
+        request.body = JSON.generate(model: @model, input: query)
 
         response = http.request(request)
 
@@ -106,9 +112,10 @@ module Algorythmo
         raise "HTTP #{response.code}" unless response.code == '200'
 
         body = JSON.parse(response.body)
-        raise 'missing embedding key' unless body.key?('embedding')
+        embedding = body.dig('data', 0, 'embedding')
+        raise 'missing embedding in response' unless embedding.is_a?(Array)
 
-        body['embedding']
+        embedding
       end
 
       def validate_result(query, idx, embedding, elapsed_ms)
@@ -176,9 +183,9 @@ end
 
 namespace :algorythmo do
   namespace :brain do
-    desc 'Day-0 BYOK smoke test: 10 PT-BR queries against Ollama nomic-embed-text (D-OQ5)'
+    desc 'Day-0 smoke test: 10 PT-BR queries against the SAME Ollama /v1 endpoint gbrain uses'
     task smoke_ollama: :environment do
-      host  = ENV.fetch('ALGORYTHMO_BRAIN_EMBEDDING_HOST', 'http://localhost:11434')
+      host  = ENV.fetch('OLLAMA_BASE_URL', 'http://localhost:11434/v1')
       model = ENV.fetch('ALGORYTHMO_BRAIN_EMBEDDING_MODEL', 'nomic-embed-text')
 
       Algorythmo::Tasks::SmokeOllama.run!(host: host, model: model)
