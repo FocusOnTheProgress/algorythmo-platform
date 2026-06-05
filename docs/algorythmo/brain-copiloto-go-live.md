@@ -8,10 +8,11 @@ O código está pronto e testado (com o motor gbrain **mockado** no CI). Esta é
 
 ## Pré-requisitos (o que falta pra funcionar)
 
-### 1. Chaves (BYOK) — founder fornece
-- `DEEPSEEK_API_KEY` — síntese (`gbrain think`). **Founder JÁ tem.**
-- `ZEROENTROPY_API_KEY` — indexador/embeddings (`zeroentropyai:zembed-1`, 1280 dims — **default do motor gbrain**, decisão founder 2026-06-04; OpenAI segue trocável depois). **PENDENTE.** Sem ele a ingestão de documento falha (status `failed`) e a busca não funciona — o cérebro não fica consultável.
-- Setar as duas no Easypanel (env dos serviços **app** E **sidekiq**), nunca no código/chat.
+### 1. Config + chaves — founder fornece (no Easypanel, env de **app** E **sidekiq**)
+- `OLLAMA_BASE_URL` — indexador/embeddings **self-hosted** (`ollama:nomic-embed-text`, 768 dims). Decisão founder 2026-06-05: indexador próprio na VPS, zero serviço pago. Aponta pro serviço Ollama (ex.: `http://os-empresarial_ollama:11434/v1`). **Depende de subir o serviço Ollama na VPS** (ver §3.5). Validado ponta a ponta (captura + busca semântica) localmente. Sem isso a ingestão falha e a busca não funciona.
+- `DEEPSEEK_API_KEY` — síntese (`gbrain think`), tier padrão. **Founder JÁ tem (crédito).**
+- `OPENAI_API_KEY` — **reserva manual** da síntese (GPT nano). Opcional; só entra se a gente virar `models.think` na mão (sem failover automático, decisão 'a').
+- Nada de chave em código/chat.
 
 ### 2. gbrain instalado na imagem de produção — INFRA ✅ RESOLVIDO (PR #139, no `algorythmo/main`)
 **Resolvido:** o `docker/Dockerfile` agora instala o motor.
@@ -42,18 +43,26 @@ mounts.createMount  { json: { projectName: "os-empresarial", serviceName: "sidek
 ```
 Conferir com `mounts.listMounts` no serviço `app` (em `db`/`redis` dá "Invalid service type"). Sem isso, o passo 4 (provisionar) cria um cérebro que o próximo deploy apaga.
 
+### 3.5. Subir o indexador local (Ollama) na VPS — INFRA (decisão 2026-06-05)
+Indexador próprio, grátis, na VPS. Para caber na VPS de 4GB, **desativar** os outros projetos do Easypanel primeiro (`central_modeloja` — Chatwoot original em uso hoje — e `algorythmo` — formulário), deixando só `os-empresarial`. Isso libera ~1-2GB de RAM. `nomic-embed-text` é um modelo pequeno (CPU, ~270MB em disco, ~1-1,5GB RAM em uso).
+- Criar um serviço Easypanel `ollama` no projeto `os-empresarial` a partir da imagem `ollama/ollama`, com um volume persistente pro modelo (ex.: `ollama-models` → `/root/.ollama`).
+- Puxar o modelo uma vez: `ollama pull nomic-embed-text` (no container do serviço ollama).
+- Apontar `OLLAMA_BASE_URL=http://os-empresarial_ollama:11434/v1` no env do `app` e do `sidekiq` (§1).
+- Validado localmente ponta a ponta: captura + busca semântica (pergunta com palavras diferentes do doc casou com score 0.82). Sem chave, sem serviço externo.
+
 ### 4. Provisionar o cérebro da Modeloja — comando no container
-Rodar uma vez (founder roda no container, ou via deploy hook), com as chaves no env:
+Rodar uma vez (founder roda no container, ou via deploy hook), com o env configurado (§1 + §3.5):
 ```
 ACCOUNT_ID=2 bundle exec rake algorythmo:brain:provision
 ```
-Isso roda `gbrain init --pglite --force --embedding-model zeroentropyai:zembed-1 --embedding-dimensions 1280 ...` + `gbrain config set models.think deepseek:deepseek-chat`, com `GBRAIN_HOME` isolado da Modeloja (account 2). O cérebro nasce **zerado** (0 páginas — sem nada do dogfooding do founder, isolamento P0-5).
+Isso roda `gbrain init --pglite --force --embedding-model ollama:nomic-embed-text --embedding-dimensions 768 ...` + `gbrain config set models.think deepseek:deepseek-chat`, com `GBRAIN_HOME` isolado da Modeloja (account 2). O cérebro nasce **zerado** (0 páginas — sem nada do dogfooding do founder, isolamento P0-5).
 - Setar `ALGORYTHMO_PRIMARY_ACCOUNT_ID=2` no env.
+- Requer `OLLAMA_BASE_URL` + `DEEPSEEK_API_KEY` no env (o provisionador falha alto se faltar).
 
 ### 5. Prova de integração real — o portão (ADR-0013 / PR0)
 Antes de confiar no Copiloto, rodar o gate:
 ```
-GBRAIN_REAL=1 ZEROENTROPY_API_KEY=... DEEPSEEK_API_KEY=... bundle exec rspec engines/algorythmo/spec/algorythmo/services/brain/gbrain_real_integration_spec.rb
+GBRAIN_REAL=1 OLLAMA_BASE_URL=http://localhost:11434/v1 DEEPSEEK_API_KEY=... bundle exec rspec engines/algorythmo/spec/algorythmo/services/brain/gbrain_real_integration_spec.rb
 ```
 Prova: `capture → stats → search` funciona contra o gbrain real no SHA pinado, e o cérebro nasce com 0 páginas. Se passar, o motor está OK de verdade (até aqui tudo foi mockado).
 
@@ -70,13 +79,13 @@ O merge no main já dispara o build (GH Actions → ghcr.io). Falta o pull/deplo
 ## Ordem de dependência
 
 ```
-chave ZeroEntropy (2)─┐
-gbrain na imagem (2)  ├─► provisionar (4) ─► prova de integração (5) ─► deploy (6) ─► smoke (7)
-volume persistente (3)┘         ▲
-                                └── precisa das chaves + gbrain rodando
+indexador Ollama na VPS (3.5)─┐
+DEEPSEEK_API_KEY (1)          ├─► provisionar (4) ─► prova de integração (5) ─► deploy (6) ─► smoke (7)
+gbrain na imagem ✅ (2)        │         ▲
+volume persistente ✅ (3)      ┘         └── precisa do Ollama no ar + DeepSeek
 ```
 
-Sem a chave ZeroEntropy, nada além da UI funciona (upload cai em `failed`, Copiloto retorna `engine_unconfigured`/503 honestamente). A UI em si (tela do Brain + chat do Copiloto) já fica visível e navegável pós-deploy — útil pra revisão visual do founder mesmo antes da operação real.
+Sem o indexador Ollama no ar + a chave DeepSeek, nada além da UI funciona (upload cai em `failed`, Copiloto retorna `engine_unconfigured`/503 honestamente). A UI em si (tela do Brain + chat do Copiloto) já fica visível e navegável pós-deploy — útil pra revisão visual do founder mesmo antes da operação real.
 
 ---
 

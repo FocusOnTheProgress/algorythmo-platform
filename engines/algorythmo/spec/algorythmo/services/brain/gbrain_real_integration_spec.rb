@@ -14,9 +14,9 @@ require 'open3'
 #   2. `before { skip ... unless GBRAIN_REAL }` inside the spec itself.
 # Both must agree; neither alone is sufficient — see CORREÇÃO 1 (adversarial review).
 #
-# How to run (locally, with a brain-capable machine + keys):
+# How to run (locally, with a brain-capable machine + a reachable Ollama + DeepSeek key):
 #   GBRAIN_REAL=1 \
-#   ZEROENTROPY_API_KEY=ze-... DEEPSEEK_API_KEY=sk-... \
+#   OLLAMA_BASE_URL=http://localhost:11434/v1 DEEPSEEK_API_KEY=sk-... \
 #   bundle exec rspec engines/algorythmo/spec/algorythmo/services/brain/gbrain_real_integration_spec.rb
 #
 # What it proves:
@@ -42,7 +42,7 @@ RSpec.describe 'GBrain real integration', :gbrain_real do
       next
     end
 
-    skip 'set ZEROENTROPY_API_KEY + DEEPSEEK_API_KEY to run' if ENV['ZEROENTROPY_API_KEY'].to_s.empty? || ENV['DEEPSEEK_API_KEY'].to_s.empty?
+    skip 'set OLLAMA_BASE_URL + DEEPSEEK_API_KEY to run' if ENV['OLLAMA_BASE_URL'].to_s.empty? || ENV['DEEPSEEK_API_KEY'].to_s.empty?
 
     client_rb = Rails.root.join('engines/algorythmo/app/services/algorythmo/brain/client.rb')
     Dir.mktmpdir('gbrain_real_') do |base|

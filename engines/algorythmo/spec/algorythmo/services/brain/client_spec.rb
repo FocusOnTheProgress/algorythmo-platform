@@ -245,11 +245,12 @@ RSpec.describe Algorythmo::Brain::Client do
       expect(home_one).not_to eq(home_two)
     end
 
-    it 'includes ZEROENTROPY_API_KEY and DEEPSEEK_API_KEY when present, never the unread vars' do
+    it 'includes OLLAMA_BASE_URL, DEEPSEEK_API_KEY and the OPENAI fallback when present, never the unread vars' do
       stub_popen3(stdout: '{}')
       ClimateControl.modify(
-        ZEROENTROPY_API_KEY: 'ze-xyz',
+        OLLAMA_BASE_URL: 'http://ollama:11434/v1',
         DEEPSEEK_API_KEY: 'sk-deepseek-xyz',
+        OPENAI_API_KEY: 'sk-openai-fallback',
         DEEPSEEK_BASE_URL: 'https://evil.example',
         DEEPSEEK_MODEL: 'should-be-ignored'
       ) do
@@ -257,21 +258,23 @@ RSpec.describe Algorythmo::Brain::Client do
       end
 
       env = captured_env
-      expect(env['ZEROENTROPY_API_KEY']).to eq('ze-xyz')
+      expect(env['OLLAMA_BASE_URL']).to eq('http://ollama:11434/v1')
       expect(env['DEEPSEEK_API_KEY']).to eq('sk-deepseek-xyz')
+      expect(env['OPENAI_API_KEY']).to eq('sk-openai-fallback')
       expect(env).not_to have_key('DEEPSEEK_BASE_URL')
       expect(env).not_to have_key('DEEPSEEK_MODEL')
     end
 
-    it 'omits keys entirely when the env vars are absent' do
+    it 'omits the provider vars entirely when absent' do
       stub_popen3(stdout: '{}')
-      ClimateControl.modify(ZEROENTROPY_API_KEY: nil, DEEPSEEK_API_KEY: nil) do
+      ClimateControl.modify(OLLAMA_BASE_URL: nil, DEEPSEEK_API_KEY: nil, OPENAI_API_KEY: nil) do
         account_client.stats
       end
 
       env = captured_env
-      expect(env).not_to have_key('ZEROENTROPY_API_KEY')
+      expect(env).not_to have_key('OLLAMA_BASE_URL')
       expect(env).not_to have_key('DEEPSEEK_API_KEY')
+      expect(env).not_to have_key('OPENAI_API_KEY')
     end
 
     it 'never places an API key in the CLI argv' do
@@ -338,11 +341,11 @@ RSpec.describe Algorythmo::Brain::Client do
     it 'redacts a leaked key from a JSON ParseError message in stdout' do
       # A future gbrain version could echo config (including keys) to stdout
       # before crashing — the ParseError message would then contain the key.
-      stub_popen3(stdout: 'auth=ze-leaked-stdout-456 invalid json {', exit_status: 0)
-      ClimateControl.modify(ZEROENTROPY_API_KEY: 'ze-leaked-stdout-456') do
+      stub_popen3(stdout: 'auth=sk-openai-leaked-456 invalid json {', exit_status: 0)
+      ClimateControl.modify(OPENAI_API_KEY: 'sk-openai-leaked-456') do
         expect { client.stats }.to raise_error(described_class::SubprocessError) do |err|
           expect(err.message).to include('[REDACTED]')
-          expect(err.message).not_to include('ze-leaked-stdout-456')
+          expect(err.message).not_to include('sk-openai-leaked-456')
         end
       end
     end
