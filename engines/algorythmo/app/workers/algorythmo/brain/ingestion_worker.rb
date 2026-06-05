@@ -94,13 +94,15 @@ module Algorythmo
         FileUtils.rm_rf(dir) if dir
       end
 
-      # GBrain CLI returns JSON; the page_path key is the canonical write
-      # destination. Defensive: tolerate empty/legacy shapes (return nil so the
-      # column reflects "unknown" rather than a literal "{}" string).
+      # capture --json returns { ..., path, slug, ... }; `path` is the canonical write
+      # destination, `slug` identifies the page (page_path kept as a defensive fallback).
+      # Defensive: tolerate empty/legacy shapes (return nil so the column reflects
+      # "unknown" rather than a literal "{}" string).
       def extract_page_path(result)
         return nil unless result.is_a?(Hash)
 
-        path = result['page_path'] || result[:page_path]
+        path = result['path'] || result['slug'] || result['page_path'] ||
+               result[:path] || result[:slug] || result[:page_path]
         path.is_a?(String) && !path.empty? ? path : nil
       end
 

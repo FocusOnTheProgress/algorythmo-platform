@@ -53,7 +53,7 @@ RSpec.describe Algorythmo::Brain::Client do
       end
     end
 
-    it 'calls gbrain capture <real_path> without --dir' do
+    it 'calls gbrain capture <real_path> --json without --dir' do
       stub_popen3(stdout: '{}')
       client.capture(file: tmp_state[:file])
       expect(Open3).to have_received(:popen3) do |env, *cli|
@@ -62,6 +62,8 @@ RSpec.describe Algorythmo::Brain::Client do
         expect(cli[1]).to eq('capture')
         # cli[2] is the resolved real_path — may differ on macOS symlinks
         expect(cli[2]).to be_a(String)
+        # --json is REQUIRED: gbrain capture prints a human receipt otherwise.
+        expect(cli).to include('--json')
       end
     end
   end
@@ -155,12 +157,14 @@ RSpec.describe Algorythmo::Brain::Client do
       expect(result).to eq([{ 'title' => 'Brain page', 'score' => 0.9 }])
     end
 
-    it 'passes --limit to the subprocess' do
+    it 'passes --limit and --json to the subprocess' do
       stub_popen3(stdout: '[]')
       client.search(query: 'test', limit: 5)
       expect(Open3).to have_received(:popen3) do |_env, *cli|
         limit_idx = cli.index('--limit')
         expect(cli[limit_idx + 1]).to eq('5')
+        # --json is REQUIRED: gbrain search prints human text otherwise.
+        expect(cli).to include('--json')
       end
     end
   end
@@ -306,6 +310,15 @@ RSpec.describe Algorythmo::Brain::Client do
     it 'returns parsed JSON hash' do
       stub_popen3(stdout: '{"pages":42,"edges":120}')
       expect(client.stats).to eq({ 'pages' => 42, 'edges' => 120 })
+    end
+
+    it 'passes --json (required — gbrain stats prints human text otherwise)' do
+      stub_popen3(stdout: '{}')
+      client.stats
+      expect(Open3).to have_received(:popen3) do |_env, *cli|
+        expect(cli[1]).to eq('stats')
+        expect(cli).to include('--json')
+      end
     end
   end
 

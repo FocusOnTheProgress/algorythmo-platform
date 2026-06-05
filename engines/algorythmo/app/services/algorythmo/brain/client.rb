@@ -63,17 +63,23 @@ module Algorythmo
       # @raise [ArgumentError] if path fails defensive validation.
       # @raise [SubprocessError] if gbrain exits non-zero.
       # @raise [TimeoutError] if gbrain exceeds WRITE_TIMEOUT.
+      # --json is REQUIRED: without it `gbrain capture` prints a human-readable
+      # receipt ("captured:\n  slug: ...") that JSON.parse rejects. With --json it
+      # emits {slug,status,chunks,content_hash,written,path,source_kind,captured_at}
+      # (verified: src/commands/capture.ts at the pinned SHA).
       def capture(file:)
         real_path = validate_capture_path!(file)
-        run_subprocess([GBRAIN_BIN, 'capture', real_path], timeout: WRITE_TIMEOUT)
+        run_subprocess([GBRAIN_BIN, 'capture', real_path, '--json'], timeout: WRITE_TIMEOUT)
       end
 
       # Search the brain for pages matching query.
       # @param query [String]
       # @param limit [Integer] max results (default 10)
       # @return [Array<Hash>]
+      # --json is REQUIRED: without it `gbrain search` prints human text
+      # ("[0.82] slug -- title") that JSON.parse rejects (verified: src/commands/search.ts).
       def search(query:, limit: 10)
-        run_subprocess([GBRAIN_BIN, 'search', query, '--limit', limit.to_s], timeout: READ_TIMEOUT)
+        run_subprocess([GBRAIN_BIN, 'search', query, '--limit', limit.to_s, '--json'], timeout: READ_TIMEOUT)
       end
 
       # Synthesise an answer using the brain's knowledge.
@@ -101,9 +107,12 @@ module Algorythmo
       end
 
       # Return usage statistics from the brain.
+      # --json is REQUIRED: without it `gbrain stats` prints human text ("Pages: 1...")
+      # that JSON.parse rejects. With --json it emits { aggregate: { total_pages,
+      # total_edges, ... }, ... } (verified: stats command at the pinned SHA).
       # @return [Hash]
       def stats
-        run_subprocess([GBRAIN_BIN, 'stats'], timeout: READ_TIMEOUT)
+        run_subprocess([GBRAIN_BIN, 'stats', '--json'], timeout: READ_TIMEOUT)
       end
 
       private
