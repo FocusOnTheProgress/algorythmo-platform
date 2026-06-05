@@ -13,19 +13,19 @@ O código está pronto e testado (com o motor gbrain **mockado** no CI). Esta é
 - `ZEROENTROPY_API_KEY` — indexador/embeddings (`zeroentropyai:zembed-1`, 1280 dims — **default do motor gbrain**, decisão founder 2026-06-04; OpenAI segue trocável depois). **PENDENTE.** Sem ele a ingestão de documento falha (status `failed`) e a busca não funciona — o cérebro não fica consultável.
 - Setar as duas no Easypanel (env dos serviços **app** E **sidekiq**), nunca no código/chat.
 
-### 2. gbrain instalado na imagem de produção — INFRA ✅ RESOLVIDO (branch `algorythmo/brain-engine-image`)
+### 2. gbrain instalado na imagem de produção — INFRA ✅ RESOLVIDO (PR #139, no `algorythmo/main`)
 **Resolvido:** o `docker/Dockerfile` agora instala o motor.
 - Runtime confirmado contra o binário real no SHA pinado: **GBrain é um CLI Bun** (`engines: bun >=1.3.10`, entrypoint `src/cli.ts`), **não** Node/pnpm. A nota antiga do `package.json` do engine estava errada e foi corrigida.
-- Instalação: `bun install -g github:garrytan/gbrain#<SHA>`, lendo `engines/algorythmo/GBRAIN_PINNED_SHA` (fonte única do pin, sem duplicação). bun + o install global ficam em `/usr/local/bun` no pre-builder e são copiados pro estágio final slim.
+- Instalação **determinística**: clona o motor no SHA exato (lendo `engines/algorythmo/GBRAIN_PINNED_SHA`, fonte única do pin) e `bun install --frozen-lockfile --production` contra o `bun.lock` commitado — deps transitivas reproduzíveis a cada rebuild (`bun install -g <git#sha>` re-resolveria as faixas `^` e NÃO é reproduzível).
 - Sem `--ignore-scripts`: o `postinstall` do gbrain é auto-protegido (no-op na instalação) e o `@electric-sql/pglite` (trustedDependency) roda o setup do WASM.
-- Smoke no próprio build (`gbrain --version`) falha cedo se o motor não entrar na imagem.
-- **Validado end-to-end** numa imagem com o mesmo formato de produção (Alpine + Ruby, sem npm/curl): `init --pglite` + `capture` + `stats` → cérebro nasce com `Pages: 0`, captura 1 doc → `Pages: 1`. bun 1.3.14, gbrain 0.42.25.0.
-- Portão final: build completo no GitHub Actions na branch (publica só tag `sha-…`, não toca `latest`/produção) antes do merge.
+- bun (`/usr/local/bun`, pinado 1.3.14) + o motor (`/usr/local/gbrain-src`) são copiados pro estágio final slim (cache do bun + `.git` do clone podados, −67 MB). Wrapper `gbrain` no PATH; `libstdc++/libgcc` (deps musl) adicionados.
+- **Smoke real no build** (`gbrain init --pglite`) exercita o WASM + grafo de deps e falha cedo se o motor não ligar — não só `--version`.
+- **Validado**: build completo verde no GitHub Actions (ambiente de produção) + end-to-end isolado em imagem com formato de produção (Alpine + Ruby, sem npm/curl): `init` → `Pages: 0`, `capture` → `Pages: 1`. bun 1.3.14, gbrain 0.42.25.0, 154 deps travadas. Revisado por adversarial-reviewer (2 High corrigidos: determinismo + bloat).
 
 ### 3. Volume persistente pro cérebro — INFRA (crítico)
 O cérebro vive em `GBRAIN_HOME_BASE/<account_id>/.gbrain` (arquivo PGLite). **Sem volume persistente, o cérebro é apagado a cada deploy** — todo o conhecimento anexado some (mesma lição do Active Storage, ver memória `project_active_storage_persistent_volume`).
 
-**Lado-imagem (já feito nesta branch):** o Dockerfile crava `ENV GBRAIN_HOME_BASE=/app/.gbrain-accounts` e cria o diretório. Sem o volume o motor ainda roda; só não persiste.
+**Lado-imagem (✅ feito, PR #139):** o Dockerfile crava `ENV GBRAIN_HOME_BASE=/app/.gbrain-accounts` e cria o diretório (chmod 0775). Sem o volume o motor ainda roda; só não persiste.
 
 **Lado-Easypanel (founder roda uma vez, antes do primeiro provisionamento):** montar um volume persistente em `/app/.gbrain-accounts` nos serviços **app** E **sidekiq** do projeto `os-empresarial` — idêntico ao volume `storage` já provado.
 
