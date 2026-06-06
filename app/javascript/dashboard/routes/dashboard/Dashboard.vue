@@ -180,9 +180,9 @@ export default {
 
 <template>
   <div class="flex flex-grow overflow-hidden text-n-slate-12">
-    <!-- algorythmo: operador — admin keeps the customized NextSidebar; the
-         operator (non-admin) gets OperatorSidebar = verbatim upstream Chatwoot
-         v4.14.0 sidebar, zero Algorythmo additions (founder requirement). -->
+    <!-- algorythmo: operador — Chatwoot v4.14.0 sidebar, verbatim, for the operator.
+         Admin keeps the customized NextSidebar; the operator (non-admin) renders
+         OperatorSidebar = pure upstream stock, zero Algorythmo additions. -->
     <NextSidebar
       v-if="isAdmin"
       :is-mobile-sidebar-open="isMobileSidebarOpen"
