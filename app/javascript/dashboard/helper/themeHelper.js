@@ -31,6 +31,10 @@ import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 //     coherent paper token set while the host chrome reverts to stock Chatwoot.
 //   Only role 'administrator' keeps the Algorythmo surface; every other role
 //   (agent, custom_role) renders stock Chatwoot.
+// Persisted as a BARE primitive string (never an object): the pre-paint boot
+// script in vueapp.html.erb reads it with `localStorage.getItem(...) === 'stock'`
+// and getStoredSurface() relies on the raw value, so both ends must agree on a
+// plain string. Do not wrap this in an object.
 export const SURFACE = {
   STOCK: 'stock',
   ALGORYTHMO: 'algorythmo',

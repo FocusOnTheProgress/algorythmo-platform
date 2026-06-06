@@ -293,7 +293,13 @@
 // accent and is intentionally LEFT as-is. Everything here is scoped to the
 // sidebar <aside>.alg-sidebar so no other surface inherits it.
 // =============================================================================
-.alg-sidebar {
+// algorythmo: operador-stock — the .alg-sidebar editorial chrome hard-codes
+// near-white inks (built for the dark canvas) and the Inter stack, NEITHER of
+// which follows the paper tokens. On the OPERATOR (stock) light shell those
+// would render white-on-light (unreadable). Scope the whole block to the
+// Algorythmo surface so the operator's rail falls back to the host slate inks
+// (dark text on the light canvas) — i.e. the stock Chatwoot sidebar.
+html:not([data-surface='stock']) .alg-sidebar {
   font-family: var(--alg-font-sans);
   letter-spacing: 0.002em;
 
