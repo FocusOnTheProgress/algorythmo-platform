@@ -46,11 +46,22 @@ describe('#defaultRedirectPage', () => {
     expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/portals');
   });
 
-  // algorythmo: operador-stock — a bare custom_role (no surface permission) falls
-  // back to the stock dashboard, never the admin-only Início.
-  it('should fall back to the dashboard for users with custom roles', () => {
+  // algorythmo: operador-stock — a permission-less custom_role matches no surface,
+  // so it falls back to the profile settings page — a route reachable by EVERY
+  // role — never the admin-only Início or the conversation-gated dashboard (which
+  // a bare custom_role cannot enter → would loop).
+  it('falls back to profile settings for a permission-less custom_role (loop-safe)', () => {
     const permissions = ['custom_role'];
-    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/dashboard');
+    const target = defaultRedirectPage(to, permissions);
+    expect(target).toBe('accounts/2/profile/settings');
+
+    // Second hop: the fallback target must itself be accessible to the custom_role,
+    // otherwise the guard would redirect again and loop. The profile route admits
+    // all roles by role string.
+    const profileRoute = {
+      meta: { permissions: ['administrator', 'agent', 'custom_role'] },
+    };
+    expect(routeIsAccessibleFor(profileRoute, permissions)).toBe(true);
   });
 
   // Administrators are the only role that lands on Início.

@@ -39,7 +39,12 @@ export const defaultRedirectPage = (to, permissions) => {
     // dashboard. Início must NOT be a non-admin fallback, or an agent bounced off
     // a blocked admin route would loop (blocked → inicio → blocked → ...).
     { permissions: ['administrator'], path: 'inicio' },
-    { permissions: [...CONVERSATION_PERMISSIONS], path: 'dashboard' },
+    // Operators (agents) + anyone with conversation access → the stock dashboard.
+    // 'agent' is matched explicitly because the agent permission set is just
+    // ['agent'] (account_user.rb#permissions); the conversation perms also catch a
+    // custom_role that was granted conversation access. The dashboard route
+    // (`home`) admits both 'agent' and the conversation perms, so this is reachable.
+    { permissions: ['agent', ...CONVERSATION_PERMISSIONS], path: 'dashboard' },
     { permissions: [CONTACT_PERMISSIONS], path: 'contacts' },
     { permissions: [REPORTS_PERMISSIONS], path: 'reports/overview' },
     { permissions: [PORTAL_PERMISSIONS], path: 'portals' },
@@ -49,10 +54,12 @@ export const defaultRedirectPage = (to, permissions) => {
     hasPermissions(routePermissions, permissions)
   );
 
-  // algorythmo: operador-stock — fall back to the stock conversations dashboard
-  // (the upstream default, reachable by every operational user), never the
-  // admin-only Início.
-  return `accounts/${accountId}/${route ? route.path : 'dashboard'}`;
+  // algorythmo: operador-stock — ultimate fallback is the profile settings page:
+  // the one surface EVERY role can reach (its route admits administrator / agent /
+  // custom_role by role string), so a user with no matched surface — e.g. a
+  // permission-less custom_role — lands there instead of looping. The admin-only
+  // Início and the conversation-gated dashboard are NOT loop-safe fallbacks.
+  return `accounts/${accountId}/${route ? route.path : 'profile/settings'}`;
 };
 
 const validateActiveAccountRoutes = (to, user) => {
