@@ -19,10 +19,7 @@ import SidebarChangelogButton from './SidebarChangelogButton.vue';
 import ChannelLeaf from './ChannelLeaf.vue';
 import ChannelIcon from 'next/icon/ChannelIcon.vue';
 import SidebarAccountSwitcher from './SidebarAccountSwitcher.vue';
-// algorythmo: operador — keep the per-account Modeloja brand (AlgBrandLogo)
-// instead of the Chatwoot Logo, per founder decision. Everything else in this
-// rail is a faithful port of the upstream Chatwoot v4.14.0 sidebar.
-import AlgBrandLogo from 'dashboard/components-next/algorythmo/AlgBrandLogo.vue';
+import Logo from 'next/icon/Logo.vue';
 import ComposeConversation from 'dashboard/components-next/NewConversation/ComposeConversation.vue';
 
 const props = defineProps({
@@ -61,25 +58,6 @@ const hasAdvancedAssignment = computed(() => {
   return isFeatureEnabledonAccount.value(
     accountId.value,
     FEATURE_FLAGS.ADVANCED_ASSIGNMENT
-  );
-});
-
-// algorythmo: operador — CRM is shown when the algorythmo_crm enable flag is on
-// (same gate as the admin sidebar). Copiloto is always shown (it is the
-// operator's AI tool). Captain (Chatwoot's built-in AI) is gated OFF by default
-// via algorythmo_show_captain — we ship our own Copiloto, so the operator does
-// not see two competing assistants unless a super-admin explicitly enables it.
-const hasAlgorythmoCrm = computed(() => {
-  return isFeatureEnabledonAccount.value(
-    accountId.value,
-    FEATURE_FLAGS.ALGORYTHMO_CRM
-  );
-});
-
-const hasCaptain = computed(() => {
-  return isFeatureEnabledonAccount.value(
-    accountId.value,
-    FEATURE_FLAGS.ALGORYTHMO_SHOW_CAPTAIN
   );
 });
 
@@ -332,103 +310,77 @@ const menuItems = computed(() => {
         },
       ],
     },
-    // algorythmo: operador — the two additions to the improved Chatwoot rail:
-    // CRM (lead pipeline) gated by the algorythmo_crm enable flag, and Copiloto
-    // (our knowledge AI) always visible to the operator.
-    ...(hasAlgorythmoCrm.value
-      ? [
-          {
-            name: 'AlgorythmoCrm',
-            icon: 'i-lucide-filter',
-            label: t('ALGORYTHMO_CRM.SIDEBAR.CRM'),
-            activeOn: ['algorythmo_crm_kanban'],
-            to: accountScopedRoute('algorythmo_crm_kanban'),
-          },
-        ]
-      : []),
     {
-      name: 'AlgorythmoCopilot',
-      icon: 'i-lucide-sparkles',
-      label: t('ALGORYTHMO_COPILOT.SIDEBAR.COPILOT'),
-      activeOn: ['algorythmo_copilot'],
-      to: accountScopedRoute('algorythmo_copilot'),
+      name: 'Captain',
+      icon: 'i-woot-captain',
+      label: t('SIDEBAR.CAPTAIN'),
+      activeOn: ['captain_assistants_create_index'],
+      children: [
+        {
+          name: 'FAQs',
+          label: t('SIDEBAR.CAPTAIN_RESPONSES'),
+          activeOn: [
+            'captain_assistants_responses_index',
+            'captain_assistants_responses_pending',
+          ],
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_assistants_responses_index',
+          }),
+        },
+        {
+          name: 'Documents',
+          label: t('SIDEBAR.CAPTAIN_DOCUMENTS'),
+          activeOn: ['captain_assistants_documents_index'],
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_assistants_documents_index',
+          }),
+        },
+        {
+          name: 'Scenarios',
+          label: t('SIDEBAR.CAPTAIN_SCENARIOS'),
+          activeOn: ['captain_assistants_scenarios_index'],
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_assistants_scenarios_index',
+          }),
+        },
+        {
+          name: 'Playground',
+          label: t('SIDEBAR.CAPTAIN_PLAYGROUND'),
+          activeOn: ['captain_assistants_playground_index'],
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_assistants_playground_index',
+          }),
+        },
+        {
+          name: 'Inboxes',
+          label: t('SIDEBAR.CAPTAIN_INBOXES'),
+          activeOn: ['captain_assistants_inboxes_index'],
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_assistants_inboxes_index',
+          }),
+        },
+        {
+          name: 'Tools',
+          label: t('SIDEBAR.CAPTAIN_TOOLS'),
+          activeOn: ['captain_tools_index'],
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_tools_index',
+          }),
+        },
+        {
+          name: 'Settings',
+          label: t('SIDEBAR.CAPTAIN_SETTINGS'),
+          activeOn: [
+            'captain_assistants_settings_index',
+            'captain_assistants_guidelines_index',
+            'captain_assistants_guardrails_index',
+          ],
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_assistants_settings_index',
+          }),
+        },
+      ],
     },
-    // algorythmo: operador — Captain (Chatwoot built-in AI) gated off by default.
-    ...(hasCaptain.value
-      ? [
-          {
-            name: 'Captain',
-            icon: 'i-woot-captain',
-            label: t('SIDEBAR.CAPTAIN'),
-            activeOn: ['captain_assistants_create_index'],
-            children: [
-              {
-                name: 'FAQs',
-                label: t('SIDEBAR.CAPTAIN_RESPONSES'),
-                activeOn: [
-                  'captain_assistants_responses_index',
-                  'captain_assistants_responses_pending',
-                ],
-                to: accountScopedRoute('captain_assistants_index', {
-                  navigationPath: 'captain_assistants_responses_index',
-                }),
-              },
-              {
-                name: 'Documents',
-                label: t('SIDEBAR.CAPTAIN_DOCUMENTS'),
-                activeOn: ['captain_assistants_documents_index'],
-                to: accountScopedRoute('captain_assistants_index', {
-                  navigationPath: 'captain_assistants_documents_index',
-                }),
-              },
-              {
-                name: 'Scenarios',
-                label: t('SIDEBAR.CAPTAIN_SCENARIOS'),
-                activeOn: ['captain_assistants_scenarios_index'],
-                to: accountScopedRoute('captain_assistants_index', {
-                  navigationPath: 'captain_assistants_scenarios_index',
-                }),
-              },
-              {
-                name: 'Playground',
-                label: t('SIDEBAR.CAPTAIN_PLAYGROUND'),
-                activeOn: ['captain_assistants_playground_index'],
-                to: accountScopedRoute('captain_assistants_index', {
-                  navigationPath: 'captain_assistants_playground_index',
-                }),
-              },
-              {
-                name: 'Inboxes',
-                label: t('SIDEBAR.CAPTAIN_INBOXES'),
-                activeOn: ['captain_assistants_inboxes_index'],
-                to: accountScopedRoute('captain_assistants_index', {
-                  navigationPath: 'captain_assistants_inboxes_index',
-                }),
-              },
-              {
-                name: 'Tools',
-                label: t('SIDEBAR.CAPTAIN_TOOLS'),
-                activeOn: ['captain_tools_index'],
-                to: accountScopedRoute('captain_assistants_index', {
-                  navigationPath: 'captain_tools_index',
-                }),
-              },
-              {
-                name: 'Settings',
-                label: t('SIDEBAR.CAPTAIN_SETTINGS'),
-                activeOn: [
-                  'captain_assistants_settings_index',
-                  'captain_assistants_guidelines_index',
-                  'captain_assistants_guardrails_index',
-                ],
-                to: accountScopedRoute('captain_assistants_index', {
-                  navigationPath: 'captain_assistants_settings_index',
-                }),
-              },
-            ],
-          },
-        ]
-      : []),
     {
       name: 'Contacts',
       label: t('SIDEBAR.CONTACTS'),
@@ -809,7 +761,7 @@ const menuItems = computed(() => {
         </template>
         <template v-else>
           <div class="grid flex-shrink-0 place-content-center size-6">
-            <AlgBrandLogo class="size-4" decorative label="Logo" />
+            <Logo class="size-4" />
           </div>
           <div class="flex-shrink-0 w-px h-3 bg-n-strong" />
           <SidebarAccountSwitcher

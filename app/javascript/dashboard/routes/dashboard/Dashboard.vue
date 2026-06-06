@@ -2,9 +2,9 @@
 import { defineAsyncComponent, ref, computed } from 'vue';
 
 import NextSidebar from 'next/sidebar/Sidebar.vue';
-// algorythmo: operador — the operator (non-admin) gets the improved Chatwoot rail
-// (faithful upstream sidebar + CRM + Copiloto); the admin keeps the customized
-// NextSidebar (still evolving). Rendered by role below.
+// algorythmo: operador — the operator (non-admin) gets OperatorSidebar, a
+// VERBATIM copy of the upstream Chatwoot v4.14.0 sidebar (zero Algorythmo
+// additions); the admin keeps the customized NextSidebar. Rendered by role below.
 import OperatorSidebar from 'next/sidebar/OperatorSidebar.vue';
 import WootKeyShortcutModal from 'dashboard/components/widgets/modal/WootKeyShortcutModal.vue';
 import AddAccountModal from 'dashboard/components/app/AddAccountModal.vue';
@@ -180,9 +180,9 @@ export default {
 
 <template>
   <div class="flex flex-grow overflow-hidden text-n-slate-12">
-    <!-- algorythmo: operador — admin keeps the customized NextSidebar; the
-         operator (non-admin) gets OperatorSidebar (faithful upstream v4.14.0
-         rail + CRM + Copiloto + Modeloja brand). -->
+    <!-- algorythmo: operador — Chatwoot v4.14.0 sidebar, verbatim, for the operator.
+         Admin keeps the customized NextSidebar; the operator (non-admin) renders
+         OperatorSidebar = pure upstream stock, zero Algorythmo additions. -->
     <NextSidebar
       v-if="isAdmin"
       :is-mobile-sidebar-open="isMobileSidebarOpen"
