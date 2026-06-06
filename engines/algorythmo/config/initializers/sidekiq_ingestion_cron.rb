@@ -24,11 +24,23 @@ Rails.application.reloader.to_prepare do
     next
   end
 
-  Sidekiq::Cron::Job.find_or_create!(
-    name: 'algorythmo_brain_ingestion_daily',
-    cron: '0 2 * * *',
-    class: 'Algorythmo::Brain::IngestionWorker',
-    args: [Integer(primary_account_id)],
-    queue: 'default'
-  )
+  # Sidekiq::Cron::Job.create is the idempotent creator (creates or updates by name);
+  # `find_or_create!` does NOT exist in sidekiq-cron 2.x and raised NoMethodError,
+  # crashing the sidekiq BOOT (this initializer is gated to Sidekiq.server?, so the
+  # web/puma process was unaffected — only the worker failed to start).
+  #
+  # Wrapped defensively: a cron-scheduling failure must NEVER take down the whole
+  # worker. We log and continue so document ingestion (job-arg driven) keeps working
+  # even if the nightly schedule can't be registered.
+  begin
+    Sidekiq::Cron::Job.create(
+      name: 'algorythmo_brain_ingestion_daily',
+      cron: '0 2 * * *',
+      class: 'Algorythmo::Brain::IngestionWorker',
+      args: [Integer(primary_account_id)],
+      queue: 'default'
+    )
+  rescue StandardError => e
+    Rails.logger.error("[Algorythmo] Failed to schedule brain ingestion cron: #{e.class}: #{e.message}")
+  end
 end
