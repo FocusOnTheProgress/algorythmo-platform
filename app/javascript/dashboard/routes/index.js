@@ -66,7 +66,12 @@ export const validateAuthenticateRoutePermission = async (to, next) => {
     // route name and skip this branch entirely (deep-links preserved).
     // Onboarding path is unchanged: admins in onboarding still land on the
     // onboarding surface, not on Início.
-    const target = needsOnboarding ? 'onboarding' : 'inicio';
+    // algorythmo: operador-stock — admins land on the Início panorama; operators
+    // (non-admins) land on the stock Chatwoot conversations dashboard. Início is
+    // an admin-only surface, so a non-admin must never default to it.
+    let target = 'dashboard';
+    if (needsOnboarding) target = 'onboarding';
+    else if (isAdmin) target = 'inicio';
     return next(frontendURL(`accounts/${routeAccountId}/${target}`));
   }
 

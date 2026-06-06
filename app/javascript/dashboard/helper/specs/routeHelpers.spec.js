@@ -22,11 +22,11 @@ describe('#defaultRedirectPage', () => {
     name: 'home',
   };
 
-  // algorythmo: Stream D — Início is the default landing surface for any user
-  // who can reach the conversation dashboard (the universal welcome panorama).
-  it('should return inicio route for users with conversation permissions', () => {
+  // algorythmo: operador-stock — operators (conversation-capable non-admins) land
+  // on the stock conversations dashboard; Início is admin-only.
+  it('should return the dashboard for users with conversation permissions (operators)', () => {
     const permissions = ['conversation_manage', 'agent'];
-    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/inicio');
+    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/dashboard');
   });
 
   it('should return contacts route for users with contact permissions', () => {
@@ -46,19 +46,20 @@ describe('#defaultRedirectPage', () => {
     expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/portals');
   });
 
-  // algorythmo: Stream D — custom_role / administrator carry the conversation
-  // permission set, so they too land on Início by default.
-  it('should return inicio route as default for users with custom roles', () => {
+  // algorythmo: operador-stock — a bare custom_role (no surface permission) falls
+  // back to the stock dashboard, never the admin-only Início.
+  it('should fall back to the dashboard for users with custom roles', () => {
     const permissions = ['custom_role'];
-    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/inicio');
+    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/dashboard');
   });
 
+  // Administrators are the only role that lands on Início.
   it('should return inicio route for users with administrator role', () => {
     const permissions = ['administrator'];
     expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/inicio');
   });
 
-  it('should return inicio route for users with multiple permissions', () => {
+  it('should return inicio route when administrator is among multiple permissions', () => {
     const permissions = [
       'contact_manage',
       'custom_role',
@@ -119,9 +120,10 @@ describe('#validateLoggedInRoutes', () => {
         });
       });
       describe('when route is not accessible', () => {
-        // algorythmo: Stream D — an inaccessible route redirects to the default
-        // landing, which is now Início (the universal welcome).
-        it('returns inicio url', () => {
+        // algorythmo: operador-stock — an agent bounced off an admin-only route
+        // lands on the stock dashboard (NOT the admin-only Início — that would
+        // loop the guard).
+        it('returns dashboard url for an operator', () => {
           expect(
             validateLoggedInRoutes(
               {
@@ -131,7 +133,7 @@ describe('#validateLoggedInRoutes', () => {
               },
               { accounts: [{ id: 1, role: 'agent', status: 'active' }] }
             )
-          ).toEqual(`accounts/1/inicio`);
+          ).toEqual(`accounts/1/dashboard`);
         });
       });
       describe('when route is suspended route', () => {

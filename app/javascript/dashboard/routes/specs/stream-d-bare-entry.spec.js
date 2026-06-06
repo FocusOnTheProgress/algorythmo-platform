@@ -1,8 +1,11 @@
 // algorythmo: Stream D — bare-entry landing spec.
 //
 // Verifies that validateAuthenticateRoutePermission routes bare-entry
-// (no route name) to Inicio — not to dashboard — for all roles:
-// administrator, agent, and a conversation-capable custom_role.
+// (no route name) by ROLE:
+//   - administrator → Início (the reformulated admin landing)
+//   - agent / custom_role (operators) → the stock conversations dashboard
+// (algorythmo: operador-stock — Início became admin-only; operators land on
+// stock Chatwoot conversations instead).
 //
 // Deep-links (routes with a name) must pass through unchanged.
 // The onboarding path must be preserved for admins in onboarding.
@@ -100,7 +103,9 @@ describe('Stream D — bare-entry landing wiring', () => {
     expect(arg).not.toContain('dashboard');
   });
 
-  it('bare-entry as agent lands on inicio', async () => {
+  // algorythmo: operador-stock — operators (agent / custom_role) land on the
+  // stock conversations dashboard, NOT the admin-only Início.
+  it('bare-entry as agent lands on the stock dashboard, not inicio', async () => {
     store.getters.getCurrentUser = {
       accounts: [
         { id: 1, role: 'agent', status: 'active', onboarding_step: null },
@@ -113,10 +118,11 @@ describe('Stream D — bare-entry landing wiring', () => {
 
     expect(next).toHaveBeenCalledOnce();
     const arg = next.mock.calls[0][0];
-    expect(arg).toContain('accounts/1/inicio');
+    expect(arg).toContain('accounts/1/dashboard');
+    expect(arg).not.toContain('inicio');
   });
 
-  it('bare-entry as conversation-capable custom_role lands on inicio', async () => {
+  it('bare-entry as custom_role lands on the stock dashboard, not inicio', async () => {
     store.getters.getCurrentUser = {
       accounts: [
         { id: 1, role: 'custom_role', status: 'active', onboarding_step: null },
@@ -129,7 +135,8 @@ describe('Stream D — bare-entry landing wiring', () => {
 
     expect(next).toHaveBeenCalledOnce();
     const arg = next.mock.calls[0][0];
-    expect(arg).toContain('accounts/1/inicio');
+    expect(arg).toContain('accounts/1/dashboard');
+    expect(arg).not.toContain('inicio');
   });
 
   it('admin in onboarding still lands on onboarding, not inicio', async () => {

@@ -5,7 +5,6 @@ import {
 } from './permissionsHelper';
 
 import {
-  ROLES,
   CONVERSATION_PERMISSIONS,
   CONTACT_PERMISSIONS,
   REPORTS_PERMISSIONS,
@@ -35,13 +34,12 @@ export const defaultRedirectPage = (to, permissions) => {
   const { accountId } = to.params;
 
   const permissionRoutes = [
-    // algorythmo: Stream D — Início is the default landing surface. Any user who
-    // can reach the conversation dashboard falls into Início first (the universal
-    // welcome panorama); Conversations stay reachable via the sidebar as before.
-    {
-      permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
-      path: 'inicio',
-    },
+    // algorythmo: operador-stock — Início is an ADMIN-ONLY surface now. Admins
+    // land on it; operators (non-admins) land on the stock conversations
+    // dashboard. Início must NOT be a non-admin fallback, or an agent bounced off
+    // a blocked admin route would loop (blocked → inicio → blocked → ...).
+    { permissions: ['administrator'], path: 'inicio' },
+    { permissions: [...CONVERSATION_PERMISSIONS], path: 'dashboard' },
     { permissions: [CONTACT_PERMISSIONS], path: 'contacts' },
     { permissions: [REPORTS_PERMISSIONS], path: 'reports/overview' },
     { permissions: [PORTAL_PERMISSIONS], path: 'portals' },
@@ -51,10 +49,10 @@ export const defaultRedirectPage = (to, permissions) => {
     hasPermissions(routePermissions, permissions)
   );
 
-  // algorythmo: Stream D — Início is the universal default landing. The fallback
-  // (e.g. a bare custom_role with no specific surface permission) also lands on
-  // Início, whose route admits administrator / agent / custom_role alike.
-  return `accounts/${accountId}/${route ? route.path : 'inicio'}`;
+  // algorythmo: operador-stock — fall back to the stock conversations dashboard
+  // (the upstream default, reachable by every operational user), never the
+  // admin-only Início.
+  return `accounts/${accountId}/${route ? route.path : 'dashboard'}`;
 };
 
 const validateActiveAccountRoutes = (to, user) => {
