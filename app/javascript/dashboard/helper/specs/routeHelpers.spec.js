@@ -142,7 +142,20 @@ describe('#validateLoggedInRoutes', () => {
                 params: { accountId: 1 },
                 meta: { permissions: ['administrator'] },
               },
-              { accounts: [{ id: 1, role: 'agent', status: 'active' }] }
+              // A real agent account always carries permissions:['agent']
+              // (account_user.rb#permissions); seed it so the redirect reflects
+              // production — an operator bounced off an admin route lands on the
+              // stock conversations dashboard.
+              {
+                accounts: [
+                  {
+                    id: 1,
+                    role: 'agent',
+                    permissions: ['agent'],
+                    status: 'active',
+                  },
+                ],
+              }
             )
           ).toEqual(`accounts/1/dashboard`);
         });
