@@ -1,10 +1,10 @@
-// algorythmo: PR7 — Copiloto (operator knowledge consultant) route.
+// algorythmo: PR7 — Copiloto (knowledge consultant) route.
 //
-// The Copiloto is the OPERATOR's tool (Malu), not an admin surface. Unlike the
-// Brain viewer — which is curated by admins — this read-only Q&A consultant is
-// open to the same permitted roles that can read the Brain: administrator,
-// agent, and custom_role. The menu entry is intentionally NOT gated by isAdmin
-// (see Sidebar.vue) so agents get the consultant Day-1.
+// Founder decision (2026-06-06): the operator screen is pure stock Chatwoot, so
+// the Copiloto is hidden from agents — removed from the operator rail AND locked
+// admin-only at the route guard (no direct-URL access for agents/custom_role).
+// The consultant stays in the codebase (and in the admin's NextSidebar); the
+// founder will decide its permanent home later.
 import { frontendURL } from 'dashboard/helper/URLHelper';
 import CopilotScreen from '../../../modules/algorythmo/copilot/CopilotScreen.vue';
 
@@ -14,7 +14,7 @@ export default {
       path: frontendURL('accounts/:accountId/copilot'),
       name: 'algorythmo_copilot',
       meta: {
-        permissions: ['administrator', 'agent', 'custom_role'],
+        permissions: ['administrator'],
       },
       component: CopilotScreen,
     },
