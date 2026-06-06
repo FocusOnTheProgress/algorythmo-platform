@@ -80,6 +80,24 @@
   <%# background inline so there is no white flash before the SPA mounts. The -%>
   <%# Vue boot (themeHelper / v3 App) re-asserts the theme once running. -%>
   <body class="dark text-slate-600" style="background-color:#111113">
+    <%# algorythmo: operador-stock — pre-paint surface boot. If this browser last -%>
+    <%# resolved the OPERATOR (stock) surface, neutralize the dark-first boot -%>
+    <%# BEFORE the SPA mounts so the operator never flashes the admin dark canvas. -%>
+    <%# The admin/default path (no stored surface, or 'algorythmo') is untouched. -%>
+    <script>
+      (function () {
+        try {
+          if (window.localStorage.getItem('alg_surface') === 'stock') {
+            var root = document.documentElement;
+            root.setAttribute('data-surface', 'stock');
+            root.setAttribute('data-theme', 'white');
+            root.style.setProperty('color-scheme', 'light');
+            document.body.classList.remove('dark');
+            document.body.style.backgroundColor = '#ffffff';
+          }
+        } catch (e) {}
+      })();
+    </script>
     <div id="app"></div>
     <noscript id="noscript">This app works best with JavaScript enabled.</noscript>
     <%= yield %>

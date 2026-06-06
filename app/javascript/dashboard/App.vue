@@ -10,7 +10,7 @@ import vueActionCable from './helper/actionCable';
 import { useRouter } from 'vue-router';
 import { useStore } from 'dashboard/composables/store';
 import WootSnackbarBox from './components/SnackbarContainer.vue';
-import { setColorTheme } from './helper/themeHelper';
+import { setColorTheme, persistSurfaceForRole } from './helper/themeHelper';
 import { isOnOnboardingView } from 'v3/helpers/RouteHelper';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useFontSize } from 'dashboard/composables/useFontSize';
@@ -60,6 +60,7 @@ export default {
       getAccount: 'accounts/getAccount',
       isRTL: 'accounts/isRTL',
       currentUser: 'getCurrentUser',
+      currentRole: 'getCurrentRole',
       authUIFlags: 'getAuthUIFlags',
     }),
     hideOnOnboardingView() {
@@ -74,6 +75,20 @@ export default {
         if (this.currentAccountId) {
           this.initializeAccount();
         }
+      },
+    },
+    // algorythmo: operador-stock — resolve the visual surface from the active
+    // account role. Operators (non-admin) render stock Chatwoot (light); admins
+    // keep the Cinematic surface. Re-runs on account switch so the surface
+    // follows the active account, and persists it so the next boot avoids a
+    // dark→light flash. No-op until the role is known (avoids a transient stock
+    // flash for an admin before accounts hydrate).
+    currentRole: {
+      immediate: true,
+      handler(role) {
+        if (!role) return;
+        persistSurfaceForRole(role);
+        setColorTheme();
       },
     },
   },

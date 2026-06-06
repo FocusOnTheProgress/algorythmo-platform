@@ -1,5 +1,11 @@
-import { setColorTheme } from 'dashboard/helper/themeHelper.js';
+import {
+  setColorTheme,
+  resolveSurfaceForRole,
+  persistSurfaceForRole,
+  SURFACE,
+} from 'dashboard/helper/themeHelper.js';
 import { LocalStorage } from 'shared/helpers/localStorage';
+import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 
 vi.mock('shared/helpers/localStorage');
 
@@ -90,5 +96,68 @@ describe('setColorTheme', () => {
     LocalStorage.get.mockReturnValue('auto');
     setColorTheme();
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+  });
+});
+
+// algorythmo: operador-stock — surface resolution by role.
+describe('resolveSurfaceForRole', () => {
+  it('keeps the Algorythmo surface only for administrators', () => {
+    expect(resolveSurfaceForRole('administrator')).toBe(SURFACE.ALGORYTHMO);
+  });
+
+  it('returns the stock surface for agents, custom roles and unknown roles', () => {
+    expect(resolveSurfaceForRole('agent')).toBe(SURFACE.STOCK);
+    expect(resolveSurfaceForRole('custom_role')).toBe(SURFACE.STOCK);
+    expect(resolveSurfaceForRole(undefined)).toBe(SURFACE.STOCK);
+  });
+});
+
+describe('persistSurfaceForRole', () => {
+  it('persists and returns the resolved surface', () => {
+    expect(persistSurfaceForRole('administrator')).toBe(SURFACE.ALGORYTHMO);
+    expect(LocalStorage.set).toHaveBeenCalledWith(
+      LOCAL_STORAGE_KEYS.SURFACE,
+      SURFACE.ALGORYTHMO
+    );
+
+    expect(persistSurfaceForRole('agent')).toBe(SURFACE.STOCK);
+    expect(LocalStorage.set).toHaveBeenCalledWith(
+      LOCAL_STORAGE_KEYS.SURFACE,
+      SURFACE.STOCK
+    );
+  });
+});
+
+// algorythmo: operador-stock — when the persisted surface is 'stock', the
+// operator gets bare stock Chatwoot: light, .dark removed, data-surface='stock'
+// (suppresses the Algorythmo chrome layer) and data-theme='white' (keeps CRM /
+// Copiloto on the paper tokens). The color_scheme preference is ignored.
+describe('setColorTheme — operator (stock) surface', () => {
+  beforeEach(() => {
+    document.body.classList.remove('dark');
+    document.documentElement.removeAttribute('data-surface');
+    document.documentElement.removeAttribute('data-theme');
+    document.documentElement.removeAttribute('style');
+    LocalStorage.get.mockImplementation(key =>
+      key === LOCAL_STORAGE_KEYS.SURFACE ? SURFACE.STOCK : 'dark'
+    );
+  });
+
+  it("removes .dark and sets data-surface='stock'", () => {
+    setColorTheme();
+    expect(document.body.classList.contains('dark')).toBe(false);
+    expect(document.documentElement.getAttribute('data-surface')).toBe('stock');
+  });
+
+  it("sets data-theme='white' so our own components stay on paper tokens", () => {
+    setColorTheme();
+    expect(document.documentElement.getAttribute('data-theme')).toBe('white');
+  });
+
+  it('forces a light color-scheme regardless of the stored color preference', () => {
+    setColorTheme();
+    expect(
+      document.documentElement.style.getPropertyValue('color-scheme')
+    ).toBe('light');
   });
 });

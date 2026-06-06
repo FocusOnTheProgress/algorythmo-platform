@@ -217,47 +217,52 @@ $alg-brand-hover: var(--alg-color-brand-primary-hover);
 // which lands ~8:1 on the cyan-teal. `!important` out-specifies the co-located
 // `text-white` utility (which is not !important). This only paints text/glyphs
 // that sit ON the brand fill — it does not touch text elsewhere on the page.
-.bg-n-brand {
-  background-color: #{$alg-brand} !important;
-  color: var(--alg-color-brand-primary-fg) !important;
-}
-.hover\:bg-n-brand:hover {
-  background-color: #{$alg-brand} !important;
-  color: var(--alg-color-brand-primary-fg) !important;
-}
-// Tailwind opacity variants compile to color-mix / rgb(.. / .1) on the literal.
-// Re-express the common tints against the brand hue.
-.bg-n-brand\/5 {
-  background-color: color-mix(in oklch, #{$alg-brand} 5%, transparent) !important;
-}
-.bg-n-brand\/10 {
-  background-color: color-mix(in oklch, #{$alg-brand} 10%, transparent) !important;
-}
-.bg-n-brand\/20,
-.hover\:bg-n-brand\/20:hover {
-  background-color: color-mix(in oklch, #{$alg-brand} 20%, transparent) !important;
-}
-.text-n-brand {
-  color: #{$alg-brand} !important;
-}
-.outline-n-brand {
-  outline-color: #{$alg-brand} !important;
-}
-.focus\:outline-n-brand:focus,
-.focus-visible\:outline-n-brand:focus-visible {
-  outline-color: #{$alg-brand} !important;
-}
-.ring-n-brand {
-  --tw-ring-color: #{$alg-brand} !important;
-}
-.border-n-brand {
-  border-color: #{$alg-brand} !important;
-}
+// algorythmo: operador-stock — the brand purge is scoped to the Algorythmo
+// surface only. On the OPERATOR (stock) surface the attribute guard fails, so
+// the host Chatwoot `n-brand` (blue) wins and the operator sees stock chrome.
+html:not([data-surface='stock']) {
+  .bg-n-brand {
+    background-color: #{$alg-brand} !important;
+    color: var(--alg-color-brand-primary-fg) !important;
+  }
+  .hover\:bg-n-brand:hover {
+    background-color: #{$alg-brand} !important;
+    color: var(--alg-color-brand-primary-fg) !important;
+  }
+  // Tailwind opacity variants compile to color-mix / rgb(.. / .1) on the literal.
+  // Re-express the common tints against the brand hue.
+  .bg-n-brand\/5 {
+    background-color: color-mix(in oklch, #{$alg-brand} 5%, transparent) !important;
+  }
+  .bg-n-brand\/10 {
+    background-color: color-mix(in oklch, #{$alg-brand} 10%, transparent) !important;
+  }
+  .bg-n-brand\/20,
+  .hover\:bg-n-brand\/20:hover {
+    background-color: color-mix(in oklch, #{$alg-brand} 20%, transparent) !important;
+  }
+  .text-n-brand {
+    color: #{$alg-brand} !important;
+  }
+  .outline-n-brand {
+    outline-color: #{$alg-brand} !important;
+  }
+  .focus\:outline-n-brand:focus,
+  .focus-visible\:outline-n-brand:focus-visible {
+    outline-color: #{$alg-brand} !important;
+  }
+  .ring-n-brand {
+    --tw-ring-color: #{$alg-brand} !important;
+  }
+  .border-n-brand {
+    border-color: #{$alg-brand} !important;
+  }
 
-// The `.text-link` helper in _base.scss applies `text-n-brand`. Belt-and-
-// suspenders: ensure links resolve to the brand hue regardless of cascade.
-.text-link {
-  color: var(--alg-color-brand-primary) !important;
+  // The `.text-link` helper in _base.scss applies `text-n-brand`. Belt-and-
+  // suspenders: ensure links resolve to the brand hue regardless of cascade.
+  .text-link {
+    color: var(--alg-color-brand-primary) !important;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -271,13 +276,17 @@ $alg-brand-hover: var(--alg-color-brand-primary-hover);
 // Geist / Geist Mono self-host is a documented TODO in _tokens.scss (founder
 // chose Inter / placeholder for C1; human curation later). Until then the
 // Inter stack carries operational UI and the editorial display surfaces.
-html,
-body,
-button,
-input,
-select,
-textarea {
-  font-family: var(--alg-font-sans) !important;
+// algorythmo: operador-stock — the Inter force is scoped to the Algorythmo
+// surface. The operator (stock) keeps the host Chatwoot font stack.
+html:not([data-surface='stock']) {
+  &,
+  body,
+  button,
+  input,
+  select,
+  textarea {
+    font-family: var(--alg-font-sans) !important;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -293,39 +302,44 @@ textarea {
 
 // App canvas — ensure the deepest neutral black sits behind everything, with a
 // faint top-lit vignette so the shell has gravity instead of flat fill.
-body.dark,
-body {
-  background-color: var(--alg-bg);
-}
-
-// Primary navigation rail (Chatwoot's left sidebar) — glass + grain + hairline.
-// Chatwoot's sidebar is the `.bg-n-background` / app-sidebar scaffold; we lift
-// it onto a soft-glass surface with an inset top highlight.
-.app-sidebar,
-[class*='sidebar'] > nav,
-nav.secondary-menu {
-  position: relative;
-  background: var(--alg-bg-base);
-  border-right: 1px solid var(--alg-border);
-  box-shadow: var(--alg-elevation-1);
-
-  @supports (backdrop-filter: blur(1px)) {
-    background: var(--alg-glass-soft-bg);
-    backdrop-filter: var(--alg-glass-soft-filter);
-    -webkit-backdrop-filter: var(--alg-glass-soft-filter);
+// algorythmo: operador-stock — the dark canvas + glass/grain chrome is scoped to
+// the Algorythmo surface. The operator (stock) keeps the host Chatwoot chrome
+// (flat sidebar, light canvas) with no glass treatment.
+html:not([data-surface='stock']) {
+  body.dark,
+  body {
+    background-color: var(--alg-bg);
   }
-}
 
-// Grain layer on the primary rail — the visionOS tell. 0.6% effective opacity.
-.app-sidebar::after,
-nav.secondary-menu::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: var(--alg-glass-grain);
-  opacity: 0.6;
-  mix-blend-mode: overlay;
-  pointer-events: none;
+  // Primary navigation rail (Chatwoot's left sidebar) — glass + grain + hairline.
+  // Chatwoot's sidebar is the `.bg-n-background` / app-sidebar scaffold; we lift
+  // it onto a soft-glass surface with an inset top highlight.
+  .app-sidebar,
+  [class*='sidebar'] > nav,
+  nav.secondary-menu {
+    position: relative;
+    background: var(--alg-bg-base);
+    border-right: 1px solid var(--alg-border);
+    box-shadow: var(--alg-elevation-1);
+
+    @supports (backdrop-filter: blur(1px)) {
+      background: var(--alg-glass-soft-bg);
+      backdrop-filter: var(--alg-glass-soft-filter);
+      -webkit-backdrop-filter: var(--alg-glass-soft-filter);
+    }
+  }
+
+  // Grain layer on the primary rail — the visionOS tell. 0.6% effective opacity.
+  .app-sidebar::after,
+  nav.secondary-menu::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--alg-glass-grain);
+    opacity: 0.6;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -333,7 +347,10 @@ nav.secondary-menu::after {
 // -----------------------------------------------------------------------------
 // Normalize the focus-visible ring to the Cinematic brand ring so keyboard
 // navigation reads consistently against the dark canvas and over glass.
-:where(a, button, [role='button'], input, select, textarea, [tabindex]):focus-visible {
+// algorythmo: operador-stock — the brand focus ring is scoped to the Algorythmo
+// surface; the operator (stock) keeps the host Chatwoot focus styles.
+html:not([data-surface='stock'])
+  :where(a, button, [role='button'], input, select, textarea, [tabindex]):focus-visible {
   outline: none;
   box-shadow: var(--alg-ring-focus);
 }
@@ -354,7 +371,12 @@ nav.secondary-menu::after {
 // Radix/surface tokens to the warm paper scale and re-purge the brand blue to
 // the white-model brand teal (--alg-color-brand-primary, darkened for AA on
 // paper). This makes white mode a coherent, on-brand editorial surface.
-[data-theme='white'] {
+//
+// algorythmo: operador-stock — :not([data-surface='stock']) so this host remap
+// fires only for an ADMIN who explicitly picked light. The OPERATOR also carries
+// data-theme='white' (to keep CRM/Copiloto on paper tokens) but must NOT get the
+// Algorythmo paper-chrome remap — they get bare stock Chatwoot light instead.
+[data-theme='white']:not([data-surface='stock']) {
   // --- Structural slate → warm ink-on-paper (mirror of _next-colors light, but
   // pulled to the Algorythmo paper temperature: near-white canvas, ink text). --
   --slate-1: 250 250 248;
