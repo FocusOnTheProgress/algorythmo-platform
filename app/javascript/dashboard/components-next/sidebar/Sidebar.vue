@@ -308,13 +308,20 @@ const menuItems = computed(() => {
     // ── INÍCIO (default landing) ─────────────────────────────────────────────
     // algorythmo: Stream D — "Início" is the first surface the user lands on.
     // It stands alone at the very top (like a home), above the Operacional block.
-    {
-      name: 'AlgorythmoInicio',
-      icon: 'i-lucide-house',
-      label: t('SIDEBAR.ALG_INICIO'),
-      activeOn: ['algorythmo_admin_inicio'],
-      to: accountScopedRoute('algorythmo_admin_inicio'),
-    },
+    // algorythmo: operador-stock — "Início" is the reformulated admin landing, not
+    // a stock Chatwoot surface, so it is admin-only. The operator lands on the
+    // stock conversations dashboard instead (see routes/index.js role-based home).
+    ...(isAdmin.value
+      ? [
+          {
+            name: 'AlgorythmoInicio',
+            icon: 'i-lucide-house',
+            label: t('SIDEBAR.ALG_INICIO'),
+            activeOn: ['algorythmo_admin_inicio'],
+            to: accountScopedRoute('algorythmo_admin_inicio'),
+          },
+        ]
+      : []),
     // ── OPERACIONAL block (no section header) ────────────────────────────────
     // algorythmo: M5 sidebar restructure — Operacional block: Contacts, Companies, Conversations, CRM
     // algorythmo: rodada 3 — CRM-6: CRM entry MOVED below Conversation (was head of block).
@@ -400,27 +407,35 @@ const menuItems = computed(() => {
       label: t('SIDEBAR.CONVERSATIONS'),
       icon: 'i-lucide-message-circle',
       children: [
-        // algorythmo: stream-a — "Operação ao vivo": read-only aquarium where the
-        // CEO watches the live commercial operation without a reply box.
-        // Routes to the dedicated alg_operacao_ao_vivo route which renders
-        // ConversationView with isReadOnly=true (no ReplyBox mounted).
-        {
-          name: 'OperacaoAoVivo',
-          label: t('SIDEBAR.ALG_CONV_OPERACAO_AO_VIVO'),
-          activeOn: ['alg_operacao_ao_vivo_conversation'],
-          to: accountScopedRoute('alg_operacao_ao_vivo'),
-        },
-        // algorythmo: stream-a — "Caixa de entrada": CEO personal inbox, moved
-        // from the top-level sidebar. Notification badge preserved via getterKeys.
-        {
-          name: 'CaixaDeEntrada',
-          label: t('SIDEBAR.ALG_CONV_CAIXA_DE_ENTRADA'),
-          activeOn: ['inbox_view', 'inbox_view_conversation'],
-          to: accountScopedRoute('inbox_view'),
-          getterKeys: {
-            count: 'notifications/getUnreadCount',
-          },
-        },
+        // algorythmo: operador-stock — "Operação ao vivo" (read-only CEO aquarium)
+        // and "Caixa de entrada" (CEO personal inbox) are Algorythmo additions, not
+        // stock Chatwoot conversation surfaces, so they are admin-only. The operator
+        // sees the standard Chatwoot conversation sub-views (Folders/Teams/Channels/
+        // Labels) below.
+        ...(isAdmin.value
+          ? [
+              // algorythmo: stream-a — "Operação ao vivo": read-only aquarium where
+              // the CEO watches the live commercial operation without a reply box.
+              // Routes to alg_operacao_ao_vivo (ConversationView isReadOnly=true).
+              {
+                name: 'OperacaoAoVivo',
+                label: t('SIDEBAR.ALG_CONV_OPERACAO_AO_VIVO'),
+                activeOn: ['alg_operacao_ao_vivo_conversation'],
+                to: accountScopedRoute('alg_operacao_ao_vivo'),
+              },
+              // algorythmo: stream-a — "Caixa de entrada": CEO personal inbox.
+              // Notification badge preserved via getterKeys.
+              {
+                name: 'CaixaDeEntrada',
+                label: t('SIDEBAR.ALG_CONV_CAIXA_DE_ENTRADA'),
+                activeOn: ['inbox_view', 'inbox_view_conversation'],
+                to: accountScopedRoute('inbox_view'),
+                getterKeys: {
+                  count: 'notifications/getUnreadCount',
+                },
+              },
+            ]
+          : []),
         {
           name: 'Folders',
           label: t('SIDEBAR.CUSTOM_VIEWS_FOLDER'),
@@ -531,7 +546,9 @@ const menuItems = computed(() => {
     // Bot / Labels / Inbox sidebar leaves (their routes stay live). The legacy
     // Commercial Overview alias key is preserved in the i18n overrides; the
     // sidebar label uses the standard sector key like its sibling sectors.
-    ...(algorythmoCutHidden.value.sector_commercial
+    // algorythmo: operador-stock — sectors are admin-only (gated by role here, in
+    // addition to the per-sector cut-flag). The operator never sees the GESTÃO block.
+    ...(!isAdmin.value || algorythmoCutHidden.value.sector_commercial
       ? []
       : [
           {
@@ -546,7 +563,7 @@ const menuItems = computed(() => {
     // ── 2. Marketing ──────────────────────────────────────────────────────────
     // algorythmo: M2-a — D1: 2nd in Management. D10: sector cut-flag.
     // D11: label "Marketing" (English). Sub-tabs in PT delivered in M2-d.
-    ...(algorythmoCutHidden.value.sector_marketing
+    ...(!isAdmin.value || algorythmoCutHidden.value.sector_marketing
       ? []
       : [
           {
@@ -560,7 +577,7 @@ const menuItems = computed(() => {
 
     // ── 3. Operations (was "Operação") ────────────────────────────────────────
     // algorythmo: M2-a — D1: 3rd. D11: "Operations". D10: sector cut-flag.
-    ...(algorythmoCutHidden.value.sector_operations
+    ...(!isAdmin.value || algorythmoCutHidden.value.sector_operations
       ? []
       : [
           {
@@ -574,7 +591,7 @@ const menuItems = computed(() => {
 
     // ── 4. Procurement (was "Compras") ────────────────────────────────────────
     // algorythmo: M2-a — D1: 4th. D11: "Procurement". D10: sector cut-flag.
-    ...(algorythmoCutHidden.value.sector_procurement
+    ...(!isAdmin.value || algorythmoCutHidden.value.sector_procurement
       ? []
       : [
           {
@@ -588,7 +605,7 @@ const menuItems = computed(() => {
 
     // ── 5. HR (was "RH") ─────────────────────────────────────────────────────
     // algorythmo: M2-a — D1: 5th. D11: "HR". D10: sector cut-flag.
-    ...(algorythmoCutHidden.value.sector_hr
+    ...(!isAdmin.value || algorythmoCutHidden.value.sector_hr
       ? []
       : [
           {
@@ -606,7 +623,7 @@ const menuItems = computed(() => {
     // cut-flag `algorythmo_cut_sector_facilities` default OFF = sector visible.
     // (The M2-a inverted carve-out — held hidden while the route was missing — is
     // retired now that `algorythmo_admin_facilities` exists.)
-    ...(algorythmoCutHidden.value.sector_facilities
+    ...(!isAdmin.value || algorythmoCutHidden.value.sector_facilities
       ? []
       : [
           {
@@ -620,7 +637,7 @@ const menuItems = computed(() => {
 
     // ── 7. Finance (was "Financeiro") ─────────────────────────────────────────
     // algorythmo: M2-a — D1: 7th. D11: "Finance". D10: sector cut-flag.
-    ...(algorythmoCutHidden.value.sector_finance
+    ...(!isAdmin.value || algorythmoCutHidden.value.sector_finance
       ? []
       : [
           {
@@ -634,7 +651,7 @@ const menuItems = computed(() => {
 
     // ── 8. Administration (was "Administração") ───────────────────────────────
     // algorythmo: M2-a — D1: 8th. D11: "Administration". D10: sector cut-flag.
-    ...(algorythmoCutHidden.value.sector_administration
+    ...(!isAdmin.value || algorythmoCutHidden.value.sector_administration
       ? []
       : [
           {
@@ -663,13 +680,19 @@ const menuItems = computed(() => {
         ]
       : []),
     // algorythmo: M5 sidebar restructure — C-Levels placeholder (M7 ships atmospheric UI)
-    {
-      name: 'AdminCLevels',
-      icon: 'i-lucide-crown',
-      label: t('ALGORYTHMO_ADMIN.C_LEVELS.SIDEBAR_LABEL'),
-      activeOn: ['algorythmo_admin_c_levels'],
-      to: accountScopedRoute('algorythmo_admin_c_levels'),
-    },
+    // algorythmo: operador-stock — admin-only (the route is already administrator-
+    // gated; this closes the menu leak so agents never see the Sala de Conselho).
+    ...(isAdmin.value
+      ? [
+          {
+            name: 'AdminCLevels',
+            icon: 'i-lucide-crown',
+            label: t('ALGORYTHMO_ADMIN.C_LEVELS.SIDEBAR_LABEL'),
+            activeOn: ['algorythmo_admin_c_levels'],
+            to: accountScopedRoute('algorythmo_admin_c_levels'),
+          },
+        ]
+      : []),
 
     // ── INTELIGÊNCIA block ────────────────────────────────────────────────────
     // algorythmo: INTELIGÊNCIA header — shown to ANY permitted role, not just
@@ -710,13 +733,19 @@ const menuItems = computed(() => {
       to: accountScopedRoute('algorythmo_copilot'),
     },
     // algorythmo: M5 sidebar restructure — Marketplace placeholder (M8c ships catalog UI)
-    {
-      name: 'AdminMarketplace',
-      icon: 'i-lucide-store',
-      label: t('ALGORYTHMO_ADMIN.MARKETPLACE.TITLE'),
-      activeOn: ['algorythmo_admin_marketplace'],
-      to: accountScopedRoute('algorythmo_admin_marketplace'),
-    },
+    // algorythmo: operador-stock — admin-only (route already administrator-gated;
+    // this closes the menu leak so agents never see the Marketplace).
+    ...(isAdmin.value
+      ? [
+          {
+            name: 'AdminMarketplace',
+            icon: 'i-lucide-store',
+            label: t('ALGORYTHMO_ADMIN.MARKETPLACE.TITLE'),
+            activeOn: ['algorythmo_admin_marketplace'],
+            to: accountScopedRoute('algorythmo_admin_marketplace'),
+          },
+        ]
+      : []),
 
     // ── Remaining upstream surfaces ───────────────────────────────────────────
     // algorythmo: rodada 3 — P-3: the top-level Help Center ("Portals") sidebar

@@ -22,11 +22,11 @@ describe('#defaultRedirectPage', () => {
     name: 'home',
   };
 
-  // algorythmo: Stream D — Início is the default landing surface for any user
-  // who can reach the conversation dashboard (the universal welcome panorama).
-  it('should return inicio route for users with conversation permissions', () => {
+  // algorythmo: operador-stock — operators (conversation-capable non-admins) land
+  // on the stock conversations dashboard; Início is admin-only.
+  it('should return the dashboard for users with conversation permissions (operators)', () => {
     const permissions = ['conversation_manage', 'agent'];
-    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/inicio');
+    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/dashboard');
   });
 
   it('should return contacts route for users with contact permissions', () => {
@@ -46,19 +46,31 @@ describe('#defaultRedirectPage', () => {
     expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/portals');
   });
 
-  // algorythmo: Stream D — custom_role / administrator carry the conversation
-  // permission set, so they too land on Início by default.
-  it('should return inicio route as default for users with custom roles', () => {
+  // algorythmo: operador-stock — a permission-less custom_role matches no surface,
+  // so it falls back to the profile settings page — a route reachable by EVERY
+  // role — never the admin-only Início or the conversation-gated dashboard (which
+  // a bare custom_role cannot enter → would loop).
+  it('falls back to profile settings for a permission-less custom_role (loop-safe)', () => {
     const permissions = ['custom_role'];
-    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/inicio');
+    const target = defaultRedirectPage(to, permissions);
+    expect(target).toBe('accounts/2/profile/settings');
+
+    // Second hop: the fallback target must itself be accessible to the custom_role,
+    // otherwise the guard would redirect again and loop. The profile route admits
+    // all roles by role string.
+    const profileRoute = {
+      meta: { permissions: ['administrator', 'agent', 'custom_role'] },
+    };
+    expect(routeIsAccessibleFor(profileRoute, permissions)).toBe(true);
   });
 
+  // Administrators are the only role that lands on Início.
   it('should return inicio route for users with administrator role', () => {
     const permissions = ['administrator'];
     expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/inicio');
   });
 
-  it('should return inicio route for users with multiple permissions', () => {
+  it('should return inicio route when administrator is among multiple permissions', () => {
     const permissions = [
       'contact_manage',
       'custom_role',
@@ -119,9 +131,10 @@ describe('#validateLoggedInRoutes', () => {
         });
       });
       describe('when route is not accessible', () => {
-        // algorythmo: Stream D — an inaccessible route redirects to the default
-        // landing, which is now Início (the universal welcome).
-        it('returns inicio url', () => {
+        // algorythmo: operador-stock — an agent bounced off an admin-only route
+        // lands on the stock dashboard (NOT the admin-only Início — that would
+        // loop the guard).
+        it('returns dashboard url for an operator', () => {
           expect(
             validateLoggedInRoutes(
               {
@@ -129,9 +142,22 @@ describe('#validateLoggedInRoutes', () => {
                 params: { accountId: 1 },
                 meta: { permissions: ['administrator'] },
               },
-              { accounts: [{ id: 1, role: 'agent', status: 'active' }] }
+              // A real agent account always carries permissions:['agent']
+              // (account_user.rb#permissions); seed it so the redirect reflects
+              // production — an operator bounced off an admin route lands on the
+              // stock conversations dashboard.
+              {
+                accounts: [
+                  {
+                    id: 1,
+                    role: 'agent',
+                    permissions: ['agent'],
+                    status: 'active',
+                  },
+                ],
+              }
             )
-          ).toEqual(`accounts/1/inicio`);
+          ).toEqual(`accounts/1/dashboard`);
         });
       });
       describe('when route is suspended route', () => {

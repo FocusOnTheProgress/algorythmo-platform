@@ -11,8 +11,12 @@ export default {
     {
       path: frontendURL('accounts/:accountId/inicio'),
       name: 'algorythmo_admin_inicio',
+      // algorythmo: operador-stock — Início is the reformulated admin landing, not
+      // a stock Chatwoot surface, so it is admin-only. Operators land on the stock
+      // conversations dashboard (see routes/index.js + defaultRedirectPage), and a
+      // direct /inicio URL by an agent is redirected there.
       meta: {
-        permissions: ['administrator', 'agent', 'custom_role'],
+        permissions: ['administrator'],
       },
       component: InicioScreen,
     },

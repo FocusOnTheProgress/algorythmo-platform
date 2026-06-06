@@ -11,8 +11,12 @@ export default {
     {
       path: frontendURL('accounts/:accountId/brain'),
       name: 'algorythmo_brain_viewer',
+      // algorythmo: operador-stock — Brain is admin-only. The sidebar already
+      // hides it from agents; this closes the direct-URL path so an agent typing
+      // /brain is redirected to their stock dashboard instead of reaching the
+      // curation hub.
       meta: {
-        permissions: ['administrator', 'agent', 'custom_role'],
+        permissions: ['administrator'],
       },
       component: BrainViewer,
     },

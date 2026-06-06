@@ -21,10 +21,62 @@ import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 //   `data-theme='white'` (the Cinematic OS paper variant). Dark/auto → add
 //   `.dark` AND set `data-theme='dark'` so the white paper tokens are released
 //   and the dark-first chrome guard re-engages.
+// algorythmo: operador-stock — two visual surfaces coexist on one build:
+//   • 'algorythmo' (default, ADMIN) — the Cinematic OS chrome (dark-first).
+//   • 'stock'      (OPERATOR / agent) — bare upstream Chatwoot, light, with the
+//     entire Algorythmo chrome layer neutralized. Driven by a <html
+//     data-surface='stock'> attribute that the scoped guards in _chrome.scss and
+//     _woot.scss key off (:not([data-surface='stock'])). data-theme stays
+//     'white' on the operator so OUR OWN components (CRM, Copiloto) keep the
+//     coherent paper token set while the host chrome reverts to stock Chatwoot.
+//   Only role 'administrator' keeps the Algorythmo surface; every other role
+//   (agent, custom_role) renders stock Chatwoot.
+// Persisted as a BARE primitive string (never an object): the pre-paint boot
+// script in vueapp.html.erb reads it with `localStorage.getItem(...) === 'stock'`
+// and getStoredSurface() relies on the raw value, so both ends must agree on a
+// plain string. Do not wrap this in an object.
+export const SURFACE = {
+  STOCK: 'stock',
+  ALGORYTHMO: 'algorythmo',
+};
+
+export const resolveSurfaceForRole = role =>
+  role === 'administrator' ? SURFACE.ALGORYTHMO : SURFACE.STOCK;
+
+export const getStoredSurface = () =>
+  LocalStorage.get(LOCAL_STORAGE_KEYS.SURFACE) === SURFACE.STOCK
+    ? SURFACE.STOCK
+    : SURFACE.ALGORYTHMO;
+
+// Persist the surface resolved for the active account role so the pre-paint boot
+// script (vueapp.html.erb) can neutralize the dark-first boot before the SPA
+// mounts — no dark→light flash for the operator after the first login.
+export const persistSurfaceForRole = role => {
+  const surface = resolveSurfaceForRole(role);
+  LocalStorage.set(LOCAL_STORAGE_KEYS.SURFACE, surface);
+  return surface;
+};
+
 export const setColorTheme = () => {
+  const root = document.documentElement;
+
+  // Operator surface: stock Chatwoot, light. The Algorythmo chrome overrides are
+  // suppressed via data-surface='stock'; data-theme='white' keeps CRM/Copiloto
+  // (our components) on the paper tokens so they stay coherent on the light shell.
+  if (getStoredSurface() === SURFACE.STOCK) {
+    document.body.classList.remove('dark');
+    root.setAttribute('data-surface', SURFACE.STOCK);
+    root.setAttribute('data-theme', 'white');
+    root.style.setProperty('color-scheme', 'light');
+    return;
+  }
+
+  // Admin surface: unchanged Cinematic behavior (dark-first; explicit 'light'
+  // opts into the paper variant). data-surface='algorythmo' is set explicitly so
+  // switching back from an operator account in the same session clears 'stock'.
+  root.setAttribute('data-surface', SURFACE.ALGORYTHMO);
   const selectedColorScheme =
     LocalStorage.get(LOCAL_STORAGE_KEYS.COLOR_SCHEME) || 'auto';
-  const root = document.documentElement;
   if (selectedColorScheme === 'light') {
     document.body.classList.remove('dark');
     root.setAttribute('data-theme', 'white');

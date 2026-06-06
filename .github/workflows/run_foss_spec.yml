@@ -127,6 +127,7 @@ jobs:
             app/javascript/dashboard/components-next/sidebar/specs/SidebarActiveNavRadius.spec.js \
             app/javascript/dashboard/components-next/sidebar/specs/SidebarStreamAConversas.spec.js \
             app/javascript/dashboard/components-next/sidebar/specs/SidebarContactsItemRender.spec.js \
+            app/javascript/dashboard/components-next/sidebar/specs/SidebarOperatorStockGating.spec.js \
             app/javascript/dashboard/modules/algorythmo/brain/specs/BrainAquario.spec.js \
             app/javascript/dashboard/modules/algorythmo/brain/specs/BrainViewer.spec.js \
             app/javascript/dashboard/modules/algorythmo/brain/specs/BrainHeader.spec.js \

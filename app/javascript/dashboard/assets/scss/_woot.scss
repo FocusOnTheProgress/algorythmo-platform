@@ -22,6 +22,19 @@
 
 html,
 body {
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+// algorythmo: operador-stock — the Inter force is scoped to the Algorythmo
+// surface so the OPERATOR (stock) renders the host Chatwoot font stack. Admin
+// (no data-surface, or 'algorythmo') keeps Inter exactly as before.
+html:not([data-surface='stock']),
+html:not([data-surface='stock']) body {
   font-family:
     'Inter',
     -apple-system,
@@ -33,12 +46,6 @@ body {
     Tahoma,
     Arial,
     sans-serif !important;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-font-smoothing: antialiased;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  width: 100%;
 }
 
 .tooltip {
