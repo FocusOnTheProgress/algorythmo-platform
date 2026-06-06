@@ -160,4 +160,10 @@ describe('setColorTheme — operator (stock) surface', () => {
       document.documentElement.style.getPropertyValue('color-scheme')
     ).toBe('light');
   });
+
+  it('clears the dark-first boot background inlined on <body> by the server layout', () => {
+    document.body.style.backgroundColor = '#111113';
+    setColorTheme();
+    expect(document.body.style.backgroundColor).toBe('');
+  });
 });

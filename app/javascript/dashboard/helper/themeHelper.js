@@ -65,6 +65,12 @@ export const setColorTheme = () => {
   // (our components) on the paper tokens so they stay coherent on the light shell.
   if (getStoredSurface() === SURFACE.STOCK) {
     document.body.classList.remove('dark');
+    // Drop the dark-first boot background the server layout inlines on <body>
+    // (vueapp.html.erb sets style="background-color:#111113" to avoid a white
+    // flash for admins). On the operator surface that inline dark would sit
+    // behind the light stock app (visible on overscroll), so clear it and let
+    // the host light canvas show through.
+    document.body.style.backgroundColor = '';
     root.setAttribute('data-surface', SURFACE.STOCK);
     root.setAttribute('data-theme', 'white');
     root.style.setProperty('color-scheme', 'light');
