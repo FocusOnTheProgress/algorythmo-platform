@@ -2,12 +2,17 @@
 import { defineAsyncComponent, ref, computed } from 'vue';
 
 import NextSidebar from 'next/sidebar/Sidebar.vue';
+// algorythmo: operador — the operator (non-admin) gets the improved Chatwoot rail
+// (faithful upstream sidebar + CRM + Copiloto); the admin keeps the customized
+// NextSidebar (still evolving). Rendered by role below.
+import OperatorSidebar from 'next/sidebar/OperatorSidebar.vue';
 import WootKeyShortcutModal from 'dashboard/components/widgets/modal/WootKeyShortcutModal.vue';
 import AddAccountModal from 'dashboard/components/app/AddAccountModal.vue';
 import UpgradePage from 'dashboard/routes/dashboard/upgrade/UpgradePage.vue';
 
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useAccount } from 'dashboard/composables/useAccount';
+import { useAdmin } from 'dashboard/composables/useAdmin';
 import { useWindowSize } from '@vueuse/core';
 import { useMapGetter } from 'dashboard/composables/store';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
@@ -31,6 +36,7 @@ import { useCallsStore } from 'dashboard/stores/calls';
 export default {
   components: {
     NextSidebar,
+    OperatorSidebar,
     CommandBar,
     WootKeyShortcutModal,
     AddAccountModal,
@@ -44,6 +50,8 @@ export default {
     const upgradePageRef = ref(null);
     const { uiSettings, updateUISettings } = useUISettings();
     const { accountId } = useAccount();
+    // algorythmo: operador — pick the rail by role (admin → custom, else operator).
+    const { isAdmin } = useAdmin();
     const { width: windowWidth } = useWindowSize();
     const callsStore = useCallsStore();
 
@@ -81,6 +89,7 @@ export default {
       hasActiveCall: computed(() => callsStore.hasActiveCall),
       hasIncomingCall: computed(() => callsStore.hasIncomingCall),
       showCaptainUI, // algorythmo: feature-gate algorythmo_show_captain
+      isAdmin, // algorythmo: operador — role-based sidebar selection
     };
   },
   data() {
@@ -171,9 +180,21 @@ export default {
 
 <template>
   <div class="flex flex-grow overflow-hidden text-n-slate-12">
+    <!-- algorythmo: operador — admin keeps the customized NextSidebar; the
+         operator (non-admin) gets the improved Chatwoot rail (OperatorSidebar:
+         faithful upstream v4.14.0 sidebar + CRM + Copiloto + Modeloja brand). -->
     <NextSidebar
+      v-if="isAdmin"
       :is-mobile-sidebar-open="isMobileSidebarOpen"
       @toggle-account-modal="toggleAccountModal"
+      @open-key-shortcut-modal="toggleKeyShortcutModal"
+      @close-key-shortcut-modal="closeKeyShortcutModal"
+      @show-create-account-modal="openCreateAccountModal"
+      @close-mobile-sidebar="closeMobileSidebar"
+    />
+    <OperatorSidebar
+      v-else
+      :is-mobile-sidebar-open="isMobileSidebarOpen"
       @open-key-shortcut-modal="toggleKeyShortcutModal"
       @close-key-shortcut-modal="closeKeyShortcutModal"
       @show-create-account-modal="openCreateAccountModal"
