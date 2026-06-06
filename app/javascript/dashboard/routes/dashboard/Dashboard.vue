@@ -181,8 +181,8 @@ export default {
 <template>
   <div class="flex flex-grow overflow-hidden text-n-slate-12">
     <!-- algorythmo: operador — admin keeps the customized NextSidebar; the
-         operator (non-admin) gets the improved Chatwoot rail (OperatorSidebar:
-         faithful upstream v4.14.0 sidebar + CRM + Copiloto + Modeloja brand). -->
+         operator (non-admin) gets OperatorSidebar (faithful upstream v4.14.0
+         rail + CRM + Copiloto + Modeloja brand). -->
     <NextSidebar
       v-if="isAdmin"
       :is-mobile-sidebar-open="isMobileSidebarOpen"
