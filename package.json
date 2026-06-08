@@ -144,14 +144,14 @@
     "husky": "^7.0.0",
     "jsdom": "^27.2.0",
     "lint-staged": "^16.2.7",
-    "postcss": "^8.4.47",
+    "postcss": "^8.5.15",
     "postcss-preset-env": "^8.5.1",
     "prettier": "^3.3.3",
     "prosemirror-model": "^1.22.3",
     "size-limit": "^8.2.4",
     "tailwindcss": "^3.4.19",
     "vite": "^5.4.21",
-    "vite-plugin-ruby": "^5.0.0",
+    "vite-plugin-ruby": "^5.2.2",
     "vitest": "3.0.5"
   },
   "engines": {
