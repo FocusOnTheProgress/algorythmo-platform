@@ -33,7 +33,7 @@ jobs:
   lint-backend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
@@ -43,7 +43,7 @@ jobs:
   lint-frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -60,7 +60,7 @@ jobs:
     name: Vitest (Algorythmo scope)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -173,7 +173,7 @@ jobs:
         options: --entrypoint redis-server
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: pnpm/action-setup@v4
 
@@ -263,7 +263,7 @@ jobs:
         options: --entrypoint redis-server
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: pnpm/action-setup@v4
 
@@ -404,6 +404,6 @@ jobs:
     name: Soft-fork zone integrity check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Validate soft-fork zone tags # algorythmo: soft-fork-ci-check
         run: bash engines/algorythmo/bin/check-soft-fork-zone.sh
