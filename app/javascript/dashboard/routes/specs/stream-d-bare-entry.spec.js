@@ -42,7 +42,7 @@ vi.mock('v3/helpers/RouteHelper', () => ({
   isOnOnboardingView: vi.fn(() => false),
 }));
 
-vi.mock('../helper/AnalyticsHelper', () => ({
+vi.mock('../../helper/AnalyticsHelper', () => ({
   default: { page: vi.fn() },
 }));
 
